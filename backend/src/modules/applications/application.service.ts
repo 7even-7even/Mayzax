@@ -1,0 +1,139 @@
+import { Prisma, Role } from '@prisma/client';
+import { ApiError } from '@/utils/apiError';
+import { normalizeJobLink } from '@/utils/normalizeJobLink';
+import { getBusinessDate } from '@/utils/businessDate';
+import { writeAuditLog } from '@/modules/shared/audit.service';
+import { prisma } from '@/lib/prisma';
+import * as repo from './application.repository';
+import { CreateApplicationInput, UpdateApplicationInput, ListApplicationsQuery } from './application.validation';
+
+interface Requester {
+  id: string;
+  role: Role;
+}
+interface Meta {
+  ip?: string;
+  userAgent?: string;
+}
+
+/**
+ * Creates a job application with strict duplicate protection for (profile, job link).
+ *
+ * Defense in depth:
+ *  1. Normalize the job link (strip tracking params, casing, trailing slash, etc.)
+ *  2. Pre-check for an existing (profileId, normalizedJobLink) row and return a
+ *     friendly 409 Conflict before hitting the DB write path.
+ *  3. Rely on the DB-level UNIQUE(profile_id, normalized_job_link) constraint as
+ *     the final, race-condition-proof guard - if two requests slip past the
+ *     pre-check simultaneously, Postgres itself rejects the second insert and
+ *     we translate that into the same friendly 409 response.
+ */
+export async function createApplication(input: CreateApplicationInput, actor: Requester, meta?: Meta) {
+  const profile = await prisma.clientProfile.findFirst({ where: { id: input.profileId, deletedAt: null } });
+  if (!profile) throw ApiError.notFound('Client profile not found');
+
+  if (actor.role === Role.RECRUITER && profile.assignedRecruiterId !== actor.id) {
+    throw ApiError.forbidden('You can only submit applications for profiles assigned to you');
+  }
+
+  const normalizedJobLink = normalizeJobLink(input.jobLink);
+  const appliedAt = input.appliedAt ?? new Date();
+  const businessDate = getBusinessDate(appliedAt);
+
+  // Layer 1: application-level pre-check for a clear, fast error message.
+  const existing = await repo.findByProfileAndNormalizedLink(input.profileId, normalizedJobLink);
+  if (existing) {
+    throw ApiError.conflict(
+      `This profile has already applied to this job. Duplicate submissions for the same profile are not allowed.`,
+      { existingApplicationId: existing.id, candidateName: profile.candidateName },
+    );
+  }
+
+  try {
+    // Layer 2: DB-level UNIQUE(profile_id, normalized_job_link) constraint - the
+    // authoritative guard against race conditions (e.g. two rapid duplicate submits).
+    const application = await repo.create({
+      profileId: input.profileId,
+      recruiterId: actor.id,
+      jobLink: input.jobLink,
+      normalizedJobLink,
+      companyName: input.companyName,
+      jobTitle: input.jobTitle,
+      jobPortal: input.jobPortal,
+      status: input.status,
+      appliedAt,
+      businessDate,
+    });
+
+    await writeAuditLog({
+      userId: actor.id,
+      action: 'APPLICATION_CREATED',
+      entity: 'JobApplication',
+      entityId: application.id,
+      metadata: { profileId: input.profileId, companyName: input.companyName, jobTitle: input.jobTitle },
+      ...meta,
+    });
+
+    return application;
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      throw ApiError.conflict(
+        'This profile has already applied to this job. Duplicate submissions for the same profile are not allowed.',
+      );
+    }
+    throw err;
+  }
+}
+
+export async function updateApplication(id: string, input: UpdateApplicationInput, actor: Requester, meta?: Meta) {
+  const existing = await repo.findById(id);
+  if (!existing) throw ApiError.notFound('Job application not found');
+
+  if (actor.role === Role.RECRUITER && existing.recruiterId !== actor.id) {
+    throw ApiError.forbidden('You can only update your own applications');
+  }
+
+  const updated = await repo.update(id, input);
+
+  await writeAuditLog({
+    userId: actor.id,
+    action: 'APPLICATION_UPDATED',
+    entity: 'JobApplication',
+    entityId: id,
+    metadata: input,
+    ...meta,
+  });
+
+  return updated;
+}
+
+export async function getApplication(id: string, actor: Requester) {
+  const application = await repo.findById(id);
+  if (!application) throw ApiError.notFound('Job application not found');
+
+  if (actor.role === Role.RECRUITER && application.recruiterId !== actor.id) {
+    throw ApiError.forbidden('You do not have access to this application');
+  }
+
+  return application;
+}
+
+export async function listApplications(query: ListApplicationsQuery, actor: Requester) {
+  const [items, total] = await repo.list(query, actor);
+  return {
+    items,
+    pagination: {
+      page: query.page,
+      pageSize: query.pageSize,
+      total,
+      totalPages: Math.ceil(total / query.pageSize),
+    },
+  };
+}
+
+/** Pre-flight duplicate check endpoint, useful for instant UI feedback before submit. */
+export async function checkDuplicate(profileId: string, jobLink: string) {
+  const normalizedJobLink = normalizeJobLink(jobLink);
+  const existing = await repo.findByProfileAndNormalizedLink(profileId, normalizedJobLink);
+  return { isDuplicate: !!existing, normalizedJobLink, existingApplicationId: existing?.id ?? null };
+}

@@ -1,0 +1,168 @@
+import { Role } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { ApiError } from '@/utils/apiError';
+import { hashPassword } from '@/modules/auth/auth.service';
+import { getBusinessDateString } from '@/utils/businessDate';
+import * as repo from './recruiter.repository';
+import { CreateRecruiterInput, UpdateRecruiterInput, ListRecruitersQuery } from './recruiter.validation';
+import { writeAuditLog } from '@/modules/shared/audit.service';
+
+export async function createRecruiter(input: CreateRecruiterInput, actorId: string, meta?: { ip?: string; userAgent?: string }) {
+  const existing = await repo.findByEmail(input.email);
+  if (existing) throw ApiError.conflict('A user with this email already exists');
+
+  const passwordHash = await hashPassword(input.password);
+  const user = await repo.createUser({
+    name: input.name,
+    email: input.email,
+    passwordHash,
+    role: (input.role as Role) ?? Role.RECRUITER,
+    createdById: actorId,
+  });
+
+  await writeAuditLog({
+    userId: actorId,
+    action: 'RECRUITER_CREATED',
+    entity: 'User',
+    entityId: user.id,
+    metadata: { name: user.name, email: user.email, role: user.role },
+    ...meta,
+  });
+
+  return sanitizeUser(user);
+}
+
+export async function updateRecruiter(id: string, input: UpdateRecruiterInput, actorId: string, meta?: { ip?: string; userAgent?: string }) {
+  const user = await repo.findActiveById(id);
+  if (!user) throw ApiError.notFound('Recruiter not found');
+
+  if (input.email && input.email.toLowerCase() !== user.email) {
+    const existing = await repo.findByEmail(input.email);
+    if (existing) throw ApiError.conflict('A user with this email already exists');
+  }
+
+  const updated = await repo.updateUser(id, input);
+
+  await writeAuditLog({
+    userId: actorId,
+    action: 'RECRUITER_UPDATED',
+    entity: 'User',
+    entityId: id,
+    metadata: input,
+    ...meta,
+  });
+
+  return sanitizeUser(updated);
+}
+
+export async function setRecruiterActiveStatus(id: string, isActive: boolean, actorId: string, meta?: { ip?: string; userAgent?: string }) {
+  const user = await repo.findActiveById(id);
+  if (!user) throw ApiError.notFound('Recruiter not found');
+  if (user.id === actorId && !isActive) {
+    throw ApiError.badRequest('You cannot deactivate your own account');
+  }
+
+  const updated = await repo.setActiveStatus(id, isActive);
+
+  await writeAuditLog({
+    userId: actorId,
+    action: isActive ? 'RECRUITER_ACTIVATED' : 'RECRUITER_DEACTIVATED',
+    entity: 'User',
+    entityId: id,
+    ...meta,
+  });
+
+  return sanitizeUser(updated);
+}
+
+export async function softDeleteRecruiter(id: string, actorId: string, meta?: { ip?: string; userAgent?: string }) {
+  const user = await repo.findActiveById(id);
+  if (!user) throw ApiError.notFound('Recruiter not found');
+  if (user.id === actorId) throw ApiError.badRequest('You cannot delete your own account');
+
+  await repo.softDeleteUser(id);
+
+  // Unassign their profiles so work can be reassigned
+  await prisma.clientProfile.updateMany({
+    where: { assignedRecruiterId: id },
+    data: { assignedRecruiterId: null },
+  });
+
+  await writeAuditLog({
+    userId: actorId,
+    action: 'RECRUITER_DELETED',
+    entity: 'User',
+    entityId: id,
+    ...meta,
+  });
+
+  return { message: 'Recruiter deleted successfully' };
+}
+
+export async function listRecruiters(query: ListRecruitersQuery) {
+  const [users, total] = await repo.listRecruiters(query);
+  return {
+    items: users,
+    pagination: {
+      page: query.page,
+      pageSize: query.pageSize,
+      total,
+      totalPages: Math.ceil(total / query.pageSize),
+    },
+  };
+}
+
+/**
+ * Detailed stats for a single recruiter:
+ * - total assigned profiles
+ * - total applications submitted (all-time)
+ * - applications submitted in current business shift
+ * - profile-wise counts
+ * - last active timestamp
+ */
+export async function getRecruiterStats(id: string) {
+  const user = await repo.findActiveById(id);
+  if (!user) throw ApiError.notFound('Recruiter not found');
+
+  const todayBusinessDate = getBusinessDateString(new Date());
+
+  const [assignedProfilesCount, totalApplications, currentShiftApplications, profileWiseCounts] = await Promise.all([
+    prisma.clientProfile.count({ where: { assignedRecruiterId: id, deletedAt: null } }),
+    prisma.jobApplication.count({ where: { recruiterId: id } }),
+    prisma.jobApplication.count({
+      where: { recruiterId: id, businessDate: new Date(`${todayBusinessDate}T00:00:00.000Z`) },
+    }),
+    prisma.jobApplication.groupBy({
+      by: ['profileId'],
+      where: { recruiterId: id },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const profileIds = profileWiseCounts.map((p) => p.profileId);
+  const profiles = await prisma.clientProfile.findMany({
+    where: { id: { in: profileIds } },
+    select: { id: true, candidateName: true, technology: true },
+  });
+  const profileMap = new Map(profiles.map((p) => [p.id, p]));
+
+  return {
+    recruiter: sanitizeUser(user),
+    assignedProfilesCount,
+    totalApplications,
+    currentShiftApplications,
+    currentBusinessDate: todayBusinessDate,
+    profileWiseCounts: profileWiseCounts.map((row) => ({
+      profileId: row.profileId,
+      candidateName: profileMap.get(row.profileId)?.candidateName ?? 'Unknown',
+      technology: profileMap.get(row.profileId)?.technology ?? null,
+      applicationCount: row._count._all,
+    })),
+    lastActiveAt: user.lastActiveAt,
+  };
+}
+
+function sanitizeUser<T extends { passwordHash?: string }>(user: T) {
+  const { passwordHash, ...rest } = user as any;
+  return rest;
+}

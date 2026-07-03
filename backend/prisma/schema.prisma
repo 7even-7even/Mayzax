@@ -1,0 +1,196 @@
+// =========================================================
+// Mayzax ATS - Prisma Schema
+// PostgreSQL database schema for the Recruitment ATS platform
+// =========================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------
+// Enums
+// ---------------------------------------------------------
+
+enum Role {
+  ADMIN
+  RECRUITER
+}
+
+enum ApplicationStatus {
+  APPLIED
+  IN_REVIEW
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  INTERVIEWED
+  OFFERED
+  REJECTED
+  WITHDRAWN
+  ON_HOLD
+}
+
+enum JobPortal {
+  LINKEDIN
+  INDEED
+  NAUKRI
+  DICE
+  MONSTER
+  ZIPRECRUITER
+  GLASSDOOR
+  COMPANY_WEBSITE
+  CAREERBUILDER
+  OTHER
+}
+
+// ---------------------------------------------------------
+// User (Admin / Recruiter)
+// ---------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(RECRUITER)
+
+  isActive  Boolean   @default(true)
+  deletedAt DateTime? // soft delete
+
+  lastActiveAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // If a recruiter, who created / manages them (admin)
+  createdById String?
+  createdBy   User?   @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers User[] @relation("UserCreatedBy")
+
+  // Recruiter relations
+  assignedProfiles ClientProfile[]  @relation("AssignedRecruiter")
+  applications     JobApplication[] @relation("RecruiterApplications")
+  refreshTokens    RefreshToken[]
+  auditLogs        AuditLog[]
+
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
+// ---------------------------------------------------------
+// Refresh Tokens (JWT refresh token rotation)
+// ---------------------------------------------------------
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String   @unique
+  userAgent String?
+  ip        String?
+
+  expiresAt DateTime
+  revokedAt DateTime?
+  replacedByTokenHash String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+// ---------------------------------------------------------
+// Client Profile (Candidate profile managed by recruiters)
+// ---------------------------------------------------------
+
+model ClientProfile {
+  id             String  @id @default(uuid())
+  candidateName  String
+  email          String
+  phone          String
+  technology     String
+  notes          String?
+
+  assignedRecruiterId String?
+  assignedRecruiter   User?   @relation("AssignedRecruiter", fields: [assignedRecruiterId], references: [id], onDelete: SetNull)
+
+  isActive  Boolean   @default(true)
+  deletedAt DateTime? // soft delete
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications JobApplication[]
+
+  @@index([assignedRecruiterId])
+  @@index([technology])
+  @@index([email])
+  @@map("client_profiles")
+}
+
+// ---------------------------------------------------------
+// Job Application
+// ---------------------------------------------------------
+
+model JobApplication {
+  id String @id @default(uuid())
+
+  profileId String
+  profile   ClientProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  recruiterId String
+  recruiter   User   @relation("RecruiterApplications", fields: [recruiterId], references: [id], onDelete: Restrict)
+
+  jobLink           String
+  normalizedJobLink String
+
+  companyName String
+  jobTitle    String
+  jobPortal   JobPortal @default(OTHER)
+
+  status ApplicationStatus @default(APPLIED)
+
+  appliedAt    DateTime @default(now())
+  businessDate DateTime @db.Date // derived via getBusinessDate() - IST business shift date
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Critical duplicate-prevention constraint:
+  // Same profile cannot apply to the same normalized job link twice.
+  @@unique([profileId, normalizedJobLink], name: "unique_profile_joblink")
+  @@index([recruiterId])
+  @@index([profileId])
+  @@index([businessDate])
+  @@index([status])
+  @@map("job_applications")
+}
+
+// ---------------------------------------------------------
+// Audit Log (engineering standard - traceability)
+// ---------------------------------------------------------
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  action    String   // e.g. "RECRUITER_CREATED", "PROFILE_UPDATED"
+  entity    String   // e.g. "User", "ClientProfile", "JobApplication"
+  entityId  String?
+  metadata  Json?
+
+  ip        String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
