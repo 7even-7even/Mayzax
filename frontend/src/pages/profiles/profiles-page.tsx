@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2 } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
+import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -67,40 +69,44 @@ export default function ProfilesPage() {
 
   return (
     <div>
-      <PageHeader
-        title={isAdmin ? 'Client Profiles' : 'My Assigned Profiles'}
-        description={
-          isAdmin
-            ? 'Manage candidate profiles and recruiter assignments.'
-            : 'Candidate profiles currently assigned to you.'
-        }
-        actions={
-          <Button
-            variant="brand"
-            onClick={() => {
-              setEditingProfile(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4" /> New Profile
-          </Button>
-        }
-      />
+      <Reveal>
+        <PageHeader
+          title={isAdmin ? 'Client Profiles' : 'My Assigned Profiles'}
+          description={
+            isAdmin
+              ? 'Manage candidate profiles and recruiter assignments.'
+              : 'Candidate profiles currently assigned to you.'
+          }
+          actions={
+            <Button
+              variant="brand"
+              onClick={() => {
+                setEditingProfile(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" /> New Profile
+            </Button>
+          }
+        />
+      </Reveal>
 
-      <div className="mb-4 flex items-center gap-3">
-        <div className="relative w-full max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            placeholder="Search by name, email, phone, or tech..."
-            className="pl-9"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-          />
+      <Reveal delay={0.05}>
+        <div className="mb-4 flex items-center gap-3">
+          <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search by name, email, phone, or tech..."
+              className="pl-9"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
         </div>
-      </div>
+      </Reveal>
 
       {isLoading && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -137,67 +143,80 @@ export default function ProfilesPage() {
 
       {!isLoading && !isError && profiles.length > 0 && (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {profiles.map((profile) => (
-              <Card key={profile.id} className="transition-shadow hover:shadow-md">
-                <CardContent className="p-4">
-                  <div className="mb-3 flex items-start justify-between">
-                    <div>
-                      <p className="font-semibold text-slate-900">{profile.candidateName}</p>
-                      <Badge variant="secondary" className="mt-1">
-                        {profile.technology}
-                      </Badge>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setEditingProfile(profile);
-                            setFormOpen(true);
-                          }}
+              <StaggerItem key={profile.id}>
+                <Card className="hover-lift group h-full overflow-hidden border-slate-200">
+                  <div className="h-1 w-full bg-mayzax-gradient opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <CardContent className="p-4">
+                    <div className="mb-3 flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <motion.div
+                          whileHover={{ rotate: 6, scale: 1.05 }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 12 }}
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mayzax-gradient text-sm font-bold text-white shadow-sm"
                         >
-                          <Pencil className="h-4 w-4" /> Edit
-                        </DropdownMenuItem>
-                        {isAdmin && (
+                          {profile.candidateName.charAt(0)}
+                        </motion.div>
+                        <div>
+                          <p className="font-semibold text-slate-900">{profile.candidateName}</p>
+                          <Badge variant="secondary" className="mt-1">
+                            {profile.technology}
+                          </Badge>
+                        </div>
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => setDeleteTarget(profile)}
-                            className="text-red-600 focus:text-red-600"
+                            onClick={() => {
+                              setEditingProfile(profile);
+                              setFormOpen(true);
+                            }}
                           >
-                            <Trash2 className="h-4 w-4" /> Delete
+                            <Pencil className="h-4 w-4" /> Edit
                           </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <div className="space-y-1.5 text-sm text-slate-500">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-3.5 w-3.5" /> {profile.email}
+                          {isAdmin && (
+                            <DropdownMenuItem
+                              onClick={() => setDeleteTarget(profile)}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-3.5 w-3.5" /> {profile.phone}
+
+                    <div className="space-y-1.5 text-sm text-slate-500">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3.5 w-3.5" /> {profile.email}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3.5 w-3.5" /> {profile.phone}
+                      </div>
                     </div>
-                  </div>
 
-                  {profile.notes && <p className="mt-2 line-clamp-2 text-xs text-slate-400">{profile.notes}</p>}
+                    {profile.notes && <p className="mt-2 line-clamp-2 text-xs text-slate-400">{profile.notes}</p>}
 
-                  <div className="mt-3 border-t border-slate-100 pt-2">
-                    <p className="text-xs text-slate-400">
-                      Assigned to{' '}
-                      <span className="font-medium text-slate-600">
-                        {profile.assignedRecruiter?.name ?? 'Unassigned'}
-                      </span>
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-2">
+                      <User2 className="h-3 w-3 text-slate-300" />
+                      <p className="text-xs text-slate-400">
+                        Assigned to{' '}
+                        <span className="font-medium text-slate-600">
+                          {profile.assignedRecruiter?.name ?? 'Unassigned'}
+                        </span>
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
           <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
         </>
       )}

@@ -17,6 +17,7 @@
     "db:migrate:deploy": "npm run prisma:migrate:deploy --prefix backend",
     "db:studio": "npm run prisma:studio --prefix backend",
     "db:seed": "npm run seed --prefix backend",
+    "db:seed:demo": "npm run seed:demo --prefix backend",
 
     "setup": "npm run install:all && npm run env:all && npm run db:generate && npm run db:migrate && npm run db:seed",
 

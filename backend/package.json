@@ -12,6 +12,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
+    "seed:demo": "cross-env SEED_DEMO_DATA=true tsx prisma/seed.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },
@@ -26,6 +27,7 @@
     "express-rate-limit": "^7.4.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
+    "mayzax-ats": "file:..",
     "pino": "^9.4.0",
     "pino-http": "^10.3.0",
     "pino-pretty": "^11.2.2",
@@ -43,6 +45,7 @@
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^8.7.0",
     "@typescript-eslint/parser": "^8.7.0",
+    "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
     "prisma": "^5.20.0",
     "tsc-alias": "^1.8.10",

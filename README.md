@@ -369,6 +369,7 @@ npm run db:seed            # creates ONLY the initial Admin account
 | `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX` | Global rate limiting | `900000` / `300` |
 | `AUTH_RATE_LIMIT_MAX` | Stricter limit on `/auth/*` | `20` |
 | `LOG_LEVEL` | Pino log level | `info` |
+| `LOGS_DIR` | Directory for daily rotating log files (`${LOGS_DIR}/YYYY-MM-DD.log`) | `logs` |
 | `SEED_ADMIN_EMAIL/PASSWORD/NAME` | Used only by `prisma/seed.ts` | see `.env.example` |
 
 ### Frontend (`frontend/.env`)
@@ -537,6 +538,7 @@ Run these from the repository root (`mayzax-ats/`) — they delegate to `backend
 - **API versioning** — all routes under `/api/v1`, allowing future `/api/v2` without breaking clients.
 - **Centralized error handling** — one Express error-handling middleware normalizes `ApiError`, Zod validation errors, and Prisma errors (including translating `P2002` unique-constraint violations into friendly `409`s) into a single response shape.
 - **Structured logging** — Pino JSON logs in production, pretty-printed in development; every request gets an `x-request-id`.
+- **Daily rotating file logs** — every log line (startup, shutdown, HTTP requests, errors, audit-adjacent events) is written to `${LOGS_DIR}/YYYY-MM-DD.log` in addition to stdout. `LOGS_DIR` is configured via `.env` (relative or absolute path); the file automatically rotates to a new date-stamped file at midnight IST with zero extra dependencies. See `src/lib/daily-log-stream.ts`.
 - **Validation middleware** — Zod schemas validate/coerce `body`, `query`, and `params` before controllers ever run.
 - **Database migrations** — Prisma Migrate, versioned and committed to `prisma/migrations/`.
 - **Reusable services & repository pattern** — controllers never touch Prisma directly; repositories isolate persistence concerns from business rules in services.

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 import { Plus, Search, MoreVertical, BarChart3, Pencil, Trash2, Users } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
+import { Reveal } from '@/components/motion/reveal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -91,54 +93,58 @@ export default function RecruitersPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Recruiter Management"
-        description="Create, manage, and monitor recruiter accounts across Mayzax ATS."
-        actions={
-          <Button
-            variant="brand"
-            onClick={() => {
-              setEditingRecruiter(null);
-              setFormOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4" /> New Recruiter
-          </Button>
-        }
-      />
+      <Reveal>
+        <PageHeader
+          title="Recruiter Management"
+          description="Create, manage, and monitor recruiter accounts across Mayzax ATS."
+          actions={
+            <Button
+              variant="brand"
+              onClick={() => {
+                setEditingRecruiter(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" /> New Recruiter
+            </Button>
+          }
+        />
+      </Reveal>
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative w-full max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            placeholder="Search by name or email..."
-            className="pl-9"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+      <Reveal delay={0.05}>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search by name or email..."
+              className="pl-9"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+          <Select
+            value={roleFilter}
+            onValueChange={(value) => {
+              setRoleFilter(value as typeof roleFilter);
               setPage(1);
             }}
-          />
+          >
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Filter by role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="RECRUITER">Recruiters</SelectItem>
+              <SelectItem value="ADMIN">Admins</SelectItem>
+              <SelectItem value={ALL_ROLES}>All Roles</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select
-          value={roleFilter}
-          onValueChange={(value) => {
-            setRoleFilter(value as typeof roleFilter);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Filter by role" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="RECRUITER">Recruiters</SelectItem>
-            <SelectItem value="ADMIN">Admins</SelectItem>
-            <SelectItem value={ALL_ROLES}>All Roles</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      </Reveal>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <Reveal delay={0.1} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         {isLoading && <TableSkeleton rows={6} cols={6} />}
         {isError && <ErrorState onRetry={() => refetch()} />}
 
@@ -170,13 +176,21 @@ export default function RecruitersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recruiters.map((recruiter) => (
-                  <TableRow key={recruiter.id}>
+                {recruiters.map((recruiter, i) => (
+                  <motion.tr
+                    key={recruiter.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.4) }}
+                    className="border-b transition-colors last:border-0 hover:bg-mayzax-blue-50/40"
+                  >
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarFallback>{initials(recruiter.name)}</AvatarFallback>
-                        </Avatar>
+                      <div className="group flex items-center gap-3">
+                        <motion.div whileHover={{ scale: 1.08 }} transition={{ type: 'spring', stiffness: 400, damping: 15 }}>
+                          <Avatar className="ring-2 ring-white transition-shadow group-hover:ring-mayzax-blue-100">
+                            <AvatarFallback>{initials(recruiter.name)}</AvatarFallback>
+                          </Avatar>
+                        </motion.div>
                         <div>
                           <p className="text-sm font-medium text-slate-900">{recruiter.name}</p>
                           <p className="text-xs text-slate-500">{recruiter.email}</p>
@@ -193,7 +207,15 @@ export default function RecruitersPage() {
                           onCheckedChange={(checked) => handleToggle(recruiter, checked)}
                           disabled={toggleStatus.isPending}
                         />
-                        <span className="text-xs text-slate-500">{recruiter.isActive ? 'Active' : 'Inactive'}</span>
+                        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                          {recruiter.isActive && (
+                            <span className="relative flex h-1.5 w-1.5">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            </span>
+                          )}
+                          {recruiter.isActive ? 'Active' : 'Inactive'}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-slate-500">{timeAgo(recruiter.lastActiveAt)}</TableCell>
@@ -225,14 +247,14 @@ export default function RecruitersPage() {
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
-                  </TableRow>
+                  </motion.tr>
                 ))}
               </TableBody>
             </Table>
             <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
           </>
         )}
-      </div>
+      </Reveal>
 
       <RecruiterFormDialog open={formOpen} onOpenChange={setFormOpen} recruiter={editingRecruiter} />
       <RecruiterStatsDialog recruiterId={statsRecruiterId} onOpenChange={(open) => !open && setStatsRecruiterId(null)} />

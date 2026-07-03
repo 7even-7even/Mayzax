@@ -31,6 +31,7 @@ const envSchema = z.object({
   AUTH_RATE_LIMIT_MAX: z.coerce.number().default(20),
 
   LOG_LEVEL: z.string().default('info'),
+  LOGS_DIR: z.string().default('logs'),
 });
 
 const parsed = envSchema.safeParse(process.env);

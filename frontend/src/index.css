@@ -54,4 +54,38 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply bg-slate-300 rounded-full;
   }
+
+  /* Gradient text using the Mayzax brand colors */
+  .text-gradient-brand {
+    background: linear-gradient(135deg, #2a5da8 0%, #3f9c71 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Hover-lift effect for interactive cards */
+  .hover-lift {
+    transition: transform 0.25s cubic-bezier(0.21, 0.47, 0.32, 0.98), box-shadow 0.25s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -8px rgba(42, 93, 168, 0.18), 0 4px 8px -4px rgba(63, 156, 113, 0.12);
+  }
+
+  /* Shimmering skeleton loader, brand-tinted */
+  .shimmer-bg {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e7eef8 37%, #f1f5f9 63%);
+    background-size: 400% 100%;
+    animation: shimmer 2.5s ease-in-out infinite;
+  }
+
+  /* Animated gradient border wrapper (used for highlighted/featured cards) */
+  .gradient-border-wrap {
+    position: relative;
+    border-radius: 1rem;
+    padding: 1.5px;
+    background: linear-gradient(120deg, #2a5da8, #3f9c71, #2a5da8);
+    background-size: 200% 200%;
+    animation: gradient-shift 4s ease infinite;
+  }
 }
