@@ -9,6 +9,9 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
   API_PREFIX: z.string().default('/api/v1'),
   CLIENT_URL: z.string().default('http://localhost:5173'),
+  // Comma-separated list of additional allowed CORS origins, e.g. Vercel
+  // preview deployment URLs: "https://mayzax-ats-git-foo.vercel.app,https://mayzax-ats-pr-12.vercel.app"
+  ADDITIONAL_CORS_ORIGINS: z.string().optional(),
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
@@ -17,8 +20,13 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
-  COOKIE_DOMAIN: z.string().default('localhost'),
+  COOKIE_DOMAIN: z.string().optional(),
   COOKIE_SECURE: z.coerce.boolean().default(false),
+  // Set to "true" when the frontend and backend are deployed on different
+  // domains (e.g. frontend on Vercel, backend on Render) so auth cookies are
+  // sent cross-site. Cross-site cookies REQUIRE Secure + SameSite=None, so
+  // this also forces COOKIE_SECURE behavior on regardless of COOKIE_SECURE.
+  CROSS_SITE_COOKIES: z.coerce.boolean().default(false),
 
   BUSINESS_SHIFT_START_HOUR: z.coerce.number().default(19),
   BUSINESS_SHIFT_START_MINUTE: z.coerce.number().default(30),

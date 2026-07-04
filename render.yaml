@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: mayzax-ats-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: API_PREFIX
+        value: /api/v1
+      - key: CLIENT_URL
+        sync: false
+      - key: ADDITIONAL_CORS_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: COOKIE_SECURE
+        value: true
+      - key: CROSS_SITE_COOKIES
+        value: true
+      - key: LOG_LEVEL
+        value: info
+      - key: LOGS_DIR
+        value: logs

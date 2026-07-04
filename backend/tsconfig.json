@@ -2,13 +2,12 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "commonjs",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "lib": ["ES2022"],
     "outDir": "dist",
     "rootDir": "src",
-    "baseUrl": "src",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["./src/*"]
     },
     "strict": true,
     "esModuleInterop": true,
@@ -22,7 +21,7 @@
     "noImplicitAny": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    // "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

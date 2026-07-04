@@ -9,6 +9,11 @@ import { globalRateLimiter } from '@/middleware/rateLimiter';
 import { notFoundHandler, errorHandler } from '@/middleware/errorHandler';
 import apiRouter from '@/routes';
 
+const allowedOrigins = [
+  env.CLIENT_URL,
+  ...(env.ADDITIONAL_CORS_ORIGINS ? env.ADDITIONAL_CORS_ORIGINS.split(',').map((o) => o.trim()) : []),
+].filter(Boolean);
+
 export function createApp() {
   const app = express();
 
@@ -17,7 +22,12 @@ export function createApp() {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.CLIENT_URL,
+      origin(origin, callback) {
+        // Allow same-origin/non-browser requests (no Origin header, e.g. curl, health checks)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS: origin "${origin}" is not allowed`));
+      },
       credentials: true,
     }),
   );

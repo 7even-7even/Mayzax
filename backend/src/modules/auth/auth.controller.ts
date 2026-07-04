@@ -9,11 +9,16 @@ const REFRESH_COOKIE = 'refresh_token';
 const ACCESS_COOKIE = 'access_token';
 
 function cookieOptions(maxAgeMs: number) {
+  // Cross-site cookies (frontend + backend on different domains, e.g. Vercel +
+  // Render) are only ever sent by browsers when SameSite=None AND Secure=true.
+  // Same-site deployments (single domain, or local dev) use the safer Lax mode.
+  const crossSite = env.CROSS_SITE_COOKIES;
+
   return {
     httpOnly: true,
-    secure: env.COOKIE_SECURE,
-    sameSite: 'lax' as const,
-    domain: env.NODE_ENV === 'production' ? env.COOKIE_DOMAIN : undefined,
+    secure: crossSite ? true : env.COOKIE_SECURE,
+    sameSite: (crossSite ? 'none' : 'lax') as 'none' | 'lax',
+    domain: env.COOKIE_DOMAIN || undefined,
     maxAge: maxAgeMs,
     path: '/',
   };
