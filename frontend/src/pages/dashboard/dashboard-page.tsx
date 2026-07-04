@@ -52,10 +52,6 @@ export default function DashboardPage() {
         <SummaryCards />
       </div>
 
-      <Reveal delay={0.1} className="mb-6">
-        <TeamActivityCard />
-      </Reveal>
-
       <Reveal delay={0.15}>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative w-full max-w-sm">

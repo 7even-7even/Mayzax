@@ -44,7 +44,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => logout()} className="text-red-600 focus:text-red-600">
-              <LogOut className="h-4 w-4" /> Sign out
+              <LogOut className="h-4 w-4 mr-2" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

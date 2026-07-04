@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -84,7 +85,7 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
   };
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
-
+  const [showPassword, setShowPassword] = useState(false);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -111,7 +112,23 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
           {!isEdit && (
             <div className="space-y-1.5">
               <Label htmlFor="password">Temporary Password</Label>
-              <Input id="password" type="password" placeholder="••••••••" {...form.register('password' as any)} />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  className="pr-9"
+                  {...form.register('password' as any)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               {(form.formState.errors as any).password && (
                 <p className="text-xs text-red-600">{(form.formState.errors as any).password.message}</p>
               )}

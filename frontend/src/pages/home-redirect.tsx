@@ -1,7 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/context/auth-context';
 import { FullPageLoader } from '@/components/shared/full-page-loader';
-
 export default function HomeRedirect() {
   const { user, isLoading } = useAuth();
   if (isLoading) return <FullPageLoader />;

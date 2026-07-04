@@ -71,7 +71,7 @@ export function RecruiterStatsDialog({
                         <p className="text-sm font-medium text-slate-800">{row.candidateName}</p>
                         {row.technology && <p className="text-xs text-slate-400">{row.technology}</p>}
                       </div>
-                      <Badge variant="default">{row.applicationCount} apps</Badge>
+                      <Badge variant="default">{row.applicationCount} applications</Badge>
                     </div>
                   ))}
                 </div>

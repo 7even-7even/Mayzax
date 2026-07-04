@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { DailyCount } from '@/types';
 
@@ -33,12 +34,19 @@ function toDateStr(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+function formatFullDate(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+}
+
 /**
  * GitHub-style contribution heatmap showing recruiter application activity
  * per business date, grouped into weekly columns (Sun -> Sat rows).
+ * Clicking a cell navigates to the Applications page filtered to that date.
  */
-export function ActivityHeatmap({ data, weeks = 18, className }: ActivityHeatmapProps) {
+export function ActivityHeatmap({ data, weeks = 26, className }: ActivityHeatmapProps) {
   const [hovered, setHovered] = useState<DayCell | null>(null);
+  const navigate = useNavigate();
 
   const countMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -89,67 +97,87 @@ export function ActivityHeatmap({ data, weeks = 18, className }: ActivityHeatmap
     return { columns: cols, monthLabels: labels, maxCount: max };
   }, [countMap, weeks]);
 
+  const handleCellClick = (cell: DayCell) => {
+    if (cell.isPadding) return;
+    navigate(`/applications?date=${cell.date}`);
+  };
+
   return (
-    <div className={cn('relative', className)}>
-      <div className="mb-1 flex pl-7 text-[10px] text-slate-400" style={{ gap: '2px' }}>
+    <div className={cn('relative w-full', className)}>
+      {/* Month labels — grid-aligned with the main heatmap columns below */}
+      <div
+        className="mb-1.5 grid pl-10 text-[11px] text-slate-400"
+        style={{ gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))` }}
+      >
         {columns.map((_, i) => {
           const label = monthLabels.find((m) => m.weekIndex === i);
-          return (
-            <div key={i} style={{ width: '13px' }} className="shrink-0">
-              {label?.label}
-            </div>
-          );
+          return <div key={i}>{label?.label}</div>;
         })}
       </div>
-      <div className="flex gap-2">
-        <div className="flex flex-col justify-between py-0.5 text-[10px] text-slate-400" style={{ height: '103px' }}>
+
+      <div className="flex gap-3">
+        {/* Day-of-week labels */}
+        <div className="flex w-7 flex-col justify-between py-0.5 text-[11px] text-slate-400">
           <span>Sun</span>
           <span>Wed</span>
           <span>Sat</span>
         </div>
-        <div className="flex" style={{ gap: '2px' }}>
+
+        {/* Main grid — columns scale with container width via 1fr, cells stay square */}
+        <div
+          className="grid flex-1 gap-1.5 pt-5 pl-3 pr-40"
+          style={{ gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))` }}
+        >
           {columns.map((col, wIdx) => (
-            <div key={wIdx} className="flex flex-col" style={{ gap: '2px' }}>
+            <div key={wIdx} className="grid gap-1.5" style={{ gridTemplateRows: 'repeat(7, minmax(0, 1fr))' }}>
               {col.map((cell, dIdx) => (
-                <motion.div
-                  key={cell.date}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  whileInView={{ opacity: cell.isPadding ? 0 : 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.2, delay: (wIdx * 7 + dIdx) * 0.003 }}
-                  onMouseEnter={() => !cell.isPadding && setHovered(cell)}
-                  onMouseLeave={() => setHovered(null)}
-                  className={cn(
-                    'h-[13px] w-[13px] rounded-[3px] transition-transform hover:scale-125 hover:ring-1 hover:ring-mayzax-green-500',
-                    cell.isPadding ? 'invisible' : getIntensityClass(cell.count),
-                  )}
-                />
+                <div key={cell.date} className="relative">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    whileInView={{ opacity: cell.isPadding ? 0 : 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.2, delay: (wIdx * 7 + dIdx) * 0.002 }}
+                    onMouseEnter={() => !cell.isPadding && setHovered(cell)}
+                    onMouseLeave={() => setHovered((h) => (h?.date === cell.date ? null : h))}
+                    onClick={() => handleCellClick(cell)}
+                    className={cn(
+                      'aspect-square w-full rounded-[4px] transition-transform hover:scale-125 hover:ring-2 hover:ring-mayzax-green-500',
+                      cell.isPadding ? 'invisible' : 'cursor-pointer',
+                      cell.isPadding ? '' : getIntensityClass(cell.count),
+                    )}
+                  />
+
+                  {/* Floating tooltip, positioned above the hovered cell */}
+                  <AnimatePresence>
+                    {hovered?.date === cell.date && !cell.isPadding && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 4, scale: 0.9 }}
+                        transition={{ duration: 0.12 }}
+                        className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg"
+                      >
+                        <span className="font-semibold">
+                          {cell.count} application{cell.count === 1 ? '' : 's'}
+                        </span>
+                        <span className="ml-1 text-slate-300">· {formatFullDate(cell.date)}</span>
+                        <div className="absolute left-1/2 top-full h-2 w-2 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-slate-900" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               ))}
             </div>
           ))}
         </div>
       </div>
 
-      <div className="mt-2 flex items-center justify-between text-[10px] text-slate-400">
-        <AnimatePresence mode="wait">
-          {hovered ? (
-            <motion.span
-              key={hovered.date}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="font-medium text-slate-600"
-            >
-              {hovered.count} application{hovered.count === 1 ? '' : 's'} · {hovered.date}
-            </motion.span>
-          ) : (
-            <span>Business-date activity{maxCount > 0 ? ` · peak ${maxCount}/day` : ''}</span>
-          )}
-        </AnimatePresence>
-        <div className="flex items-center gap-1">
+      <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
+        <span>Business-date activity{maxCount > 0 ? ` · peak ${maxCount}/day` : ''} — click a day to view applications</span>
+        <div className="flex items-center gap-1.5">
           <span>Less</span>
           {INTENSITY_LEVELS.map((level, i) => (
-            <div key={i} className={cn('h-[10px] w-[10px] rounded-[2px]', level.className)} />
+            <div key={i} className={cn('h-3 w-3 rounded-[3px]', level.className)} />
           ))}
           <span>More</span>
         </div>

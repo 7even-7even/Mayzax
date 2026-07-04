@@ -7,40 +7,31 @@
     "install:backend": "npm install --prefix backend",
     "install:frontend": "npm install --prefix frontend",
     "install:all": "npm run install:backend && npm run install:frontend",
-
     "env:backend": "cp -n backend/.env.example backend/.env || true",
     "env:frontend": "cp -n frontend/.env.example frontend/.env || true",
     "env:all": "npm run env:backend && npm run env:frontend",
-
     "db:generate": "npm run prisma:generate --prefix backend",
     "db:migrate": "npm run prisma:migrate --prefix backend",
     "db:migrate:deploy": "npm run prisma:migrate:deploy --prefix backend",
     "db:studio": "npm run prisma:studio --prefix backend",
     "db:seed": "npm run seed --prefix backend",
     "db:seed:demo": "npm run seed:demo --prefix backend",
-
     "setup": "npm run install:all && npm run env:all && npm run db:generate && npm run db:migrate && npm run db:seed",
-
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
     "dev": "concurrently -n API,WEB -c blue,green \"npm:dev:backend\" \"npm:dev:frontend\"",
-
     "build:backend": "npm run build --prefix backend",
     "build:frontend": "npm run build --prefix frontend",
     "build": "npm run build:backend && npm run build:frontend",
-
     "start:backend": "npm run start --prefix backend",
     "start": "npm run start:backend",
     "preview:frontend": "npm run preview --prefix frontend",
-
     "lint:backend": "npm run lint --prefix backend",
     "lint:frontend": "npm run lint --prefix frontend",
     "lint": "npm run lint:backend && npm run lint:frontend",
-
     "typecheck:backend": "npm run typecheck --prefix backend",
     "typecheck:frontend": "npm run typecheck --prefix frontend",
     "typecheck": "npm run typecheck:backend && npm run typecheck:frontend",
-
     "clean": "rimraf backend/dist backend/node_modules frontend/dist frontend/node_modules node_modules"
   },
   "devDependencies": {
@@ -50,5 +41,8 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "typescript": "^6.0.3"
   }
 }

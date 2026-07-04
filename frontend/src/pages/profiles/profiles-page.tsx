@@ -178,14 +178,14 @@ export default function ProfilesPage() {
                               setFormOpen(true);
                             }}
                           >
-                            <Pencil className="h-4 w-4" /> Edit
+                            <Pencil className="h-4 w-4 mr-2" /> Edit
                           </DropdownMenuItem>
                           {isAdmin && (
                             <DropdownMenuItem
                               onClick={() => setDeleteTarget(profile)}
                               className="text-red-600 focus:text-red-600"
                             >
-                              <Trash2 className="h-4 w-4" /> Delete
+                              <Trash2 className="h-4 w-4 mr-2" /> Delete
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>

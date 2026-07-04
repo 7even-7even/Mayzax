@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ExternalLink, FileText, Plus, Search } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { ExternalLink, FileText, Plus, Search, X } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,9 +20,17 @@ import { ApplicationStatus } from '@/types';
 
 const ALL = '__all__';
 
+function formatBusinessDateLabel(dateStr: string): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+}
+
 export default function ApplicationsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const dateFilter = searchParams.get('date'); // YYYY-MM-DD, from heatmap click
 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ApplicationStatus | typeof ALL>(ALL);
@@ -32,6 +41,9 @@ export default function ApplicationsPage() {
   const { data, isLoading, isError, refetch } = useApplications({
     search: debouncedSearch || undefined,
     status: status === ALL ? undefined : status,
+    // Single-day filter expressed as a from/to range on the same date.
+    businessDateFrom: dateFilter || undefined,
+    businessDateTo: dateFilter || undefined,
     page,
     pageSize: 12,
     sortBy: 'appliedAt',
@@ -39,6 +51,13 @@ export default function ApplicationsPage() {
   });
 
   const applications = data?.data ?? [];
+
+  const clearDateFilter = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('date');
+    setSearchParams(next);
+    setPage(1);
+  };
 
   return (
     <div>
@@ -55,6 +74,21 @@ export default function ApplicationsPage() {
           </Button>
         }
       />
+
+      {dateFilter && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-mayzax-blue/20 bg-mayzax-blue/5 px-3 py-2 text-sm text-slate-700">
+          <span>
+            Filtered by business date: <span className="font-medium text-slate-900">{formatBusinessDateLabel(dateFilter)}</span>
+          </span>
+          <button
+            onClick={clearDateFilter}
+            className="ml-1 flex items-center gap-1 rounded-full p-0.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-600"
+            aria-label="Clear date filter"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative w-full max-w-sm">
@@ -99,13 +133,16 @@ export default function ApplicationsPage() {
             icon={FileText}
             title="No applications found"
             description={
-              search || status !== ALL
-                ? 'Try adjusting your search or filters.'
-                : 'Log your first job application to start tracking submissions.'
+              dateFilter
+                ? `No applications were logged on ${formatBusinessDateLabel(dateFilter)}.`
+                : search || status !== ALL
+                  ? 'Try adjusting your search or filters.'
+                  : 'Log your first job application to start tracking submissions.'
             }
             action={
               !search &&
-              status === ALL && (
+              status === ALL &&
+              !dateFilter && (
                 <Button variant="brand" size="sm" onClick={() => setFormOpen(true)}>
                   <Plus className="h-4 w-4" /> Log Application
                 </Button>

@@ -168,11 +168,11 @@ export default function RecruitersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Recruiter</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="pl-[80px]">Name</TableHead>
+                  <TableHead className="pl-[40px]">Role</TableHead>
+                  <TableHead className="pl-[40px]">Status</TableHead>
                   <TableHead>Last Active</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right pr-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -218,8 +218,8 @@ export default function RecruitersPage() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-slate-500">{timeAgo(recruiter.lastActiveAt)}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-sm text-slate-500 pl-[30px]">{timeAgo(recruiter.lastActiveAt)}</TableCell>
+                    <TableCell className="text-right pr-[80px]">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -228,7 +228,7 @@ export default function RecruitersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => setStatsRecruiterId(recruiter.id)}>
-                            <BarChart3 className="h-4 w-4" /> View Stats
+                            <BarChart3 className="h-4 w-4 mr-2" /> View Stats
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
@@ -236,13 +236,13 @@ export default function RecruitersPage() {
                               setFormOpen(true);
                             }}
                           >
-                            <Pencil className="h-4 w-4" /> Edit
+                            <Pencil className="h-4 w-4 mr-2" /> Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setDeleteTarget(recruiter)}
                             className="text-red-600 focus:text-red-600"
                           >
-                            <Trash2 className="h-4 w-4" /> Delete
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
