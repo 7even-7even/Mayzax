@@ -1,6 +1,7 @@
 # Mayzax ATS
 
 **Mayzax ATS** is a production-grade Recruitment Applicant Tracking System built for **Mayzax Solutions**. It lets Admins manage recruiters and candidate profiles, lets Recruiters log job applications against their assigned profiles, and gives Admins a real-time analytics dashboard — all keyed off Mayzax's night-shift **business date** instead of the calendar date. You can view the Work Based Structure here: [Mayzax_WBS](./docs/Mayzax_WBS.xlsx)
+
 ---
 
 ## Table of Contents
@@ -88,7 +89,7 @@ mayzax-ats/
 
 ## Database Schema
 
-Defined in `backend/prisma/schema.prisma`. Key models:
+Defined in [`backend/prisma/schema.prisma`](./backend/prisma/schema.prisma). Key models:
 
 ### `User`
 
@@ -293,6 +294,7 @@ All routes are versioned under `API_PREFIX` (default `/api/v1`). Responses follo
 | GET | `/health` | Liveness check. |
 
 The detailed API documentation can be viewed here : [API Documentation](./docs/API_DOCUMENTATIONS.md)
+
 ---
 
 ## Deployment Checklist
@@ -309,5 +311,7 @@ Before going to production:
 8. Put the API behind a reverse proxy / load balancer that forwards `X-Forwarded-For` (the app trusts proxy hop `1`).
 9. Review `RATE_LIMIT_*` values for expected production traffic.
 10. Ship logs (`pino` JSON output) to your log aggregator of choice.
+
+The Project Snapshots can be viewed here [Snapshots](./docs/snapshots/)
 
 ---
