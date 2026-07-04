@@ -68,7 +68,8 @@ mayzax-ats/
 │   └── tsconfig.json
 ├── docs/
 │   └── arch.png                   # Project Flow Diagram
-│   └── Mayzax_WBS.xlsx            # Project Work Based Structure with completion status. 
+│   └── Mayzax_WBS.xlsx            # Project Work Based Structure with completion status.
+│   └── API_Documentation.md 
 ├── frontend/
 │   ├── public/                    # Public Resources
 │   ├── src/
