@@ -8,4 +8,4 @@ logs/
 coverage/
 .vite/
 generated/
-env.txt
+*.txt
