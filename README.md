@@ -1,9 +1,7 @@
 # Mayzax ATS
 
 **Mayzax ATS** is a production-grade Recruitment Applicant Tracking System built for **Mayzax Solutions**. It lets Admins manage recruiters and candidate profiles, lets Recruiters log job applications against their assigned profiles, and gives Admins a real-time analytics dashboard — all keyed off Mayzax's night-shift **business date** instead of the calendar date.
-
-> **Build status:** The backend (API, database, auth, business logic) is **complete, migrated, and verified against a live PostgreSQL database** — every endpoint below has been exercised with real HTTP requests. The frontend foundation (Vite + React + TS + Tailwind + shadcn/ui, routing, auth context, API hooks, design system, login page, recruiter form) is in place; the remaining feature pages (Dashboard, Analytics, Recruiters list, Profiles, Applications) are actively being built out module-by-module.
-
+You can view the Work Based Structure here [Mayzax_WBS](./docs/Mayzax_WBS)
 ---
 
 ## Table of Contents
