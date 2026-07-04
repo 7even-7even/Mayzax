@@ -9,9 +9,9 @@ services:
     autoDeploy: true
     envVars:
       - key: NODE_ENV
-        value: production
+        value: development
       - key: PORT
-        value: 10000
+        value: 4000
       - key: API_PREFIX
         value: /api/v1
       - key: CLIENT_URL
