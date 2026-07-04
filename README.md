@@ -294,7 +294,7 @@ All routes are versioned under `API_PREFIX` (default `/api/v1`). Responses follo
 | --- | --- | --- |
 | GET | `/health` | Liveness check. |
 
-***The detailed API documentation can be viewed here : [API Documentation](./docs/API_DOCUMENTATIONS.md)
+**The detailed API documentation can be viewed here : [API Documentation](./docs/API_DOCUMENTATIONS.md)
 ---
 
 ## Deployment Checklist
