@@ -94,6 +94,7 @@ Mayzax ATS uses **JWT access tokens + rotating refresh tokens**, delivered two w
 
 | Route group | Auth required | Roles allowed |
 |---|---|---|
+| `/auth/signup` | No | Public |
 | `/auth/login`, `/auth/refresh` | No | Public |
 | `/auth/logout`, `/auth/me`, `/auth/change-password` | Yes | Any authenticated user |
 | `/recruiters/*` | Yes | `ADMIN` only |
@@ -194,7 +195,7 @@ Request: `POST /applications` for a profile that already applied to the same job
 | Scope | Window | Max requests | Applies to |
 |---|---|---|---|
 | Global | 15 min (`RATE_LIMIT_WINDOW_MS`) | 300 (`RATE_LIMIT_MAX`) | Every request |
-| Auth | 15 min (`RATE_LIMIT_WINDOW_MS`) | 20 (`AUTH_RATE_LIMIT_MAX`) | `POST /auth/login`, `POST /auth/refresh` |
+| Auth | 15 min (`RATE_LIMIT_WINDOW_MS`) | 20 (`AUTH_RATE_LIMIT_MAX`) | `POST /auth/signup`, `POST /auth/login`, `POST /auth/refresh` |
 
 Exceeding a limit returns:
 
@@ -321,6 +322,40 @@ No auth required.
 ---
 
 ### Auth (`/api/v1/auth`)
+
+#### `POST /auth/signup`
+
+Public. Rate-limited (auth tier). Creates a recruiter account, sets session cookies, and returns the signed-in user plus an access token.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `name` | string | 2–120 chars |
+| `email` | string | valid email, must be unique |
+| `password` | string | min 8 chars; needs uppercase, lowercase, and a number |
+
+**Request**
+```json
+{ "name": "Riya Sharma", "email": "riya.sharma@mayzaxsolutions.com", "password": "Recruiter@123" }
+```
+
+**Response `201`** *(also sets `access_token` and `refresh_token` HttpOnly cookies)*
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "f188e902-1130-4727-bc2c-f4532e37dfc6",
+      "name": "Riya Sharma",
+      "email": "riya.sharma@mayzaxsolutions.com",
+      "role": "RECRUITER"
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...."
+  }
+}
+```
+
+**Errors:** `409 CONFLICT` (email already exists), `422 VALIDATION_ERROR`, `429 RATE_LIMITED`
 
 #### `POST /auth/login`
 
@@ -1036,6 +1071,7 @@ Use `GET /applications/check-duplicate` to check before submitting, for instant 
 | Method | Path | Auth | Roles |
 |---|---|---|---|
 | GET | `/health` | No | — |
+| POST | `/auth/signup` | No | — |
 | POST | `/auth/login` | No | — |
 | POST | `/auth/refresh` | No (cookie) | — |
 | POST | `/auth/logout` | Yes | Any |

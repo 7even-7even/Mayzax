@@ -8,11 +8,18 @@ interface LoginInput {
   password: string;
 }
 
+interface SignupInput {
+  name: string;
+  email: string;
+  password: string;
+}
+
 interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (input: LoginInput) => Promise<User>;
+  signup: (input: SignupInput) => Promise<User>;
   logout: () => Promise<void>;
 }
 
@@ -57,6 +64,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return data.data.user as User;
   }, []);
 
+  const signup = useCallback(async (input: SignupInput) => {
+    const { data } = await apiClient.post('/auth/signup', input);
+    setAccessToken(data.data.accessToken);
+    setUser(data.data.user);
+    return data.data.user as User;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await apiClient.post('/auth/logout');
@@ -69,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated: !!user && !!getAccessToken(), login, logout }}
+      value={{ user, isLoading, isAuthenticated: !!user && !!getAccessToken(), login, signup, logout }}
     >
       {children}
     </AuthContext.Provider>

@@ -51,6 +51,23 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   });
 });
 
+export const signup = asyncHandler(async (req: Request, res: Response) => {
+  const result = await authService.signupRecruiter(req.body, {
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+
+  setSessionCookies(res, result.tokens);
+
+  res.status(201).json({
+    success: true,
+    data: {
+      user: result.user,
+      accessToken: result.tokens.accessToken,
+    },
+  });
+});
+
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const refreshToken = req.cookies?.[REFRESH_COOKIE] ?? req.body?.refreshToken;
   if (!refreshToken) throw ApiError.unauthorized('No refresh token provided');

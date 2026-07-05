@@ -48,6 +48,8 @@ Mayzax ATS follows **clean architecture** with a clear separation of concerns on
 | Validation | Zod (shared conventions front & back) |
 | Logging | Pino / pino-http |
 
+The web app includes public `login` and `signup` flows for recruiters. New recruiter accounts are created from the signup page and are automatically signed in after registration.
+
 ## Project Structure
 
 ```
@@ -262,6 +264,7 @@ All routes are versioned under `API_PREFIX` (default `/api/v1`). Responses follo
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
+| POST | `/auth/signup` | Public | Recruiter self-registration. Creates a recruiter account, sets HttpOnly `access_token` / `refresh_token` cookies, and returns an access token for header-based use. |
 | POST | `/auth/login` | Public | Email + password login. Sets HttpOnly `access_token` / `refresh_token` cookies and returns an access token for header-based use. |
 | POST | `/auth/refresh` | Cookie | Rotates the refresh token, issues a new pair. Detects token reuse and revokes all sessions if triggered. |
 | POST | `/auth/logout` | Required | Revokes the current refresh token, clears cookies. |

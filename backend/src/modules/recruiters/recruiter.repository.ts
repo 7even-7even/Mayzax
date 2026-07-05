@@ -15,7 +15,7 @@ export function createUser(data: {
   email: string;
   passwordHash: string;
   role: Role;
-  createdById: string;
+  createdById?: string | null;
 }) {
   return prisma.user.create({
     data: { ...data, email: data.email.toLowerCase() },

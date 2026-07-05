@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { extractErrorMessage } from '@/lib/api-client';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
-import { MayzaxIntro } from '@/components/shared/mayzax-intro';
 import { FloatingCube } from '@/components/shared/floating-cube';
 
 const loginSchema = z.object({
@@ -27,20 +26,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
-  const [showIntro, setShowIntro] = useState(true);
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout>>();
-
-  const handleIntroComplete = () => {
-    hideTimerRef.current = setTimeout(() => setShowIntro(false), 2000);
-  };
-
-  useEffect(() => {
-    const fallbackTimer = setTimeout(() => setShowIntro(false), 5000);
-    return () => {
-      clearTimeout(fallbackTimer);
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-    };
-  }, []);
 
   const {
     register,
@@ -61,11 +46,6 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-slate-50">
-      {/* Intro animation overlay */}
-      <AnimatePresence mode="popLayout">
-        {showIntro && <MayzaxIntro key="intro" onComplete={handleIntroComplete} />}
-      </AnimatePresence>
-
       {/* ---------- LEFT BRAND PANEL ---------- */}
       <div className="relative hidden w-3/5 flex-col justify-center overflow-hidden bg-mayzax-gradient px-16 lg:flex">
         {/* Dark overshade for depth + contrast */}
@@ -179,6 +159,13 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
+
+            <p className="mt-6 text-center text-sm text-slate-500">
+              New recruiter?{' '}
+              <Link to="/signup" className="font-medium text-mayzax-blue hover:underline">
+                Create an account
+              </Link>
+            </p>
           </div>
         </div>
       </div>

@@ -1,5 +1,8 @@
+import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { Routes, Route } from 'react-router-dom';
 import LoginPage from '@/pages/auth/login-page';
+import SignupPage from '@/pages/auth/signup-page';
 import { AppShell } from '@/components/layout/app-shell';
 import { ProtectedRoute } from '@/routes/protected-route';
 import DashboardPage from '@/pages/dashboard/dashboard-page';
@@ -10,29 +13,64 @@ import ApplicationsPage from '@/pages/applications/applications-page';
 import NotFoundPage from '@/pages/not-found-page';
 import UnauthorizedPage from '@/pages/unauthorized-page';
 import HomeRedirect from '@/pages/home-redirect';
+import { MayzaxIntro } from '@/components/shared/mayzax-intro';
 
 export default function App() {
+  const [showIntro, setShowIntro] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !window.sessionStorage.getItem('mayzax-intro-seen');
+  });
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (!showIntro) return;
+
+    const fallbackTimer = setTimeout(() => {
+      window.sessionStorage.setItem('mayzax-intro-seen', 'true');
+      setShowIntro(false);
+    }, 5000);
+
+    return () => {
+      clearTimeout(fallbackTimer);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [showIntro]);
+
+  const handleIntroComplete = () => {
+    hideTimerRef.current = setTimeout(() => {
+      window.sessionStorage.setItem('mayzax-intro-seen', 'true');
+      setShowIntro(false);
+    }, 2000);
+  };
+
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/unauthorized" element={<UnauthorizedPage />} />
+    <>
+      <AnimatePresence mode="popLayout">
+        {showIntro && <MayzaxIntro key="intro" onComplete={handleIntroComplete} />}
+      </AnimatePresence>
 
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppShell />}>
-          <Route path="/" element={<HomeRedirect />} />
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-          <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/recruiters" element={<RecruitersPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppShell />}>
+            <Route path="/" element={<HomeRedirect />} />
+
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/recruiters" element={<RecruitersPage />} />
+            </Route>
+
+            <Route path="/profiles" element={<ProfilesPage />} />
+            <Route path="/applications" element={<ApplicationsPage />} />
           </Route>
-
-          <Route path="/profiles" element={<ProfilesPage />} />
-          <Route path="/applications" element={<ApplicationsPage />} />
         </Route>
-      </Route>
 
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </>
   );
 }

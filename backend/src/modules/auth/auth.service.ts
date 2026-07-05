@@ -10,7 +10,8 @@ import {
   parseExpiryToMs,
 } from './token.service';
 import { env } from '@/config/env';
-import { LoginInput, ChangePasswordInput } from './auth.validation';
+import { LoginInput, SignupInput, ChangePasswordInput } from './auth.validation';
+import * as recruiterRepo from '@/modules/recruiters/recruiter.repository';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -61,6 +62,36 @@ export async function login(input: LoginInput, meta: SessionMeta) {
   if (!isValid) {
     throw ApiError.unauthorized('Invalid email or password');
   }
+
+  const tokens = await issueTokenPair(user.id, user.role, user.email, meta);
+
+  await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
+
+  return {
+    tokens,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  };
+}
+
+export async function signupRecruiter(input: SignupInput, meta: SessionMeta) {
+  const existing = await recruiterRepo.findByEmail(input.email);
+  if (existing) {
+    throw ApiError.conflict('A user with this email already exists');
+  }
+
+  const passwordHash = await hashPassword(input.password);
+  const user = await recruiterRepo.createUser({
+    name: input.name,
+    email: input.email,
+    passwordHash,
+    role: 'RECRUITER',
+    createdById: null,
+  });
 
   const tokens = await issueTokenPair(user.id, user.role, user.email, meta);
 

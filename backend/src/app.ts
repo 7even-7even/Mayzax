@@ -14,6 +14,16 @@ const allowedOrigins = [
   ...(env.ADDITIONAL_CORS_ORIGINS ? env.ADDITIONAL_CORS_ORIGINS.split(',').map((o) => o.trim()) : []),
 ].filter(Boolean);
 
+function isAllowedOrigin(origin: string) {
+  if (allowedOrigins.includes(origin)) return true;
+
+  if (env.NODE_ENV === 'development') {
+    return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+  }
+
+  return false;
+}
+
 export function createApp() {
   const app = express();
 
@@ -25,7 +35,7 @@ export function createApp() {
       origin(origin, callback) {
         // Allow same-origin/non-browser requests (no Origin header, e.g. curl, health checks)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
+        if (isAllowedOrigin(origin)) return callback(null, true);
         callback(new Error(`CORS: origin "${origin}" is not allowed`));
       },
       credentials: true,
