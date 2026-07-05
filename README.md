@@ -334,10 +334,4 @@ Before going to production:
 9. Review `RATE_LIMIT_*` values for expected production traffic.
 10. Ship logs (`pino` JSON output) to your log aggregator of choice.
 
-For the deployed instance, use:
-
-- Frontend URL: https://mayzax.vercel.app/
-- Backend URL: https://mayzax.onrender.com
-- Health check: https://mayzax.onrender.com/api/v1/health
-
 ---
