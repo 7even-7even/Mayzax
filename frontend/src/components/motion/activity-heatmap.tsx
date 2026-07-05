@@ -47,6 +47,7 @@ function formatFullDate(dateStr: string): string {
 export function ActivityHeatmap({ data, weeks = 26, className }: ActivityHeatmapProps) {
   const [hovered, setHovered] = useState<DayCell | null>(null);
   const navigate = useNavigate();
+  const minHeatmapWidth = weeks * 18 + 80;
 
   const countMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -103,11 +104,11 @@ export function ActivityHeatmap({ data, weeks = 26, className }: ActivityHeatmap
   };
 
   return (
-    <div className={cn('relative w-full', className)}>
+    <div className={cn('relative w-full overflow-x-auto pb-2', className)}>
       {/* Month labels — grid-aligned with the main heatmap columns below */}
       <div
         className="mb-1.5 grid pl-10 text-[11px] text-slate-400"
-        style={{ gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))`, minWidth: minHeatmapWidth }}
       >
         {columns.map((_, i) => {
           const label = monthLabels.find((m) => m.weekIndex === i);
@@ -126,7 +127,7 @@ export function ActivityHeatmap({ data, weeks = 26, className }: ActivityHeatmap
         {/* Main grid — columns scale with container width via 1fr, cells stay square */}
         <div
           className="grid flex-1 gap-1.5 pt-5 pl-3 pr-40"
-          style={{ gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))` }}
+          style={{ gridTemplateColumns: `repeat(${weeks}, minmax(14px, 1fr))`, minWidth: minHeatmapWidth }}
         >
           {columns.map((col, wIdx) => (
             <div key={wIdx} className="grid gap-1.5" style={{ gridTemplateRows: 'repeat(7, minmax(0, 1fr))' }}>

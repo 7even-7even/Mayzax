@@ -3,6 +3,18 @@
 **Mayzax ATS** is a production-grade Recruitment Applicant Tracking System built for **Mayzax Solutions**. It lets Admins manage recruiters and candidate profiles, lets Recruiters log job applications against their assigned profiles, and gives Admins a real-time analytics dashboard — all keyed off Mayzax's night-shift **business date** instead of the calendar date. You can view the Work Based Structure here: [Mayzax_WBS](./docs/Mayzax_WBS.xlsx)
 
 ---
+---
+
+## Live Deployment
+
+The project is live here:
+
+- Frontend: https://mayzax.vercel.app/
+- Backend: https://mayzax.onrender.com
+- Backend health check: https://mayzax.onrender.com/api/v1/health
+- The Project Snapshots can be viewed here [Snapshots](./docs/snapshots/)
+
+---
 
 ## Table of Contents
 
@@ -13,7 +25,7 @@
 5. [Getting Started](#getting-started)
 6. [Environment Variables](#environment-variables)
 7. [API Reference](#api-reference)
-8. [Deployment Checklist](#deployment-checklist)
+8. [Deployment](#deployment-checklist)
 
 ---
 
@@ -35,8 +47,6 @@ Mayzax ATS follows **clean architecture** with a clear separation of concerns on
 | Auth | JWT (access + refresh) with rotation, bcrypt, HttpOnly cookies |
 | Validation | Zod (shared conventions front & back) |
 | Logging | Pino / pino-http |
-
----
 
 ## Project Structure
 
@@ -324,6 +334,10 @@ Before going to production:
 9. Review `RATE_LIMIT_*` values for expected production traffic.
 10. Ship logs (`pino` JSON output) to your log aggregator of choice.
 
-The Project Snapshots can be viewed here [Snapshots](./docs/snapshots/)
+For the deployed instance, use:
+
+- Frontend URL: https://mayzax.vercel.app/
+- Backend URL: https://mayzax.onrender.com
+- Health check: https://mayzax.onrender.com/api/v1/health
 
 ---
