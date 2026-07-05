@@ -167,7 +167,7 @@ The seed step prints the generated admin credentials — **log in and change the
 Use below command to seed sample data in DB
 
 ```bash
-SEED_DEMO_DATA=true npm run seed         
+env.SEED_DEMO_DATA="true" npm run seed         
 ```
 
 ### Run in development
@@ -186,6 +186,18 @@ Or run them separately in two terminals if you prefer:
 ```bash
 npm run dev:backend     # API only
 npm run dev:frontend    # Web app only
+```
+
+To build the project run: 
+
+```bash
+npm run build
+```
+
+To start the app:
+
+```bash
+npm run start
 ```
 
 ## Environment Variables
