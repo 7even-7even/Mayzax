@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { ApiSuccess, DailyCount, DashboardRow, GlobalSummary, RecruiterBreakdown } from '@/types';
+import { ApiSuccess, DailyCount, DashboardRow, GlobalSummary, JobPortalAnalytics, RecruiterBreakdown } from '@/types';
 
 export interface DashboardParams {
   search?: string;
@@ -36,6 +36,16 @@ export function useGlobalSummary() {
     queryKey: ['analytics-summary'],
     queryFn: async () => {
       const { data } = await apiClient.get<ApiSuccess<GlobalSummary>>('/analytics/summary');
+      return data.data;
+    },
+  });
+}
+
+export function useJobPortalAnalytics() {
+  return useQuery({
+    queryKey: ['job-portal-analytics'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<ApiSuccess<JobPortalAnalytics>>('/analytics/job-portals');
       return data.data;
     },
   });

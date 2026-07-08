@@ -105,3 +105,23 @@ export const changePassword = asyncHandler(async (req: Request, res: Response) =
   clearSessionCookies(res);
   res.status(200).json({ success: true, data: { message: 'Password changed. Please log in again.' } });
 });
+
+export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
+  const user = await authService.updateProfile(req.user!.sub, req.body);
+  res.status(200).json({ success: true, data: user });
+});
+
+export const setSecurityQuestion = asyncHandler(async (req: Request, res: Response) => {
+  const user = await authService.setSecurityQuestion(req.user!.sub, req.body);
+  res.status(200).json({ success: true, data: user });
+});
+
+export const forgotPasswordQuestion = asyncHandler(async (req: Request, res: Response) => {
+  const result = await authService.getForgotPasswordQuestion(req.body);
+  res.status(200).json({ success: true, data: result });
+});
+
+export const forgotPasswordReset = asyncHandler(async (req: Request, res: Response) => {
+  await authService.resetPasswordWithSecurityAnswer(req.body);
+  res.status(200).json({ success: true, data: { message: 'Password reset successfully. Please log in.' } });
+});

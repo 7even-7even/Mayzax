@@ -1,5 +1,5 @@
 import { Badge } from '@/components/ui/badge';
-import { ApplicationStatus } from '@/types';
+import { ApplicationStatus, JobPortal } from '@/types';
 
 const statusConfig: Record<ApplicationStatus, { label: string; variant: 'default' | 'secondary' | 'success' | 'warning' | 'destructive' | 'muted' }> = {
   APPLIED: { label: 'Applied', variant: 'default' },
@@ -33,18 +33,31 @@ export const ALL_STATUSES: ApplicationStatus[] = [
 export const ALL_JOB_PORTALS = [
   'LINKEDIN',
   'INDEED',
-  'NAUKRI',
-  'DICE',
-  'MONSTER',
-  'ZIPRECRUITER',
   'GLASSDOOR',
-  'COMPANY_WEBSITE',
-  'CAREERBUILDER',
+  'JOBRIGHT',
+  'SIMPLIFY',
+  'SIMPLYHIRED',
+  'WELLFOUND',
+  'HANDSHAKE',
   'OTHER',
-] as const;
+] as const satisfies readonly JobPortal[];
+
+const enumLabels: Partial<Record<string, string>> = {
+  LINKEDIN: 'LinkedIn',
+  INDEED: 'Indeed',
+  GLASSDOOR: 'Glassdoor',
+  JOBRIGHT: 'Jobright',
+  SIMPLIFY: 'Simplify',
+  SIMPLYHIRED: 'SimplyHired',
+  WELLFOUND: 'Wellfound',
+  HANDSHAKE: 'Handshake',
+  ZIPRECRUITER: 'ZipRecruiter',
+  COMPANY_WEBSITE: 'Company Website',
+  CAREERBUILDER: 'CareerBuilder',
+};
 
 export function formatEnumLabel(value: string): string {
-  return value
+  return enumLabels[value] ?? value
     .split('_')
     .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
     .join(' ');

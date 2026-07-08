@@ -11,6 +11,7 @@ import { PaginationControls } from '@/components/ui/pagination-controls';
 import { Reveal } from '@/components/motion/reveal';
 import { SummaryCards } from './summary-cards';
 import { TeamActivityCard } from './team-activity-card';
+import { JobPortalAnalyticsCard } from './job-portal-analytics-card';
 import { RecruiterRow } from './recruiter-row';
 import { useDashboardOverview } from '@/hooks/use-analytics';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -51,6 +52,13 @@ export default function DashboardPage() {
       <div className="mb-6">
         <SummaryCards />
       </div>
+
+      <Reveal delay={0.1} className="mb-6">
+        <JobPortalAnalyticsCard
+          title="Job Portal Analytics"
+          description="Admin overview of application submissions by portal across all recruiters."
+        />
+      </Reveal>
 
       <Reveal delay={0.15}>
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

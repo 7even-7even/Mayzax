@@ -17,6 +17,11 @@ export const getDailyCounts = asyncHandler(async (req: Request, res: Response) =
   res.status(200).json({ success: true, data: result });
 });
 
+export const getJobPortalAnalytics = asyncHandler(async (req: Request, res: Response) => {
+  const result = await analyticsService.getJobPortalAnalytics({ id: req.user!.sub, role: req.user!.role });
+  res.status(200).json({ success: true, data: result });
+});
+
 export const getGlobalSummary = asyncHandler(async (_req: Request, res: Response) => {
   const result = await analyticsService.getGlobalSummary();
   res.status(200).json({ success: true, data: result });

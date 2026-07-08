@@ -4,10 +4,13 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string | null;
   role: Role;
   isActive?: boolean;
   lastActiveAt?: string | null;
   createdAt?: string;
+  securityQuestion?: string | null;
+  hasSecurityQuestion?: boolean;
 }
 
 export interface Recruiter extends User {
@@ -58,11 +61,16 @@ export type ApplicationStatus =
 export type JobPortal =
   | 'LINKEDIN'
   | 'INDEED'
+  | 'GLASSDOOR'
+  | 'JOBRIGHT'
+  | 'SIMPLIFY'
+  | 'SIMPLYHIRED'
+  | 'WELLFOUND'
+  | 'HANDSHAKE'
   | 'NAUKRI'
   | 'DICE'
   | 'MONSTER'
   | 'ZIPRECRUITER'
-  | 'GLASSDOOR'
   | 'COMPANY_WEBSITE'
   | 'CAREERBUILDER'
   | 'OTHER';
@@ -125,8 +133,18 @@ export interface RecruiterBreakdown {
     candidateName: string;
     technology: string | null;
     applicationCount: number;
+    currentShiftApplicationCount: number;
   }>;
   recentApplications: JobApplication[];
+  currentBusinessDate: string;
+}
+
+export interface JobPortalAnalytics {
+  totalApplications: number;
+  portals: Array<{
+    portal: JobPortal;
+    count: number;
+  }>;
 }
 
 export interface GlobalSummary {

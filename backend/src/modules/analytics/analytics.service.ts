@@ -1,7 +1,19 @@
-import { Role, Prisma } from '@prisma/client';
+import { Role, Prisma, JobPortal } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getBusinessDateString } from '@/utils/businessDate';
 import { DashboardQuery, DailyCountsQuery } from './analytics.validation';
+
+const ANALYTICS_JOB_PORTALS: JobPortal[] = [
+  JobPortal.LINKEDIN,
+  JobPortal.INDEED,
+  JobPortal.GLASSDOOR,
+  JobPortal.JOBRIGHT,
+  JobPortal.SIMPLIFY,
+  JobPortal.SIMPLYHIRED,
+  JobPortal.WELLFOUND,
+  JobPortal.HANDSHAKE,
+  JobPortal.OTHER,
+];
 
 /**
  * Admin dashboard: per-recruiter rollups.
@@ -83,10 +95,23 @@ export async function getDashboardOverview(query: DashboardQuery) {
 
 /** Expandable recruiter view: profile-wise application counts for a given recruiter. */
 export async function getRecruiterBreakdown(recruiterId: string) {
-  const [profileWise, recentApplications] = await Promise.all([
+  const todayBusinessDate = getBusinessDateString(new Date());
+  const businessDateFilter = new Date(`${todayBusinessDate}T00:00:00.000Z`);
+
+  const [assignedProfiles, totalProfileWise, currentShiftProfileWise, recentApplications] = await Promise.all([
+    prisma.clientProfile.findMany({
+      where: { assignedRecruiterId: recruiterId, deletedAt: null },
+      select: { id: true, candidateName: true, technology: true },
+      orderBy: { candidateName: 'asc' },
+    }),
     prisma.jobApplication.groupBy({
       by: ['profileId'],
       where: { recruiterId },
+      _count: { _all: true },
+    }),
+    prisma.jobApplication.groupBy({
+      by: ['profileId'],
+      where: { recruiterId, businessDate: businessDateFilter },
       _count: { _all: true },
     }),
     prisma.jobApplication.findMany({
@@ -97,21 +122,19 @@ export async function getRecruiterBreakdown(recruiterId: string) {
     }),
   ]);
 
-  const profileIds = profileWise.map((p) => p.profileId);
-  const profiles = await prisma.clientProfile.findMany({
-    where: { id: { in: profileIds } },
-    select: { id: true, candidateName: true, technology: true },
-  });
-  const profileMap = new Map(profiles.map((p) => [p.id, p]));
+  const totalCountMap = new Map(totalProfileWise.map((row) => [row.profileId, row._count._all]));
+  const currentShiftCountMap = new Map(currentShiftProfileWise.map((row) => [row.profileId, row._count._all]));
 
   return {
-    profileWiseCounts: profileWise.map((row) => ({
-      profileId: row.profileId,
-      candidateName: profileMap.get(row.profileId)?.candidateName ?? 'Unknown',
-      technology: profileMap.get(row.profileId)?.technology ?? null,
-      applicationCount: row._count._all,
+    profileWiseCounts: assignedProfiles.map((profile) => ({
+      profileId: profile.id,
+      candidateName: profile.candidateName,
+      technology: profile.technology,
+      applicationCount: totalCountMap.get(profile.id) ?? 0,
+      currentShiftApplicationCount: currentShiftCountMap.get(profile.id) ?? 0,
     })),
     recentApplications,
+    currentBusinessDate: todayBusinessDate,
   };
 }
 
@@ -140,6 +163,31 @@ export async function getDailyCounts(query: DailyCountsQuery) {
     businessDate: r.businessDate.toISOString().slice(0, 10),
     count: Number(r.count),
   }));
+}
+
+export async function getJobPortalAnalytics(actor: { id: string; role: Role }) {
+  const where = actor.role === Role.RECRUITER ? { recruiterId: actor.id } : {};
+
+  const groupedCounts = await prisma.jobApplication.groupBy({
+    by: ['jobPortal'],
+    where,
+    _count: { _all: true },
+  });
+
+  const countMap = new Map(groupedCounts.map((row) => [row.jobPortal, row._count._all]));
+  const totalApplications = groupedCounts.reduce((sum, row) => sum + row._count._all, 0);
+  const trackedPortalSet = new Set(ANALYTICS_JOB_PORTALS);
+  const legacyOtherCount = groupedCounts
+    .filter((row) => !trackedPortalSet.has(row.jobPortal))
+    .reduce((sum, row) => sum + row._count._all, 0);
+
+  return {
+    totalApplications,
+    portals: ANALYTICS_JOB_PORTALS.map((portal) => ({
+      portal,
+      count: (countMap.get(portal) ?? 0) + (portal === JobPortal.OTHER ? legacyOtherCount : 0),
+    })),
+  };
 }
 
 export async function getGlobalSummary() {

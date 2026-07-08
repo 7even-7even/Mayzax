@@ -6,7 +6,7 @@ import { useGlobalSummary } from '@/hooks/use-analytics';
 const cardConfig = [
   { key: 'totalRecruiters', label: 'Total Recruiters', icon: Users, color: 'text-mayzax-blue bg-mayzax-blue-50' },
   { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, color: 'text-emerald-600 bg-emerald-50' },
-  { key: 'totalProfiles', label: 'Client Profiles', icon: UserSquare2, color: 'text-mayzax-green bg-mayzax-green-50' },
+  { key: 'totalProfiles', label: 'Total Client Profiles', icon: UserSquare2, color: 'text-mayzax-green bg-mayzax-green-50' },
   { key: 'totalApplications', label: 'Total Applications', icon: Briefcase, color: 'text-amber-600 bg-amber-50' },
   { key: 'currentShiftApplications', label: "Today's Shift Applications", icon: Clock, color: 'text-purple-600 bg-purple-50' },
 ] as const;

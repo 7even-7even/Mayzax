@@ -66,7 +66,7 @@ export function RecruiterRow({ row, expanded, onToggle, index = 0 }: Props) {
               >
                 <div className="px-6 py-4">
                   <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                    Profile-wise application counts
+                    Assigned profile application counts · Total vs current shift
                   </p>
                   {isLoading && (
                     <div className="space-y-2">
@@ -91,7 +91,14 @@ export function RecruiterRow({ row, expanded, onToggle, index = 0 }: Props) {
                             <p className="text-sm font-medium text-slate-800">{p.candidateName}</p>
                             {p.technology && <p className="text-xs text-slate-400">{p.technology}</p>}
                           </div>
-                          <Badge variant="default">{p.applicationCount}</Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" title="Total applications">
+                              Total {p.applicationCount}
+                            </Badge>
+                            <Badge variant={p.currentShiftApplicationCount > 0 ? 'default' : 'muted'} title="Current shift applications">
+                              Today {p.currentShiftApplicationCount}
+                            </Badge>
+                          </div>
                         </motion.div>
                       ))}
                     </div>

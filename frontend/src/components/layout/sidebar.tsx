@@ -5,6 +5,7 @@ import {
   UserSquare2,
   FileText,
   BarChart3,
+  UserCircle,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
@@ -16,11 +17,14 @@ const adminNav = [
   { to: '/recruiters', label: 'Recruiters', icon: Users },
   { to: '/profiles', label: 'Client Profiles', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
+  { to: '/profile', label: 'Profile', icon: UserCircle },
 ];
 
 const recruiterNav = [
-  { to: '/profiles', label: 'My Profiles', icon: UserSquare2 },
+  { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/profiles', label: 'My Clients', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
+  { to: '/profile', label: 'Profile', icon: UserCircle },
 ];
 
 export function Sidebar() {
