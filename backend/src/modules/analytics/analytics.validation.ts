@@ -14,9 +14,16 @@ export const dailyCountsQuerySchema = z.object({
   to: z.string().optional(),
 });
 
+export const jobPortalAnalyticsQuerySchema = z.object({
+  scope: z.enum(['all', 'currentShift', 'custom']).default('all'),
+  from: z.string().optional(), // YYYY-MM-DD business date
+  to: z.string().optional(),
+});
+
 export const idParamSchema = z.object({
   id: z.string().uuid('Invalid id'),
 });
 
 export type DashboardQuery = z.infer<typeof dashboardQuerySchema>;
 export type DailyCountsQuery = z.infer<typeof dailyCountsQuerySchema>;
+export type JobPortalAnalyticsQuery = z.infer<typeof jobPortalAnalyticsQuerySchema>;

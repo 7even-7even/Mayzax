@@ -41,11 +41,17 @@ export function useGlobalSummary() {
   });
 }
 
-export function useJobPortalAnalytics() {
+export interface JobPortalAnalyticsParams {
+  scope?: 'all' | 'currentShift' | 'custom';
+  from?: string;
+  to?: string;
+}
+
+export function useJobPortalAnalytics(params: JobPortalAnalyticsParams = {}) {
   return useQuery({
-    queryKey: ['job-portal-analytics'],
+    queryKey: ['job-portal-analytics', params],
     queryFn: async () => {
-      const { data } = await apiClient.get<ApiSuccess<JobPortalAnalytics>>('/analytics/job-portals');
+      const { data } = await apiClient.get<ApiSuccess<JobPortalAnalytics>>('/analytics/job-portals', { params });
       return data.data;
     },
   });

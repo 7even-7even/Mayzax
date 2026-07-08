@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { Role } from '@prisma/client';
 import { requireAuth, requireRole } from '@/middleware/auth';
 import { validate } from '@/middleware/validate';
-import { dashboardQuerySchema, dailyCountsQuerySchema, idParamSchema } from './analytics.validation';
+import { dashboardQuerySchema, dailyCountsQuerySchema, idParamSchema, jobPortalAnalyticsQuerySchema } from './analytics.validation';
 import * as analyticsController from './analytics.controller';
 
 const router = Router();
@@ -10,7 +10,7 @@ const router = Router();
 router.use(requireAuth);
 
 // Recruiters get their own scoped portal analytics; admins get all applications.
-router.get('/job-portals', analyticsController.getJobPortalAnalytics);
+router.get('/job-portals', validate({ query: jobPortalAnalyticsQuerySchema }), analyticsController.getJobPortalAnalytics);
 
 router.use(requireRole(Role.ADMIN));
 

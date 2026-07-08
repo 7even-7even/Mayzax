@@ -141,6 +141,8 @@ export interface RecruiterBreakdown {
 
 export interface JobPortalAnalytics {
   totalApplications: number;
+  currentBusinessDate?: string;
+  filter?: { scope: 'all' | 'currentShift' | 'custom'; from: string | null; to: string | null };
   portals: Array<{
     portal: JobPortal;
     count: number;

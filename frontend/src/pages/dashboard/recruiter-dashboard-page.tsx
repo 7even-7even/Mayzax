@@ -1,26 +1,22 @@
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BarChart3, Briefcase, ExternalLink } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
-import { ErrorState } from '@/components/shared/error-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { useJobPortalAnalytics } from '@/hooks/use-analytics';
 import { useApplications } from '@/hooks/use-applications';
 import { useAuth } from '@/context/auth-context';
 import { formatEnumLabel } from '@/components/shared/status-badge';
 import { formatDateTime } from '@/lib/utils';
+import { JobPortalAnalyticsCard } from './job-portal-analytics-card';
 
 export default function RecruiterDashboardPage() {
   const { user } = useAuth();
-  const { data, isLoading, isError, refetch } = useJobPortalAnalytics();
+  const { data, isLoading } = useJobPortalAnalytics({ scope: 'all' });
   const { data: recentApplicationsData } = useApplications({ page: 1, pageSize: 5, sortBy: 'appliedAt', sortOrder: 'desc' });
 
   const portals = data?.portals ?? [];
-  const chartData = portals.map((row) => ({ portal: formatEnumLabel(row.portal), applications: row.count }));
-  const hasPortalData = portals.some((row) => row.count > 0);
   const topPortal = portals.reduce((best, row) => (row.count > best.count ? row : best), portals[0] ?? { portal: 'LINKEDIN' as const, count: 0 });
   const recentApplications = recentApplicationsData?.data ?? [];
 
@@ -64,60 +60,11 @@ export default function RecruiterDashboardPage() {
         </Card>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(360px,0.8fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Job Portal Analytics</CardTitle>
-            <CardDescription>Number of applications submitted through each job portal.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading && <Skeleton className="h-80 w-full" />}
-            {isError && <ErrorState onRetry={() => refetch()} />}
-            {!isLoading && !isError && !hasPortalData && (
-              <EmptyState icon={BarChart3} title="No portal data yet" description="Submit applications to start seeing portal-wise analytics." />
-            )}
-            {!isLoading && !isError && hasPortalData && (
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 35 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="portal" tick={{ fontSize: 11, fill: '#64748b' }} angle={-25} textAnchor="end" interval={0} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} allowDecimals={false} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    cursor={{ fill: '#f8fafc' }}
-                    contentStyle={{ borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 12 }}
-                    formatter={(value) => [value, 'Applications']}
-                  />
-                  <Bar dataKey="applications" fill="#2A5DA8" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Portal-wise Count</CardTitle>
-            <CardDescription>Quick count by portal.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-9 w-full" />
-                <Skeleton className="h-9 w-full" />
-                <Skeleton className="h-9 w-full" />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {portals.map((row) => (
-                  <div key={row.portal} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-                    <span className="text-sm font-medium text-slate-700">{formatEnumLabel(row.portal)}</span>
-                    <Badge variant={row.count > 0 ? 'default' : 'muted'}>{row.count}</Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="mb-6">
+        <JobPortalAnalyticsCard
+          title="Job Portal Analytics"
+          description="Toggle between all-time, current-shift, and custom date-range portal counts for your applications."
+        />
       </div>
 
       <Card>

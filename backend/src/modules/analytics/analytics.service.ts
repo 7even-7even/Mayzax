@@ -1,7 +1,7 @@
 import { Role, Prisma, JobPortal } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getBusinessDateString } from '@/utils/businessDate';
-import { DashboardQuery, DailyCountsQuery } from './analytics.validation';
+import { DashboardQuery, DailyCountsQuery, JobPortalAnalyticsQuery } from './analytics.validation';
 
 const ANALYTICS_JOB_PORTALS: JobPortal[] = [
   JobPortal.LINKEDIN,
@@ -165,8 +165,18 @@ export async function getDailyCounts(query: DailyCountsQuery) {
   }));
 }
 
-export async function getJobPortalAnalytics(actor: { id: string; role: Role }) {
-  const where = actor.role === Role.RECRUITER ? { recruiterId: actor.id } : {};
+export async function getJobPortalAnalytics(actor: { id: string; role: Role }, query: JobPortalAnalyticsQuery) {
+  const where: Prisma.JobApplicationWhereInput = actor.role === Role.RECRUITER ? { recruiterId: actor.id } : {};
+  const currentBusinessDate = getBusinessDateString(new Date());
+
+  if (query.scope === 'currentShift') {
+    where.businessDate = new Date(`${currentBusinessDate}T00:00:00.000Z`);
+  } else if (query.scope === 'custom' && (query.from || query.to)) {
+    where.businessDate = {
+      ...(query.from ? { gte: new Date(`${query.from}T00:00:00.000Z`) } : {}),
+      ...(query.to ? { lte: new Date(`${query.to}T00:00:00.000Z`) } : {}),
+    };
+  }
 
   const groupedCounts = await prisma.jobApplication.groupBy({
     by: ['jobPortal'],
@@ -183,7 +193,9 @@ export async function getJobPortalAnalytics(actor: { id: string; role: Role }) {
 
   return {
     totalApplications,
-    portals: ANALYTICS_JOB_PORTALS.map((portal) => ({
+    currentBusinessDate,
+    filter: { scope: query.scope, from: query.from ?? null, to: query.to ?? null },
+    portals: ANALYTICS_JOB_PORTALS.map((portal) => ({ 
       portal,
       count: (countMap.get(portal) ?? 0) + (portal === JobPortal.OTHER ? legacyOtherCount : 0),
     })),

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -12,6 +12,7 @@ import { BarChart3, TrendingUp, Briefcase, Flame } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
@@ -34,7 +35,7 @@ function getDefaultRange() {
 
 export default function AnalyticsPage() {
   const [recruiterId, setRecruiterId] = useState<string>(ALL);
-  const range = useMemo(getDefaultRange, []);
+  const [range, setRange] = useState(getDefaultRange);
 
   const { data: recruitersData } = useRecruiters({ pageSize: 100 });
   const { data: summary, isLoading: summaryLoading } = useGlobalSummary();
@@ -63,29 +64,45 @@ export default function AnalyticsPage() {
       <Reveal>
         <PageHeader
           title="Analytics"
-          description="Application trends across the last 30 business days."
+          description="Application trends with recruiter and business-date filters."
           actions={
-            <Select value={recruiterId} onValueChange={setRecruiterId}>
-              <SelectTrigger className="w-56">
-                <SelectValue placeholder="All recruiters" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>All Recruiters</SelectItem>
-                {recruiters.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Select value={recruiterId} onValueChange={setRecruiterId}>
+                <SelectTrigger className="w-full sm:w-56">
+                  <SelectValue placeholder="All recruiters" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>All Recruiters</SelectItem>
+                  {recruiters.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="date"
+                value={range.from}
+                onChange={(e) => setRange((prev) => ({ ...prev, from: e.target.value }))}
+                className="w-full sm:w-36"
+                aria-label="Analytics start date"
+              />
+              <Input
+                type="date"
+                value={range.to}
+                onChange={(e) => setRange((prev) => ({ ...prev, to: e.target.value }))}
+                className="w-full sm:w-36"
+                aria-label="Analytics end date"
+              />
+            </div>
           }
         />
       </Reveal>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard icon={Briefcase} label="Total Applications (all-time)" value={summary?.totalApplications ?? 0} isLoading={summaryLoading} colorClass="text-mayzax-blue bg-mayzax-blue-50" index={0} />
-        <StatCard icon={TrendingUp} label="Avg. Applications / Day (30d)" value={avgPerDay} isLoading={isLoading} colorClass="text-mayzax-green bg-mayzax-green-50" index={1} />
-        <StatCard icon={Flame} label="Peak Day (30d)" value={peakDay} isLoading={isLoading} colorClass="text-amber-600 bg-amber-50" index={2} />
+        <StatCard icon={TrendingUp} label="Avg. Applications / Day" value={avgPerDay} isLoading={isLoading} colorClass="text-mayzax-green bg-mayzax-green-50" index={1} />
+        <StatCard icon={Flame} label="Peak Day" value={peakDay} isLoading={isLoading} colorClass="text-amber-600 bg-amber-50" index={2} />
       </div>
 
       <Reveal delay={0.1} className="mb-6">
