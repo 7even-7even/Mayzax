@@ -1,6 +1,6 @@
 # Mayzax ATS
 
-**Mayzax ATS** is a production-grade Recruitment Applicant Tracking System built for **Mayzax Solutions**. It lets Admins manage recruiters and candidate profiles, lets Recruiters log job applications against their assigned profiles, provides Excel exports, profile/account management, security-question based password recovery, and gives both Admins and Recruiters analytics — all keyed off Mayzax's night-shift **business date** instead of the calendar date. You can view the Work Based Structure here: [Mayzax_WBS](./docs/Mayzax_WBS.xlsx)
+**Mayzax ATS** is a Recruitment Applicant Tracking System built for **Mayzax Solutions**. It lets Admins manage recruiters and candidate profiles, lets Recruiters log job applications against their assigned profiles, provides Excel exports, profile/account management, security-question based password recovery, and gives both Admins and Recruiters analytics — all keyed off Mayzax's night-shift **business date** instead of the calendar date. You can view the Work Based Structure here: [Mayzax_WBS](./docs/Mayzax_WBS.xlsx)
 
 ---
 ---
