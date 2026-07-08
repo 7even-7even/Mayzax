@@ -1,0 +1,6 @@
+-- Add new job portal enum values used by the application form and analytics.
+ALTER TYPE "JobPortal" ADD VALUE IF NOT EXISTS 'JOBRIGHT';
+ALTER TYPE "JobPortal" ADD VALUE IF NOT EXISTS 'SIMPLIFY';
+ALTER TYPE "JobPortal" ADD VALUE IF NOT EXISTS 'SIMPLYHIRED';
+ALTER TYPE "JobPortal" ADD VALUE IF NOT EXISTS 'WELLFOUND';
+ALTER TYPE "JobPortal" ADD VALUE IF NOT EXISTS 'HANDSHAKE';

@@ -15,11 +15,16 @@ export const applicationStatusEnum = z.enum([
 export const jobPortalEnum = z.enum([
   'LINKEDIN',
   'INDEED',
+  'GLASSDOOR',
+  'JOBRIGHT',
+  'SIMPLIFY',
+  'SIMPLYHIRED',
+  'WELLFOUND',
+  'HANDSHAKE',
   'NAUKRI',
   'DICE',
   'MONSTER',
   'ZIPRECRUITER',
-  'GLASSDOOR',
   'COMPANY_WEBSITE',
   'CAREERBUILDER',
   'OTHER',
@@ -28,8 +33,8 @@ export const jobPortalEnum = z.enum([
 export const createApplicationSchema = z.object({
   profileId: z.string().uuid('A valid profile is required'),
   jobLink: z.string().url('A valid job link URL is required').max(2048),
-  companyName: z.string().min(1, 'Company name is required').max(200),
-  jobTitle: z.string().min(1, 'Job title is required').max(200),
+  companyName: z.string().trim().max(200).default(''),
+  jobTitle: z.string().trim().max(200).default(''),
   jobPortal: jobPortalEnum.default('OTHER'),
   status: applicationStatusEnum.default('APPLIED'),
   appliedAt: z.coerce.date().optional(),
@@ -37,8 +42,8 @@ export const createApplicationSchema = z.object({
 
 export const updateApplicationSchema = z.object({
   status: applicationStatusEnum.optional(),
-  companyName: z.string().min(1).max(200).optional(),
-  jobTitle: z.string().min(1).max(200).optional(),
+  companyName: z.string().trim().max(200).optional(),
+  jobTitle: z.string().trim().max(200).optional(),
   jobPortal: jobPortalEnum.optional(),
 });
 

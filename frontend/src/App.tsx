@@ -3,12 +3,15 @@ import { AnimatePresence } from 'framer-motion';
 import { Routes, Route } from 'react-router-dom';
 import LoginPage from '@/pages/auth/login-page';
 import SignupPage from '@/pages/auth/signup-page';
+import ForgotPasswordPage from '@/pages/auth/forgot-password-page';
 import { AppShell } from '@/components/layout/app-shell';
 import { ProtectedRoute } from '@/routes/protected-route';
 import DashboardPage from '@/pages/dashboard/dashboard-page';
+import RecruiterDashboardPage from '@/pages/dashboard/recruiter-dashboard-page';
 import AnalyticsPage from '@/pages/dashboard/analytics-page';
 import RecruitersPage from '@/pages/recruiters/recruiters-page';
 import ProfilesPage from '@/pages/profiles/profiles-page';
+import ProfilePage from '@/pages/profile/profile-page';
 import ApplicationsPage from '@/pages/applications/applications-page';
 import NotFoundPage from '@/pages/not-found-page';
 import UnauthorizedPage from '@/pages/unauthorized-page';
@@ -52,6 +55,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         <Route element={<ProtectedRoute />}>
@@ -64,6 +68,11 @@ export default function App() {
               <Route path="/recruiters" element={<RecruitersPage />} />
             </Route>
 
+            <Route element={<ProtectedRoute allowedRoles={['RECRUITER']} />}>
+              <Route path="/recruiter-dashboard" element={<RecruiterDashboardPage />} />
+            </Route>
+
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profiles" element={<ProfilesPage />} />
             <Route path="/applications" element={<ApplicationsPage />} />
           </Route>

@@ -10,10 +10,55 @@ import {
   parseExpiryToMs,
 } from './token.service';
 import { env } from '@/config/env';
-import { LoginInput, SignupInput, ChangePasswordInput } from './auth.validation';
+import {
+  LoginInput,
+  SignupInput,
+  ChangePasswordInput,
+  UpdateProfileInput,
+  SecurityQuestionInput,
+  ForgotPasswordQuestionInput,
+  ForgotPasswordResetInput,
+} from './auth.validation';
 import * as recruiterRepo from '@/modules/recruiters/recruiter.repository';
 
 const BCRYPT_ROUNDS = 12;
+
+function sanitizeUser(user: {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  role: any;
+  isActive?: boolean;
+  lastActiveAt?: Date | null;
+  createdAt?: Date;
+  securityQuestion?: string | null;
+}) {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone ?? null,
+    role: user.role,
+    ...(user.isActive !== undefined ? { isActive: user.isActive } : {}),
+    ...(user.lastActiveAt !== undefined ? { lastActiveAt: user.lastActiveAt } : {}),
+    ...(user.createdAt !== undefined ? { createdAt: user.createdAt } : {}),
+    securityQuestion: user.securityQuestion ?? null,
+    hasSecurityQuestion: !!user.securityQuestion,
+  };
+}
+
+function normalizeSecurityAnswer(answer: string) {
+  return answer.trim().toLowerCase();
+}
+
+async function hashSecurityAnswer(answer: string): Promise<string> {
+  return bcrypt.hash(normalizeSecurityAnswer(answer), BCRYPT_ROUNDS);
+}
+
+async function compareSecurityAnswer(answer: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(normalizeSecurityAnswer(answer), hash);
+}
 
 export async function hashPassword(plain: string): Promise<string> {
   return bcrypt.hash(plain, BCRYPT_ROUNDS);
@@ -69,12 +114,7 @@ export async function login(input: LoginInput, meta: SessionMeta) {
 
   return {
     tokens,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
+    user: sanitizeUser(user),
   };
 }
 
@@ -99,12 +139,7 @@ export async function signupRecruiter(input: SignupInput, meta: SessionMeta) {
 
   return {
     tokens,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    },
+    user: sanitizeUser(user),
   };
 }
 
@@ -152,7 +187,7 @@ export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta)
 
   return {
     tokens: newTokens,
-    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    user: sanitizeUser(user),
   };
 }
 
@@ -168,10 +203,20 @@ export async function logout(refreshTokenRaw?: string) {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, role: true, isActive: true, lastActiveAt: true, createdAt: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+      isActive: true,
+      lastActiveAt: true,
+      createdAt: true,
+      securityQuestion: true,
+    },
   });
   if (!user || !user.isActive) throw ApiError.notFound('User not found');
-  return user;
+  return sanitizeUser(user);
 }
 
 export async function changePassword(userId: string, input: ChangePasswordInput) {
@@ -186,4 +231,66 @@ export async function changePassword(userId: string, input: ChangePasswordInput)
 
   // Revoke all existing sessions after password change
   await prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
+}
+
+export async function updateProfile(userId: string, input: UpdateProfileInput) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.deletedAt) throw ApiError.notFound('User not found');
+
+  if (input.email && input.email.toLowerCase() !== user.email) {
+    const existing = await prisma.user.findUnique({ where: { email: input.email.toLowerCase() } });
+    if (existing) throw ApiError.conflict('A user with this email already exists');
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      ...(input.email !== undefined ? { email: input.email.toLowerCase() } : {}),
+      ...(input.phone !== undefined ? { phone: input.phone.trim() || null } : {}),
+    },
+  });
+
+  return sanitizeUser(updated);
+}
+
+export async function setSecurityQuestion(userId: string, input: SecurityQuestionInput) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || user.deletedAt) throw ApiError.notFound('User not found');
+
+  const securityAnswerHash = await hashSecurityAnswer(input.securityAnswer);
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      securityQuestion: input.securityQuestion.trim(),
+      securityAnswerHash,
+    },
+  });
+
+  return sanitizeUser(updated);
+}
+
+export async function getForgotPasswordQuestion(input: ForgotPasswordQuestionInput) {
+  const user = await prisma.user.findUnique({ where: { email: input.email.toLowerCase() } });
+  if (!user || user.deletedAt || !user.isActive) throw ApiError.notFound('No active account found for this email');
+  if (!user.securityQuestion || !user.securityAnswerHash) {
+    throw ApiError.badRequest('No security question is configured for this account. Please contact an administrator.');
+  }
+
+  return { email: user.email, securityQuestion: user.securityQuestion };
+}
+
+export async function resetPasswordWithSecurityAnswer(input: ForgotPasswordResetInput) {
+  const user = await prisma.user.findUnique({ where: { email: input.email.toLowerCase() } });
+  if (!user || user.deletedAt || !user.isActive) throw ApiError.notFound('No active account found for this email');
+  if (!user.securityQuestion || !user.securityAnswerHash) {
+    throw ApiError.badRequest('No security question is configured for this account. Please contact an administrator.');
+  }
+
+  const isValid = await compareSecurityAnswer(input.securityAnswer, user.securityAnswerHash);
+  if (!isValid) throw ApiError.badRequest('Security answer is incorrect');
+
+  const newHash = await hashPassword(input.newPassword);
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash: newHash } });
+  await prisma.refreshToken.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date() } });
 }

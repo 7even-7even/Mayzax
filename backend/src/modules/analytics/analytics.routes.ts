@@ -7,7 +7,12 @@ import * as analyticsController from './analytics.controller';
 
 const router = Router();
 
-router.use(requireAuth, requireRole(Role.ADMIN));
+router.use(requireAuth);
+
+// Recruiters get their own scoped portal analytics; admins get all applications.
+router.get('/job-portals', analyticsController.getJobPortalAnalytics);
+
+router.use(requireRole(Role.ADMIN));
 
 router.get('/summary', analyticsController.getGlobalSummary);
 router.get('/dashboard', validate({ query: dashboardQuerySchema }), analyticsController.getDashboardOverview);

@@ -117,13 +117,12 @@ const JOB_TITLES = [
 const JOB_PORTALS: readonly JobPortal[] = [
   JobPortal.LINKEDIN,
   JobPortal.INDEED,
-  JobPortal.NAUKRI,
-  JobPortal.DICE,
-  JobPortal.MONSTER,
-  JobPortal.ZIPRECRUITER,
   JobPortal.GLASSDOOR,
-  JobPortal.COMPANY_WEBSITE,
-  JobPortal.CAREERBUILDER,
+  JobPortal.JOBRIGHT,
+  JobPortal.SIMPLIFY,
+  JobPortal.SIMPLYHIRED,
+  JobPortal.WELLFOUND,
+  JobPortal.HANDSHAKE,
 ];
 
 const APPLICATION_STATUSES: readonly ApplicationStatus[] = [
@@ -141,11 +140,16 @@ const APPLICATION_STATUSES: readonly ApplicationStatus[] = [
 const PORTAL_URL_BUILDERS: Record<JobPortal, (jobId: string) => string> = {
   LINKEDIN: (id) => `https://www.linkedin.com/jobs/view/${id}`,
   INDEED: (id) => `https://www.indeed.com/viewjob?jk=${id}`,
+  GLASSDOOR: (id) => `https://www.glassdoor.com/job-listing/${id}`,
+  JOBRIGHT: (id) => `https://jobright.ai/jobs/info/${id}`,
+  SIMPLIFY: (id) => `https://simplify.jobs/p/${id}`,
+  SIMPLYHIRED: (id) => `https://www.simplyhired.com/job/${id}`,
+  WELLFOUND: (id) => `https://wellfound.com/jobs/${id}`,
+  HANDSHAKE: (id) => `https://app.joinhandshake.com/stu/jobs/${id}`,
   NAUKRI: (id) => `https://www.naukri.com/job-listings-${id}`,
   DICE: (id) => `https://www.dice.com/jobs/detail/${id}`,
   MONSTER: (id) => `https://www.monster.com/job-openings/${id}`,
   ZIPRECRUITER: (id) => `https://www.ziprecruiter.com/jobs/${id}`,
-  GLASSDOOR: (id) => `https://www.glassdoor.com/job-listing/${id}`,
   COMPANY_WEBSITE: (id) => `https://careers.example-company.com/jobs/${id}`,
   CAREERBUILDER: (id) => `https://www.careerbuilder.com/job/${id}`,
   OTHER: (id) => `https://jobs.example.com/${id}`,

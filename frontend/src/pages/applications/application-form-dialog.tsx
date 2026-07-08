@@ -26,8 +26,8 @@ import { useAuth } from '@/context/auth-context';
 const applicationSchema = z.object({
   profileId: z.string().uuid('Please select a profile'),
   jobLink: z.string().url('Enter a valid job posting URL'),
-  companyName: z.string().min(1, 'Company name is required'),
-  jobTitle: z.string().min(1, 'Job title is required'),
+  companyName: z.string().trim().max(200, 'Company name must be 200 characters or less'),
+  jobTitle: z.string().trim().max(200, 'Job title must be 200 characters or less'),
   jobPortal: z.enum(ALL_JOB_PORTALS),
 });
 
@@ -112,7 +112,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Log Job Application</DialogTitle>
-          <DialogDescription>Select a profile, paste the job link, and fill in the details.</DialogDescription>
+          <DialogDescription>Select a profile and paste the job link. Company name and job title are optional.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -162,14 +162,14 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="companyName">Company Name</Label>
+              <Label htmlFor="companyName">Company Name <span className="text-slate-400">(optional)</span></Label>
               <Input id="companyName" placeholder="e.g. Acme Corp" {...form.register('companyName')} />
               {form.formState.errors.companyName && (
                 <p className="text-xs text-red-600">{form.formState.errors.companyName.message}</p>
               )}
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="jobTitle">Job Title</Label>
+              <Label htmlFor="jobTitle">Job Title <span className="text-slate-400">(optional)</span></Label>
               <Input id="jobTitle" placeholder="e.g. Backend Engineer" {...form.register('jobTitle')} />
               {form.formState.errors.jobTitle && <p className="text-xs text-red-600">{form.formState.errors.jobTitle.message}</p>}
             </div>

@@ -37,11 +37,16 @@ enum ApplicationStatus {
 enum JobPortal {
   LINKEDIN
   INDEED
+  GLASSDOOR
+  JOBRIGHT
+  SIMPLIFY
+  SIMPLYHIRED
+  WELLFOUND
+  HANDSHAKE
   NAUKRI
   DICE
   MONSTER
   ZIPRECRUITER
-  GLASSDOOR
   COMPANY_WEBSITE
   CAREERBUILDER
   OTHER
@@ -52,11 +57,14 @@ enum JobPortal {
 // ---------------------------------------------------------
 
 model User {
-  id           String   @id @default(uuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         Role     @default(RECRUITER)
+  id                 String   @id @default(uuid())
+  name               String
+  email              String   @unique
+  phone              String?
+  passwordHash       String
+  role               Role     @default(RECRUITER)
+  securityQuestion   String?
+  securityAnswerHash String?
 
   isActive  Boolean   @default(true)
   deletedAt DateTime? // soft delete
