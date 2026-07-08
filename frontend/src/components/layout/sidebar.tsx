@@ -22,7 +22,7 @@ const adminNav = [
 
 const recruiterNav = [
   { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/profiles', label: 'My Profiles', icon: UserSquare2 },
+  { to: '/profiles', label: 'My Clients', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
   { to: '/profile', label: 'Profile', icon: UserCircle },
 ];
