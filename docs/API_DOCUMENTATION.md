@@ -20,7 +20,7 @@ Complete reference for the Mayzax ATS backend REST API. Every request/response e
    - [Recruiters](#recruiters-apiv1recruiters--admin-only)
    - [Client Profiles](#client-profiles-apiv1profiles)
    - [Job Applications](#job-applications-apiv1applications)
-   - [Analytics](#analytics-apiv1analytics--admin-only)
+   - [Analytics](#analytics-apiv1analytics)
 8. [Business Date Logic](#business-date-logic)
 9. [Duplicate Application Detection](#duplicate-application-detection)
 
@@ -87,8 +87,8 @@ Mayzax ATS uses **JWT access tokens + rotating refresh tokens**, delivered two w
 
 | Role | Description |
 |---|---|
-| `ADMIN` | Full access: manages recruiters, all client profiles, all applications, analytics dashboard |
-| `RECRUITER` | Scoped access: can only see/act on client profiles assigned to them and applications they created |
+| `ADMIN` | Full access: manages recruiters, all client profiles, all applications, admin dashboard, and all analytics |
+| `RECRUITER` | Scoped access: can only see/act on client profiles assigned to them, applications they created, and their own job portal analytics |
 
 ### Route protection at a glance
 
@@ -96,12 +96,14 @@ Mayzax ATS uses **JWT access tokens + rotating refresh tokens**, delivered two w
 |---|---|---|
 | `/auth/signup` | No | Public |
 | `/auth/login`, `/auth/refresh` | No | Public |
-| `/auth/logout`, `/auth/me`, `/auth/change-password` | Yes | Any authenticated user |
+| `/auth/forgot-password/question`, `/auth/forgot-password/reset` | No | Public |
+| `/auth/logout`, `/auth/me`, `/auth/profile`, `/auth/security-question`, `/auth/change-password` | Yes | Any authenticated user |
 | `/recruiters/*` | Yes | `ADMIN` only |
 | `/profiles/*` (read/create/update) | Yes | `ADMIN`, `RECRUITER` (row-level scoping applies) |
 | `/profiles/:id/assign`, `DELETE /profiles/:id` | Yes | `ADMIN` only |
 | `/applications/*` | Yes | `ADMIN`, `RECRUITER` (row-level scoping applies) |
-| `/analytics/*` | Yes | `ADMIN` only |
+| `/analytics/job-portals` | Yes | `ADMIN`, `RECRUITER` (role-level scoping applies) |
+| `/analytics/summary`, `/analytics/dashboard*`, `/analytics/daily-counts` | Yes | `ADMIN` only |
 
 **Row-level scoping:** even where both roles are allowed, a `RECRUITER` only ever sees/modifies Client Profiles assigned to them and Job Applications they personally created. `ADMIN` sees everything.
 
@@ -195,7 +197,7 @@ Request: `POST /applications` for a profile that already applied to the same job
 | Scope | Window | Max requests | Applies to |
 |---|---|---|---|
 | Global | 15 min (`RATE_LIMIT_WINDOW_MS`) | 300 (`RATE_LIMIT_MAX`) | Every request |
-| Auth | 15 min (`RATE_LIMIT_WINDOW_MS`) | 20 (`AUTH_RATE_LIMIT_MAX`) | `POST /auth/signup`, `POST /auth/login`, `POST /auth/refresh` |
+| Auth | 15 min (`RATE_LIMIT_WINDOW_MS`) | 20 (`AUTH_RATE_LIMIT_MAX`) | `POST /auth/signup`, `POST /auth/login`, `POST /auth/refresh`, forgot-password endpoints |
 
 Exceeding a limit returns:
 
@@ -243,7 +245,7 @@ APPLIED | IN_REVIEW | SHORTLISTED | INTERVIEW_SCHEDULED | INTERVIEWED | OFFERED 
 
 ### `JobPortal`
 ```
-LINKEDIN | INDEED | NAUKRI | DICE | MONSTER | ZIPRECRUITER | GLASSDOOR | COMPANY_WEBSITE | CAREERBUILDER | OTHER
+LINKEDIN | INDEED | GLASSDOOR | JOBRIGHT | SIMPLIFY | SIMPLYHIRED | WELLFOUND | HANDSHAKE | NAUKRI | DICE | MONSTER | ZIPRECRUITER | COMPANY_WEBSITE | CAREERBUILDER | OTHER
 ```
 
 ### Core entity shapes
@@ -254,7 +256,10 @@ LINKEDIN | INDEED | NAUKRI | DICE | MONSTER | ZIPRECRUITER | GLASSDOOR | COMPANY
   id: string;              // UUID
   name: string;
   email: string;
+  phone: string | null;
   role: "ADMIN" | "RECRUITER";
+  securityQuestion: string | null;
+  hasSecurityQuestion: boolean;
   isActive: boolean;
   deletedAt: string | null;      // soft-delete marker, ISO datetime
   lastActiveAt: string | null;   // ISO datetime, updated on login/refresh
@@ -348,7 +353,10 @@ Public. Rate-limited (auth tier). Creates a recruiter account, sets session cook
       "id": "f188e902-1130-4727-bc2c-f4532e37dfc6",
       "name": "Riya Sharma",
       "email": "riya.sharma@mayzaxsolutions.com",
-      "role": "RECRUITER"
+      "phone": null,
+      "role": "RECRUITER",
+      "securityQuestion": null,
+      "hasSecurityQuestion": false
     },
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...."
   }
@@ -381,7 +389,10 @@ Public. Rate-limited (auth tier).
       "id": "417c08ba-b4de-4abc-aaad-358216a7abba",
       "name": "Mayzax Admin",
       "email": "admin@mayzaxsolutions.com",
-      "role": "ADMIN"
+      "phone": null,
+      "role": "ADMIN",
+      "securityQuestion": null,
+      "hasSecurityQuestion": false
     },
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...."
   }
@@ -408,6 +419,66 @@ Public (relies on the `refresh_token` cookie; a `refreshToken` field in the body
 
 ---
 
+#### `POST /auth/forgot-password/question`
+
+Public. Rate-limited (auth tier). Given an email address, returns that user's configured security question for password recovery.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `email` | string | valid email |
+
+**Request**
+```json
+{ "email": "recruiter@mayzaxsolutions.com" }
+```
+
+**Response `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "email": "recruiter@mayzaxsolutions.com",
+    "securityQuestion": "What is your pet name?"
+  }
+}
+```
+
+**Errors:** `400 BAD_REQUEST` (no question configured), `404 NOT_FOUND` (no active account), `422 VALIDATION_ERROR`, `429 RATE_LIMITED`
+
+---
+
+#### `POST /auth/forgot-password/reset`
+
+Public. Rate-limited (auth tier). Verifies the user's security answer, resets the password, and revokes existing sessions.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `email` | string | valid email |
+| `securityAnswer` | string | required |
+| `newPassword` | string | min 8 chars; needs uppercase, lowercase, and a number |
+| `confirmPassword` | string | must match `newPassword` |
+
+**Request**
+```json
+{
+  "email": "recruiter@mayzaxsolutions.com",
+  "securityAnswer": "Bruno",
+  "newPassword": "NewPass123",
+  "confirmPassword": "NewPass123"
+}
+```
+
+**Response `200`**
+```json
+{ "success": true, "data": { "message": "Password reset successfully. Please log in." } }
+```
+
+**Errors:** `400 BAD_REQUEST` (wrong answer / no question configured), `404 NOT_FOUND`, `422 VALIDATION_ERROR`, `429 RATE_LIMITED`
+
+---
+
 #### `POST /auth/logout`
 
 Requires auth. Revokes the current refresh token and clears both cookies.
@@ -431,7 +502,10 @@ Requires auth. Returns the current user's profile.
     "id": "417c08ba-b4de-4abc-aaad-358216a7abba",
     "name": "Mayzax Admin",
     "email": "admin@mayzaxsolutions.com",
+    "phone": "+91 98765 43210",
     "role": "ADMIN",
+    "securityQuestion": "What is your pet name?",
+    "hasSecurityQuestion": true,
     "isActive": true,
     "lastActiveAt": "2026-07-04T12:14:28.543Z",
     "createdAt": "2026-07-04T12:13:41.201Z"
@@ -440,6 +514,49 @@ Requires auth. Returns the current user's profile.
 ```
 
 **Errors:** `401 UNAUTHORIZED`, `404 NOT_FOUND` (user deactivated/deleted since token issued)
+
+---
+
+#### `PATCH /auth/profile`
+
+Requires auth. Updates the current user's editable profile details.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `name` | string | optional, 2–120 chars |
+| `email` | string | optional, valid email, must be unique |
+| `phone` | string | optional, max 30 chars, blank allowed |
+
+**Request**
+```json
+{ "name": "Updated Name", "email": "updated@mayzaxsolutions.com", "phone": "+91 98765 43210" }
+```
+
+**Response `200`** — updated sanitized user object.
+
+**Errors:** `409 CONFLICT` (email already exists), `401 UNAUTHORIZED`, `404 NOT_FOUND`, `422 VALIDATION_ERROR`
+
+---
+
+#### `POST /auth/security-question`
+
+Requires auth. Sets or updates the current user's security question and answer for forgot-password recovery. The answer is normalized and stored as a bcrypt hash; raw answers are never returned.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `securityQuestion` | string | 3–200 chars |
+| `securityAnswer` | string | 2–200 chars |
+
+**Request**
+```json
+{ "securityQuestion": "What is your pet name?", "securityAnswer": "Bruno" }
+```
+
+**Response `200`** — updated sanitized user object with `hasSecurityQuestion: true`.
+
+**Errors:** `401 UNAUTHORIZED`, `404 NOT_FOUND`, `422 VALIDATION_ERROR`
 
 ---
 
@@ -452,6 +569,7 @@ Requires auth. Revokes **all** existing sessions for the user on success (they m
 |---|---|---|
 | `currentPassword` | string | required |
 | `newPassword` | string | min 8 chars; must contain an uppercase letter, a lowercase letter, and a number |
+| `confirmPassword` | string | must match `newPassword` |
 
 **Response `200`**
 ```json
@@ -855,8 +973,8 @@ Creates a job application. **This is the endpoint enforcing duplicate protection
 |---|---|---|
 | `profileId` | UUID | required, must be an active profile |
 | `jobLink` | string | required, valid URL, max 2048 chars |
-| `companyName` | string | required, 1–200 chars |
-| `jobTitle` | string | required, 1–200 chars |
+| `companyName` | string | optional/blank allowed, max 200 chars |
+| `jobTitle` | string | optional/blank allowed, max 200 chars |
 | `jobPortal` | `JobPortal` | optional, defaults to `OTHER` |
 | `status` | `ApplicationStatus` | optional, defaults to `APPLIED` |
 | `appliedAt` | ISO datetime | optional, defaults to now |
@@ -866,8 +984,8 @@ Creates a job application. **This is the endpoint enforcing duplicate protection
 {
   "profileId": "950abfda-be8f-441b-a931-48f1d92ad981",
   "jobLink": "https://www.linkedin.com/jobs/view/999999",
-  "companyName": "Acme Corp",
-  "jobTitle": "Senior Backend Engineer",
+  "companyName": "",
+  "jobTitle": "",
   "jobPortal": "LINKEDIN"
 }
 ```
@@ -900,9 +1018,60 @@ Update status/company/title/portal on an existing application.
 
 ---
 
-### Analytics (`/api/v1/analytics`) — Admin only
+### Analytics (`/api/v1/analytics`)
 
-All routes require `Authorization` + role `ADMIN`.
+Most analytics routes require `ADMIN`. `GET /analytics/job-portals` is available to both roles: admins see all applications, while recruiters see only their own applications.
+
+#### `GET /analytics/job-portals`
+
+Portal-wise application counts for the portal analytics cards.
+
+**Auth / role behavior**
+| Role | Scope |
+|---|---|
+| `ADMIN` | All applications across all recruiters |
+| `RECRUITER` | Only applications created by the authenticated recruiter |
+
+**Query params**
+| Param | Type | Default | Notes |
+|---|---|---|---|
+| `scope` | `all` \| `currentShift` \| `custom` | `all` | `currentShift` uses the current business date; `custom` uses `from`/`to` |
+| `from` | `YYYY-MM-DD` | — | Used when `scope=custom`; inclusive business date |
+| `to` | `YYYY-MM-DD` | — | Used when `scope=custom`; inclusive business date |
+
+**Examples**
+```text
+GET /analytics/job-portals?scope=all
+GET /analytics/job-portals?scope=currentShift
+GET /analytics/job-portals?scope=custom&from=2026-07-01&to=2026-07-08
+```
+
+**Response `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "totalApplications": 53,
+    "currentBusinessDate": "2026-07-08",
+    "filter": { "scope": "custom", "from": "2026-07-01", "to": "2026-07-08" },
+    "portals": [
+      { "portal": "LINKEDIN", "count": 25 },
+      { "portal": "INDEED", "count": 18 },
+      { "portal": "GLASSDOOR", "count": 10 },
+      { "portal": "JOBRIGHT", "count": 0 },
+      { "portal": "SIMPLIFY", "count": 0 },
+      { "portal": "SIMPLYHIRED", "count": 0 },
+      { "portal": "WELLFOUND", "count": 0 },
+      { "portal": "HANDSHAKE", "count": 0 },
+      { "portal": "OTHER", "count": 0 }
+    ]
+  }
+}
+```
+
+**Notes:** Legacy/non-primary portal values are rolled into `OTHER` for this analytics response.
+
+---
 
 #### `GET /analytics/summary`
 
@@ -963,16 +1132,17 @@ Per-recruiter rollup table for the admin dashboard. Supports search/sort/paginat
 
 #### `GET /analytics/dashboard/:id/breakdown`
 
-Expandable drill-down for one recruiter: profile-wise application counts + their 10 most recent applications.
+Expandable drill-down for one recruiter: assigned profile-wise all-time/current-shift application counts + their 10 most recent applications.
 
 **Response `200`**
 ```json
 {
   "success": true,
   "data": {
+    "currentBusinessDate": "2026-07-08",
     "profileWiseCounts": [
-      { "profileId": "0e4d78bb-43b1-44b1-a233-029502a3131d", "candidateName": "Amit Patel", "technology": "AWS Cloud", "applicationCount": 9 },
-      { "profileId": "375f03e3-83ac-4b71-ad11-61ba97d15775", "candidateName": "Jane Smith", "technology": "React", "applicationCount": 6 }
+      { "profileId": "0e4d78bb-43b1-44b1-a233-029502a3131d", "candidateName": "Amit Patel", "technology": "AWS Cloud", "applicationCount": 9, "currentShiftApplicationCount": 2 },
+      { "profileId": "375f03e3-83ac-4b71-ad11-61ba97d15775", "candidateName": "Jane Smith", "technology": "React", "applicationCount": 6, "currentShiftApplicationCount": 0 }
     ],
     "recentApplications": [
       {
@@ -996,7 +1166,7 @@ Expandable drill-down for one recruiter: profile-wise application counts + their
 }
 ```
 
-**Notes:** if `:id` is not a well-formed UUID, this returns `422 VALIDATION_ERROR`. If `:id` is a valid UUID but no such recruiter exists, the endpoint does **not** 404 — it simply returns `200` with empty arrays (`profileWiseCounts: []`, `recentApplications: []`), since it treats the ID as an unscoped filter rather than a required resource lookup.
+**Notes:** Assigned profiles are included even when they have zero applications. If `:id` is not a well-formed UUID, this returns `422 VALIDATION_ERROR`. If `:id` is a valid UUID but no such recruiter exists, the endpoint returns empty arrays.
 
 ---
 
@@ -1043,7 +1213,7 @@ Rule (`getBusinessDate()` in `src/utils/businessDate.ts`):
 | 4:31 AM, Jul 4 | Jul 4 |
 | 10:00 AM, Jul 4 | Jul 4 |
 
-All analytics endpoints (`/analytics/summary`, `/analytics/dashboard`, `/analytics/daily-counts`, `/recruiters/:id/stats`) filter and group by this derived `businessDate` field, never by raw `createdAt`/`appliedAt` calendar date.
+Analytics endpoints (`/analytics/summary`, `/analytics/dashboard`, `/analytics/job-portals`, `/analytics/daily-counts`, `/recruiters/:id/stats`) filter and group by this derived `businessDate` field where date/current-shift reporting is involved, never by raw `createdAt`/`appliedAt` calendar date.
 
 ---
 
@@ -1074,8 +1244,12 @@ Use `GET /applications/check-duplicate` to check before submitting, for instant 
 | POST | `/auth/signup` | No | — |
 | POST | `/auth/login` | No | — |
 | POST | `/auth/refresh` | No (cookie) | — |
+| POST | `/auth/forgot-password/question` | No | — |
+| POST | `/auth/forgot-password/reset` | No | — |
 | POST | `/auth/logout` | Yes | Any |
 | GET | `/auth/me` | Yes | Any |
+| PATCH | `/auth/profile` | Yes | Any |
+| POST | `/auth/security-question` | Yes | Any |
 | POST | `/auth/change-password` | Yes | Any |
 | GET | `/recruiters` | Yes | Admin |
 | POST | `/recruiters` | Yes | Admin |
@@ -1094,6 +1268,7 @@ Use `GET /applications/check-duplicate` to check before submitting, for instant 
 | GET | `/applications/:id` | Yes | Admin, Recruiter (scoped) |
 | POST | `/applications` | Yes | Admin, Recruiter |
 | PATCH | `/applications/:id` | Yes | Admin, Recruiter (scoped) |
+| GET | `/analytics/job-portals` | Yes | Admin, Recruiter (scoped) |
 | GET | `/analytics/summary` | Yes | Admin |
 | GET | `/analytics/dashboard` | Yes | Admin |
 | GET | `/analytics/dashboard/:id/breakdown` | Yes | Admin |
@@ -1101,4 +1276,4 @@ Use `GET /applications/check-duplicate` to check before submitting, for instant 
 
 ---
 
-*Generated from the live Mayzax ATS API (seeded demo data) on 2026-07-04. Regenerate examples any time by re-running the seed script and re-capturing responses — every payload above is real, not illustrative.*
+*Updated for the current Mayzax ATS API on 2026-07-08. Some examples are illustrative snapshots of the documented response shapes.*

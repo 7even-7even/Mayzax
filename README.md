@@ -1,6 +1,6 @@
 # Mayzax ATS
 
-**Mayzax ATS** is a production-grade Recruitment Applicant Tracking System built for **Mayzax Solutions**. It lets Admins manage recruiters and candidate profiles, lets Recruiters log job applications against their assigned profiles, and gives Admins a real-time analytics dashboard — all keyed off Mayzax's night-shift **business date** instead of the calendar date. You can view the Work Based Structure here: [Mayzax_WBS](./docs/Mayzax_WBS.xlsx)
+**Mayzax ATS** is a production-grade Recruitment Applicant Tracking System built for **Mayzax Solutions**. It lets Admins manage recruiters and candidate profiles, lets Recruiters log job applications against their assigned profiles, provides Excel exports, profile/account management, security-question based password recovery, and gives both Admins and Recruiters analytics — all keyed off Mayzax's night-shift **business date** instead of the calendar date. You can view the Work Based Structure here: [Mayzax_WBS](./docs/Mayzax_WBS.xlsx)
 
 ---
 ---
@@ -48,7 +48,7 @@ Mayzax ATS follows **clean architecture** with a clear separation of concerns on
 | Validation | Zod (shared conventions front & back) |
 | Logging | Pino / pino-http |
 
-The web app includes public `login` and `signup` flows for recruiters. New recruiter accounts are created from the signup page and are automatically signed in after registration.
+The web app includes public `login`, `signup`, and `forgot password` flows for recruiters. New recruiter accounts are created from the signup page and are automatically signed in after registration. Authenticated users can manage their profile details, set a security question, and change their password from the Profile tab.
 
 ## Project Structure
 
@@ -64,11 +64,11 @@ mayzax-ats/
 │   │   ├── lib/                   # prisma client singleton, logger
 │   │   ├── middleware/            # auth, validate, errorHandler, rateLimiter, requestLogger
 │   │   ├── modules/
-│   │   │   ├── auth/              # login, refresh, logout, me, change-password
+│   │   │   ├── auth/              # login, signup, refresh, profile, security question, forgot/change password
 │   │   │   ├── recruiters/        # Admin recruiter management + stats
 │   │   │   ├── profiles/          # Client profile CRUD + assignment
 │   │   │   ├── applications/      # Job applications + duplicate detection
-│   │   │   ├── analytics/         # Admin dashboard, breakdowns, daily counts
+│   │   │   ├── analytics/         # Admin/recruiter dashboards, portal analytics, breakdowns, daily counts
 │   │   │   └── shared/            # audit logging service
 │   │   ├── routes/index.ts        # API v1 router aggregation
 │   │   ├── utils/                 # apiError, asyncHandler, businessDate, normalizeJobLink
@@ -80,7 +80,7 @@ mayzax-ats/
 ├── docs/
 │   └── arch.png                   # Project Flow Diagram
 │   └── Mayzax_WBS.xlsx            # Project Work Based Structure with completion status.
-│   └── API_Documentation.md 
+│   └── API_DOCUMENTATION.md       # Detailed API reference
 ├── frontend/
 │   ├── public/                    # Public Resources
 │   ├── src/
@@ -106,7 +106,8 @@ Defined in [`backend/prisma/schema.prisma`](./backend/prisma/schema.prisma). Key
 ### `User`
 
 ```
-id, name, email (unique), passwordHash, role (ADMIN|RECRUITER),
+id, name, email (unique), phone, passwordHash, role (ADMIN|RECRUITER),
+securityQuestion, securityAnswerHash (bcrypt),
 isActive, deletedAt (soft delete), lastActiveAt, createdById (self-relation),
 createdAt, updatedAt
 ```
@@ -130,7 +131,7 @@ isActive, deletedAt (soft delete), createdAt, updatedAt
 
 ```
 id, profileId (FK), recruiterId (FK), jobLink, normalizedJobLink,
-companyName, jobTitle, jobPortal (enum), status (enum),
+companyName (optional/blank allowed), jobTitle (optional/blank allowed), jobPortal (enum), status (enum),
 appliedAt, businessDate (DATE),
 createdAt, updatedAt
 
@@ -146,7 +147,7 @@ ip, userAgent, createdAt
 
 ```
 
-Enums: `Role {ADMIN, RECRUITER}`, `ApplicationStatus {APPLIED, IN_REVIEW, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEWED, OFFERED, REJECTED, WITHDRAWN, ON_HOLD}`, `JobPortal {LINKEDIN, INDEED, NAUKRI, DICE, MONSTER, ZIPRECRUITER, GLASSDOOR, COMPANY_WEBSITE, CAREERBUILDER, OTHER}`.
+Enums: `Role {ADMIN, RECRUITER}`, `ApplicationStatus {APPLIED, IN_REVIEW, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEWED, OFFERED, REJECTED, WITHDRAWN, ON_HOLD}`, `JobPortal {LINKEDIN, INDEED, GLASSDOOR, JOBRIGHT, SIMPLIFY, SIMPLYHIRED, WELLFOUND, HANDSHAKE, NAUKRI, DICE, MONSTER, ZIPRECRUITER, COMPANY_WEBSITE, CAREERBUILDER, OTHER}`.
 
 ---
 
@@ -267,9 +268,13 @@ All routes are versioned under `API_PREFIX` (default `/api/v1`). Responses follo
 | POST | `/auth/signup` | Public | Recruiter self-registration. Creates a recruiter account, sets HttpOnly `access_token` / `refresh_token` cookies, and returns an access token for header-based use. |
 | POST | `/auth/login` | Public | Email + password login. Sets HttpOnly `access_token` / `refresh_token` cookies and returns an access token for header-based use. |
 | POST | `/auth/refresh` | Cookie | Rotates the refresh token, issues a new pair. Detects token reuse and revokes all sessions if triggered. |
+| POST | `/auth/forgot-password/question` | Public | Given an email, returns the configured security question for password recovery. |
+| POST | `/auth/forgot-password/reset` | Public | Verifies the security answer and resets the password. |
 | POST | `/auth/logout` | Required | Revokes the current refresh token, clears cookies. |
-| GET | `/auth/me` | Required | Returns the current authenticated user. |
-| POST | `/auth/change-password` | Required | Changes password, revokes all existing sessions. |
+| GET | `/auth/me` | Required | Returns the current authenticated user, including phone/security-question metadata. |
+| PATCH | `/auth/profile` | Required | Updates the current user's name, email, and phone number. |
+| POST | `/auth/security-question` | Required | Sets/updates the current user's password recovery security question and hashed answer. |
+| POST | `/auth/change-password` | Required | Verifies current password, changes password, and revokes all existing sessions. |
 
 ### Recruiters (`/recruiters`) — Admin only
 
@@ -300,17 +305,18 @@ All routes are versioned under `API_PREFIX` (default `/api/v1`). Responses follo
 | GET | `/applications` | Any | List — recruiters see only their own; search/filter by status, portal, business date range. |
 | GET | `/applications/check-duplicate` | Any | Pre-flight duplicate check for instant UI feedback. |
 | GET | `/applications/:id` | Any | Fetch a single application. |
-| POST | `/applications` | Any | Create an application. Enforces duplicate protection (see above). |
+| POST | `/applications` | Any | Create an application. `jobLink` is required; `companyName` and `jobTitle` may be blank. Enforces duplicate protection (see above). |
 | PATCH | `/applications/:id` | Any | Update status/company/title/portal. |
 
-### Analytics (`/analytics`) — Admin only
+### Analytics (`/analytics`)
 
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | `/analytics/summary` | Global counts: recruiters, active recruiters, profiles, applications, current-shift applications. |
-| GET | `/analytics/dashboard` | Per-recruiter rollup: assigned profiles, total applications, current-shift applications, last active. Search/sort/paginate. |
-| GET | `/analytics/dashboard/:id/breakdown` | Expandable view: profile-wise application counts + recent applications for one recruiter. |
-| GET | `/analytics/daily-counts` | Daily application counts grouped by **business date**, optionally filtered by recruiter and date range — powers trend charts. |
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/analytics/job-portals` | Any | Portal-wise application counts. Admins see all applications; recruiters see only their own. Supports `scope=all|currentShift|custom` plus `from`/`to` for custom business-date filtering. |
+| GET | `/analytics/summary` | Admin | Global counts: recruiters, active recruiters, profiles, applications, current-shift applications. |
+| GET | `/analytics/dashboard` | Admin | Per-recruiter rollup: assigned profiles, total applications, current-shift applications, last active. Search/sort/paginate. |
+| GET | `/analytics/dashboard/:id/breakdown` | Admin | Expandable view: assigned profile-wise total/current-shift application counts + recent applications for one recruiter. |
+| GET | `/analytics/daily-counts` | Admin | Daily application counts grouped by **business date**, optionally filtered by recruiter and date range — powers trend charts. |
 
 ### Health
 
@@ -318,7 +324,7 @@ All routes are versioned under `API_PREFIX` (default `/api/v1`). Responses follo
 | --- | --- | --- |
 | GET | `/health` | Liveness check. |
 
-The detailed API documentation can be viewed here : [API Documentation](./docs/API_DOCUMENTATIONS.md)
+The detailed API documentation can be viewed here: [API Documentation](./docs/API_DOCUMENTATION.md).
 
 ---
 
@@ -330,11 +336,12 @@ Before going to production:
 2. Generate strong, unique `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` (`openssl rand -hex 32`).
 3. Set `COOKIE_SECURE=true` and serve over HTTPS (required for `Secure` cookies to work).
 4. Point `DATABASE_URL` amd `DIRECT_URL`at a managed/production Postgres instance.
-5. Run `npm run seed` once against production to create the first Admin, then **change that password immediately**.
-6. Set `CLIENT_URL` to your production frontend origin (CORS).
-7. Set `VITE_API_BASE_URL` to your production API URL and rebuild the frontend.
-8. Put the API behind a reverse proxy / load balancer that forwards `X-Forwarded-For` (the app trusts proxy hop `1`).
-9. Review `RATE_LIMIT_*` values for expected production traffic.
-10. Ship logs (`pino` JSON output) to your log aggregator of choice.
+5. Run database migrations (`npm run db:migrate:deploy`) so the job portal enum and user profile/security fields exist.
+6. Run `npm run seed` once against production to create the first Admin, then **change that password immediately**.
+7. Set `CLIENT_URL` to your production frontend origin (CORS).
+8. Set `VITE_API_BASE_URL` to your production API URL and rebuild the frontend.
+9. Put the API behind a reverse proxy / load balancer that forwards `X-Forwarded-For` (the app trusts proxy hop `1`).
+10. Review `RATE_LIMIT_*` values for expected production traffic.
+11. Ship logs (`pino` JSON output) to your log aggregator of choice.
 
 ---
