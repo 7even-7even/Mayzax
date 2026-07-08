@@ -19,6 +19,7 @@ import { Reveal } from '@/components/motion/reveal';
 import { StatCard } from '@/components/motion/stat-card';
 import { GradientBorderCard } from '@/components/motion/gradient-border-card';
 import { ActivityHeatmap } from '@/components/motion/activity-heatmap';
+import { JobPortalAnalyticsCard } from './job-portal-analytics-card';
 import { useDailyCounts, useGlobalSummary } from '@/hooks/use-analytics';
 import { useRecruiters } from '@/hooks/use-recruiters';
 
@@ -88,6 +89,13 @@ export default function AnalyticsPage() {
       </div>
 
       <Reveal delay={0.1} className="mb-6">
+        <JobPortalAnalyticsCard
+          title="Job Portal Analytics"
+          description="Admin overview of application submissions by portal across all recruiters."
+        />
+      </Reveal>
+
+      <Reveal delay={0.15} className="mb-6">
         <GradientBorderCard>
           <Card className="border-0 shadow-none">
             <CardHeader>
@@ -137,7 +145,7 @@ export default function AnalyticsPage() {
         </GradientBorderCard>
       </Reveal>
 
-      <Reveal delay={0.2}>
+      <Reveal delay={0.25}>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
