@@ -180,7 +180,9 @@ export async function getRecruiterStats(id: string) {
       candidateName: profile.candidateName,
       technology: profile.technology,
       applicationCount: applicationCountMap.get(profile.id) ?? 0,
+      totalApplications: applicationCountMap.get(profile.id) ?? 0,
       currentShiftApplicationCount: currentShiftApplicationCountMap.get(profile.id) ?? 0,
+      currentShiftApplications: currentShiftApplicationCountMap.get(profile.id) ?? 0,
     })),
     lastActiveAt: user.lastActiveAt,
   };

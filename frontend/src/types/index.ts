@@ -29,7 +29,9 @@ export interface RecruiterStats {
     candidateName: string;
     technology: string | null;
     applicationCount: number;
+    totalApplications: number;
     currentShiftApplicationCount: number;
+    currentShiftApplications: number;
   }>;
   lastActiveAt: string | null;
 }
@@ -144,7 +146,9 @@ export interface RecruiterBreakdown {
     candidateName: string;
     technology: string | null;
     applicationCount: number;
+    totalApplications: number;
     currentShiftApplicationCount: number;
+    currentShiftApplications: number;
   }>;
   recentApplications: JobApplication[];
   currentBusinessDate: string;
