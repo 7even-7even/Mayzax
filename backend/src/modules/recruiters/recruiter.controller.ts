@@ -31,3 +31,8 @@ export const getRecruiterStats = asyncHandler(async (req: Request, res: Response
   const stats = await recruiterService.getRecruiterStats(req.params.id);
   res.status(200).json({ success: true, data: stats });
 });
+
+export const getMyRecruiterStats = asyncHandler(async (req: Request, res: Response) => {
+  const stats = await recruiterService.getRecruiterStats(req.user!.sub);
+  res.status(200).json({ success: true, data: stats });
+});

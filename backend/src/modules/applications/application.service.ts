@@ -29,12 +29,21 @@ interface Meta {
  *     we translate that into the same friendly 409 response.
  */
 export async function createApplication(input: CreateApplicationInput, actor: Requester, meta?: Meta) {
-  const profile = await prisma.clientProfile.findFirst({ where: { id: input.profileId, deletedAt: null } });
+  const profile = await prisma.clientProfile.findFirst({
+    where: {
+      id: input.profileId,
+      deletedAt: null,
+      ...(actor.role === Role.RECRUITER
+        ? {
+            OR: [
+              { assignedRecruiterId: actor.id },
+              { assignedRecruiterAssignments: { some: { recruiterId: actor.id } } },
+            ],
+          }
+        : {}),
+    },
+  });
   if (!profile) throw ApiError.notFound('Client profile not found');
-
-  if (actor.role === Role.RECRUITER && profile.assignedRecruiterId !== actor.id) {
-    throw ApiError.forbidden('You can only submit applications for profiles assigned to you');
-  }
 
   const normalizedJobLink = normalizeJobLink(input.jobLink);
   const appliedAt = input.appliedAt ?? new Date();

@@ -27,6 +27,10 @@ export const jobPortalEnum = z.enum([
   'ZIPRECRUITER',
   'COMPANY_WEBSITE',
   'CAREERBUILDER',
+  'SPEEDY_APPLY',
+  'THE_MUSE',
+  'Y_COMBINATOR',
+  'CAREER_SITE',
   'OTHER',
 ]);
 

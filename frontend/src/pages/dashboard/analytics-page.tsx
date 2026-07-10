@@ -118,7 +118,7 @@ export default function AnalyticsPage() {
             <CardHeader>
               <CardTitle>Daily Applications by Business Date</CardTitle>
               <CardDescription>
-                Grouped using Mayzax's business shift (7:30 PM – 4:30 AM IST), not calendar date.
+                Grouped using Mayzax's business shift (7:30 PM – 7:30 AM IST), not calendar date.
                 {summary && <> Current business date: <span className="font-medium text-slate-700">{summary.currentBusinessDate}</span>.</>}
               </CardDescription>
             </CardHeader>

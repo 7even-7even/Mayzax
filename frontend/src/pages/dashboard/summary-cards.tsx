@@ -37,7 +37,7 @@ export function SummaryCards() {
           className="mt-3 text-xs text-slate-400"
         >
           Business date: <span className="font-medium text-slate-600">{data.currentBusinessDate}</span> · Shift window
-          7:30 PM – 4:30 AM IST
+          7:30 PM – 7:30 AM IST
         </motion.p>
       )}
     </div>

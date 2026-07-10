@@ -49,6 +49,10 @@ enum JobPortal {
   ZIPRECRUITER
   COMPANY_WEBSITE
   CAREERBUILDER
+  SPEEDY_APPLY
+  THE_MUSE
+  Y_COMBINATOR
+  CAREER_SITE
   OTHER
 }
 
@@ -81,6 +85,7 @@ model User {
 
   // Recruiter relations
   assignedProfiles ClientProfile[]  @relation("AssignedRecruiter")
+  profileAssignments ClientProfileAssignment[] @relation("RecruiterProfileAssignments")
   applications     JobApplication[] @relation("RecruiterApplications")
   refreshTokens    RefreshToken[]
   auditLogs        AuditLog[]
@@ -127,6 +132,7 @@ model ClientProfile {
 
   assignedRecruiterId String?
   assignedRecruiter   User?   @relation("AssignedRecruiter", fields: [assignedRecruiterId], references: [id], onDelete: SetNull)
+  assignedRecruiterAssignments ClientProfileAssignment[] @relation("ProfileRecruiterAssignments")
 
   isActive  Boolean   @default(true)
   deletedAt DateTime? // soft delete
@@ -140,6 +146,24 @@ model ClientProfile {
   @@index([technology])
   @@index([email])
   @@map("client_profiles")
+}
+
+// ---------------------------------------------------------
+// Client Profile Assignments (multi-recruiter checklist)
+// ---------------------------------------------------------
+
+model ClientProfileAssignment {
+  profileId   String
+  recruiterId String
+
+  profile   ClientProfile @relation("ProfileRecruiterAssignments", fields: [profileId], references: [id], onDelete: Cascade)
+  recruiter User          @relation("RecruiterProfileAssignments", fields: [recruiterId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([profileId, recruiterId])
+  @@index([recruiterId])
+  @@map("client_profile_assignments")
 }
 
 // ---------------------------------------------------------

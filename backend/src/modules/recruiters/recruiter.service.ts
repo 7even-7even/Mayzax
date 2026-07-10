@@ -87,6 +87,7 @@ export async function softDeleteRecruiter(id: string, actorId: string, meta?: { 
     where: { assignedRecruiterId: id },
     data: { assignedRecruiterId: null },
   });
+  await prisma.clientProfileAssignment.deleteMany({ where: { recruiterId: id } });
 
   await writeAuditLog({
     userId: actorId,
@@ -126,37 +127,45 @@ export async function getRecruiterStats(id: string) {
 
   const todayBusinessDate = getBusinessDateString(new Date());
 
-  const [assignedProfilesCount, totalApplications, currentShiftApplications, profileWiseCounts] = await Promise.all([
-    prisma.clientProfile.count({ where: { assignedRecruiterId: id, deletedAt: null } }),
+  const [assignedProfiles, totalApplications, currentShiftApplications] = await Promise.all([
+    prisma.clientProfile.findMany({
+      where: {
+        deletedAt: null,
+        OR: [
+          { assignedRecruiterId: id },
+          { assignedRecruiterAssignments: { some: { recruiterId: id } } },
+        ],
+      },
+      select: { id: true, candidateName: true, technology: true },
+      orderBy: { candidateName: 'asc' },
+    }),
     prisma.jobApplication.count({ where: { recruiterId: id } }),
     prisma.jobApplication.count({
       where: { recruiterId: id, businessDate: new Date(`${todayBusinessDate}T00:00:00.000Z`) },
     }),
-    prisma.jobApplication.groupBy({
-      by: ['profileId'],
-      where: { recruiterId: id },
-      _count: { _all: true },
-    }),
   ]);
 
-  const profileIds = profileWiseCounts.map((p) => p.profileId);
-  const profiles = await prisma.clientProfile.findMany({
-    where: { id: { in: profileIds } },
-    select: { id: true, candidateName: true, technology: true },
-  });
-  const profileMap = new Map(profiles.map((p) => [p.id, p]));
+  const profileIds = assignedProfiles.map((p) => p.id);
+  const applicationsByProfile = profileIds.length
+    ? await prisma.jobApplication.groupBy({
+        by: ['profileId'],
+        where: { recruiterId: id, profileId: { in: profileIds } },
+        _count: { _all: true },
+      })
+    : [];
+  const applicationCountMap = new Map(applicationsByProfile.map((row) => [row.profileId, row._count._all]));
 
   return {
     recruiter: sanitizeUser(user),
-    assignedProfilesCount,
+    assignedProfilesCount: assignedProfiles.length,
     totalApplications,
     currentShiftApplications,
     currentBusinessDate: todayBusinessDate,
-    profileWiseCounts: profileWiseCounts.map((row) => ({
-      profileId: row.profileId,
-      candidateName: profileMap.get(row.profileId)?.candidateName ?? 'Unknown',
-      technology: profileMap.get(row.profileId)?.technology ?? null,
-      applicationCount: row._count._all,
+    profileWiseCounts: assignedProfiles.map((profile) => ({
+      profileId: profile.id,
+      candidateName: profile.candidateName,
+      technology: profile.technology,
+      applicationCount: applicationCountMap.get(profile.id) ?? 0,
     })),
     lastActiveAt: user.lastActiveAt,
   };

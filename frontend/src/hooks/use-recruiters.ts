@@ -33,6 +33,16 @@ export function useRecruiterStats(id: string | null) {
   });
 }
 
+export function useMyRecruiterStats() {
+  return useQuery({
+    queryKey: ['recruiter-stats', 'me'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<ApiSuccess<RecruiterStats>>('/recruiters/me/stats');
+      return data.data;
+    },
+  });
+}
+
 export function useCreateRecruiter() {
   const qc = useQueryClient();
   return useMutation({

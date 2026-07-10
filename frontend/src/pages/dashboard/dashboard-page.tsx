@@ -10,7 +10,6 @@ import { ErrorState } from '@/components/shared/error-state';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { Reveal } from '@/components/motion/reveal';
 import { SummaryCards } from './summary-cards';
-import { TeamActivityCard } from './team-activity-card';
 import { RecruiterRow } from './recruiter-row';
 import { useDashboardOverview } from '@/hooks/use-analytics';
 import { useDebounce } from '@/hooks/use-debounce';

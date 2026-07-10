@@ -22,8 +22,32 @@ async function assertRecruiterExists(recruiterId: string | null | undefined) {
   if (!recruiter.isActive) throw ApiError.badRequest('Cannot assign profile to an inactive recruiter');
 }
 
+async function assertRecruitersExist(recruiterIds: string[]) {
+  const uniqueIds = [...new Set(recruiterIds)];
+  if (uniqueIds.length > 5) throw ApiError.badRequest('You can assign up to 5 recruiters');
+
+  if (uniqueIds.length === 0) return;
+
+  const recruiters = await prisma.user.findMany({
+    where: { id: { in: uniqueIds }, deletedAt: null, role: Role.RECRUITER },
+    select: { id: true, isActive: true },
+  });
+
+  if (recruiters.length !== uniqueIds.length) throw ApiError.badRequest('One or more assigned recruiters were not found');
+  const inactive = recruiters.find((r) => !r.isActive);
+  if (inactive) throw ApiError.badRequest('Cannot assign profile to an inactive recruiter');
+}
+
+async function syncProfileAssignments(profileId: string, recruiterIds: string[]) {
+  const uniqueIds = [...new Set(recruiterIds)];
+  const primaryRecruiterId = uniqueIds[0] ?? null;
+  await repo.replaceRecruiterAssignments(profileId, uniqueIds);
+  await repo.update(profileId, { assignedRecruiterId: primaryRecruiterId } as any);
+}
+
 export async function createProfile(input: CreateProfileInput, actor: Requester, meta?: Meta) {
-  await assertRecruiterExists(input.assignedRecruiterId);
+  const recruiterIds = input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
+  await assertRecruitersExist(recruiterIds);
 
   const profile = await repo.create({
     candidateName: input.candidateName,
@@ -31,8 +55,14 @@ export async function createProfile(input: CreateProfileInput, actor: Requester,
     phone: input.phone,
     technology: input.technology,
     notes: input.notes ?? null,
-    assignedRecruiterId: input.assignedRecruiterId ?? null,
+    assignedRecruiterId: recruiterIds[0] ?? null,
   });
+
+  if (recruiterIds.length > 0) {
+    await syncProfileAssignments(profile.id, recruiterIds);
+  }
+
+  const refreshed = await repo.findActiveById(profile.id);
 
   await writeAuditLog({
     userId: actor.id,
@@ -43,25 +73,34 @@ export async function createProfile(input: CreateProfileInput, actor: Requester,
     ...meta,
   });
 
-  return profile;
+  return refreshed ?? profile;
 }
 
 export async function updateProfile(id: string, input: UpdateProfileInput, actor: Requester, meta?: Meta) {
   const existing = await repo.findActiveById(id);
   if (!existing) throw ApiError.notFound('Client profile not found');
 
-  if (actor.role === Role.RECRUITER && existing.assignedRecruiterId !== actor.id) {
+  const assignedRecruiterIds = [
+    ...(existing.assignedRecruiterId ? [existing.assignedRecruiterId] : []),
+    ...(existing.assignedRecruiterAssignments?.map((row) => row.recruiterId) ?? []),
+  ];
+
+  if (actor.role === Role.RECRUITER && !assignedRecruiterIds.includes(actor.id)) {
     throw ApiError.forbidden('You can only edit profiles assigned to you');
   }
 
-  if (input.assignedRecruiterId !== undefined) {
+  if (input.assignedRecruiterIds !== undefined || input.assignedRecruiterId !== undefined) {
     if (actor.role === Role.RECRUITER) {
       throw ApiError.forbidden('Only admins can reassign profiles');
     }
-    await assertRecruiterExists(input.assignedRecruiterId);
+    const recruiterIds = input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
+    await assertRecruitersExist(recruiterIds);
+    await syncProfileAssignments(id, recruiterIds);
   }
 
-  const updated = await repo.update(id, input as any);
+  const { assignedRecruiterId, assignedRecruiterIds, ...rest } = input as any;
+  await repo.update(id, rest);
+  const refreshed = await repo.findActiveById(id);
 
   await writeAuditLog({
     userId: actor.id,
@@ -72,7 +111,7 @@ export async function updateProfile(id: string, input: UpdateProfileInput, actor
     ...meta,
   });
 
-  return updated;
+  return refreshed ?? existing;
 }
 
 export async function deleteProfile(id: string, actor: Requester, meta?: Meta) {
@@ -86,20 +125,22 @@ export async function deleteProfile(id: string, actor: Requester, meta?: Meta) {
   return { message: 'Profile deleted successfully' };
 }
 
-export async function assignRecruiter(id: string, assignedRecruiterId: string | null, actor: Requester, meta?: Meta) {
+export async function assignRecruiter(id: string, assignedRecruiterIds: string[], actor: Requester, meta?: Meta) {
   const existing = await repo.findActiveById(id);
   if (!existing) throw ApiError.notFound('Client profile not found');
 
-  await assertRecruiterExists(assignedRecruiterId);
+  await assertRecruitersExist(assignedRecruiterIds);
+  await syncProfileAssignments(id, assignedRecruiterIds);
 
-  const updated = await repo.update(id, { assignedRecruiterId });
+  const updated = await repo.findActiveById(id);
+  if (!updated) throw ApiError.notFound('Client profile not found');
 
   await writeAuditLog({
     userId: actor.id,
     action: 'PROFILE_REASSIGNED',
     entity: 'ClientProfile',
     entityId: id,
-    metadata: { assignedRecruiterId },
+    metadata: { assignedRecruiterIds },
     ...meta,
   });
 
@@ -110,7 +151,11 @@ export async function getProfile(id: string, actor: Requester) {
   const profile = await repo.findActiveById(id);
   if (!profile) throw ApiError.notFound('Client profile not found');
 
-  if (actor.role === Role.RECRUITER && profile.assignedRecruiterId !== actor.id) {
+  const assignedRecruiterIds = [
+    ...(profile.assignedRecruiterId ? [profile.assignedRecruiterId] : []),
+    ...(profile.assignedRecruiterAssignments?.map((row) => row.recruiterId) ?? []),
+  ];
+  if (actor.role === Role.RECRUITER && !assignedRecruiterIds.includes(actor.id)) {
     throw ApiError.forbidden('You do not have access to this profile');
   }
 

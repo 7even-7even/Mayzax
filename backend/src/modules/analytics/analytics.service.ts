@@ -12,6 +12,10 @@ const ANALYTICS_JOB_PORTALS: JobPortal[] = [
   JobPortal.SIMPLYHIRED,
   JobPortal.WELLFOUND,
   JobPortal.HANDSHAKE,
+  JobPortal.SPEEDY_APPLY,
+  JobPortal.THE_MUSE,
+  JobPortal.Y_COMBINATOR,
+  JobPortal.CAREER_SITE,
   JobPortal.OTHER,
 ];
 
@@ -45,7 +49,7 @@ export async function getDashboardOverview(query: DashboardQuery) {
       isActive: true,
       lastActiveAt: true,
       createdAt: true,
-      _count: { select: { assignedProfiles: true, applications: true } },
+      _count: { select: { applications: true } },
     },
   });
 
@@ -59,12 +63,26 @@ export async function getDashboardOverview(query: DashboardQuery) {
   });
   const shiftCountMap = new Map(currentShiftCounts.map((r) => [r.recruiterId, r._count._all]));
 
-  let rows = recruiters.map((r) => ({
+  const assignedProfileCounts = await Promise.all(
+    recruiters.map((recruiter) =>
+      prisma.clientProfile.count({
+        where: {
+          deletedAt: null,
+          OR: [
+            { assignedRecruiterId: recruiter.id },
+            { assignedRecruiterAssignments: { some: { recruiterId: recruiter.id } } },
+          ],
+        },
+      }),
+    ),
+  );
+
+  let rows = recruiters.map((r, index) => ({
     id: r.id,
     name: r.name,
     email: r.email,
     isActive: r.isActive,
-    assignedProfiles: r._count.assignedProfiles,
+    assignedProfiles: assignedProfileCounts[index],
     totalApplications: r._count.applications,
     currentShiftApplications: shiftCountMap.get(r.id) ?? 0,
     lastActiveAt: r.lastActiveAt,
@@ -100,7 +118,13 @@ export async function getRecruiterBreakdown(recruiterId: string) {
 
   const [assignedProfiles, totalProfileWise, currentShiftProfileWise, recentApplications] = await Promise.all([
     prisma.clientProfile.findMany({
-      where: { assignedRecruiterId: recruiterId, deletedAt: null },
+      where: {
+        deletedAt: null,
+        OR: [
+          { assignedRecruiterId: recruiterId },
+          { assignedRecruiterAssignments: { some: { recruiterId } } },
+        ],
+      },
       select: { id: true, candidateName: true, technology: true },
       orderBy: { candidateName: 'asc' },
     }),

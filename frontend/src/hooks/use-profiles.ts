@@ -41,6 +41,7 @@ export interface CreateProfileInput {
   technology: string;
   notes?: string;
   assignedRecruiterId?: string | null;
+  assignedRecruiterIds?: string[];
 }
 
 export function useCreateProfile() {
@@ -68,8 +69,8 @@ export function useUpdateProfile() {
 export function useAssignRecruiter() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, assignedRecruiterId }: { id: string; assignedRecruiterId: string | null }) => {
-      const { data } = await apiClient.patch<ApiSuccess<ClientProfile>>(`/profiles/${id}/assign`, { assignedRecruiterId });
+    mutationFn: async ({ id, assignedRecruiterIds }: { id: string; assignedRecruiterIds: string[] }) => {
+      const { data } = await apiClient.patch<ApiSuccess<ClientProfile>>(`/profiles/${id}/assign`, { assignedRecruiterIds });
       return data.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['profiles'] }),

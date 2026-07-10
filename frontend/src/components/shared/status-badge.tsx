@@ -39,6 +39,11 @@ export const ALL_JOB_PORTALS = [
   'SIMPLYHIRED',
   'WELLFOUND',
   'HANDSHAKE',
+  'CAREERBUILDER',
+  'SPEEDY_APPLY',
+  'THE_MUSE',
+  'Y_COMBINATOR',
+  'CAREER_SITE',
   'OTHER',
 ] as const satisfies readonly JobPortal[];
 
@@ -54,6 +59,10 @@ const enumLabels: Partial<Record<string, string>> = {
   ZIPRECRUITER: 'ZipRecruiter',
   COMPANY_WEBSITE: 'Company Website',
   CAREERBUILDER: 'CareerBuilder',
+  SPEEDY_APPLY: 'Speedy Apply',
+  THE_MUSE: 'The Muse',
+  Y_COMBINATOR: 'Y Combinator',
+  CAREER_SITE: 'Career Site',
 };
 
 export function formatEnumLabel(value: string): string {

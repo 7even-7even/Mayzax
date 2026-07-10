@@ -208,7 +208,9 @@ export default function ProfilesPage() {
                       <p className="text-xs text-slate-400">
                         Assigned to{' '}
                         <span className="font-medium text-slate-600">
-                          {profile.assignedRecruiter?.name ?? 'Unassigned'}
+                          {profile.assignedRecruiterAssignments?.length
+                            ? profile.assignedRecruiterAssignments.map((assignment) => assignment.recruiter.name).join(', ')
+                            : profile.assignedRecruiter?.name ?? 'Unassigned'}
                         </span>
                       </p>
                     </div>

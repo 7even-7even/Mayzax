@@ -13,6 +13,8 @@ import * as recruiterController from './recruiter.controller';
 
 const router = Router();
 
+router.get('/me/stats', requireAuth, recruiterController.getMyRecruiterStats);
+
 router.use(requireAuth, requireRole(Role.ADMIN));
 
 router.get('/', validate({ query: listRecruitersQuerySchema }), recruiterController.listRecruiters);

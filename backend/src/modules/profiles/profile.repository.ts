@@ -5,7 +5,20 @@ import { ListProfilesQuery } from './profile.validation';
 export function findActiveById(id: string) {
   return prisma.clientProfile.findFirst({
     where: { id, deletedAt: null },
-    include: { assignedRecruiter: { select: { id: true, name: true, email: true } } },
+    include: {
+      assignedRecruiter: { select: { id: true, name: true, email: true } },
+      assignedRecruiterAssignments: {
+        include: { recruiter: { select: { id: true, name: true, email: true } } },
+      },
+    },
+  });
+}
+
+export function findRecruiterAssignments(profileId: string) {
+  return prisma.clientProfileAssignment.findMany({
+    where: { profileId },
+    include: { recruiter: { select: { id: true, name: true, email: true } } },
+    orderBy: { createdAt: 'asc' },
   });
 }
 
@@ -17,11 +30,33 @@ export function create(data: {
   notes?: string | null;
   assignedRecruiterId?: string | null;
 }) {
-  return prisma.clientProfile.create({ data });
+  return prisma.clientProfile.create({
+    data,
+    include: {
+      assignedRecruiter: { select: { id: true, name: true, email: true } },
+      assignedRecruiterAssignments: {
+        include: { recruiter: { select: { id: true, name: true, email: true } } },
+      },
+    },
+  });
 }
 
 export function update(id: string, data: Partial<Prisma.ClientProfileUncheckedUpdateInput>) {
   return prisma.clientProfile.update({ where: { id }, data });
+}
+
+export function replaceRecruiterAssignments(profileId: string, recruiterIds: string[]) {
+  if (recruiterIds.length === 0) {
+    return prisma.clientProfileAssignment.deleteMany({ where: { profileId } });
+  }
+
+  return prisma.$transaction([
+    prisma.clientProfileAssignment.deleteMany({ where: { profileId } }),
+    prisma.clientProfileAssignment.createMany({
+      data: recruiterIds.map((recruiterId) => ({ profileId, recruiterId })),
+      skipDuplicates: true,
+    }),
+  ]);
 }
 
 export function softDelete(id: string) {
@@ -36,29 +71,39 @@ export function buildWhereClause(
   query: ListProfilesQuery,
   requester: { id: string; role: Role },
 ): Prisma.ClientProfileWhereInput {
-  const where: Prisma.ClientProfileWhereInput = {
-    deletedAt: null,
-    ...(query.isActive !== undefined ? { isActive: query.isActive } : {}),
-    ...(query.technology ? { technology: { equals: query.technology, mode: 'insensitive' } } : {}),
-    ...(query.search
-      ? {
-          OR: [
-            { candidateName: { contains: query.search, mode: 'insensitive' } },
-            { email: { contains: query.search, mode: 'insensitive' } },
-            { phone: { contains: query.search, mode: 'insensitive' } },
-            { technology: { contains: query.search, mode: 'insensitive' } },
-          ],
-        }
-      : {}),
-  };
+  const conditions: Prisma.ClientProfileWhereInput[] = [{ deletedAt: null }];
 
-  if (requester.role === Role.RECRUITER) {
-    where.assignedRecruiterId = requester.id;
-  } else if (query.assignedRecruiterId) {
-    where.assignedRecruiterId = query.assignedRecruiterId;
+  if (query.isActive !== undefined) {
+    conditions.push({ isActive: query.isActive });
   }
 
-  return where;
+  if (query.technology) {
+    conditions.push({ technology: { equals: query.technology, mode: 'insensitive' } });
+  }
+
+  if (query.search) {
+    conditions.push({
+      OR: [
+        { candidateName: { contains: query.search, mode: 'insensitive' } },
+        { email: { contains: query.search, mode: 'insensitive' } },
+        { phone: { contains: query.search, mode: 'insensitive' } },
+        { technology: { contains: query.search, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  if (requester.role === Role.RECRUITER) {
+    conditions.push({
+      OR: [
+        { assignedRecruiterId: requester.id },
+        { assignedRecruiterAssignments: { some: { recruiterId: requester.id } } },
+      ],
+    });
+  } else if (query.assignedRecruiterId) {
+    conditions.push({ assignedRecruiterId: query.assignedRecruiterId });
+  }
+
+  return { AND: conditions };
 }
 
 export function list(query: ListProfilesQuery, requester: { id: string; role: Role }) {
@@ -71,7 +116,12 @@ export function list(query: ListProfilesQuery, requester: { id: string; role: Ro
       orderBy,
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
-      include: { assignedRecruiter: { select: { id: true, name: true, email: true } } },
+      include: {
+        assignedRecruiter: { select: { id: true, name: true, email: true } },
+        assignedRecruiterAssignments: {
+          include: { recruiter: { select: { id: true, name: true, email: true } } },
+        },
+      },
     }),
     prisma.clientProfile.count({ where }),
   ]);

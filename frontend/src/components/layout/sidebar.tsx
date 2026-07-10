@@ -64,7 +64,7 @@ export function Sidebar() {
       <div className="border-t border-slate-100 p-4">
         <div className="rounded-lg bg-mayzax-gradient p-3 text-white">
           <p className="text-xs font-semibold">Business Shift</p>
-          <p className="text-[11px] opacity-90">7:30 PM – 4:30 AM IST</p>
+          <p className="text-[11px] opacity-90">7:30 PM – 7:30 AM IST</p>
         </div>
       </div>
     </aside>

@@ -25,7 +25,8 @@ export const deleteProfile = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const assignRecruiter = asyncHandler(async (req: Request, res: Response) => {
-  const profile = await profileService.assignRecruiter(req.params.id, req.body.assignedRecruiterId, actor(req), meta(req));
+  const recruiterIds = req.body.assignedRecruiterIds ?? (req.body.assignedRecruiterId ? [req.body.assignedRecruiterId] : []);
+  const profile = await profileService.assignRecruiter(req.params.id, recruiterIds, actor(req), meta(req));
   res.status(200).json({ success: true, data: profile });
 });
 

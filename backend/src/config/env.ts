@@ -30,7 +30,7 @@ const envSchema = z.object({
 
   BUSINESS_SHIFT_START_HOUR: z.coerce.number().default(19),
   BUSINESS_SHIFT_START_MINUTE: z.coerce.number().default(30),
-  BUSINESS_SHIFT_END_HOUR: z.coerce.number().default(4),
+  BUSINESS_SHIFT_END_HOUR: z.coerce.number().default(7),
   BUSINESS_SHIFT_END_MINUTE: z.coerce.number().default(30),
   BUSINESS_TIMEZONE: z.string().default('Asia/Kolkata'),
 

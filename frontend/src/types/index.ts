@@ -42,6 +42,10 @@ export interface ClientProfile {
   notes: string | null;
   assignedRecruiterId: string | null;
   assignedRecruiter?: { id: string; name: string; email: string } | null;
+  assignedRecruiterAssignments?: Array<{
+    recruiterId: string;
+    recruiter: { id: string; name: string; email: string };
+  }>;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -73,6 +77,10 @@ export type JobPortal =
   | 'ZIPRECRUITER'
   | 'COMPANY_WEBSITE'
   | 'CAREERBUILDER'
+  | 'SPEEDY_APPLY'
+  | 'THE_MUSE'
+  | 'Y_COMBINATOR'
+  | 'CAREER_SITE'
   | 'OTHER';
 
 export interface JobApplication {

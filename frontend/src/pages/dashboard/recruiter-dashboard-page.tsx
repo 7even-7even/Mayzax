@@ -1,5 +1,6 @@
-import { BarChart3, Briefcase, ExternalLink } from 'lucide-react';
+import { BarChart3, Briefcase, ExternalLink, Users } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -10,15 +11,25 @@ import { useAuth } from '@/context/auth-context';
 import { formatEnumLabel } from '@/components/shared/status-badge';
 import { formatDateTime } from '@/lib/utils';
 import { JobPortalAnalyticsCard } from './job-portal-analytics-card';
+import { useMyRecruiterStats } from '@/hooks/use-recruiters';
 
 export default function RecruiterDashboardPage() {
   const { user } = useAuth();
+  const { data: recruiterStats, isLoading: isRecruiterStatsLoading } = useMyRecruiterStats();
   const { data, isLoading } = useJobPortalAnalytics({ scope: 'all' });
-  const { data: recentApplicationsData } = useApplications({ page: 1, pageSize: 5, sortBy: 'appliedAt', sortOrder: 'desc' });
+  const { data: recentApplicationsData } = useApplications({
+    page: 1,
+    pageSize: 5,
+    sortBy: 'appliedAt',
+    sortOrder: 'desc',
+    recruiterId: user?.id,
+  });
 
   const portals = data?.portals ?? [];
   const topPortal = portals.reduce((best, row) => (row.count > best.count ? row : best), portals[0] ?? { portal: 'LINKEDIN' as const, count: 0 });
   const recentApplications = recentApplicationsData?.data ?? [];
+  const profileWiseCounts = recruiterStats?.profileWiseCounts ?? [];
+  const totalApplications = recruiterStats?.totalApplications ?? 0;
 
   return (
     <div>
@@ -27,7 +38,7 @@ export default function RecruiterDashboardPage() {
         description={`Welcome${user?.name ? `, ${user.name}` : ''}. Track your job portal performance and latest application activity.`}
       />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -58,6 +69,22 @@ export default function RecruiterDashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="h-4 w-4 text-mayzax-blue" /> Assigned Profiles
+            </CardTitle>
+            <CardDescription>Profiles assigned to your recruiter account.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isRecruiterStatsLoading ? (
+              <Skeleton className="h-9 w-24" />
+            ) : (
+              <p className="text-3xl font-bold text-slate-900">{recruiterStats?.assignedProfilesCount ?? profileWiseCounts.length}</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="mb-6">
@@ -65,6 +92,48 @@ export default function RecruiterDashboardPage() {
           title="Job Portal Analytics"
           description="Toggle between all-time, current-shift, and custom date-range portal counts for your applications."
         />
+      </div>
+      <div className="mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile wise Applications</CardTitle>
+            <CardDescription>Applications grouped by the client profiles assigned to you.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isRecruiterStatsLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-14 w-full" />
+              </div>
+            ) : profileWiseCounts.length === 0 ? (
+              <EmptyState title="No assigned profiles" description="Profiles assigned to you will appear here with their application counts." />
+            ) : (
+              <div className="space-y-2">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Candidate</TableHead>
+                      <TableHead className="text-right">Applications</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {profileWiseCounts.map((row) => (
+                      <TableRow key={row.profileId}>
+                        <TableCell>
+                          <p className="text-sm font-medium text-slate-900">{row.candidateName}</p>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="default">{row.applicationCount} applications</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
