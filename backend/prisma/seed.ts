@@ -123,8 +123,8 @@ const JOB_PORTALS: readonly JobPortal[] = [
   JobPortal.SIMPLYHIRED,
   JobPortal.WELLFOUND,
   JobPortal.HANDSHAKE,
-  JobPortal.LEVER,
-  JobPortal.GREENHOUSE,
+  'LEVER' as JobPortal,
+  'GREENHOUSE' as JobPortal,
 ];
 
 const APPLICATION_STATUSES: readonly ApplicationStatus[] = [

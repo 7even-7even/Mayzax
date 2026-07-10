@@ -48,7 +48,7 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
 
   const normalizedJobLink = normalizeJobLink(input.jobLink);
   const detectedPortal = detectJobPortalFromUrl(input.jobLink);
-  const jobPortal = input.jobPortal === 'OTHER' && detectedPortal !== 'OTHER' ? detectedPortal : input.jobPortal;
+  const jobPortal = (input.jobPortal === 'OTHER' && detectedPortal !== 'OTHER' ? detectedPortal : input.jobPortal) as any;
   const appliedAt = input.appliedAt ?? new Date();
   const businessDate = getBusinessDate(appliedAt);
 

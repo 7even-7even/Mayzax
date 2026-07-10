@@ -3,23 +3,23 @@ import { prisma } from '@/lib/prisma';
 import { getBusinessDateString } from '@/utils/businessDate';
 import { DashboardQuery, DailyCountsQuery, JobPortalAnalyticsQuery } from './analytics.validation';
 
-const ANALYTICS_JOB_PORTALS: JobPortal[] = [
-  JobPortal.LINKEDIN,
-  JobPortal.INDEED,
-  JobPortal.GLASSDOOR,
-  JobPortal.JOBRIGHT,
-  JobPortal.SIMPLIFY,
-  JobPortal.SIMPLYHIRED,
-  JobPortal.WELLFOUND,
-  JobPortal.HANDSHAKE,
-  JobPortal.SPEEDY_APPLY,
-  JobPortal.THE_MUSE,
-  JobPortal.Y_COMBINATOR,
-  JobPortal.LEVER,
-  JobPortal.GREENHOUSE,
-  JobPortal.CAREER_SITE,
-  JobPortal.OTHER,
-];
+const ANALYTICS_JOB_PORTALS = [
+  'LINKEDIN',
+  'INDEED',
+  'GLASSDOOR',
+  'JOBRIGHT',
+  'SIMPLIFY',
+  'SIMPLYHIRED',
+  'WELLFOUND',
+  'HANDSHAKE',
+  'SPEEDY_APPLY',
+  'THE_MUSE',
+  'Y_COMBINATOR',
+  'LEVER',
+  'GREENHOUSE',
+  'CAREER_SITE',
+  'OTHER',
+] as JobPortal[];
 
 /**
  * Admin dashboard: per-recruiter rollups.

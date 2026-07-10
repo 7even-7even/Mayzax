@@ -20,8 +20,8 @@ export function detectJobPortalFromUrl(url: string): JobPortal {
   if (hostname.includes('simplyhired.com')) return JobPortal.SIMPLYHIRED;
   if (hostname.includes('wellfound.com') || hostname.includes('angel.co')) return JobPortal.WELLFOUND;
   if (hostname.includes('joinhandshake.com')) return JobPortal.HANDSHAKE;
-  if (hostname === 'jobs.lever.co' || hostname.endsWith('.lever.co')) return JobPortal.LEVER;
-  if (hostname.includes('greenhouse.io') || hostname.includes('greenhouse.com')) return JobPortal.GREENHOUSE;
+  if (hostname === 'jobs.lever.co' || hostname.endsWith('.lever.co')) return 'LEVER' as JobPortal;
+  if (hostname.includes('greenhouse.io') || hostname.includes('greenhouse.com')) return 'GREENHOUSE' as JobPortal;
   if (hostname.includes('careerbuilder.com')) return JobPortal.CAREERBUILDER;
   if (hostname.includes('ziprecruiter.com')) return JobPortal.ZIPRECRUITER;
   if (hostname.includes('naukri.com')) return JobPortal.NAUKRI;
