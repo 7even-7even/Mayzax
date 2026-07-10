@@ -50,6 +50,8 @@ Mayzax ATS follows **clean architecture** with a clear separation of concerns on
 
 The web app includes public `login`, `signup`, and `forgot password` flows for recruiters. New recruiter accounts are created from the signup page and are automatically signed in after registration. Authenticated users can manage their profile details, set a security question, and change their password from the Profile tab.
 
+Latest workflow updates include multi-recruiter profile assignment (1–5 recruiters per profile), current-shift reporting using the 7:30 PM–7:30 AM IST business window, automatic job portal detection from known job URLs, completion confirmation before saving application links, shared-profile application attribution, and business-friendly Excel exports.
+
 ## Project Structure
 
 ```
@@ -123,7 +125,7 @@ userAgent, ip, expiresAt, revokedAt, replacedByTokenHash, createdAt
 
 ```
 id, candidateName, email, phone, technology, notes,
-assignedRecruiterId (FK → User, nullable),
+assignedRecruiterId (legacy primary FK → User, nullable), assignedRecruiterAssignments (1–5 recruiters),
 isActive, deletedAt (soft delete), createdAt, updatedAt
 ```
 
@@ -147,7 +149,7 @@ ip, userAgent, createdAt
 
 ```
 
-Enums: `Role {ADMIN, RECRUITER}`, `ApplicationStatus {APPLIED, IN_REVIEW, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEWED, OFFERED, REJECTED, WITHDRAWN, ON_HOLD}`, `JobPortal {LINKEDIN, INDEED, GLASSDOOR, JOBRIGHT, SIMPLIFY, SIMPLYHIRED, WELLFOUND, HANDSHAKE, NAUKRI, DICE, MONSTER, ZIPRECRUITER, COMPANY_WEBSITE, CAREERBUILDER, OTHER}`.
+Enums: `Role {ADMIN, RECRUITER}`, `ApplicationStatus {APPLIED, IN_REVIEW, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEWED, OFFERED, REJECTED, WITHDRAWN, ON_HOLD}`, `JobPortal {LINKEDIN, INDEED, GLASSDOOR, JOBRIGHT, SIMPLIFY, SIMPLYHIRED, WELLFOUND, HANDSHAKE, LEVER, GREENHOUSE, NAUKRI, DICE, MONSTER, ZIPRECRUITER, COMPANY_WEBSITE, CAREERBUILDER, SPEEDY_APPLY, THE_MUSE, Y_COMBINATOR, CAREER_SITE, OTHER}`.
 
 ---
 
@@ -232,7 +234,7 @@ npm run start
 | `COOKIE_DOMAIN` | Cookie domain | `localhost` |
 | `COOKIE_SECURE` | `true` in production (HTTPS only) | `false` |
 | `BUSINESS_SHIFT_START_HOUR` / `_MINUTE` | Shift start (IST) | `19` / `30` |
-| `BUSINESS_SHIFT_END_HOUR` / `_MINUTE` | Shift end (IST) | `4` / `30` |
+| `BUSINESS_SHIFT_END_HOUR` / `_MINUTE` | Shift end (IST) | `7` / `30` |
 | `BUSINESS_TIMEZONE` | IANA timezone for shift math | `Asia/Kolkata` |
 | `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX` | Global rate limiting | `900000` / `300` |
 | `AUTH_RATE_LIMIT_MAX` | Stricter limit on `/auth/*` | `20` |

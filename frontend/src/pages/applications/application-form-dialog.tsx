@@ -23,12 +23,33 @@ import { extractErrorMessage } from '@/lib/api-client';
 import { ALL_JOB_PORTALS, formatEnumLabel } from '@/components/shared/status-badge';
 import { useAuth } from '@/context/auth-context';
 
+function detectJobPortal(url: string): (typeof ALL_JOB_PORTALS)[number] | null {
+  try {
+    const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+    if (host.includes('linkedin.com')) return 'LINKEDIN';
+    if (host.includes('indeed.com')) return 'INDEED';
+    if (host.includes('glassdoor.com')) return 'GLASSDOOR';
+    if (host.includes('jobright.ai')) return 'JOBRIGHT';
+    if (host.includes('simplify.jobs')) return 'SIMPLIFY';
+    if (host.includes('simplyhired.com')) return 'SIMPLYHIRED';
+    if (host.includes('wellfound.com') || host.includes('angel.co')) return 'WELLFOUND';
+    if (host.includes('joinhandshake.com')) return 'HANDSHAKE';
+    if (host === 'jobs.lever.co' || host.endsWith('.lever.co')) return 'LEVER';
+    if (host.includes('greenhouse.io') || host.includes('greenhouse.com')) return 'GREENHOUSE';
+    if (host.includes('careerbuilder.com')) return 'CAREERBUILDER';
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 const applicationSchema = z.object({
   profileId: z.string().uuid('Please select a profile'),
   jobLink: z.string().url('Enter a valid job posting URL'),
   companyName: z.string().trim().max(200, 'Company name must be 200 characters or less'),
   jobTitle: z.string().trim().max(200, 'Job title must be 200 characters or less'),
   jobPortal: z.enum(ALL_JOB_PORTALS),
+  applicationCompleted: z.boolean().refine(Boolean, 'Confirm the application was completed before saving the link'),
 });
 
 type ApplicationForm = z.infer<typeof applicationSchema>;
@@ -56,14 +77,15 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
       jobLink: '',
       companyName: '',
       jobTitle: '',
-      jobPortal: 'LINKEDIN',
+      jobPortal: 'OTHER',
+      applicationCompleted: false,
     },
   });
 
   const jobLink = form.watch('jobLink');
   const profileId = form.watch('profileId');
   const debouncedLink = useDebounce(jobLink, 500);
-  const [duplicateResult, setDuplicateResult] = useState<{ isDuplicate: boolean } | null>(null);
+  const [duplicateResult, setDuplicateResult] = useState<{ isDuplicate: boolean; appliedByRecruiter?: { name: string } | null } | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -72,7 +94,8 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
         jobLink: '',
         companyName: '',
         jobTitle: '',
-        jobPortal: 'LINKEDIN',
+        jobPortal: 'OTHER',
+        applicationCompleted: false,
       });
       setDuplicateResult(null);
     }
@@ -86,6 +109,10 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
       new URL(debouncedLink);
     } catch {
       return;
+    }
+    const detectedPortal = detectJobPortal(debouncedLink);
+    if (detectedPortal) {
+      form.setValue('jobPortal', detectedPortal, { shouldDirty: true, shouldValidate: true });
     }
     checkDuplicate.mutate(
       { profileId, jobLink: debouncedLink },
@@ -150,7 +177,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
             )}
             {duplicateResult?.isDuplicate && (
               <p className="flex items-center gap-1.5 rounded-md bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> This profile has already applied to this job.
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> This profile has already applied to this job{duplicateResult.appliedByRecruiter?.name ? ` by ${duplicateResult.appliedByRecruiter.name}` : ''}.
               </p>
             )}
             {duplicateResult && !duplicateResult.isDuplicate && (
@@ -190,6 +217,20 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
               </SelectContent>
             </Select>
           </div>
+
+          <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-sm text-amber-900">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 rounded border-amber-300 text-mayzax-blue focus:ring-mayzax-blue"
+              {...form.register('applicationCompleted')}
+            />
+            <span>
+              I confirm this application was successfully submitted. Save the job link only after the completed submission.
+              {form.formState.errors.applicationCompleted && (
+                <span className="mt-1 block text-xs text-red-600">{form.formState.errors.applicationCompleted.message}</span>
+              )}
+            </span>
+          </label>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

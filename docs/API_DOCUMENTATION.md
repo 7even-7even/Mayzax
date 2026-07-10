@@ -184,6 +184,7 @@ Request: `POST /applications` for a profile that already applied to the same job
     "message": "This profile has already applied to this job. Duplicate submissions for the same profile are not allowed.",
     "details": {
       "existingApplicationId": "4f1afa74-32a4-4118-b541-a787a9667b74",
+    "appliedByRecruiter": { "id": "recruiter-id", "name": "Recruiter B", "email": "recruiterb@example.com" },
       "candidateName": "Sara Khan"
     }
   }
@@ -245,7 +246,7 @@ APPLIED | IN_REVIEW | SHORTLISTED | INTERVIEW_SCHEDULED | INTERVIEWED | OFFERED 
 
 ### `JobPortal`
 ```
-LINKEDIN | INDEED | GLASSDOOR | JOBRIGHT | SIMPLIFY | SIMPLYHIRED | WELLFOUND | HANDSHAKE | NAUKRI | DICE | MONSTER | ZIPRECRUITER | COMPANY_WEBSITE | CAREERBUILDER | OTHER
+LINKEDIN | INDEED | GLASSDOOR | JOBRIGHT | SIMPLIFY | SIMPLYHIRED | WELLFOUND | HANDSHAKE | LEVER | GREENHOUSE | NAUKRI | DICE | MONSTER | ZIPRECRUITER | COMPANY_WEBSITE | CAREERBUILDER | SPEEDY_APPLY | THE_MUSE | Y_COMBINATOR | CAREER_SITE | OTHER
 ```
 
 ### Core entity shapes
@@ -748,6 +749,8 @@ Soft-deletes a recruiter (sets `deletedAt` + `isActive: false`). Their assigned 
 
 ### Client Profiles (`/api/v1/profiles`)
 
+Profiles can be assigned to 1–5 recruiters through `assignedRecruiterIds`. The legacy `assignedRecruiterId` remains as the primary/first assigned recruiter for backwards compatibility.
+
 Requires auth. `RECRUITER` accounts only ever see/act on profiles assigned to them; `ADMIN` sees all.
 
 #### `GET /profiles`
@@ -941,7 +944,8 @@ Pre-flight check — lets the UI warn the user *before* they submit. Does not cr
   "data": {
     "isDuplicate": true,
     "normalizedJobLink": "linkedin.com/jobs/view/126005",
-    "existingApplicationId": "4f1afa74-32a4-4118-b541-a787a9667b74"
+    "existingApplicationId": "4f1afa74-32a4-4118-b541-a787a9667b74",
+    "appliedByRecruiter": { "id": "recruiter-id", "name": "Recruiter B", "email": "recruiterb@example.com" }
   }
 }
 ```
@@ -966,7 +970,7 @@ Pre-flight check — lets the UI warn the user *before* they submit. Does not cr
 
 #### `POST /applications`
 
-Creates a job application. **This is the endpoint enforcing duplicate protection** — see [Duplicate Application Detection](#duplicate-application-detection) below.
+Creates a job application. Application links are saved only after the frontend confirmation that submission completed; the API rejects explicit `applicationCompleted: false` and common placeholder/test URLs. The API also auto-detects known portals from URLs when `jobPortal` is `OTHER`. **This is the endpoint enforcing duplicate protection** — see [Duplicate Application Detection](#duplicate-application-detection) below.
 
 **Body**
 | Field | Type | Rules |
@@ -1197,11 +1201,11 @@ Application counts grouped by **business date** (not calendar date) — powers t
 
 ## Business Date Logic
 
-Mayzax runs a night shift from **7:30 PM IST to 4:30 AM IST** (configurable via `BUSINESS_SHIFT_START_HOUR/MINUTE` and `BUSINESS_SHIFT_END_HOUR/MINUTE`). Because the shift spans midnight, every `JobApplication.businessDate` is computed — not just copied from the calendar date — so that "today" in reporting always means "this shift," even at 2 AM.
+Mayzax runs a night shift from **7:30 PM IST to 7:30 AM IST** (configurable via `BUSINESS_SHIFT_START_HOUR/MINUTE` and `BUSINESS_SHIFT_END_HOUR/MINUTE`). Because the shift spans midnight, every `JobApplication.businessDate` is computed — not just copied from the calendar date — so that "today" in reporting always means "this shift," even at 2 AM.
 
 Rule (`getBusinessDate()` in `src/utils/businessDate.ts`):
 - IST time ≥ 19:30 → business date = today's date
-- IST time ≤ 04:30 → business date = **yesterday's** date
+- IST time ≤ 07:30 → business date = **yesterday's** date
 - Otherwise (daytime) → business date = today's date
 
 | Timestamp (IST) | `businessDate` |
@@ -1209,7 +1213,7 @@ Rule (`getBusinessDate()` in `src/utils/businessDate.ts`):
 | 8:00 PM, Jul 3 | Jul 3 |
 | 1:00 AM, Jul 4 | Jul 3 |
 | 4:00 AM, Jul 4 | Jul 3 |
-| 4:30 AM, Jul 4 | Jul 3 |
+| 7:30 AM, Jul 4 | Jul 3 |
 | 4:31 AM, Jul 4 | Jul 4 |
 | 10:00 AM, Jul 4 | Jul 4 |
 

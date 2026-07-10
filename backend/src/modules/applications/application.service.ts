@@ -1,6 +1,7 @@
 import { Prisma, Role } from '@prisma/client';
 import { ApiError } from '@/utils/apiError';
 import { normalizeJobLink } from '@/utils/normalizeJobLink';
+import { detectJobPortalFromUrl } from '@/utils/detectJobPortal';
 import { getBusinessDate } from '@/utils/businessDate';
 import { writeAuditLog } from '@/modules/shared/audit.service';
 import { prisma } from '@/lib/prisma';
@@ -46,6 +47,8 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
   if (!profile) throw ApiError.notFound('Client profile not found');
 
   const normalizedJobLink = normalizeJobLink(input.jobLink);
+  const detectedPortal = detectJobPortalFromUrl(input.jobLink);
+  const jobPortal = input.jobPortal === 'OTHER' && detectedPortal !== 'OTHER' ? detectedPortal : input.jobPortal;
   const appliedAt = input.appliedAt ?? new Date();
   const businessDate = getBusinessDate(appliedAt);
 
@@ -54,7 +57,11 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
   if (existing) {
     throw ApiError.conflict(
       `This profile has already applied to this job. Duplicate submissions for the same profile are not allowed.`,
-      { existingApplicationId: existing.id, candidateName: profile.candidateName },
+      {
+        existingApplicationId: existing.id,
+        candidateName: profile.candidateName,
+        appliedByRecruiter: existing.recruiter ? { id: existing.recruiter.id, name: existing.recruiter.name, email: existing.recruiter.email } : null,
+      },
     );
   }
 
@@ -68,7 +75,7 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
       normalizedJobLink,
       companyName: input.companyName,
       jobTitle: input.jobTitle,
-      jobPortal: input.jobPortal,
+      jobPortal,
       status: input.status,
       appliedAt,
       businessDate,
@@ -120,8 +127,14 @@ export async function getApplication(id: string, actor: Requester) {
   const application = await repo.findById(id);
   if (!application) throw ApiError.notFound('Job application not found');
 
-  if (actor.role === Role.RECRUITER && application.recruiterId !== actor.id) {
-    throw ApiError.forbidden('You do not have access to this application');
+  if (actor.role === Role.RECRUITER) {
+    const assignedRecruiterIds = [
+      ...(application.profile.assignedRecruiterId ? [application.profile.assignedRecruiterId] : []),
+      ...(application.profile.assignedRecruiterAssignments?.map((row) => row.recruiterId) ?? []),
+    ];
+    if (application.recruiterId !== actor.id && !assignedRecruiterIds.includes(actor.id)) {
+      throw ApiError.forbidden('You do not have access to this application');
+    }
   }
 
   return application;
@@ -141,8 +154,31 @@ export async function listApplications(query: ListApplicationsQuery, actor: Requ
 }
 
 /** Pre-flight duplicate check endpoint, useful for instant UI feedback before submit. */
-export async function checkDuplicate(profileId: string, jobLink: string) {
+export async function checkDuplicate(profileId: string, jobLink: string, actor: Requester) {
+  const profile = await prisma.clientProfile.findFirst({
+    where: {
+      id: profileId,
+      deletedAt: null,
+      ...(actor.role === Role.RECRUITER
+        ? {
+            OR: [
+              { assignedRecruiterId: actor.id },
+              { assignedRecruiterAssignments: { some: { recruiterId: actor.id } } },
+            ],
+          }
+        : {}),
+    },
+  });
+  if (!profile) throw ApiError.notFound('Client profile not found');
+
   const normalizedJobLink = normalizeJobLink(jobLink);
   const existing = await repo.findByProfileAndNormalizedLink(profileId, normalizedJobLink);
-  return { isDuplicate: !!existing, normalizedJobLink, existingApplicationId: existing?.id ?? null };
+  return {
+    isDuplicate: !!existing,
+    normalizedJobLink,
+    existingApplicationId: existing?.id ?? null,
+    appliedByRecruiter: existing?.recruiter
+      ? { id: existing.recruiter.id, name: existing.recruiter.name, email: existing.recruiter.email }
+      : null,
+  };
 }

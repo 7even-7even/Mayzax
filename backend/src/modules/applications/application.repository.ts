@@ -5,6 +5,7 @@ import { ListApplicationsQuery } from './application.validation';
 export function findByProfileAndNormalizedLink(profileId: string, normalizedJobLink: string) {
   return prisma.jobApplication.findUnique({
     where: { unique_profile_joblink: { profileId, normalizedJobLink } },
+    include: { recruiter: { select: { id: true, name: true, email: true } } },
   });
 }
 
@@ -22,7 +23,15 @@ export function findById(id: string) {
   return prisma.jobApplication.findUnique({
     where: { id },
     include: {
-      profile: { select: { id: true, candidateName: true, technology: true, assignedRecruiterId: true } },
+      profile: {
+        select: {
+          id: true,
+          candidateName: true,
+          technology: true,
+          assignedRecruiterId: true,
+          assignedRecruiterAssignments: { select: { recruiterId: true } },
+        },
+      },
       recruiter: { select: { id: true, name: true, email: true } },
     },
   });
@@ -43,36 +52,52 @@ export function buildWhereClause(
   query: ListApplicationsQuery,
   requester: { id: string; role: Role },
 ): Prisma.JobApplicationWhereInput {
-  const where: Prisma.JobApplicationWhereInput = {
-    ...(query.profileId ? { profileId: query.profileId } : {}),
-    ...(query.status ? { status: query.status } : {}),
-    ...(query.jobPortal ? { jobPortal: query.jobPortal } : {}),
-    ...(query.search
-      ? {
-          OR: [
-            { companyName: { contains: query.search, mode: 'insensitive' } },
-            { jobTitle: { contains: query.search, mode: 'insensitive' } },
-            { jobLink: { contains: query.search, mode: 'insensitive' } },
-            { profile: { candidateName: { contains: query.search, mode: 'insensitive' } } },
-          ],
-        }
-      : {}),
-  };
+  const conditions: Prisma.JobApplicationWhereInput[] = [];
+
+  if (query.profileId) conditions.push({ profileId: query.profileId });
+  if (query.status) conditions.push({ status: query.status });
+  if (query.jobPortal) conditions.push({ jobPortal: query.jobPortal });
+
+  if (query.search) {
+    conditions.push({
+      OR: [
+        { companyName: { contains: query.search, mode: 'insensitive' } },
+        { jobTitle: { contains: query.search, mode: 'insensitive' } },
+        { jobLink: { contains: query.search, mode: 'insensitive' } },
+        { profile: { candidateName: { contains: query.search, mode: 'insensitive' } } },
+        { recruiter: { name: { contains: query.search, mode: 'insensitive' } } },
+      ],
+    });
+  }
 
   if (requester.role === Role.RECRUITER) {
-    where.recruiterId = requester.id;
+    conditions.push({
+      OR: [
+        { recruiterId: requester.id },
+        {
+          profile: {
+            OR: [
+              { assignedRecruiterId: requester.id },
+              { assignedRecruiterAssignments: { some: { recruiterId: requester.id } } },
+            ],
+          },
+        },
+      ],
+    });
   } else if (query.recruiterId) {
-    where.recruiterId = query.recruiterId;
+    conditions.push({ recruiterId: query.recruiterId });
   }
 
   if (query.businessDateFrom || query.businessDateTo) {
-    where.businessDate = {
-      ...(query.businessDateFrom ? { gte: new Date(`${query.businessDateFrom}T00:00:00.000Z`) } : {}),
-      ...(query.businessDateTo ? { lte: new Date(`${query.businessDateTo}T00:00:00.000Z`) } : {}),
-    };
+    conditions.push({
+      businessDate: {
+        ...(query.businessDateFrom ? { gte: new Date(`${query.businessDateFrom}T00:00:00.000Z`) } : {}),
+        ...(query.businessDateTo ? { lte: new Date(`${query.businessDateTo}T00:00:00.000Z`) } : {}),
+      },
+    });
   }
 
-  return where;
+  return conditions.length ? { AND: conditions } : {};
 }
 
 export function list(query: ListApplicationsQuery, requester: { id: string; role: Role }) {

@@ -47,7 +47,8 @@ function downloadApplicationsExcel(applications: JobApplication[], isAdmin: bool
     'Company Name',
     'Job Title',
     'Portal',
-    ...(isAdmin ? ['Recruiter', 'Recruiter Email'] : []),
+    'Applied By',
+    'Recruiter Email',
     'Status',
     'Business Date',
     'Applied At',
@@ -60,9 +61,10 @@ function downloadApplicationsExcel(applications: JobApplication[], isAdmin: bool
     app.companyName || 'Company not provided',
     app.jobTitle || 'Job title not provided',
     formatEnumLabel(app.jobPortal),
-    ...(isAdmin ? [app.recruiter?.name ?? '', app.recruiter?.email ?? ''] : []),
+    app.recruiter?.name ?? '',
+    app.recruiter?.email ?? '',
     formatEnumLabel(app.status),
-    app.businessDate.slice(0, 10),
+    formatBusinessDateLabel(app.businessDate.slice(0, 10)),
     formatDateTime(app.appliedAt),
     app.jobLink,
   ]);
@@ -275,7 +277,7 @@ export default function ApplicationsPage() {
                   <TableHead>Candidate</TableHead>
                   <TableHead>Company / Title</TableHead>
                   <TableHead>Portal</TableHead>
-                  {isAdmin && <TableHead>Recruiter</TableHead>}
+                  <TableHead>Applied By</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Business Date</TableHead>
                   <TableHead>Applied</TableHead>
@@ -294,7 +296,10 @@ export default function ApplicationsPage() {
                       <p className="text-xs text-slate-500">{app.jobTitle || 'Job title not provided'}</p>
                     </TableCell>
                     <TableCell className="text-xs text-slate-500">{formatEnumLabel(app.jobPortal)}</TableCell>
-                    {isAdmin && <TableCell className="text-sm text-slate-600">{app.recruiter?.name}</TableCell>}
+                    <TableCell>
+                      <p className="text-sm font-medium text-slate-700">{app.recruiter?.name ?? 'Unknown'}</p>
+                      <p className="text-xs text-slate-400">{app.recruiter?.email}</p>
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={app.status} />
                     </TableCell>

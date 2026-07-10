@@ -27,6 +27,8 @@ export const jobPortalEnum = z.enum([
   'ZIPRECRUITER',
   'COMPANY_WEBSITE',
   'CAREERBUILDER',
+  'LEVER',
+  'GREENHOUSE',
   'SPEEDY_APPLY',
   'THE_MUSE',
   'Y_COMBINATOR',
@@ -34,12 +36,30 @@ export const jobPortalEnum = z.enum([
   'OTHER',
 ]);
 
+function isPlaceholderJobUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    return (
+      ['example.com', 'example.org', 'example.net', 'localhost', '127.0.0.1'].includes(host) ||
+      /placeholder|dummy|unused|test-job|sample-job/i.test(url)
+    );
+  } catch {
+    return true;
+  }
+}
+
 export const createApplicationSchema = z.object({
   profileId: z.string().uuid('A valid profile is required'),
-  jobLink: z.string().url('A valid job link URL is required').max(2048),
+  jobLink: z
+    .string()
+    .url('A valid job link URL is required')
+    .max(2048)
+    .refine((url) => !isPlaceholderJobUrl(url), 'Please submit the real completed application link, not a placeholder/test link'),
   companyName: z.string().trim().max(200).default(''),
   jobTitle: z.string().trim().max(200).default(''),
   jobPortal: jobPortalEnum.default('OTHER'),
+  applicationCompleted: z.literal(true, { errorMap: () => ({ message: 'Confirm the application was completed before saving the link' }) }).default(true),
   status: applicationStatusEnum.default('APPLIED'),
   appliedAt: z.coerce.date().optional(),
 });

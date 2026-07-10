@@ -100,7 +100,12 @@ export function buildWhereClause(
       ],
     });
   } else if (query.assignedRecruiterId) {
-    conditions.push({ assignedRecruiterId: query.assignedRecruiterId });
+    conditions.push({
+      OR: [
+        { assignedRecruiterId: query.assignedRecruiterId },
+        { assignedRecruiterAssignments: { some: { recruiterId: query.assignedRecruiterId } } },
+      ],
+    });
   }
 
   return { AND: conditions };

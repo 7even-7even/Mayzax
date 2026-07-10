@@ -32,7 +32,7 @@ const profileSchema = z.object({
   technology: z.string().min(1, 'Technology is required'),
   notes: z.string().optional(),
   assignedRecruiterId: z.string().nullable().optional(),
-  assignedRecruiterIds: z.array(z.string().uuid()).max(5, 'You can assign up to 5 recruiters').optional(),
+  assignedRecruiterIds: z.array(z.string().uuid()).min(1, 'Assign at least 1 recruiter').max(5, 'You can assign up to 5 recruiters').optional(),
 });
 
 type ProfileForm = z.infer<typeof profileSchema>;

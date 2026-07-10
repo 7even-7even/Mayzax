@@ -77,6 +77,8 @@ export type JobPortal =
   | 'ZIPRECRUITER'
   | 'COMPANY_WEBSITE'
   | 'CAREERBUILDER'
+  | 'LEVER'
+  | 'GREENHOUSE'
   | 'SPEEDY_APPLY'
   | 'THE_MUSE'
   | 'Y_COMBINATOR'

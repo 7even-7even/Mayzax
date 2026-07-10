@@ -15,18 +15,10 @@ interface Meta {
   userAgent?: string;
 }
 
-async function assertRecruiterExists(recruiterId: string | null | undefined) {
-  if (!recruiterId) return;
-  const recruiter = await prisma.user.findFirst({ where: { id: recruiterId, deletedAt: null, role: Role.RECRUITER } });
-  if (!recruiter) throw ApiError.badRequest('Assigned recruiter not found');
-  if (!recruiter.isActive) throw ApiError.badRequest('Cannot assign profile to an inactive recruiter');
-}
-
 async function assertRecruitersExist(recruiterIds: string[]) {
   const uniqueIds = [...new Set(recruiterIds)];
+  if (uniqueIds.length === 0) throw ApiError.badRequest('Assign at least 1 recruiter');
   if (uniqueIds.length > 5) throw ApiError.badRequest('You can assign up to 5 recruiters');
-
-  if (uniqueIds.length === 0) return;
 
   const recruiters = await prisma.user.findMany({
     where: { id: { in: uniqueIds }, deletedAt: null, role: Role.RECRUITER },
@@ -46,7 +38,9 @@ async function syncProfileAssignments(profileId: string, recruiterIds: string[])
 }
 
 export async function createProfile(input: CreateProfileInput, actor: Requester, meta?: Meta) {
-  const recruiterIds = input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
+  const recruiterIds = actor.role === Role.RECRUITER
+    ? [actor.id]
+    : input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
   await assertRecruitersExist(recruiterIds);
 
   const profile = await repo.create({
@@ -98,7 +92,9 @@ export async function updateProfile(id: string, input: UpdateProfileInput, actor
     await syncProfileAssignments(id, recruiterIds);
   }
 
-  const { assignedRecruiterId, assignedRecruiterIds, ...rest } = input as any;
+  const rest = { ...(input as any) };
+  delete rest.assignedRecruiterId;
+  delete rest.assignedRecruiterIds;
   await repo.update(id, rest);
   const refreshed = await repo.findActiveById(id);
 

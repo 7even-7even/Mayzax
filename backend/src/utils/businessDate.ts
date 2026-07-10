@@ -3,7 +3,7 @@
  * ------------------------------------------------------------------
  * Mayzax operates a night shift (IST):
  *   Shift START: 7:30 PM IST
- *   Shift END:   4:30 AM IST (next calendar day)
+ *   Shift END:   7:30 AM IST (next calendar day)
  *
  * All analytics, reports, and duplicate-window logic must key off the
  * "business date" rather than the raw calendar date, because a shift
@@ -13,8 +13,8 @@
  *   8:00 PM, Jul 3   -> businessDate = Jul 3   (shift just started)
  *   1:00 AM, Jul 4   -> businessDate = Jul 3   (still in Jul 3's shift)
  *   4:00 AM, Jul 4   -> businessDate = Jul 3   (still in Jul 3's shift)
- *   4:30 AM, Jul 4   -> businessDate = Jul 3   (shift end boundary, inclusive)
- *   4:31 AM, Jul 4   -> businessDate = Jul 4   (outside shift -> own day)
+ *   7:30 AM, Jul 4   -> businessDate = Jul 3   (shift end boundary, inclusive)
+ *   7:31 AM, Jul 4   -> businessDate = Jul 4   (outside shift -> own day)
  *   10:00 AM, Jul 4  -> businessDate = Jul 4   (daytime, no active shift)
  *   7:30 PM, Jul 4   -> businessDate = Jul 4   (new shift starts)
  * ------------------------------------------------------------------
@@ -25,7 +25,7 @@ import { env } from '@/config/env';
 const IST_TIMEZONE = env.BUSINESS_TIMEZONE; // "Asia/Kolkata"
 const SHIFT_START_HOUR = env.BUSINESS_SHIFT_START_HOUR; // 19
 const SHIFT_START_MINUTE = env.BUSINESS_SHIFT_START_MINUTE; // 30
-const SHIFT_END_HOUR = env.BUSINESS_SHIFT_END_HOUR; // 4
+const SHIFT_END_HOUR = env.BUSINESS_SHIFT_END_HOUR; // 7
 const SHIFT_END_MINUTE = env.BUSINESS_SHIFT_END_MINUTE; // 30
 
 interface ISTParts {
@@ -89,15 +89,15 @@ function minutesOfDay(hour: number, minute: number): number {
 }
 
 const SHIFT_START_MINUTES = minutesOfDay(SHIFT_START_HOUR, SHIFT_START_MINUTE); // 1170 (19:30)
-const SHIFT_END_MINUTES = minutesOfDay(SHIFT_END_HOUR, SHIFT_END_MINUTE); // 270 (04:30)
+const SHIFT_END_MINUTES = minutesOfDay(SHIFT_END_HOUR, SHIFT_END_MINUTE); // 450 (07:30)
 
 /**
  * Computes the "business date" for a given timestamp per Mayzax's night-shift rules.
  *
  * Rule:
  *  - If time-of-day (IST) >= shift start (19:30) => business date = same IST calendar date.
- *  - Else if time-of-day (IST) <= shift end (04:30) => business date = previous IST calendar date.
- *  - Else (daytime, between 04:30 and 19:30, no active shift) => business date = same IST calendar date.
+ *  - Else if time-of-day (IST) <= shift end (07:30) => business date = previous IST calendar date.
+ *  - Else (daytime, between 07:30 and 19:30, no active shift) => business date = same IST calendar date.
  *
  * @param timestamp Date, ISO string, or epoch millis. Defaults to "now".
  * @returns A UTC-midnight Date representing the business date (safe for Postgres DATE columns).
@@ -135,7 +135,7 @@ export function getBusinessDateString(timestamp: Date | string | number = new Da
 
 /**
  * Returns true if the given timestamp falls within an active business shift window
- * (19:30 IST -> 04:30 IST next day).
+ * (19:30 IST -> 07:30 IST next day).
  */
 export function isWithinBusinessShift(timestamp: Date | string | number = new Date()): boolean {
   const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
@@ -156,7 +156,7 @@ export function getBusinessShiftBounds(businessDate: string | Date): { start: Da
   // Shift start: businessDate at 19:30 IST -> convert to UTC instant.
   const start = istWallClockToUtc(year, month, day, SHIFT_START_HOUR, SHIFT_START_MINUTE, 0);
 
-  // Shift end: businessDate + 1 day at 04:30:00 IST (inclusive), we use 04:30:59.999 to include the boundary minute.
+  // Shift end: businessDate + 1 day at 07:30:00 IST (inclusive), we use 07:30:59.999 to include the boundary minute.
   const next = addDays(year, month, day, 1);
   const end = istWallClockToUtc(next.year, next.month, next.day, SHIFT_END_HOUR, SHIFT_END_MINUTE, 59, 999);
 

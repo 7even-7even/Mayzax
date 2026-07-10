@@ -32,6 +32,7 @@ export interface CreateApplicationInput {
   companyName: string;
   jobTitle: string;
   jobPortal: JobPortal;
+  applicationCompleted?: boolean;
   status?: ApplicationStatus;
 }
 
@@ -65,7 +66,7 @@ export function useUpdateApplication() {
 export function useCheckDuplicate() {
   return useMutation({
     mutationFn: async ({ profileId, jobLink }: { profileId: string; jobLink: string }) => {
-      const { data } = await apiClient.get<ApiSuccess<{ isDuplicate: boolean; normalizedJobLink: string }>>(
+      const { data } = await apiClient.get<ApiSuccess<{ isDuplicate: boolean; normalizedJobLink: string; appliedByRecruiter?: { id: string; name: string; email: string } | null }>>(
         '/applications/check-duplicate',
         { params: { profileId, jobLink } },
       );

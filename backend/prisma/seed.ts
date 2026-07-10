@@ -123,6 +123,8 @@ const JOB_PORTALS: readonly JobPortal[] = [
   JobPortal.SIMPLYHIRED,
   JobPortal.WELLFOUND,
   JobPortal.HANDSHAKE,
+  JobPortal.LEVER,
+  JobPortal.GREENHOUSE,
 ];
 
 const APPLICATION_STATUSES: readonly ApplicationStatus[] = [
@@ -152,6 +154,12 @@ const PORTAL_URL_BUILDERS: Record<JobPortal, (jobId: string) => string> = {
   ZIPRECRUITER: (id) => `https://www.ziprecruiter.com/jobs/${id}`,
   COMPANY_WEBSITE: (id) => `https://careers.example-company.com/jobs/${id}`,
   CAREERBUILDER: (id) => `https://www.careerbuilder.com/job/${id}`,
+  LEVER: (id) => `https://jobs.lever.co/example/${id}`,
+  GREENHOUSE: (id) => `https://boards.greenhouse.io/example/jobs/${id}`,
+  SPEEDY_APPLY: (id) => `https://speedyapply.example.com/jobs/${id}`,
+  THE_MUSE: (id) => `https://www.themuse.com/jobs/example/${id}`,
+  Y_COMBINATOR: (id) => `https://www.ycombinator.com/companies/example/jobs/${id}`,
+  CAREER_SITE: (id) => `https://careers.example-company.com/jobs/${id}`,
   OTHER: (id) => `https://jobs.example.com/${id}`,
 };
 

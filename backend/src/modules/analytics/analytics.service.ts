@@ -15,6 +15,8 @@ const ANALYTICS_JOB_PORTALS: JobPortal[] = [
   JobPortal.SPEEDY_APPLY,
   JobPortal.THE_MUSE,
   JobPortal.Y_COMBINATOR,
+  JobPortal.LEVER,
+  JobPortal.GREENHOUSE,
   JobPortal.CAREER_SITE,
   JobPortal.OTHER,
 ];

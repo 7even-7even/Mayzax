@@ -37,6 +37,6 @@ const duplicateCheckSchema = z.object({
 
 export const checkDuplicate = asyncHandler(async (req: Request, res: Response) => {
   const { profileId, jobLink } = duplicateCheckSchema.parse(req.query);
-  const result = await applicationService.checkDuplicate(profileId, jobLink);
+  const result = await applicationService.checkDuplicate(profileId, jobLink, actor(req));
   res.status(200).json({ success: true, data: result });
 });

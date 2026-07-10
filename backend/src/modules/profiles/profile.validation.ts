@@ -11,7 +11,7 @@ export const createProfileSchema = z.object({
   technology: z.string().min(1, 'Technology is required').max(100),
   notes: z.string().max(5000).optional().nullable(),
   assignedRecruiterId: z.string().uuid().optional().nullable(),
-  assignedRecruiterIds: z.array(z.string().uuid()).max(5, 'You can assign up to 5 recruiters').optional(),
+  assignedRecruiterIds: z.array(z.string().uuid()).min(1, 'Assign at least 1 recruiter').max(5, 'You can assign up to 5 recruiters').optional(),
 });
 
 export const updateProfileSchema = createProfileSchema.partial();
@@ -35,7 +35,7 @@ export const idParamSchema = z.object({
 });
 
 export const assignRecruiterSchema = z.object({
-  assignedRecruiterIds: z.array(z.string().uuid()).max(5, 'You can assign up to 5 recruiters').optional(),
+  assignedRecruiterIds: z.array(z.string().uuid()).min(1, 'Assign at least 1 recruiter').max(5, 'You can assign up to 5 recruiters').optional(),
   assignedRecruiterId: z.string().uuid().optional(),
 });
 
