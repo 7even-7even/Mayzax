@@ -124,7 +124,7 @@ export default function RecruiterDashboardPage() {
                         <TableCell>
                           <p className="text-sm font-medium text-slate-900">{row.candidateName}</p>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right pr-[50px]">
                           <Badge variant={row.currentShiftApplications > 0 ? 'default' : 'muted'}>
                             {row.currentShiftApplications} applications
                           </Badge>
