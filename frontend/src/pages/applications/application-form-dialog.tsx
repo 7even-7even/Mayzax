@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+
 import {
   Dialog,
   DialogContent,
@@ -12,10 +13,19 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 import { useCreateApplication, useCheckDuplicate } from '@/hooks/use-applications';
 import { useProfiles } from '@/hooks/use-profiles';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -23,9 +33,11 @@ import { extractErrorMessage } from '@/lib/api-client';
 import { ALL_JOB_PORTALS, formatEnumLabel } from '@/components/shared/status-badge';
 import { useAuth } from '@/context/auth-context';
 
+
 function detectJobPortal(url: string): (typeof ALL_JOB_PORTALS)[number] | null {
   try {
     const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+
     if (host.includes('linkedin.com')) return 'LINKEDIN';
     if (host.includes('indeed.com')) return 'INDEED';
     if (host.includes('glassdoor.com')) return 'GLASSDOOR';
@@ -37,22 +49,36 @@ function detectJobPortal(url: string): (typeof ALL_JOB_PORTALS)[number] | null {
     if (host === 'jobs.lever.co' || host.endsWith('.lever.co')) return 'LEVER';
     if (host.includes('greenhouse.io') || host.includes('greenhouse.com')) return 'GREENHOUSE';
     if (host.includes('careerbuilder.com')) return 'CAREERBUILDER';
+
   } catch {
     return null;
   }
+
   return null;
 }
 
+
 const applicationSchema = z.object({
   profileId: z.string().uuid('Please select a profile'),
+
   jobLink: z.string().url('Enter a valid job posting URL'),
-  companyName: z.string().trim().max(200, 'Company name must be 200 characters or less'),
-  jobTitle: z.string().trim().max(200, 'Job title must be 200 characters or less'),
+
+  companyName: z
+    .string()
+    .trim()
+    .max(200, 'Company name must be 200 characters or less'),
+
+  jobTitle: z
+    .string()
+    .trim()
+    .max(200, 'Job title must be 200 characters or less'),
+
   jobPortal: z.enum(ALL_JOB_PORTALS),
-  applicationCompleted: z.boolean().refine(Boolean, 'Confirm the application was completed before saving the link'),
 });
 
+
 type ApplicationForm = z.infer<typeof applicationSchema>;
+
 
 interface Props {
   open: boolean;
@@ -60,189 +86,476 @@ interface Props {
   defaultProfileId?: string;
 }
 
-export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: Props) {
+
+export function ApplicationFormDialog({
+  open,
+  onOpenChange,
+  defaultProfileId,
+}: Props) {
+
   const { user } = useAuth();
+
   const createMutation = useCreateApplication();
   const checkDuplicate = useCheckDuplicate();
 
+
   const { data: profilesData } = useProfiles({
     pageSize: 100,
-    assignedRecruiterId: user?.role === 'RECRUITER' ? user.id : undefined,
+    assignedRecruiterId:
+      user?.role === 'RECRUITER'
+        ? user.id
+        : undefined,
   });
+
 
   const form = useForm<ApplicationForm>({
     resolver: zodResolver(applicationSchema),
+
     defaultValues: {
       profileId: defaultProfileId ?? '',
       jobLink: '',
       companyName: '',
       jobTitle: '',
       jobPortal: 'OTHER',
-      applicationCompleted: false,
     },
   });
 
+
   const jobLink = form.watch('jobLink');
   const profileId = form.watch('profileId');
+
   const debouncedLink = useDebounce(jobLink, 500);
-  const [duplicateResult, setDuplicateResult] = useState<{ isDuplicate: boolean; appliedByRecruiter?: { name: string } | null } | null>(null);
+
+
+  const [duplicateResult, setDuplicateResult] =
+    useState<{
+      isDuplicate: boolean;
+      appliedByRecruiter?: {
+        name: string;
+      } | null;
+    } | null>(null);
+
+
 
   useEffect(() => {
+
     if (open) {
+
       form.reset({
         profileId: defaultProfileId ?? '',
         jobLink: '',
         companyName: '',
         jobTitle: '',
         jobPortal: 'OTHER',
-        applicationCompleted: false,
       });
+
       setDuplicateResult(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [open, defaultProfileId]);
 
+
+
   useEffect(() => {
+
     setDuplicateResult(null);
-    if (!profileId || !debouncedLink) return;
+
+    if (!profileId || !debouncedLink)
+      return;
+
+
     try {
       new URL(debouncedLink);
-    } catch {
+    }
+    catch {
       return;
     }
+
+
+
     const detectedPortal = detectJobPortal(debouncedLink);
+
+
     if (detectedPortal) {
-      form.setValue('jobPortal', detectedPortal, { shouldDirty: true, shouldValidate: true });
+
+      form.setValue(
+        'jobPortal',
+        detectedPortal,
+        {
+          shouldDirty: true,
+          shouldValidate: true
+        }
+      );
+
     }
+
+
+
     checkDuplicate.mutate(
-      { profileId, jobLink: debouncedLink },
-      { onSuccess: (result) => setDuplicateResult(result) },
+      {
+        profileId,
+        jobLink: debouncedLink
+      },
+      {
+        onSuccess: (result) => {
+          setDuplicateResult(result);
+        }
+      }
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileId, debouncedLink]);
+
+
+  }, [
+    profileId,
+    debouncedLink
+  ]);
+
+
+
 
   const onSubmit = async (values: ApplicationForm) => {
+
     try {
+
       await createMutation.mutateAsync(values);
-      toast.success('Application submitted successfully');
+
+      toast.success(
+        'Application submitted successfully'
+      );
+
       onOpenChange(false);
-    } catch (err) {
-      toast.error(extractErrorMessage(err, 'This profile may have already applied to this job.'));
+
     }
+    catch (err) {
+
+      toast.error(
+        extractErrorMessage(
+          err,
+          'This profile may have already applied to this job.'
+        )
+      );
+
+    }
+
   };
 
+
+
   const profiles = profilesData?.data ?? [];
+
   const isSubmitting = createMutation.isPending;
 
+
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+    >
+
       <DialogContent className="max-w-lg">
+
+
         <DialogHeader>
-          <DialogTitle>Log Job Application</DialogTitle>
-          <DialogDescription>Select a profile and paste the job link. Company name and job title are optional.</DialogDescription>
+
+          <DialogTitle>
+            Log Job Application
+          </DialogTitle>
+
+
+          <DialogDescription>
+            Select a profile and paste the job link.
+            Company name and job title are optional.
+          </DialogDescription>
+
+
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+
+
+        <form
+          onSubmit={
+            form.handleSubmit(onSubmit)
+          }
+          className="space-y-4"
+        >
+
+
           <div className="space-y-1.5">
-            <Label>Candidate Profile</Label>
-            <Select value={form.watch('profileId')} onValueChange={(value) => form.setValue('profileId', value)}>
+
+            <Label>
+              Candidate Profile
+            </Label>
+
+
+            <Select
+              value={
+                form.watch('profileId')
+              }
+              onValueChange={
+                value =>
+                  form.setValue(
+                    'profileId',
+                    value
+                  )
+              }
+            >
+
               <SelectTrigger>
+
                 <SelectValue placeholder="Select a profile" />
+
               </SelectTrigger>
+
+
               <SelectContent>
-                {profiles.length === 0 && (
-                  <div className="px-2 py-1.5 text-sm text-slate-400">No assigned profiles available</div>
-                )}
-                {profiles.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.candidateName} · {p.technology}
-                  </SelectItem>
-                ))}
+
+
+                {
+                  profiles.map((p) => (
+
+                    <SelectItem
+                      key={p.id}
+                      value={p.id}
+                    >
+
+                      {p.candidateName}
+                      {' · '}
+                      {p.technology}
+
+                    </SelectItem>
+
+                  ))
+                }
+
+
               </SelectContent>
+
+
             </Select>
-            {form.formState.errors.profileId && (
-              <p className="text-xs text-red-600">{form.formState.errors.profileId.message}</p>
-            )}
+
+
           </div>
+
+
+
 
           <div className="space-y-1.5">
-            <Label htmlFor="jobLink">Job Posting Link</Label>
-            <Input id="jobLink" placeholder="https://www.linkedin.com/jobs/view/..." {...form.register('jobLink')} />
-            {form.formState.errors.jobLink && <p className="text-xs text-red-600">{form.formState.errors.jobLink.message}</p>}
 
-            {checkDuplicate.isPending && jobLink && profileId && (
-              <p className="flex items-center gap-1.5 text-xs text-slate-400">
-                <Loader2 className="h-3 w-3 animate-spin" /> Checking for duplicates...
-              </p>
-            )}
-            {duplicateResult?.isDuplicate && (
-              <p className="flex items-center gap-1.5 rounded-md bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> This profile has already applied to this job{duplicateResult.appliedByRecruiter?.name ? ` by ${duplicateResult.appliedByRecruiter.name}` : ''}.
-              </p>
-            )}
-            {duplicateResult && !duplicateResult.isDuplicate && (
-              <p className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700">
-                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> No duplicate found. You're good to go.
-              </p>
-            )}
+
+            <Label htmlFor="jobLink">
+              Job Posting Link
+            </Label>
+
+
+            <Input
+              id="jobLink"
+              placeholder="https://www.linkedin.com/jobs/view/..."
+              {...form.register('jobLink')}
+            />
+
+
+
+            {
+              duplicateResult?.isDuplicate && (
+
+                <p className="flex items-center gap-1.5 rounded-md bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700">
+
+                  <AlertTriangle className="h-3.5 w-3.5" />
+
+                  This profile has already applied to this job.
+
+                </p>
+
+              )
+            }
+
+
+
+            {
+              duplicateResult &&
+              !duplicateResult.isDuplicate && (
+
+                <p className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700">
+
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+
+                  No duplicate found.
+
+                </p>
+
+              )
+            }
+
+
+
           </div>
+
+
+
+
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="companyName">Company Name <span className="text-slate-400">(optional)</span></Label>
-              <Input id="companyName" placeholder="e.g. Acme Corp" {...form.register('companyName')} />
-              {form.formState.errors.companyName && (
-                <p className="text-xs text-red-600">{form.formState.errors.companyName.message}</p>
-              )}
+
+
+            <div>
+
+              <Label>
+                Company Name
+              </Label>
+
+
+              <Input
+                placeholder="e.g. Google"
+                {...form.register('companyName')}
+              />
+
+
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="jobTitle">Job Title <span className="text-slate-400">(optional)</span></Label>
-              <Input id="jobTitle" placeholder="e.g. Backend Engineer" {...form.register('jobTitle')} />
-              {form.formState.errors.jobTitle && <p className="text-xs text-red-600">{form.formState.errors.jobTitle.message}</p>}
+
+
+
+            <div>
+
+
+              <Label>
+                Job Title
+              </Label>
+
+
+              <Input
+                placeholder="e.g. Backend Engineer"
+                {...form.register('jobTitle')}
+              />
+
+
             </div>
+
+
           </div>
+
+
+
+
 
           <div className="space-y-1.5">
-            <Label>Job Portal</Label>
-            <Select value={form.watch('jobPortal')} onValueChange={(value) => form.setValue('jobPortal', value as any)}>
+
+
+            <Label>
+              Job Portal
+            </Label>
+
+
+
+            <Select
+
+              value={
+                form.watch('jobPortal')
+              }
+
+              onValueChange={
+                value =>
+                  form.setValue(
+                    'jobPortal',
+                    value as any
+                  )
+              }
+
+            >
+
+
               <SelectTrigger>
+
                 <SelectValue />
+
               </SelectTrigger>
+
+
+
               <SelectContent>
-                {ALL_JOB_PORTALS.map((portal) => (
-                  <SelectItem key={portal} value={portal}>
-                    {formatEnumLabel(portal)}
-                  </SelectItem>
-                ))}
+
+
+                {
+                  ALL_JOB_PORTALS.map(portal => (
+
+                    <SelectItem
+                      key={portal}
+                      value={portal}
+                    >
+
+                      {formatEnumLabel(portal)}
+
+                    </SelectItem>
+
+                  ))
+                }
+
+
               </SelectContent>
+
+
             </Select>
+
+
           </div>
 
-          <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2 text-sm text-amber-900">
-            <input
-              type="checkbox"
-              className="mt-1 h-4 w-4 rounded border-amber-300 text-mayzax-blue focus:ring-mayzax-blue"
-              {...form.register('applicationCompleted')}
-            />
-            <span>
-              I confirm this application was successfully submitted. Save the job link only after the completed submission.
-              {form.formState.errors.applicationCompleted && (
-                <span className="mt-1 block text-xs text-red-600">{form.formState.errors.applicationCompleted.message}</span>
-              )}
-            </span>
-          </label>
+
+
+
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+
               Cancel
+
             </Button>
-            <Button type="submit" variant="brand" disabled={isSubmitting || duplicateResult?.isDuplicate}>
-              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+
+
+
+            <Button
+
+              type="submit"
+
+              variant="brand"
+
+              disabled={
+                isSubmitting ||
+                duplicateResult?.isDuplicate
+              }
+
+            >
+
+              {
+                isSubmitting &&
+                <Loader2 className="h-4 w-4 animate-spin" />
+              }
+
+
               Submit Application
+
+
             </Button>
+
+
           </DialogFooter>
+
+
+
         </form>
+
+
+
       </DialogContent>
+
+
     </Dialog>
+
   );
+
 }
