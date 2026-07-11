@@ -7,6 +7,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  Cell,
 } from 'recharts';
 import { BarChart3 } from 'lucide-react';
 
@@ -26,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 import { useJobPortalAnalytics } from '@/hooks/use-analytics';
-import { formatEnumLabel } from '@/components/shared/status-badge';
+import { formatEnumLabel, ALL_JOB_PORTALS } from '@/components/shared/status-badge';
 
 
 type PortalScope = 'all' | 'currentShift' | 'custom';
@@ -37,6 +38,30 @@ interface JobPortalAnalyticsCardProps {
   description?: string;
 }
 
+
+// A small, deterministic color palette keyed by portal enum. Add or tweak colors as needed.
+const PORTAL_COLORS: Record<string, string> = {
+  LINKEDIN: '#0A66C2',
+  INDEED: '#2164A6',
+  GLASSDOOR: '#17A2B8',
+  JOBRIGHT: '#7C3AED',
+  SIMPLIFY: '#06B6D4',
+  SIMPLYHIRED: '#F59E0B',
+  WELLFOUND: '#10B981',
+  HANDSHAKE: '#F97316',
+  ZIPRECRUITER: '#8B5CF6',
+  COMPANY_WEBSITE: '#64748B',
+  CAREERBUILDER: '#0EA5A4',
+  LEVER: '#F43F5E',
+  GREENHOUSE: '#22C55E',
+  SPEEDY_APPLY: '#E11D48',
+  THE_MUSE: '#6366F1',
+  Y_COMBINATOR: '#F97316',
+  CAREER_SITE: '#94A3B8',
+  OTHER: '#94A3B8',
+};
+
+const DEFAULT_BAR_COLOR = '#2A5DA8';
 
 export function JobPortalAnalyticsCard({
   title = 'Job Portal Analytics',
@@ -64,9 +89,12 @@ export function JobPortalAnalyticsCard({
   const portals = data?.portals ?? [];
 
 
+  // Build chart data including a color for each portal (look up by the portal enum value)
   const chartData = portals.map((row) => ({
     portal: formatEnumLabel(row.portal),
     applications: row.count,
+    rawPortal: row.portal,
+    color: PORTAL_COLORS[row.portal] ?? DEFAULT_BAR_COLOR,
   }));
 
 
@@ -200,7 +228,6 @@ export function JobPortalAnalyticsCard({
 
 
 
-
         {!isLoading &&
           !isError &&
           !hasPortalData && (
@@ -213,8 +240,6 @@ export function JobPortalAnalyticsCard({
 
           )
         }
-
-
 
 
 
@@ -326,7 +351,7 @@ export function JobPortalAnalyticsCard({
 
                       dataKey="applications"
 
-                      fill="#2A5DA8"
+                      fill={DEFAULT_BAR_COLOR}
 
                       radius={[
                         6,
@@ -337,7 +362,11 @@ export function JobPortalAnalyticsCard({
 
                       barSize={18}
 
-                    />
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
 
 
                   </BarChart>
