@@ -83,6 +83,11 @@ export interface ApiErrorShape {
 export function extractErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data as ApiErrorShape | undefined;
+    const fieldErrors = (data?.error?.details as any)?.fieldErrors;
+    if (fieldErrors && typeof fieldErrors === 'object') {
+      const firstError = Object.values(fieldErrors).flat().find(Boolean);
+      if (typeof firstError === 'string') return firstError;
+    }
     if (data?.error?.message) return data.error.message;
   }
   return fallback;

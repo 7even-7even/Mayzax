@@ -49,6 +49,15 @@ function isPlaceholderJobUrl(url: string) {
   }
 }
 
+const applicationCompletedSchema = z.preprocess(
+  (value) => {
+    if (value === undefined || value === null || value === '') return true;
+    if (value === 'true' || value === 'on') return true;
+    return value;
+  },
+  z.literal(true, { errorMap: () => ({ message: 'Confirm the application was completed before saving the link' }) }),
+);
+
 export const createApplicationSchema = z.object({
   profileId: z.string().uuid('A valid profile is required'),
   jobLink: z
@@ -59,7 +68,7 @@ export const createApplicationSchema = z.object({
   companyName: z.string().trim().max(200).default(''),
   jobTitle: z.string().trim().max(200).default(''),
   jobPortal: jobPortalEnum.default('OTHER'),
-  applicationCompleted: z.literal(true, { errorMap: () => ({ message: 'Confirm the application was completed before saving the link' }) }).default(true),
+  applicationCompleted: applicationCompletedSchema,
   status: applicationStatusEnum.default('APPLIED'),
   appliedAt: z.coerce.date().optional(),
 });

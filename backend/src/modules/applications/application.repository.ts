@@ -9,9 +9,17 @@ export function findByProfileAndNormalizedLink(profileId: string, normalizedJobL
   });
 }
 
-export function create(data: Prisma.JobApplicationUncheckedCreateInput) {
+type JobApplicationCreateInputWithLoosePortal = Omit<Prisma.JobApplicationUncheckedCreateInput, 'jobPortal'> & {
+  jobPortal?: unknown;
+};
+
+type JobApplicationUpdateInputWithLoosePortal = Omit<Prisma.JobApplicationUpdateInput, 'jobPortal'> & {
+  jobPortal?: unknown;
+};
+
+export function create(data: JobApplicationCreateInputWithLoosePortal) {
   return prisma.jobApplication.create({
-    data,
+    data: data as Prisma.JobApplicationUncheckedCreateInput,
     include: {
       profile: { select: { id: true, candidateName: true, technology: true } },
       recruiter: { select: { id: true, name: true, email: true } },
@@ -37,10 +45,10 @@ export function findById(id: string) {
   });
 }
 
-export function update(id: string, data: Prisma.JobApplicationUpdateInput) {
+export function update(id: string, data: JobApplicationUpdateInputWithLoosePortal) {
   return prisma.jobApplication.update({
     where: { id },
-    data,
+    data: data as Prisma.JobApplicationUpdateInput,
     include: {
       profile: { select: { id: true, candidateName: true, technology: true } },
       recruiter: { select: { id: true, name: true, email: true } },
@@ -56,7 +64,7 @@ export function buildWhereClause(
 
   if (query.profileId) conditions.push({ profileId: query.profileId });
   if (query.status) conditions.push({ status: query.status });
-  if (query.jobPortal) conditions.push({ jobPortal: query.jobPortal });
+  if (query.jobPortal) conditions.push({ jobPortal: query.jobPortal as any });
 
   if (query.search) {
     conditions.push({

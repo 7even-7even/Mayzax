@@ -40,7 +40,10 @@ export function useCreateApplication() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateApplicationInput) => {
-      const { data } = await apiClient.post<ApiSuccess<JobApplication>>('/applications', input);
+      const { data } = await apiClient.post<ApiSuccess<JobApplication>>('/applications', {
+        ...input,
+        applicationCompleted: input.applicationCompleted ?? true,
+      });
       return data.data;
     },
     onSuccess: () => {

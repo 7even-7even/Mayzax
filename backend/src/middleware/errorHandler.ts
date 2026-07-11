@@ -32,8 +32,11 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
   } else if (err instanceof ZodError) {
     statusCode = 422;
     code = 'VALIDATION_ERROR';
-    message = 'Validation failed';
-    details = err.flatten();
+    const flattened = err.flatten();
+    const firstFieldError = Object.values(flattened.fieldErrors).flat().find(Boolean);
+    const firstFormError = flattened.formErrors.find(Boolean);
+    message = firstFieldError ?? firstFormError ?? 'Validation failed';
+    details = flattened;
   } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
     if (err.code === 'P2002') {
       statusCode = 409;

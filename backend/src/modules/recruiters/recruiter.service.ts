@@ -146,14 +146,28 @@ export async function getRecruiterStats(id: string) {
   ]);
 
   const profileIds = assignedProfiles.map((p) => p.id);
-  const applicationsByProfile = profileIds.length
-    ? await prisma.jobApplication.groupBy({
-        by: ['profileId'],
-        where: { recruiterId: id, profileId: { in: profileIds } },
-        _count: { _all: true },
-      })
-    : [];
+  const [applicationsByProfile, currentShiftApplicationsByProfile] = profileIds.length
+    ? await Promise.all([
+        prisma.jobApplication.groupBy({
+          by: ['profileId'],
+          where: { recruiterId: id, profileId: { in: profileIds } },
+          _count: { _all: true },
+        }),
+        prisma.jobApplication.groupBy({
+          by: ['profileId'],
+          where: {
+            recruiterId: id,
+            profileId: { in: profileIds },
+            businessDate: new Date(`${todayBusinessDate}T00:00:00.000Z`),
+          },
+          _count: { _all: true },
+        }),
+      ])
+    : [[], []];
   const applicationCountMap = new Map(applicationsByProfile.map((row) => [row.profileId, row._count._all]));
+  const currentShiftApplicationCountMap = new Map(
+    currentShiftApplicationsByProfile.map((row) => [row.profileId, row._count._all]),
+  );
 
   return {
     recruiter: sanitizeUser(user),
@@ -166,6 +180,9 @@ export async function getRecruiterStats(id: string) {
       candidateName: profile.candidateName,
       technology: profile.technology,
       applicationCount: applicationCountMap.get(profile.id) ?? 0,
+      totalApplications: applicationCountMap.get(profile.id) ?? 0,
+      currentShiftApplicationCount: currentShiftApplicationCountMap.get(profile.id) ?? 0,
+      currentShiftApplications: currentShiftApplicationCountMap.get(profile.id) ?? 0,
     })),
     lastActiveAt: user.lastActiveAt,
   };

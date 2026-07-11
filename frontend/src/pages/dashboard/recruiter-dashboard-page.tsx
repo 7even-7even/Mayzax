@@ -114,7 +114,8 @@ export default function RecruiterDashboardPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Candidate</TableHead>
-                      <TableHead className="text-right">Applications</TableHead>
+                      <TableHead className="text-right">Current Shift Applications</TableHead>
+                      <TableHead className="text-right">Total Applications</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -124,7 +125,12 @@ export default function RecruiterDashboardPage() {
                           <p className="text-sm font-medium text-slate-900">{row.candidateName}</p>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Badge variant="default">{row.applicationCount} applications</Badge>
+                          <Badge variant={row.currentShiftApplications > 0 ? 'default' : 'muted'}>
+                            {row.currentShiftApplications} applications
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Badge variant="secondary">{row.totalApplications} applications</Badge>
                         </TableCell>
                       </TableRow>
                     ))}
