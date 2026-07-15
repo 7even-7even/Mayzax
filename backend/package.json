@@ -11,6 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
+    "db:push": "prisma db push --accept-data-loss",
     "seed": "tsx prisma/seed.ts",
     "seed:demo": "cross-env SEED_DEMO_DATA=true tsx prisma/seed.ts",
     "lint": "eslint src --ext .ts",

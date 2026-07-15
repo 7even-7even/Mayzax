@@ -13,6 +13,7 @@
     "db:generate": "npm run prisma:generate --prefix backend",
     "db:migrate": "npm run prisma:migrate --prefix backend",
     "db:migrate:deploy": "npm run prisma:migrate:deploy --prefix backend",
+    "db:push": "npm run db:push --prefix backend",
     "db:studio": "npm run prisma:studio --prefix backend",
     "db:seed": "npm run seed --prefix backend",
     "db:seed:demo": "npm run seed:demo --prefix backend",
@@ -36,6 +37,7 @@
     "clean": "rimraf backend/dist backend/node_modules frontend/dist frontend/node_modules node_modules"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.7",
     "concurrently": "^9.0.1",
     "rimraf": "^6.0.1"
   },
@@ -44,6 +46,10 @@
     "npm": ">=9.0.0"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
+    "prisma": "^6.19.3",
     "typescript": "^6.0.3"
   }
 }

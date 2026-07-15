@@ -19,6 +19,8 @@ import { formatDateTime } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { ApiSuccess, ApplicationStatus, JobApplication } from '@/types';
 import { toast } from 'sonner';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 const ALL = '__all__';
 
@@ -27,20 +29,16 @@ function formatBusinessDateLabel(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
-function escapeHtml(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+async function downloadApplicationsExcel(applications: JobApplication[], isAdmin: boolean) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Mayzax ATS';
+  workbook.created = new Date();
 
-function makeExcelCell(value: unknown): string {
-  return `<td style="mso-number-format:'\\@';">${escapeHtml(value)}</td>`;
-}
+  const worksheet = workbook.addWorksheet('Applications');
 
-function downloadApplicationsExcel(applications: JobApplication[], isAdmin: boolean) {
+  // Freeze the header row (first row)
+  worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+
   const headers = [
     'Candidate',
     'Technology',
@@ -55,45 +53,111 @@ function downloadApplicationsExcel(applications: JobApplication[], isAdmin: bool
     'Job Link',
   ];
 
-  const rows = applications.map((app) => [
-    app.profile?.candidateName ?? '',
-    app.profile?.technology ?? '',
-    app.companyName || 'Company not provided',
-    app.jobTitle || 'Job title not provided',
-    formatEnumLabel(app.jobPortal),
-    app.recruiter?.name ?? '',
-    app.recruiter?.email ?? '',
-    formatEnumLabel(app.status),
-    formatBusinessDateLabel(app.businessDate.slice(0, 10)),
-    formatDateTime(app.appliedAt),
-    app.jobLink,
-  ]);
+  // Add headers and style them professionally
+  const headerRow = worksheet.addRow(headers);
+  headerRow.height = 28;
+  headerRow.eachCell((cell) => {
+    cell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF2A5DA8' }, // Mayzax Blue (#2A5DA8)
+    };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF1A3966' } },
+      left: { style: 'thin', color: { argb: 'FF1A3966' } },
+      bottom: { style: 'medium', color: { argb: 'FF1A3966' } },
+      right: { style: 'thin', color: { argb: 'FF1A3966' } },
+    };
+  });
 
-  const html = `
-    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
-      <head>
-        <meta charset="UTF-8" />
-        <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Applications</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
-      </head>
-      <body>
-        <table border="1">
-          <thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join('')}</tr></thead>
-          <tbody>${rows.map((row) => `<tr>${row.map(makeExcelCell).join('')}</tr>`).join('')}</tbody>
-        </table>
-      </body>
-    </html>
-  `;
+  // Populate data rows
+  applications.forEach((app) => {
+    worksheet.addRow([
+      app.profile?.candidateName ?? '',
+      app.profile?.technology ?? '',
+      app.companyName || 'Company not provided',
+      app.jobTitle || 'Job title not provided',
+      formatEnumLabel(app.jobPortal),
+      app.recruiter?.name ?? '',
+      app.recruiter?.email ?? '',
+      formatEnumLabel(app.status),
+      formatBusinessDateLabel(app.businessDate.slice(0, 10)),
+      formatDateTime(app.appliedAt),
+      app.jobLink,
+    ]);
+  });
 
-  const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  // Format data cells
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return; // skip header
+
+    row.height = 22;
+    const isEven = rowNumber % 2 === 0;
+
+    row.eachCell((cell, colNumber) => {
+      cell.font = { name: 'Segoe UI', size: 10 };
+      cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+      };
+
+      // Alternate row shading using Mayzax Blue 50
+      if (isEven) {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFEBF1FA' },
+        };
+      }
+
+      // Center Status, Business Date, and Applied At columns
+      if (colNumber === 8 || colNumber === 9 || colNumber === 10) {
+        cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      }
+
+      // Highlight Job Link column as hyperlink
+      if (colNumber === 11) {
+        const urlStr = cell.value;
+        if (typeof urlStr === 'string' && urlStr.startsWith('http')) {
+          cell.value = { text: urlStr, hyperlink: urlStr };
+          cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF2A5DA8' }, underline: true };
+        }
+      }
+    });
+  });
+
+  // Enable auto filter
+  worksheet.autoFilter = 'A1:K1';
+
+  // Compute dynamic column widths
+  worksheet.columns.forEach((col) => {
+    let maxLen = 12;
+    col.eachCell?.((cell) => {
+      let text = '';
+      if (cell.value) {
+        if (typeof cell.value === 'object' && 'text' in cell.value) {
+          text = String(cell.value.text);
+        } else {
+          text = String(cell.value);
+        }
+      }
+      if (text.length > maxLen) {
+        maxLen = text.length;
+      }
+    });
+    col.width = Math.min(maxLen + 4, 50); // limit max width to 50 to avoid overflow
+  });
+
+  // Write and trigger download
+  const buffer = await workbook.xlsx.writeBuffer();
   const today = new Date().toISOString().slice(0, 10);
-  link.href = url;
-  link.download = `mayzax-applications-${today}.xls`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, `mayzax-applications-${today}.xlsx`);
 }
 
 export default function ApplicationsPage() {
@@ -155,7 +219,7 @@ export default function ApplicationsPage() {
         return;
       }
 
-      downloadApplicationsExcel(allApplications, isAdmin);
+      await downloadApplicationsExcel(allApplications, isAdmin);
       toast.success(`Downloaded ${allApplications.length} application${allApplications.length === 1 ? '' : 's'}.`);
     } catch {
       toast.error('Failed to download applications. Please try again.');

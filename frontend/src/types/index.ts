@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'RECRUITER';
+export type Role = 'ADMIN' | 'TEAM_LEADER' | 'RECRUITER';
 
 export interface User {
   id: string;
@@ -171,6 +171,7 @@ export interface GlobalSummary {
   totalApplications: number;
   currentShiftApplications: number;
   currentBusinessDate: string;
+  shiftWindowText: string;
 }
 
 export interface DailyCount {

@@ -12,7 +12,7 @@ router.use(requireAuth);
 // Recruiters get their own scoped portal analytics; admins get all applications.
 router.get('/job-portals', validate({ query: jobPortalAnalyticsQuerySchema }), analyticsController.getJobPortalAnalytics);
 
-router.use(requireRole(Role.ADMIN));
+router.use(requireRole(Role.ADMIN, Role.TEAM_LEADER));
 
 router.get('/summary', analyticsController.getGlobalSummary);
 router.get('/dashboard', validate({ query: dashboardQuerySchema }), analyticsController.getDashboardOverview);

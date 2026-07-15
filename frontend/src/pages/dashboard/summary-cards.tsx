@@ -36,8 +36,8 @@ export function SummaryCards() {
           transition={{ delay: 0.5 }}
           className="mt-3 text-xs text-slate-400"
         >
-          Business date: <span className="font-medium text-slate-600">{data.currentBusinessDate}</span> · Shift window
-          7:30 PM – 7:30 AM IST
+          Business date: <span className="font-medium text-slate-600">{data.currentBusinessDate}</span> · Shift window{' '}
+          {data.shiftWindowText || '6:00 PM – 9:00 AM IST'}
         </motion.p>
       )}
     </div>

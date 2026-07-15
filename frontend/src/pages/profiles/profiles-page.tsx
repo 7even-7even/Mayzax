@@ -36,6 +36,7 @@ import { ClientProfile } from '@/types';
 export default function ProfilesPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
+  const isManager = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER';
 
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -71,9 +72,9 @@ export default function ProfilesPage() {
     <div>
       <Reveal>
         <PageHeader
-          title={isAdmin ? 'Client Profiles' : 'My Assigned Profiles'}
+          title={isManager ? 'Client Profiles' : 'My Assigned Profiles'}
           description={
-            isAdmin
+            isManager
               ? 'Manage candidate profiles and recruiter assignments.'
               : 'Candidate profiles currently assigned to you.'
           }
@@ -127,7 +128,7 @@ export default function ProfilesPage() {
           description={
             search
               ? 'Try adjusting your search terms.'
-              : isAdmin
+              : isManager
                 ? 'Create your first candidate profile to get started.'
                 : 'No profiles have been assigned to you yet.'
           }
@@ -180,7 +181,7 @@ export default function ProfilesPage() {
                           >
                             <Pencil className="h-4 w-4 mr-2" /> Edit
                           </DropdownMenuItem>
-                          {isAdmin && (
+                          {isManager && (
                             <DropdownMenuItem
                               onClick={() => setDeleteTarget(profile)}
                               className="text-red-600 focus:text-red-600"

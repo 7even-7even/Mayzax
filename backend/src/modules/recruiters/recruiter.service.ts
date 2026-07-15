@@ -7,7 +7,20 @@ import * as repo from './recruiter.repository';
 import { CreateRecruiterInput, UpdateRecruiterInput, ListRecruitersQuery } from './recruiter.validation';
 import { writeAuditLog } from '@/modules/shared/audit.service';
 
-export async function createRecruiter(input: CreateRecruiterInput, actorId: string, meta?: { ip?: string; userAgent?: string }) {
+interface Requester {
+  id: string;
+  role: Role;
+}
+
+export async function createRecruiter(
+  input: CreateRecruiterInput,
+  actor: Requester,
+  meta?: { ip?: string; userAgent?: string }
+) {
+  if (actor.role === Role.TEAM_LEADER && input.role !== Role.RECRUITER) {
+    throw ApiError.forbidden('Team Leaders can only create Recruiters');
+  }
+
   const existing = await repo.findByEmail(input.email);
   if (existing) throw ApiError.conflict('A user with this email already exists');
 
@@ -17,11 +30,11 @@ export async function createRecruiter(input: CreateRecruiterInput, actorId: stri
     email: input.email,
     passwordHash,
     role: (input.role as Role) ?? Role.RECRUITER,
-    createdById: actorId,
+    createdById: actor.role === Role.TEAM_LEADER ? actor.id : (input.createdById || null),
   });
 
   await writeAuditLog({
-    userId: actorId,
+    userId: actor.id,
     action: 'RECRUITER_CREATED',
     entity: 'User',
     entityId: user.id,
@@ -32,19 +45,35 @@ export async function createRecruiter(input: CreateRecruiterInput, actorId: stri
   return sanitizeUser(user);
 }
 
-export async function updateRecruiter(id: string, input: UpdateRecruiterInput, actorId: string, meta?: { ip?: string; userAgent?: string }) {
+export async function updateRecruiter(
+  id: string,
+  input: UpdateRecruiterInput,
+  actor: Requester,
+  meta?: { ip?: string; userAgent?: string }
+) {
   const user = await repo.findActiveById(id);
   if (!user) throw ApiError.notFound('Recruiter not found');
+
+  const updatePayload = { ...input };
+  if (actor.role === Role.TEAM_LEADER) {
+    if (user.createdById !== actor.id) {
+      throw ApiError.forbidden('You can only update recruiters managed by your team');
+    }
+    if (input.role && input.role !== Role.RECRUITER) {
+      throw ApiError.forbidden('Team Leaders can only assign the Recruiter role');
+    }
+    delete updatePayload.createdById;
+  }
 
   if (input.email && input.email.toLowerCase() !== user.email) {
     const existing = await repo.findByEmail(input.email);
     if (existing) throw ApiError.conflict('A user with this email already exists');
   }
 
-  const updated = await repo.updateUser(id, input);
+  const updated = await repo.updateUser(id, updatePayload);
 
   await writeAuditLog({
-    userId: actorId,
+    userId: actor.id,
     action: 'RECRUITER_UPDATED',
     entity: 'User',
     entityId: id,
@@ -55,17 +84,27 @@ export async function updateRecruiter(id: string, input: UpdateRecruiterInput, a
   return sanitizeUser(updated);
 }
 
-export async function setRecruiterActiveStatus(id: string, isActive: boolean, actorId: string, meta?: { ip?: string; userAgent?: string }) {
+export async function setRecruiterActiveStatus(
+  id: string,
+  isActive: boolean,
+  actor: Requester,
+  meta?: { ip?: string; userAgent?: string }
+) {
   const user = await repo.findActiveById(id);
   if (!user) throw ApiError.notFound('Recruiter not found');
-  if (user.id === actorId && !isActive) {
+
+  if (actor.role === Role.TEAM_LEADER && user.createdById !== actor.id) {
+    throw ApiError.forbidden('You can only toggle status of recruiters managed by your team');
+  }
+
+  if (user.id === actor.id && !isActive) {
     throw ApiError.badRequest('You cannot deactivate your own account');
   }
 
   const updated = await repo.setActiveStatus(id, isActive);
 
   await writeAuditLog({
-    userId: actorId,
+    userId: actor.id,
     action: isActive ? 'RECRUITER_ACTIVATED' : 'RECRUITER_DEACTIVATED',
     entity: 'User',
     entityId: id,
@@ -75,10 +114,19 @@ export async function setRecruiterActiveStatus(id: string, isActive: boolean, ac
   return sanitizeUser(updated);
 }
 
-export async function softDeleteRecruiter(id: string, actorId: string, meta?: { ip?: string; userAgent?: string }) {
+export async function softDeleteRecruiter(
+  id: string,
+  actor: Requester,
+  meta?: { ip?: string; userAgent?: string }
+) {
   const user = await repo.findActiveById(id);
   if (!user) throw ApiError.notFound('Recruiter not found');
-  if (user.id === actorId) throw ApiError.badRequest('You cannot delete your own account');
+
+  if (actor.role === Role.TEAM_LEADER && user.createdById !== actor.id) {
+    throw ApiError.forbidden('You can only delete recruiters managed by your team');
+  }
+
+  if (user.id === actor.id) throw ApiError.badRequest('You cannot delete your own account');
 
   await repo.softDeleteUser(id);
 
@@ -90,7 +138,7 @@ export async function softDeleteRecruiter(id: string, actorId: string, meta?: { 
   await prisma.clientProfileAssignment.deleteMany({ where: { recruiterId: id } });
 
   await writeAuditLog({
-    userId: actorId,
+    userId: actor.id,
     action: 'RECRUITER_DELETED',
     entity: 'User',
     entityId: id,
@@ -100,8 +148,13 @@ export async function softDeleteRecruiter(id: string, actorId: string, meta?: { 
   return { message: 'Recruiter deleted successfully' };
 }
 
-export async function listRecruiters(query: ListRecruitersQuery) {
-  const [users, total] = await repo.listRecruiters(query);
+export async function listRecruiters(query: ListRecruitersQuery, actor: Requester) {
+  const repoQuery = { ...query };
+  if (actor.role === Role.TEAM_LEADER) {
+    repoQuery.createdById = actor.id;
+  }
+
+  const [users, total] = await repo.listRecruiters(repoQuery as any);
   return {
     items: users,
     pagination: {
@@ -121,9 +174,13 @@ export async function listRecruiters(query: ListRecruitersQuery) {
  * - profile-wise counts
  * - last active timestamp
  */
-export async function getRecruiterStats(id: string) {
+export async function getRecruiterStats(id: string, actor: Requester) {
   const user = await repo.findActiveById(id);
   if (!user) throw ApiError.notFound('Recruiter not found');
+
+  if (actor.role === Role.TEAM_LEADER && user.createdById !== actor.id && user.id !== actor.id) {
+    throw ApiError.forbidden('You can only view stats for recruiters managed by your team');
+  }
 
   const todayBusinessDate = getBusinessDateString(new Date());
 

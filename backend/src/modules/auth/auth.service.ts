@@ -159,12 +159,16 @@ export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta)
   }
 
   if (stored.revokedAt) {
-    // Reuse of a revoked/rotated token => possible token theft. Revoke all sessions for safety.
-    await prisma.refreshToken.updateMany({
-      where: { userId: stored.userId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
-    throw ApiError.unauthorized('Refresh token has already been used. All sessions revoked for security.');
+    // Reuse of a revoked/rotated token => possible token theft.
+    // However, we allow a 10-second grace period to handle concurrent requests (e.g. React 18 StrictMode double-mounting).
+    const timeSinceRevocation = Date.now() - stored.revokedAt.getTime();
+    if (timeSinceRevocation > 10000) {
+      await prisma.refreshToken.updateMany({
+        where: { userId: stored.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throw ApiError.unauthorized('Refresh token has already been used. All sessions revoked for security.');
+    }
   }
 
   if (stored.expiresAt < new Date()) {

@@ -62,7 +62,7 @@ export default function App() {
           <Route element={<AppShell />}>
             <Route path="/" element={<HomeRedirect />} />
 
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'TEAM_LEADER']} />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/recruiters" element={<RecruitersPage />} />

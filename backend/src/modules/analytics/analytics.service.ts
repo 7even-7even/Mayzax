@@ -1,6 +1,7 @@
 import { Role, Prisma, JobPortal } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { getBusinessDateString } from '@/utils/businessDate';
+import { ApiError } from '@/utils/apiError';
+import { getBusinessDateString, getShiftWindowText } from '@/utils/businessDate';
 import { DashboardQuery, DailyCountsQuery, JobPortalAnalyticsQuery } from './analytics.validation';
 
 const ANALYTICS_JOB_PORTALS = [
@@ -30,11 +31,12 @@ const ANALYTICS_JOB_PORTALS = [
  * - Last active time
  * Supports search, sorting, filtering, pagination.
  */
-export async function getDashboardOverview(query: DashboardQuery) {
+export async function getDashboardOverview(query: DashboardQuery, actor: { id: string; role: Role }) {
   const recruiters = await prisma.user.findMany({
     where: {
       role: Role.RECRUITER,
       deletedAt: null,
+      ...(actor.role === Role.TEAM_LEADER ? { createdById: actor.id } : {}),
       ...(query.search
         ? {
             OR: [
@@ -114,7 +116,16 @@ export async function getDashboardOverview(query: DashboardQuery) {
 }
 
 /** Expandable recruiter view: profile-wise application counts for a given recruiter. */
-export async function getRecruiterBreakdown(recruiterId: string) {
+export async function getRecruiterBreakdown(recruiterId: string, actor: { id: string; role: Role }) {
+  if (actor.role === Role.TEAM_LEADER) {
+    const recruiter = await prisma.user.findFirst({
+      where: { id: recruiterId, createdById: actor.id, deletedAt: null },
+    });
+    if (!recruiter) {
+      throw ApiError.forbidden('You can only access recruiter stats for your own team');
+    }
+  }
+
   const todayBusinessDate = getBusinessDateString(new Date());
   const businessDateFilter = new Date(`${todayBusinessDate}T00:00:00.000Z`);
 
@@ -170,13 +181,34 @@ export async function getRecruiterBreakdown(recruiterId: string) {
  * Daily counts grouped by business date - powers trend charts.
  * Uses raw SQL for efficient DB-side date grouping.
  */
-export async function getDailyCounts(query: DailyCountsQuery) {
+export async function getDailyCounts(query: DailyCountsQuery, actor: { id: string; role: Role }) {
   const from = query.from ? new Date(`${query.from}T00:00:00.000Z`) : new Date(Date.now() - 30 * 86400000);
   const to = query.to ? new Date(`${query.to}T00:00:00.000Z`) : new Date();
 
-  const recruiterFilter = query.recruiterId
+  let recruiterFilter = query.recruiterId
     ? Prisma.sql`AND "recruiterId" = ${query.recruiterId}`
     : Prisma.empty;
+
+  if (actor.role === Role.TEAM_LEADER) {
+    if (query.recruiterId) {
+      const recruiter = await prisma.user.findFirst({
+        where: { id: query.recruiterId, createdById: actor.id, deletedAt: null }
+      });
+      if (!recruiter) {
+        throw ApiError.forbidden('You can only access stats for your own team recruiters');
+      }
+    } else {
+      const teamRecruiters = await prisma.user.findMany({
+        where: { createdById: actor.id, deletedAt: null },
+        select: { id: true }
+      });
+      const teamRecruiterIds = teamRecruiters.map(r => r.id);
+      if (teamRecruiterIds.length === 0) {
+        return [];
+      }
+      recruiterFilter = Prisma.sql`AND "recruiterId" IN (${Prisma.join(teamRecruiterIds)})`;
+    }
+  }
 
   const rows = await prisma.$queryRaw<Array<{ businessDate: Date; count: bigint }>>(Prisma.sql`
     SELECT "businessDate", COUNT(*)::bigint as count
@@ -194,7 +226,18 @@ export async function getDailyCounts(query: DailyCountsQuery) {
 }
 
 export async function getJobPortalAnalytics(actor: { id: string; role: Role }, query: JobPortalAnalyticsQuery) {
-  const where: Prisma.JobApplicationWhereInput = actor.role === Role.RECRUITER ? { recruiterId: actor.id } : {};
+  let where: Prisma.JobApplicationWhereInput = {};
+  if (actor.role === Role.RECRUITER) {
+    where = { recruiterId: actor.id };
+  } else if (actor.role === Role.TEAM_LEADER) {
+    const teamRecruiters = await prisma.user.findMany({
+      where: { createdById: actor.id, deletedAt: null },
+      select: { id: true }
+    });
+    const teamRecruiterIds = teamRecruiters.map(r => r.id);
+    where = { recruiterId: { in: teamRecruiterIds } };
+  }
+
   const currentBusinessDate = getBusinessDateString(new Date());
 
   if (query.scope === 'currentShift') {
@@ -230,16 +273,50 @@ export async function getJobPortalAnalytics(actor: { id: string; role: Role }, q
   };
 }
 
-export async function getGlobalSummary() {
+export async function getGlobalSummary(actor: { id: string; role: Role }) {
   const todayBusinessDate = getBusinessDateString(new Date());
   const businessDateFilter = new Date(`${todayBusinessDate}T00:00:00.000Z`);
 
+  const isTeamLeader = actor.role === Role.TEAM_LEADER;
+
   const [totalRecruiters, activeRecruiters, totalProfiles, totalApplications, todayApplications] = await Promise.all([
-    prisma.user.count({ where: { role: Role.RECRUITER, deletedAt: null } }),
-    prisma.user.count({ where: { role: Role.RECRUITER, deletedAt: null, isActive: true } }),
-    prisma.clientProfile.count({ where: { deletedAt: null } }),
-    prisma.jobApplication.count(),
-    prisma.jobApplication.count({ where: { businessDate: businessDateFilter } }),
+    prisma.user.count({
+      where: {
+        role: Role.RECRUITER,
+        deletedAt: null,
+        ...(isTeamLeader ? { createdById: actor.id } : {}),
+      },
+    }),
+    prisma.user.count({
+      where: {
+        role: Role.RECRUITER,
+        deletedAt: null,
+        isActive: true,
+        ...(isTeamLeader ? { createdById: actor.id } : {}),
+      },
+    }),
+    prisma.clientProfile.count({
+      where: {
+        deletedAt: null,
+        ...(isTeamLeader
+          ? {
+              OR: [
+                { assignedRecruiter: { createdById: actor.id } },
+                { assignedRecruiterAssignments: { some: { recruiter: { createdById: actor.id } } } },
+              ],
+            }
+          : {}),
+      },
+    }),
+    prisma.jobApplication.count({
+      where: isTeamLeader ? { recruiter: { createdById: actor.id } } : {},
+    }),
+    prisma.jobApplication.count({
+      where: {
+        businessDate: businessDateFilter,
+        ...(isTeamLeader ? { recruiter: { createdById: actor.id } } : {}),
+      },
+    }),
   ]);
 
   return {
@@ -249,5 +326,8 @@ export async function getGlobalSummary() {
     totalApplications,
     currentShiftApplications: todayApplications,
     currentBusinessDate: todayBusinessDate,
+    shiftWindowText: getShiftWindowText(),
   };
 }
+
+

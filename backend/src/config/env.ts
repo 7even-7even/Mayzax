@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { z } from 'zod';
+import fs from 'fs';
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
@@ -28,10 +29,10 @@ const envSchema = z.object({
   // this also forces COOKIE_SECURE behavior on regardless of COOKIE_SECURE.
   CROSS_SITE_COOKIES: z.coerce.boolean().default(false),
 
-  BUSINESS_SHIFT_START_HOUR: z.coerce.number().default(19),
-  BUSINESS_SHIFT_START_MINUTE: z.coerce.number().default(30),
-  BUSINESS_SHIFT_END_HOUR: z.coerce.number().default(7),
-  BUSINESS_SHIFT_END_MINUTE: z.coerce.number().default(30),
+  BUSINESS_SHIFT_START_HOUR: z.coerce.number().default(18),
+  BUSINESS_SHIFT_START_MINUTE: z.coerce.number().default(0),
+  BUSINESS_SHIFT_END_HOUR: z.coerce.number().default(9),
+  BUSINESS_SHIFT_END_MINUTE: z.coerce.number().default(0),
   BUSINESS_TIMEZONE: z.string().default('Asia/Kolkata'),
 
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
@@ -50,7 +51,36 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = parsed.data;
+export const env = { ...parsed.data };
 
 export const isProduction = env.NODE_ENV === 'production';
 export const isDevelopment = env.NODE_ENV === 'development';
+
+export function reloadEnv() {
+  dotenv.config({ path: path.resolve(process.cwd(), '.env'), override: true });
+  const parsed = envSchema.safeParse(process.env);
+  if (parsed.success) {
+    Object.assign(env, parsed.data);
+    // eslint-disable-next-line no-console
+    console.log('🔄 Environment variables reloaded successfully from .env');
+  } else {
+    // eslint-disable-next-line no-console
+    console.error('❌ Failed to reload environment variables:', parsed.error.flatten().fieldErrors);
+  }
+}
+
+// Watch the .env file for changes in non-production environments
+if (!isProduction) {
+  const envPath = path.resolve(process.cwd(), '.env');
+  if (fs.existsSync(envPath)) {
+    let watchTimeout: NodeJS.Timeout | null = null;
+    fs.watch(envPath, (eventType) => {
+      if (eventType === 'change') {
+        if (watchTimeout) clearTimeout(watchTimeout);
+        watchTimeout = setTimeout(() => {
+          reloadEnv();
+        }, 100);
+      }
+    });
+  }
+}

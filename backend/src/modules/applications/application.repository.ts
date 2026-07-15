@@ -92,6 +92,20 @@ export function buildWhereClause(
         },
       ],
     });
+  } else if (requester.role === Role.TEAM_LEADER) {
+    conditions.push({
+      OR: [
+        { recruiter: { createdById: requester.id } },
+        {
+          profile: {
+            OR: [
+              { assignedRecruiter: { createdById: requester.id } },
+              { assignedRecruiterAssignments: { some: { recruiter: { createdById: requester.id } } } },
+            ],
+          },
+        },
+      ],
+    });
   } else if (query.recruiterId) {
     conditions.push({ recruiterId: query.recruiterId });
   }

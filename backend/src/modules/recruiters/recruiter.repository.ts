@@ -22,7 +22,7 @@ export function createUser(data: {
   });
 }
 
-export function updateUser(id: string, data: Partial<{ name: string; email: string; role: Role }>) {
+export function updateUser(id: string, data: Partial<{ name: string; email: string; role: Role; createdById?: string | null }>) {
   return prisma.user.update({
     where: { id },
     data: data.email ? { ...data, email: data.email.toLowerCase() } : data,
@@ -45,6 +45,7 @@ export function listRecruiters(query: ListRecruitersQuery) {
     deletedAt: null,
     ...(query.role ? { role: query.role } : {}),
     ...(query.isActive !== undefined ? { isActive: query.isActive } : {}),
+    ...(query.createdById ? { createdById: query.createdById } : {}),
     ...(query.search
       ? {
           OR: [

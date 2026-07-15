@@ -8,6 +8,7 @@ import {
   UserCircle,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
+import { useGlobalSummary } from '@/hooks/use-analytics';
 import { cn } from '@/lib/utils';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
 
@@ -29,7 +30,19 @@ const recruiterNav = [
 
 export function Sidebar() {
   const { user } = useAuth();
-  const nav = user?.role === 'ADMIN' ? adminNav : recruiterNav;
+  const { data: summary } = useGlobalSummary();
+  const rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? adminNav : recruiterNav;
+
+  const nav = rawNav.map((item) => {
+    if (user?.role === 'TEAM_LEADER') {
+      if (item.to === '/dashboard') return { ...item, label: 'TL Dashboard' };
+      if (item.to === '/recruiters') return { ...item, label: 'My Team' };
+    }
+    if (user?.role === 'ADMIN') {
+      if (item.to === '/recruiters') return { ...item, label: 'User Management' };
+    }
+    return item;
+  });
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
@@ -64,7 +77,7 @@ export function Sidebar() {
       <div className="border-t border-slate-100 p-4">
         <div className="rounded-lg bg-mayzax-gradient p-3 text-white">
           <p className="text-xs font-semibold">Business Shift</p>
-          <p className="text-[11px] opacity-90">7:30 PM – 7:30 AM IST</p>
+          <p className="text-[11px] opacity-90">{summary?.shiftWindowText || '6:00 PM – 9:00 AM IST'}</p>
         </div>
       </div>
     </aside>
