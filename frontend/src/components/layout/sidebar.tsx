@@ -15,8 +15,8 @@ import mayzaxLogo from '@/assets/mayzax-logo.png';
 const adminNav = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/recruiters', label: 'Recruiters', icon: Users },
-  { to: '/profiles', label: 'Client Profiles', icon: UserSquare2 },
+  { to: '/recruiters', label: 'Management', icon: Users },
+  { to: '/profiles', label: 'Clients', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
   { to: '/profile', label: 'Profile', icon: UserCircle },
 ];
