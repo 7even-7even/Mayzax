@@ -24,7 +24,7 @@ async function assertRecruitersExist(recruiterIds: string[], actor?: Requester) 
     where: {
       id: { in: uniqueIds },
       deletedAt: null,
-      role: Role.RECRUITER,
+      role: { in: [Role.RECRUITER, Role.TEAM_LEADER] },
       ...(actor?.role === Role.TEAM_LEADER ? { createdById: actor.id } : {}),
     },
     select: { id: true, isActive: true },
@@ -196,8 +196,19 @@ export async function getProfile(id: string, actor: Requester) {
   }
 
   if (actor.role === Role.TEAM_LEADER) {
-    const inTeam = await isProfileInTeam(id, actor.id);
-    if (!inTeam) {
+    const inTeamOrSelf = await prisma.clientProfile.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+        OR: [
+          { assignedRecruiterId: actor.id },
+          { assignedRecruiterAssignments: { some: { recruiterId: actor.id } } },
+          { assignedRecruiter: { createdById: actor.id } },
+          { assignedRecruiterAssignments: { some: { recruiter: { createdById: actor.id } } } },
+        ],
+      },
+    });
+    if (!inTeamOrSelf) {
       throw ApiError.forbidden('You do not have access to this profile');
     }
   }
@@ -206,7 +217,7 @@ export async function getProfile(id: string, actor: Requester) {
 }
 
 export async function listProfiles(query: ListProfilesQuery, actor: Requester) {
-  if (actor.role === Role.TEAM_LEADER && query.assignedRecruiterId) {
+  if (actor.role === Role.TEAM_LEADER && query.assignedRecruiterId && query.assignedRecruiterId !== actor.id) {
     const recruiter = await prisma.user.findFirst({
       where: { id: query.assignedRecruiterId, createdById: actor.id, deletedAt: null }
     });
