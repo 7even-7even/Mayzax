@@ -39,7 +39,9 @@ export function Sidebar() {
       if (item.to === '/recruiters') return { ...item, label: 'My Team' };
     }
     if (user?.role === 'ADMIN') {
-      if (item.to === '/recruiters') return { ...item, label: 'User Management' };
+      if (item.to === '/recruiters') return { ...item, label: 'Management' };
+      //if /profiles return Client
+      if (item.to === '/profiles') return {  ...item, label: 'Clients' };
     }
     return item;
   });

@@ -166,6 +166,7 @@ export default function ApplicationsPage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const dateFilter = searchParams.get('date'); // YYYY-MM-DD, from heatmap click
+  const profileIdFilter = searchParams.get('profileId');
 
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ApplicationStatus | typeof ALL>(ALL);
@@ -177,6 +178,7 @@ export default function ApplicationsPage() {
   const { data, isLoading, isError, refetch } = useApplications({
     search: debouncedSearch || undefined,
     status: status === ALL ? undefined : status,
+    profileId: profileIdFilter || undefined,
     // Single-day filter expressed as a from/to range on the same date.
     businessDateFrom: dateFilter || undefined,
     businessDateTo: dateFilter || undefined,
@@ -195,6 +197,7 @@ export default function ApplicationsPage() {
       const baseParams = {
         search: debouncedSearch || undefined,
         status: status === ALL ? undefined : status,
+        profileId: profileIdFilter || undefined,
         businessDateFrom: dateFilter || undefined,
         businessDateTo: dateFilter || undefined,
         sortBy: 'appliedAt',
@@ -266,6 +269,26 @@ export default function ApplicationsPage() {
             onClick={clearDateFilter}
             className="ml-1 flex items-center gap-1 rounded-full p-0.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-600"
             aria-label="Clear date filter"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {profileIdFilter && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-mayzax-blue/20 bg-mayzax-blue/5 px-3 py-2 text-sm text-slate-700">
+          <span>
+            Filtered by Candidate Profile: <span className="font-medium text-slate-900">{applications.find(app => app.profileId === profileIdFilter)?.profile?.candidateName || 'Loading...'}</span>
+          </span>
+          <button
+            onClick={() => {
+              const next = new URLSearchParams(searchParams);
+              next.delete('profileId');
+              setSearchParams(next);
+              setPage(1);
+            }}
+            className="ml-1 flex items-center gap-1 rounded-full p-0.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-600"
+            aria-label="Clear profile filter"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -383,7 +406,7 @@ export default function ApplicationsPage() {
         )}
       </div>
 
-      <ApplicationFormDialog open={formOpen} onOpenChange={setFormOpen} />
+      <ApplicationFormDialog open={formOpen} onOpenChange={setFormOpen} defaultProfileId={profileIdFilter || undefined} />
     </div>
   );
 }

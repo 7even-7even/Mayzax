@@ -112,16 +112,18 @@ export default function RecruitersPage() {
               : 'Create, manage, and monitor recruiter accounts across Mayzax ATS.'
           }
           actions={
-            <Button
-              variant="brand"
-              onClick={() => {
-                setEditingRecruiter(null);
-                setFormOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4" />{' '}
-              {user?.role === 'ADMIN' ? 'New User' : 'New Recruiter'}
-            </Button>
+            user?.role !== 'TEAM_LEADER' ? (
+              <Button
+                variant="brand"
+                onClick={() => {
+                  setEditingRecruiter(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4" />{' '}
+                {user?.role === 'ADMIN' ? 'New User' : 'New Recruiter'}
+              </Button>
+            ) : undefined
           }
         />
       </Reveal>
@@ -172,7 +174,7 @@ export default function RecruitersPage() {
             title="No recruiters found"
             description={search ? 'Try adjusting your search terms.' : 'Create your first recruiter account to get started.'}
             action={
-              !search && (
+              !search && user?.role !== 'TEAM_LEADER' && (
                 <Button variant="brand" size="sm" onClick={() => setFormOpen(true)}>
                   <Plus className="h-4 w-4" /> New Recruiter
                 </Button>
@@ -233,7 +235,7 @@ export default function RecruitersPage() {
                         <Switch
                           checked={recruiter.isActive}
                           onCheckedChange={(checked) => handleToggle(recruiter, checked)}
-                          disabled={toggleStatus.isPending}
+                          disabled={toggleStatus.isPending || user?.role === 'TEAM_LEADER'}
                         />
                         <span className="flex items-center gap-1.5 text-xs text-slate-500">
                           {recruiter.isActive && (
@@ -258,20 +260,24 @@ export default function RecruitersPage() {
                           <DropdownMenuItem onClick={() => setStatsRecruiterId(recruiter.id)}>
                             <BarChart3 className="h-4 w-4 mr-2" /> View Stats
                           </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditingRecruiter(recruiter);
-                              setFormOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4 mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDeleteTarget(recruiter)}
-                            className="text-red-600 focus:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" /> Delete
-                          </DropdownMenuItem>
+                          {user?.role !== 'TEAM_LEADER' && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setEditingRecruiter(recruiter);
+                                  setFormOpen(true);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4 mr-2" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setDeleteTarget(recruiter)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

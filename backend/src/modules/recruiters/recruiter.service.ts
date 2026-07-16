@@ -17,8 +17,8 @@ export async function createRecruiter(
   actor: Requester,
   meta?: { ip?: string; userAgent?: string }
 ) {
-  if (actor.role === Role.TEAM_LEADER && input.role !== Role.RECRUITER) {
-    throw ApiError.forbidden('Team Leaders can only create Recruiters');
+  if (actor.role !== Role.ADMIN) {
+    throw ApiError.forbidden('Only admins can create users');
   }
 
   const existing = await repo.findByEmail(input.email);
@@ -30,7 +30,7 @@ export async function createRecruiter(
     email: input.email,
     passwordHash,
     role: (input.role as Role) ?? Role.RECRUITER,
-    createdById: actor.role === Role.TEAM_LEADER ? actor.id : (input.createdById || null),
+    createdById: input.createdById || null,
   });
 
   await writeAuditLog({
@@ -55,14 +55,8 @@ export async function updateRecruiter(
   if (!user) throw ApiError.notFound('Recruiter not found');
 
   const updatePayload = { ...input };
-  if (actor.role === Role.TEAM_LEADER) {
-    if (user.createdById !== actor.id) {
-      throw ApiError.forbidden('You can only update recruiters managed by your team');
-    }
-    if (input.role && input.role !== Role.RECRUITER) {
-      throw ApiError.forbidden('Team Leaders can only assign the Recruiter role');
-    }
-    delete updatePayload.createdById;
+  if (actor.role !== Role.ADMIN) {
+    throw ApiError.forbidden('Only admins can update users');
   }
 
   if (input.email && input.email.toLowerCase() !== user.email) {
@@ -93,8 +87,8 @@ export async function setRecruiterActiveStatus(
   const user = await repo.findActiveById(id);
   if (!user) throw ApiError.notFound('Recruiter not found');
 
-  if (actor.role === Role.TEAM_LEADER && user.createdById !== actor.id) {
-    throw ApiError.forbidden('You can only toggle status of recruiters managed by your team');
+  if (actor.role !== Role.ADMIN) {
+    throw ApiError.forbidden('Only admins can change user status');
   }
 
   if (user.id === actor.id && !isActive) {
@@ -122,8 +116,8 @@ export async function softDeleteRecruiter(
   const user = await repo.findActiveById(id);
   if (!user) throw ApiError.notFound('Recruiter not found');
 
-  if (actor.role === Role.TEAM_LEADER && user.createdById !== actor.id) {
-    throw ApiError.forbidden('You can only delete recruiters managed by your team');
+  if (actor.role !== Role.ADMIN) {
+    throw ApiError.forbidden('Only admins can delete users');
   }
 
   if (user.id === actor.id) throw ApiError.badRequest('You cannot delete your own account');

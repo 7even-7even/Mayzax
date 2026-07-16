@@ -50,7 +50,7 @@ Mayzax ATS follows **clean architecture** with a clear separation of concerns on
 
 The web app includes public `login`, `signup`, and `forgot password` flows for recruiters. New recruiter accounts are created from the signup page and are automatically signed in after registration. Authenticated users can manage their profile details, set a security question, and change their password from the Profile tab.
 
-Latest workflow updates include multi-recruiter profile assignment (1–5 recruiters per profile), current-shift reporting using the 7:30 PM–7:30 AM IST business window, automatic job portal detection from known job URLs, completion confirmation before saving application links, shared-profile application attribution, and business-friendly Excel exports.
+Latest workflow updates include a Team Leader role with managed team boundaries, restricted recruiter/profile creation and modifications, double-click candidate-to-applications navigation, automatic pre-selected candidates when logging applications from profile-filtered lists, multi-recruiter profile assignment (1–5 recruiters per profile), current-shift reporting using the 7:30 PM–7:30 AM IST business window, automatic job portal detection from known job URLs, and professional ExcelJS workbook exports.
 
 ## Project Structure
 
@@ -108,7 +108,7 @@ Defined in [`backend/prisma/schema.prisma`](./backend/prisma/schema.prisma). Key
 ### `User`
 
 ```
-id, name, email (unique), phone, passwordHash, role (ADMIN|RECRUITER),
+id, name, email (unique), phone, passwordHash, role (ADMIN|TEAM_LEADER|RECRUITER),
 securityQuestion, securityAnswerHash (bcrypt),
 isActive, deletedAt (soft delete), lastActiveAt, createdById (self-relation),
 createdAt, updatedAt
@@ -149,7 +149,7 @@ ip, userAgent, createdAt
 
 ```
 
-Enums: `Role {ADMIN, RECRUITER}`, `ApplicationStatus {APPLIED, IN_REVIEW, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEWED, OFFERED, REJECTED, WITHDRAWN, ON_HOLD}`, `JobPortal {LINKEDIN, INDEED, GLASSDOOR, JOBRIGHT, SIMPLIFY, SIMPLYHIRED, WELLFOUND, HANDSHAKE, LEVER, GREENHOUSE, NAUKRI, DICE, MONSTER, ZIPRECRUITER, COMPANY_WEBSITE, CAREERBUILDER, SPEEDY_APPLY, THE_MUSE, Y_COMBINATOR, CAREER_SITE, OTHER}`.
+Enums: `Role {ADMIN, TEAM_LEADER, RECRUITER}`, `ApplicationStatus {APPLIED, IN_REVIEW, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEWED, OFFERED, REJECTED, WITHDRAWN, ON_HOLD}`, `JobPortal {LINKEDIN, INDEED, GLASSDOOR, JOBRIGHT, SIMPLIFY, SIMPLYHIRED, WELLFOUND, HANDSHAKE, LEVER, GREENHOUSE, NAUKRI, DICE, MONSTER, ZIPRECRUITER, COMPANY_WEBSITE, CAREERBUILDER, SPEEDY_APPLY, THE_MUSE, Y_COMBINATOR, CAREER_SITE, OTHER}`.
 
 ---
 
@@ -278,25 +278,25 @@ All routes are versioned under `API_PREFIX` (default `/api/v1`). Responses follo
 | POST | `/auth/security-question` | Required | Sets/updates the current user's password recovery security question and hashed answer. |
 | POST | `/auth/change-password` | Required | Verifies current password, changes password, and revokes all existing sessions. |
 
-### Recruiters (`/recruiters`) — Admin only
+### Recruiters (`/recruiters`) — Admin / Team Leader
 
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | `/recruiters` | List recruiters — search, filter by role/isActive, sort, paginate. |
-| POST | `/recruiters` | Create a recruiter or admin account. |
-| GET | `/recruiters/:id/stats` | Assigned profiles, total applications, current-shift applications, profile-wise counts, last active. |
-| PATCH | `/recruiters/:id` | Update name/email/role. |
-| PATCH | `/recruiters/:id/status` | Activate/deactivate. |
-| DELETE | `/recruiters/:id` | Soft delete (unassigns their profiles). |
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/recruiters` | Admin / Team Leader | List recruiters — search, filter by role/isActive, sort, paginate. Team Leaders only see recruiters they created/managed. |
+| POST | `/recruiters` | Admin | Create a recruiter, team leader, or admin account. |
+| GET | `/recruiters/:id/stats` | Admin / Team Leader | Assigned profiles, total applications, current-shift applications, profile-wise counts, last active. (Scoped to team for Team Leaders). |
+| PATCH | `/recruiters/:id` | Admin | Update name/email/role. |
+| PATCH | `/recruiters/:id/status` | Admin | Activate/deactivate. |
+| DELETE | `/recruiters/:id` | Admin | Soft delete (unassigns their profiles). |
 
 ### Client Profiles (`/profiles`)
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/profiles` | Any | List — recruiters see only their assigned profiles; admins see all, with search/filter/sort. |
+| GET | `/profiles` | Any | List — recruiters see only their assigned profiles; admins and team leaders see all, with search/filter/sort. |
 | GET | `/profiles/:id` | Any | Fetch a single profile (recruiters restricted to their own). |
-| POST | `/profiles` | Any | Create a candidate profile. |
-| PATCH | `/profiles/:id` | Any | Update profile fields (recruiters can't reassign). |
+| POST | `/profiles` | Admin / Recruiter | Create a candidate profile. |
+| PATCH | `/profiles/:id` | Admin / Recruiter | Update profile fields (recruiters can't reassign). |
 | PATCH | `/profiles/:id/assign` | Admin | Reassign to a different recruiter (or unassign). |
 | DELETE | `/profiles/:id` | Admin | Soft delete. |
 
@@ -304,7 +304,7 @@ All routes are versioned under `API_PREFIX` (default `/api/v1`). Responses follo
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/applications` | Any | List — recruiters see only their own; search/filter by status, portal, business date range. |
+| GET | `/applications` | Any | List — recruiters see only their own; team leaders see own + team's applications; search/filter by status, portal, business date range, profileId. |
 | GET | `/applications/check-duplicate` | Any | Pre-flight duplicate check for instant UI feedback. |
 | GET | `/applications/:id` | Any | Fetch a single application. |
 | POST | `/applications` | Any | Create an application. `jobLink` is required; `companyName` and `jobTitle` may be blank. Enforces duplicate protection (see above). |

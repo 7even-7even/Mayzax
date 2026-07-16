@@ -8,3 +8,4 @@ coverage/
 .vite/
 generated/
 *.txt
+CHANGELOG.md

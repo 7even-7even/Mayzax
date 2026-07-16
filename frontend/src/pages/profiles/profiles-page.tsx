@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2 } from 'lucide-react';
+import { Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '@/components/shared/page-header';
 import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ import { ClientProfile } from '@/types';
 
 export default function ProfilesPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.role === 'ADMIN';
   const isManager = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER';
 
@@ -79,15 +81,17 @@ export default function ProfilesPage() {
               : 'Candidate profiles currently assigned to you.'
           }
           actions={
-            <Button
-              variant="brand"
-              onClick={() => {
-                setEditingProfile(null);
-                setFormOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4" /> New Profile
-            </Button>
+            user?.role !== 'TEAM_LEADER' ? (
+              <Button
+                variant="brand"
+                onClick={() => {
+                  setEditingProfile(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4" /> New Profile
+              </Button>
+            ) : undefined
           }
         />
       </Reveal>
@@ -133,7 +137,7 @@ export default function ProfilesPage() {
                 : 'No profiles have been assigned to you yet.'
           }
           action={
-            !search && (
+            !search && user?.role !== 'TEAM_LEADER' && (
               <Button variant="brand" size="sm" onClick={() => setFormOpen(true)}>
                 <Plus className="h-4 w-4" /> New Profile
               </Button>
@@ -147,7 +151,10 @@ export default function ProfilesPage() {
           <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {profiles.map((profile) => (
               <StaggerItem key={profile.id}>
-                <Card className="hover-lift group h-full overflow-hidden border-slate-200">
+                <Card
+                  className="hover-lift group h-full overflow-hidden border-slate-200 cursor-pointer select-none"
+                  onDoubleClick={() => navigate(`/applications?profileId=${profile.id}`)}
+                >
                   <div className="h-1 w-full bg-mayzax-gradient opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <CardContent className="p-4">
                     <div className="mb-3 flex items-start justify-between">
@@ -174,14 +181,21 @@ export default function ProfilesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => {
-                              setEditingProfile(profile);
-                              setFormOpen(true);
-                            }}
+                            onClick={() => navigate(`/applications?profileId=${profile.id}`)}
                           >
-                            <Pencil className="h-4 w-4 mr-2" /> Edit
+                            <FileText className="h-4 w-4 mr-2" /> View Applications
                           </DropdownMenuItem>
-                          {isManager && (
+                          {user?.role !== 'TEAM_LEADER' && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setEditingProfile(profile);
+                                setFormOpen(true);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4 mr-2" /> Edit
+                            </DropdownMenuItem>
+                          )}
+                          {user?.role !== 'TEAM_LEADER' && isManager && (
                             <DropdownMenuItem
                               onClick={() => setDeleteTarget(profile)}
                               className="text-red-600 focus:text-red-600"

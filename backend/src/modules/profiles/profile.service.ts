@@ -63,6 +63,9 @@ async function syncProfileAssignments(profileId: string, recruiterIds: string[])
 }
 
 export async function createProfile(input: CreateProfileInput, actor: Requester, meta?: Meta) {
+  if (actor.role === Role.TEAM_LEADER) {
+    throw ApiError.forbidden('Team Leaders cannot create client profiles');
+  }
   const recruiterIds = actor.role === Role.RECRUITER
     ? [actor.id]
     : input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
@@ -109,10 +112,7 @@ export async function updateProfile(id: string, input: UpdateProfileInput, actor
   }
 
   if (actor.role === Role.TEAM_LEADER) {
-    const inTeam = await isProfileInTeam(id, actor.id);
-    if (!inTeam) {
-      throw ApiError.forbidden('You can only edit profiles managed by your team');
-    }
+    throw ApiError.forbidden('Team Leaders cannot edit client profiles');
   }
 
   if (input.assignedRecruiterIds !== undefined || input.assignedRecruiterId !== undefined) {
@@ -147,10 +147,7 @@ export async function deleteProfile(id: string, actor: Requester, meta?: Meta) {
   if (!existing) throw ApiError.notFound('Client profile not found');
 
   if (actor.role === Role.TEAM_LEADER) {
-    const inTeam = await isProfileInTeam(id, actor.id);
-    if (!inTeam) {
-      throw ApiError.forbidden('You can only delete profiles managed by your team');
-    }
+    throw ApiError.forbidden('Team Leaders cannot delete client profiles');
   }
 
   await repo.softDelete(id);
@@ -165,10 +162,7 @@ export async function assignRecruiter(id: string, assignedRecruiterIds: string[]
   if (!existing) throw ApiError.notFound('Client profile not found');
 
   if (actor.role === Role.TEAM_LEADER) {
-    const inTeam = await isProfileInTeam(id, actor.id);
-    if (!inTeam) {
-      throw ApiError.forbidden('You can only assign recruiters to profiles managed by your team');
-    }
+    throw ApiError.forbidden('Team Leaders cannot assign recruiters to client profiles');
   }
 
   await assertRecruitersExist(assignedRecruiterIds, actor);

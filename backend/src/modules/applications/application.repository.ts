@@ -79,33 +79,49 @@ export function buildWhereClause(
   }
 
   if (requester.role === Role.RECRUITER) {
-    conditions.push({
-      OR: [
-        { recruiterId: requester.id },
-        {
-          profile: {
-            OR: [
-              { assignedRecruiterId: requester.id },
-              { assignedRecruiterAssignments: { some: { recruiterId: requester.id } } },
-            ],
+    if (query.profileId) {
+      conditions.push({ recruiterId: requester.id });
+    } else {
+      conditions.push({
+        OR: [
+          { recruiterId: requester.id },
+          {
+            profile: {
+              OR: [
+                { assignedRecruiterId: requester.id },
+                { assignedRecruiterAssignments: { some: { recruiterId: requester.id } } },
+              ],
+            },
           },
-        },
-      ],
-    });
+        ],
+      });
+    }
   } else if (requester.role === Role.TEAM_LEADER) {
-    conditions.push({
-      OR: [
-        { recruiter: { createdById: requester.id } },
-        {
-          profile: {
-            OR: [
-              { assignedRecruiter: { createdById: requester.id } },
-              { assignedRecruiterAssignments: { some: { recruiter: { createdById: requester.id } } } },
-            ],
+    if (query.profileId) {
+      conditions.push({
+        OR: [
+          { recruiterId: requester.id },
+          { recruiter: { createdById: requester.id } },
+        ],
+      });
+    } else {
+      conditions.push({
+        OR: [
+          { recruiterId: requester.id },
+          { recruiter: { createdById: requester.id } },
+          {
+            profile: {
+              OR: [
+                { assignedRecruiterId: requester.id },
+                { assignedRecruiter: { createdById: requester.id } },
+                { assignedRecruiterAssignments: { some: { recruiterId: requester.id } } },
+                { assignedRecruiterAssignments: { some: { recruiter: { createdById: requester.id } } } },
+              ],
+            },
           },
-        },
-      ],
-    });
+        ],
+      });
+    }
   } else if (query.recruiterId) {
     conditions.push({ recruiterId: query.recruiterId });
   }
