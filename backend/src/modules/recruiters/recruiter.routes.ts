@@ -15,7 +15,7 @@ const router = Router();
 
 router.get('/me/stats', requireAuth, recruiterController.getMyRecruiterStats);
 
-router.use(requireAuth, requireRole(Role.ADMIN));
+router.use(requireAuth, requireRole(Role.ADMIN, Role.TEAM_LEADER));
 
 router.get('/', validate({ query: listRecruitersQuerySchema }), recruiterController.listRecruiters);
 router.post('/', validate({ body: createRecruiterSchema }), recruiterController.createRecruiter);

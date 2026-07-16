@@ -22,12 +22,6 @@
 
 import { env } from '@/config/env';
 
-const IST_TIMEZONE = env.BUSINESS_TIMEZONE; // "Asia/Kolkata"
-const SHIFT_START_HOUR = env.BUSINESS_SHIFT_START_HOUR; // 19
-const SHIFT_START_MINUTE = env.BUSINESS_SHIFT_START_MINUTE; // 30
-const SHIFT_END_HOUR = env.BUSINESS_SHIFT_END_HOUR; // 7
-const SHIFT_END_MINUTE = env.BUSINESS_SHIFT_END_MINUTE; // 30
-
 interface ISTParts {
   year: number;
   month: number; // 1-12
@@ -42,8 +36,9 @@ interface ISTParts {
  * regardless of the server's local timezone.
  */
 function getISTParts(date: Date): ISTParts {
+  const { timezone } = getShiftConfig();
   const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: IST_TIMEZONE,
+    timeZone: timezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -88,8 +83,22 @@ function minutesOfDay(hour: number, minute: number): number {
   return hour * 60 + minute;
 }
 
-const SHIFT_START_MINUTES = minutesOfDay(SHIFT_START_HOUR, SHIFT_START_MINUTE); // 1170 (19:30)
-const SHIFT_END_MINUTES = minutesOfDay(SHIFT_END_HOUR, SHIFT_END_MINUTE); // 450 (07:30)
+function getShiftConfig() {
+  const startHour = env.BUSINESS_SHIFT_START_HOUR;
+  const startMinute = env.BUSINESS_SHIFT_START_MINUTE;
+  const endHour = env.BUSINESS_SHIFT_END_HOUR;
+  const endMinute = env.BUSINESS_SHIFT_END_MINUTE;
+  const timezone = env.BUSINESS_TIMEZONE;
+  return {
+    startHour,
+    startMinute,
+    endHour,
+    endMinute,
+    timezone,
+    startMinutes: minutesOfDay(startHour, startMinute),
+    endMinutes: minutesOfDay(endHour, endMinute),
+  };
+}
 
 /**
  * Computes the "business date" for a given timestamp per Mayzax's night-shift rules.
@@ -109,15 +118,16 @@ export function getBusinessDate(timestamp: Date | string | number = new Date()):
     throw new Error(`getBusinessDate received an invalid timestamp: ${timestamp}`);
   }
 
+  const { startMinutes, endMinutes } = getShiftConfig();
   const { year, month, day, hour, minute } = getISTParts(date);
   const currentMinutes = minutesOfDay(hour, minute);
 
-  if (currentMinutes >= SHIFT_START_MINUTES) {
+  if (currentMinutes >= startMinutes) {
     // Evening shift just began today -> belongs to today's business date.
     return buildDateOnly(year, month, day);
   }
 
-  if (currentMinutes <= SHIFT_END_MINUTES) {
+  if (currentMinutes <= endMinutes) {
     // Still within the shift that started the previous evening.
     const prev = addDays(year, month, day, -1);
     return buildDateOnly(prev.year, prev.month, prev.day);
@@ -138,10 +148,11 @@ export function getBusinessDateString(timestamp: Date | string | number = new Da
  * (19:30 IST -> 07:30 IST next day).
  */
 export function isWithinBusinessShift(timestamp: Date | string | number = new Date()): boolean {
+  const { startMinutes, endMinutes } = getShiftConfig();
   const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
   const { hour, minute } = getISTParts(date);
   const currentMinutes = minutesOfDay(hour, minute);
-  return currentMinutes >= SHIFT_START_MINUTES || currentMinutes <= SHIFT_END_MINUTES;
+  return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
 }
 
 /**
@@ -150,15 +161,16 @@ export function isWithinBusinessShift(timestamp: Date | string | number = new Da
  * (e.g. "applications submitted in current business shift").
  */
 export function getBusinessShiftBounds(businessDate: string | Date): { start: Date; end: Date } {
+  const { startHour, startMinute, endHour, endMinute } = getShiftConfig();
   const dateStr = typeof businessDate === 'string' ? businessDate : businessDate.toISOString().slice(0, 10);
   const [year, month, day] = dateStr.split('-').map((v) => parseInt(v, 10));
 
-  // Shift start: businessDate at 19:30 IST -> convert to UTC instant.
-  const start = istWallClockToUtc(year, month, day, SHIFT_START_HOUR, SHIFT_START_MINUTE, 0);
+  // Shift start: businessDate at startHour:startMinute IST -> convert to UTC instant.
+  const start = istWallClockToUtc(year, month, day, startHour, startMinute, 0);
 
-  // Shift end: businessDate + 1 day at 07:30:00 IST (inclusive), we use 07:30:59.999 to include the boundary minute.
+  // Shift end: businessDate + 1 day at endHour:endMinute:00 IST (inclusive), we use endHour:endMinute:59.999 to include the boundary minute.
   const next = addDays(year, month, day, 1);
-  const end = istWallClockToUtc(next.year, next.month, next.day, SHIFT_END_HOUR, SHIFT_END_MINUTE, 59, 999);
+  const end = istWallClockToUtc(next.year, next.month, next.day, endHour, endMinute, 59, 999);
 
   return { start, end };
 }
@@ -188,3 +200,19 @@ export function getCurrentBusinessShiftBounds(): { businessDate: string; start: 
   const bounds = getBusinessShiftBounds(businessDate);
   return { businessDate, ...bounds };
 }
+
+/** Returns the formatted shift window text, e.g. "6:00 PM – 9:00 AM IST" */
+export function getShiftWindowText(): string {
+  const { startHour, startMinute, endHour, endMinute } = getShiftConfig();
+  const formatTime = (hour: number, minute: number): string => {
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    const displayMinute = minute.toString().padStart(2, '0');
+    return `${displayHour}:${displayMinute} ${ampm}`;
+  };
+
+  const startText = formatTime(startHour, startMinute);
+  const endText = formatTime(endHour, endMinute);
+  return `${startText} – ${endText} IST`;
+}
+

@@ -15,19 +15,44 @@ interface Meta {
   userAgent?: string;
 }
 
-async function assertRecruitersExist(recruiterIds: string[]) {
+async function assertRecruitersExist(recruiterIds: string[], actor?: Requester) {
   const uniqueIds = [...new Set(recruiterIds)];
   if (uniqueIds.length === 0) throw ApiError.badRequest('Assign at least 1 recruiter');
   if (uniqueIds.length > 5) throw ApiError.badRequest('You can assign up to 5 recruiters');
 
   const recruiters = await prisma.user.findMany({
-    where: { id: { in: uniqueIds }, deletedAt: null, role: Role.RECRUITER },
+    where: {
+      id: { in: uniqueIds },
+      deletedAt: null,
+      role: Role.RECRUITER,
+      ...(actor?.role === Role.TEAM_LEADER ? { createdById: actor.id } : {}),
+    },
     select: { id: true, isActive: true },
   });
 
-  if (recruiters.length !== uniqueIds.length) throw ApiError.badRequest('One or more assigned recruiters were not found');
+  if (recruiters.length !== uniqueIds.length) {
+    throw ApiError.badRequest(
+      actor?.role === Role.TEAM_LEADER
+        ? 'One or more assigned recruiters were not found or do not belong to your team'
+        : 'One or more assigned recruiters were not found'
+    );
+  }
   const inactive = recruiters.find((r) => !r.isActive);
   if (inactive) throw ApiError.badRequest('Cannot assign profile to an inactive recruiter');
+}
+
+async function isProfileInTeam(profileId: string, teamLeaderId: string): Promise<boolean> {
+  const profile = await prisma.clientProfile.findFirst({
+    where: {
+      id: profileId,
+      deletedAt: null,
+      OR: [
+        { assignedRecruiter: { createdById: teamLeaderId } },
+        { assignedRecruiterAssignments: { some: { recruiter: { createdById: teamLeaderId } } } },
+      ],
+    },
+  });
+  return !!profile;
 }
 
 async function syncProfileAssignments(profileId: string, recruiterIds: string[]) {
@@ -41,7 +66,7 @@ export async function createProfile(input: CreateProfileInput, actor: Requester,
   const recruiterIds = actor.role === Role.RECRUITER
     ? [actor.id]
     : input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
-  await assertRecruitersExist(recruiterIds);
+  await assertRecruitersExist(recruiterIds, actor);
 
   const profile = await repo.create({
     candidateName: input.candidateName,
@@ -83,12 +108,19 @@ export async function updateProfile(id: string, input: UpdateProfileInput, actor
     throw ApiError.forbidden('You can only edit profiles assigned to you');
   }
 
+  if (actor.role === Role.TEAM_LEADER) {
+    const inTeam = await isProfileInTeam(id, actor.id);
+    if (!inTeam) {
+      throw ApiError.forbidden('You can only edit profiles managed by your team');
+    }
+  }
+
   if (input.assignedRecruiterIds !== undefined || input.assignedRecruiterId !== undefined) {
     if (actor.role === Role.RECRUITER) {
-      throw ApiError.forbidden('Only admins can reassign profiles');
+      throw ApiError.forbidden('Only admins and team leaders can reassign profiles');
     }
     const recruiterIds = input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
-    await assertRecruitersExist(recruiterIds);
+    await assertRecruitersExist(recruiterIds, actor);
     await syncProfileAssignments(id, recruiterIds);
   }
 
@@ -114,6 +146,13 @@ export async function deleteProfile(id: string, actor: Requester, meta?: Meta) {
   const existing = await repo.findActiveById(id);
   if (!existing) throw ApiError.notFound('Client profile not found');
 
+  if (actor.role === Role.TEAM_LEADER) {
+    const inTeam = await isProfileInTeam(id, actor.id);
+    if (!inTeam) {
+      throw ApiError.forbidden('You can only delete profiles managed by your team');
+    }
+  }
+
   await repo.softDelete(id);
 
   await writeAuditLog({ userId: actor.id, action: 'PROFILE_DELETED', entity: 'ClientProfile', entityId: id, ...meta });
@@ -125,7 +164,14 @@ export async function assignRecruiter(id: string, assignedRecruiterIds: string[]
   const existing = await repo.findActiveById(id);
   if (!existing) throw ApiError.notFound('Client profile not found');
 
-  await assertRecruitersExist(assignedRecruiterIds);
+  if (actor.role === Role.TEAM_LEADER) {
+    const inTeam = await isProfileInTeam(id, actor.id);
+    if (!inTeam) {
+      throw ApiError.forbidden('You can only assign recruiters to profiles managed by your team');
+    }
+  }
+
+  await assertRecruitersExist(assignedRecruiterIds, actor);
   await syncProfileAssignments(id, assignedRecruiterIds);
 
   const updated = await repo.findActiveById(id);
@@ -155,10 +201,26 @@ export async function getProfile(id: string, actor: Requester) {
     throw ApiError.forbidden('You do not have access to this profile');
   }
 
+  if (actor.role === Role.TEAM_LEADER) {
+    const inTeam = await isProfileInTeam(id, actor.id);
+    if (!inTeam) {
+      throw ApiError.forbidden('You do not have access to this profile');
+    }
+  }
+
   return profile;
 }
 
 export async function listProfiles(query: ListProfilesQuery, actor: Requester) {
+  if (actor.role === Role.TEAM_LEADER && query.assignedRecruiterId) {
+    const recruiter = await prisma.user.findFirst({
+      where: { id: query.assignedRecruiterId, createdById: actor.id, deletedAt: null }
+    });
+    if (!recruiter) {
+      throw ApiError.forbidden('You can only filter by recruiters in your own team');
+    }
+  }
+
   const [items, total] = await repo.list(query, actor);
   return {
     items,

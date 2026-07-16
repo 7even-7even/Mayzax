@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Users } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
+import { useAuth } from '@/context/auth-context';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,6 +23,7 @@ const sortOptions = [
 ];
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('totalApplications');
   const [page, setPage] = useState(1);
@@ -42,8 +44,12 @@ export default function DashboardPage() {
     <div>
       <Reveal>
         <PageHeader
-          title="Admin Dashboard"
-          description="Real-time overview of recruiter performance across Mayzax ATS."
+          title={user?.role === 'TEAM_LEADER' ? 'TL Dashboard' : 'Admin Dashboard'}
+          description={
+            user?.role === 'TEAM_LEADER'
+              ? "Real-time overview of your team's recruiter performance."
+              : 'Real-time overview of recruiter performance across Mayzax ATS.'
+          }
         />
       </Reveal>
 

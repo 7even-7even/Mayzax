@@ -99,6 +99,13 @@ export function buildWhereClause(
         { assignedRecruiterAssignments: { some: { recruiterId: requester.id } } },
       ],
     });
+  } else if (requester.role === Role.TEAM_LEADER) {
+    conditions.push({
+      OR: [
+        { assignedRecruiter: { createdById: requester.id } },
+        { assignedRecruiterAssignments: { some: { recruiter: { createdById: requester.id } } } },
+      ],
+    });
   } else if (query.assignedRecruiterId) {
     conditions.push({
       OR: [

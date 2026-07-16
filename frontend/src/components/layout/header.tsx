@@ -28,6 +28,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
       <div className="flex items-center gap-3">
         {user?.role === 'ADMIN' && <Badge variant="default">Admin</Badge>}
+        {user?.role === 'TEAM_LEADER' && <Badge variant="default" className="bg-mayzax-blue text-white hover:bg-mayzax-blue/90">Team Leader</Badge>}
         {user?.role === 'RECRUITER' && <Badge variant="secondary">Recruiter</Badge>}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

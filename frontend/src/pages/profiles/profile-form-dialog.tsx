@@ -47,6 +47,7 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
   const { user } = useAuth();
   const isEdit = !!profile;
   const isAdmin = user?.role === 'ADMIN';
+  const isManager = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER';
 
   const createMutation = useCreateProfile();
   const updateMutation = useUpdateProfile();
@@ -94,7 +95,7 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
       if (isEdit && profile) {
         // Recruiters cannot change assignment; strip it if not admin
         const { assignedRecruiterId, assignedRecruiterIds, ...rest } = payload;
-        await updateMutation.mutateAsync({ id: profile.id, ...(isAdmin ? payload : rest) });
+        await updateMutation.mutateAsync({ id: profile.id, ...(isManager ? payload : rest) });
         toast.success('Profile updated successfully');
       } else {
         await createMutation.mutateAsync(payload);
@@ -149,7 +150,7 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
               )}
             </div>
 
-            {isAdmin && (
+            {isManager && (
               <div className="col-span-2 space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>Assigned Recruiters</Label>

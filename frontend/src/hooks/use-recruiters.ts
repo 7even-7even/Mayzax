@@ -1,10 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { ApiSuccess, Recruiter, RecruiterStats } from '@/types';
+import { ApiSuccess, Recruiter, RecruiterStats, Role } from '@/types';
 
 export interface RecruiterListParams {
   search?: string;
-  role?: 'ADMIN' | 'RECRUITER';
+  role?: Role;
   isActive?: boolean;
   page?: number;
   pageSize?: number;
@@ -46,7 +46,7 @@ export function useMyRecruiterStats() {
 export function useCreateRecruiter() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { name: string; email: string; password: string; role?: 'ADMIN' | 'RECRUITER' }) => {
+    mutationFn: async (input: { name: string; email: string; password: string; role?: Role }) => {
       const { data } = await apiClient.post<ApiSuccess<Recruiter>>('/recruiters', input);
       return data.data;
     },
@@ -57,7 +57,7 @@ export function useCreateRecruiter() {
 export function useUpdateRecruiter() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: string; name?: string; email?: string; role?: 'ADMIN' | 'RECRUITER' }) => {
+    mutationFn: async ({ id, ...input }: { id: string; name?: string; email?: string; role?: Role }) => {
       const { data } = await apiClient.patch<ApiSuccess<Recruiter>>(`/recruiters/${id}`, input);
       return data.data;
     },

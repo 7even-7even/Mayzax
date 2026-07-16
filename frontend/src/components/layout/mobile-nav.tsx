@@ -21,7 +21,18 @@ const recruiterNav = [
 
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
-  const nav = user?.role === 'ADMIN' ? adminNav : recruiterNav;
+  const rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? adminNav : recruiterNav;
+
+  const nav = rawNav.map((item) => {
+    if (user?.role === 'TEAM_LEADER') {
+      if (item.to === '/dashboard') return { ...item, label: 'TL Dashboard' };
+      if (item.to === '/recruiters') return { ...item, label: 'My Team' };
+    }
+    if (user?.role === 'ADMIN') {
+      if (item.to === '/recruiters') return { ...item, label: 'User Management' };
+    }
+    return item;
+  });
 
   if (!open) return null;
 

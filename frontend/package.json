@@ -30,6 +30,8 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
     "framer-motion": "^11.11.9",
     "lucide-react": "^0.454.0",
     "mayzax-ats": "file:..",
@@ -45,6 +47,7 @@
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.9.0",
+    "@types/file-saver": "^2.0.7",
     "@types/node": "^20.16.9",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",

@@ -36,25 +36,111 @@ import { useAuth } from '@/context/auth-context';
 
 function detectJobPortal(url: string): (typeof ALL_JOB_PORTALS)[number] | null {
   try {
-    const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+    const host = new URL(url).hostname
+      .toLowerCase()
+      .replace(/^www\./, '');
 
-    if (host.includes('linkedin.com')) return 'LINKEDIN';
-    if (host.includes('indeed.com')) return 'INDEED';
-    if (host.includes('glassdoor.com')) return 'GLASSDOOR';
-    if (host.includes('jobright.ai')) return 'JOBRIGHT';
-    if (host.includes('simplify.jobs')) return 'SIMPLIFY';
-    if (host.includes('simplyhired.com')) return 'SIMPLYHIRED';
-    if (host.includes('wellfound.com') || host.includes('angel.co')) return 'WELLFOUND';
-    if (host.includes('joinhandshake.com')) return 'HANDSHAKE';
-    if (host === 'jobs.lever.co' || host.endsWith('.lever.co')) return 'LEVER';
-    if (host.includes('greenhouse.io') || host.includes('greenhouse.com')) return 'GREENHOUSE';
-    if (host.includes('careerbuilder.com')) return 'CAREERBUILDER';
+    // LinkedIn
+    if (
+      host.includes('linkedin.com') ||
+      host.includes('linkedin.cn')
+    )
+      return 'LINKEDIN';
 
+    // Indeed
+    if (host.includes('indeed.'))
+      return 'INDEED';
+
+    // Glassdoor
+    if (host.includes('glassdoor.'))
+      return 'GLASSDOOR';
+
+    // Jobright
+    if (
+      host.includes('jobright.ai') ||
+      host.includes('jobright.com')
+    )
+      return 'JOBRIGHT';
+
+    // Simplify
+    if (
+      host.includes('simplify.jobs') ||
+      host.includes('simplify.com')
+    )
+      return 'SIMPLIFY';
+
+    // SimplyHired
+    if (host.includes('simplyhired.com'))
+      return 'SIMPLYHIRED';
+
+    // Wellfound (AngelList)
+    if (
+      host.includes('wellfound.com') ||
+      host.includes('angel.co')
+    )
+      return 'WELLFOUND';
+
+    // Handshake
+    if (
+      host.includes('joinhandshake.com') ||
+      host.includes('handshake.com')
+    )
+      return 'HANDSHAKE';
+
+    // CareerBuilder
+    if (host.includes('careerbuilder.com'))
+      return 'CAREERBUILDER';
+
+    // Lever
+    if (
+      host === 'jobs.lever.co' ||
+      host.endsWith('.lever.co')
+    )
+      return 'LEVER';
+
+    // Greenhouse
+    if (
+      host.includes('greenhouse.io') ||
+      host.includes('boards.greenhouse.io') ||
+      host.includes('greenhouse.com')
+    )
+      return 'GREENHOUSE';
+
+    // Speedy Apply
+    if (
+      host.includes('speedyapply.com') ||
+      host.includes('speedy-apply.com')
+    )
+      return 'SPEEDY_APPLY';
+
+    // The Muse
+    if (
+      host.includes('themuse.com') ||
+      host.includes('themuse.co')
+    )
+      return 'THE_MUSE';
+
+    // Y Combinator Jobs
+    if (
+      host.includes('ycombinator.com') ||
+      host.includes('workatastartup.com')
+    )
+      return 'Y_COMBINATOR';
+
+    // Generic Career Site
+    if (
+      host.includes('careers.') ||
+      host.startsWith('careers.') ||
+      host.startsWith('jobs.') ||
+      host.includes('/careers') ||
+      host.includes('/jobs')
+    )
+      return 'CAREER_SITE';
+
+    return 'OTHER';
   } catch {
     return null;
   }
-
-  return null;
 }
 
 
@@ -222,7 +308,15 @@ export function ApplicationFormDialog({
         'Application submitted successfully'
       );
 
-      onOpenChange(false);
+      // Keep dialog open, reset input fields, and preserve candidate selection if there is exactly 1 candidate
+      form.reset({
+        profileId: profiles.length === 1 ? profiles[0].id : (defaultProfileId ?? ''),
+        jobLink: '',
+        companyName: '',
+        jobTitle: '',
+        jobPortal: 'OTHER',
+      });
+      setDuplicateResult(null);
 
     }
     catch (err) {
@@ -244,7 +338,28 @@ export function ApplicationFormDialog({
 
   const isSubmitting = createMutation.isPending;
 
+useEffect(() => {
+  if (!open) return;
 
+  // Respect an explicitly provided default profile.
+  if (defaultProfileId) return;
+
+  // Don't override an already selected profile.
+  if (form.getValues('profileId')) return;
+
+  // Auto-select if there's exactly one profile.
+  if (profiles.length === 1) {
+    form.setValue('profileId', profiles[0].id, {
+      shouldDirty: false,
+      shouldValidate: true,
+    });
+  }
+}, [
+  open,
+  profiles,
+  defaultProfileId,
+  form,
+]);
 
   return (
 

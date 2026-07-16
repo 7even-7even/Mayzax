@@ -41,6 +41,13 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
               { assignedRecruiterAssignments: { some: { recruiterId: actor.id } } },
             ],
           }
+        : actor.role === Role.TEAM_LEADER
+        ? {
+            OR: [
+              { assignedRecruiter: { createdById: actor.id } },
+              { assignedRecruiterAssignments: { some: { recruiter: { createdById: actor.id } } } },
+            ],
+          }
         : {}),
     },
   });
@@ -109,6 +116,15 @@ export async function updateApplication(id: string, input: UpdateApplicationInpu
     throw ApiError.forbidden('You can only update your own applications');
   }
 
+  if (actor.role === Role.TEAM_LEADER) {
+    const recruiter = await prisma.user.findFirst({
+      where: { id: existing.recruiterId, createdById: actor.id, deletedAt: null }
+    });
+    if (!recruiter) {
+      throw ApiError.forbidden('You can only update applications submitted by recruiters in your team');
+    }
+  }
+
   const updated = await repo.update(id, input);
 
   await writeAuditLog({
@@ -135,12 +151,37 @@ export async function getApplication(id: string, actor: Requester) {
     if (application.recruiterId !== actor.id && !assignedRecruiterIds.includes(actor.id)) {
       throw ApiError.forbidden('You do not have access to this application');
     }
+  } else if (actor.role === Role.TEAM_LEADER) {
+    const candidateRecruiterIds = [
+      application.recruiterId,
+      ...(application.profile.assignedRecruiterId ? [application.profile.assignedRecruiterId] : []),
+      ...(application.profile.assignedRecruiterAssignments?.map((row) => row.recruiterId) ?? []),
+    ];
+    const teamUser = await prisma.user.findFirst({
+      where: {
+        id: { in: candidateRecruiterIds },
+        createdById: actor.id,
+        deletedAt: null
+      }
+    });
+    if (!teamUser) {
+      throw ApiError.forbidden('You do not have access to this application');
+    }
   }
 
   return application;
 }
 
 export async function listApplications(query: ListApplicationsQuery, actor: Requester) {
+  if (actor.role === Role.TEAM_LEADER && query.recruiterId) {
+    const recruiter = await prisma.user.findFirst({
+      where: { id: query.recruiterId, createdById: actor.id, deletedAt: null }
+    });
+    if (!recruiter) {
+      throw ApiError.forbidden('You can only filter by recruiters in your own team');
+    }
+  }
+
   const [items, total] = await repo.list(query, actor);
   return {
     items,
@@ -164,6 +205,13 @@ export async function checkDuplicate(profileId: string, jobLink: string, actor: 
             OR: [
               { assignedRecruiterId: actor.id },
               { assignedRecruiterAssignments: { some: { recruiterId: actor.id } } },
+            ],
+          }
+        : actor.role === Role.TEAM_LEADER
+        ? {
+            OR: [
+              { assignedRecruiter: { createdById: actor.id } },
+              { assignedRecruiterAssignments: { some: { recruiter: { createdById: actor.id } } } },
             ],
           }
         : {}),

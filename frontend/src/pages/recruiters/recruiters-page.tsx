@@ -43,12 +43,14 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage } from '@/lib/api-client';
 import { initials, timeAgo } from '@/lib/utils';
 import { Recruiter } from '@/types';
+import { useAuth } from '@/context/auth-context';
 
 const ALL_ROLES = '__all__';
 
 export default function RecruitersPage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'RECRUITER' | 'ADMIN' | typeof ALL_ROLES>('RECRUITER');
+  const [roleFilter, setRoleFilter] = useState<'RECRUITER' | 'TEAM_LEADER' | 'ADMIN' | typeof ALL_ROLES>('RECRUITER');
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search);
 
@@ -95,8 +97,20 @@ export default function RecruitersPage() {
     <div>
       <Reveal>
         <PageHeader
-          title="Recruiter Management"
-          description="Create, manage, and monitor recruiter accounts across Mayzax ATS."
+          title={
+            user?.role === 'ADMIN'
+              ? 'User Management'
+              : user?.role === 'TEAM_LEADER'
+              ? 'My Team'
+              : 'Recruiter Management'
+          }
+          description={
+            user?.role === 'ADMIN'
+              ? 'Manage admin, team leader, and recruiter accounts.'
+              : user?.role === 'TEAM_LEADER'
+              ? "Manage your team's recruiters and monitor stats."
+              : 'Create, manage, and monitor recruiter accounts across Mayzax ATS.'
+          }
           actions={
             <Button
               variant="brand"
@@ -105,7 +119,8 @@ export default function RecruitersPage() {
                 setFormOpen(true);
               }}
             >
-              <Plus className="h-4 w-4" /> New Recruiter
+              <Plus className="h-4 w-4" />{' '}
+              {user?.role === 'ADMIN' ? 'New User' : 'New Recruiter'}
             </Button>
           }
         />
@@ -125,22 +140,25 @@ export default function RecruitersPage() {
               }}
             />
           </div>
-          <Select
-            value={roleFilter}
-            onValueChange={(value) => {
-              setRoleFilter(value as typeof roleFilter);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Filter by role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="RECRUITER">Recruiters</SelectItem>
-              <SelectItem value="ADMIN">Admins</SelectItem>
-              <SelectItem value={ALL_ROLES}>All Roles</SelectItem>
-            </SelectContent>
-          </Select>
+          {user?.role === 'ADMIN' && (
+            <Select
+              value={roleFilter}
+              onValueChange={(value) => {
+                setRoleFilter(value as typeof roleFilter);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="RECRUITER">Recruiters</SelectItem>
+                <SelectItem value="TEAM_LEADER">Team Leaders</SelectItem>
+                <SelectItem value="ADMIN">Admins</SelectItem>
+                <SelectItem value={ALL_ROLES}>All Roles</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </Reveal>
 
@@ -198,7 +216,17 @@ export default function RecruitersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={recruiter.role === 'ADMIN' ? 'default' : 'secondary'}>{recruiter.role}</Badge>
+                      <Badge
+                        variant={
+                          recruiter.role === 'ADMIN'
+                            ? 'default'
+                            : recruiter.role === 'TEAM_LEADER'
+                            ? 'outline'
+                            : 'secondary'
+                        }
+                      >
+                        {recruiter.role === 'TEAM_LEADER' ? 'Team Leader' : recruiter.role}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
