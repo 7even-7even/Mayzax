@@ -8,10 +8,14 @@
  * ------------------------------------------------------------------
  */
 
+// Explicit job ID query parameters that MUST be preserved for distinct job identification
+const JOB_ID_PARAMS = new Set(['gh_jid', 'gh_job_id', 'job_id', 'jobid', 'jid', 'jk', 'reqid', 'requisition_id']);
+
 // Common tracking / session query params to strip across job portals.
 const TRACKING_PARAM_PATTERNS = [
   /^utm_/i,
-  /^gh_/i,
+  /^gh_src$/i,
+  /^gh_referrer$/i,
   /^ref$/i,
   /^refid$/i,
   /^referrer$/i,
@@ -27,6 +31,8 @@ const TRACKING_PARAM_PATTERNS = [
 ];
 
 function isTrackingParam(key: string): boolean {
+  const lowerKey = key.toLowerCase();
+  if (JOB_ID_PARAMS.has(lowerKey)) return false;
   return TRACKING_PARAM_PATTERNS.some((pattern) => pattern.test(key));
 }
 
