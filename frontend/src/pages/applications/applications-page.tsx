@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, ExternalLink, FileText, Loader2, Plus, Search, X } from 'lucide-react';
+import { Calendar, Download, ExternalLink, FileText, Loader2, Plus, Search, X } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import { ApplicationFormDialog } from './application-form-dialog';
 import { useApplications } from '@/hooks/use-applications';
 import { useDebounce } from '@/hooks/use-debounce';
 import { apiClient } from '@/lib/api-client';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, generateExportFilename } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { ApiSuccess, ApplicationStatus, JobApplication } from '@/types';
 import { toast } from 'sonner';
@@ -29,7 +29,7 @@ function formatBusinessDateLabel(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 
-async function downloadApplicationsExcel(applications: JobApplication[], isAdmin: boolean) {
+async function downloadApplicationsExcel(applications: JobApplication[], isAdmin: boolean, filename: string) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Mayzax ATS';
   workbook.created = new Date();
@@ -155,9 +155,8 @@ async function downloadApplicationsExcel(applications: JobApplication[], isAdmin
 
   // Write and trigger download
   const buffer = await workbook.xlsx.writeBuffer();
-  const today = new Date().toISOString().slice(0, 10);
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  saveAs(blob, `mayzax-applications-${today}.xlsx`);
+  saveAs(blob, filename);
 }
 
 export default function ApplicationsPage() {
@@ -166,8 +165,12 @@ export default function ApplicationsPage() {
 
   const [searchParams, setSearchParams] = useSearchParams();
   const dateFilter = searchParams.get('date'); // YYYY-MM-DD, from heatmap click
+  const fromFilter = searchParams.get('from');
+  const toFilter = searchParams.get('to');
   const profileIdFilter = searchParams.get('profileId');
 
+  const [fromDate, setFromDate] = useState<string>(fromFilter || dateFilter || '');
+  const [toDate, setToDate] = useState<string>(toFilter || dateFilter || '');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ApplicationStatus | typeof ALL>(ALL);
   const [page, setPage] = useState(1);
@@ -175,13 +178,38 @@ export default function ApplicationsPage() {
   const [isExporting, setIsExporting] = useState(false);
   const debouncedSearch = useDebounce(search);
 
+  useEffect(() => {
+    if (fromFilter || toFilter) {
+      setFromDate(fromFilter || '');
+      setToDate(toFilter || '');
+    } else if (dateFilter) {
+      setFromDate(dateFilter);
+      setToDate(dateFilter);
+    }
+  }, [dateFilter, fromFilter, toFilter]);
+
+  const handleDateChange = (newFrom: string, newTo: string) => {
+    setFromDate(newFrom);
+    setToDate(newTo);
+    setPage(1);
+
+    const next = new URLSearchParams(searchParams);
+    next.delete('date');
+    if (newFrom) next.set('from', newFrom);
+    else next.delete('from');
+
+    if (newTo) next.set('to', newTo);
+    else next.delete('to');
+
+    setSearchParams(next);
+  };
+
   const { data, isLoading, isError, refetch } = useApplications({
     search: debouncedSearch || undefined,
     status: status === ALL ? undefined : status,
     profileId: profileIdFilter || undefined,
-    // Single-day filter expressed as a from/to range on the same date.
-    businessDateFrom: dateFilter || undefined,
-    businessDateTo: dateFilter || undefined,
+    businessDateFrom: fromDate || undefined,
+    businessDateTo: toDate || undefined,
     page,
     pageSize: 12,
     sortBy: 'appliedAt',
@@ -198,8 +226,8 @@ export default function ApplicationsPage() {
         search: debouncedSearch || undefined,
         status: status === ALL ? undefined : status,
         profileId: profileIdFilter || undefined,
-        businessDateFrom: dateFilter || undefined,
-        businessDateTo: dateFilter || undefined,
+        businessDateFrom: fromDate || undefined,
+        businessDateTo: toDate || undefined,
         sortBy: 'appliedAt',
         sortOrder: 'desc' as const,
       };
@@ -222,7 +250,20 @@ export default function ApplicationsPage() {
         return;
       }
 
-      await downloadApplicationsExcel(allApplications, isAdmin);
+      const candidateName = profileIdFilter
+        ? allApplications.find((app) => app.profileId === profileIdFilter)?.profile?.candidateName
+        : undefined;
+
+      const filename = generateExportFilename({
+        baseName: 'Applications',
+        userNameOrCandidate: candidateName,
+        search: debouncedSearch || undefined,
+        status: status === ALL ? undefined : status,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+      });
+
+      await downloadApplicationsExcel(allApplications, isAdmin, filename);
       toast.success(`Downloaded ${allApplications.length} application${allApplications.length === 1 ? '' : 's'}.`);
     } catch {
       toast.error('Failed to download applications. Please try again.');
@@ -231,11 +272,16 @@ export default function ApplicationsPage() {
     }
   };
 
-  const clearDateFilter = () => {
+
+  const clearDateRange = () => {
+    setFromDate('');
+    setToDate('');
+    setPage(1);
     const next = new URLSearchParams(searchParams);
     next.delete('date');
+    next.delete('from');
+    next.delete('to');
     setSearchParams(next);
-    setPage(1);
   };
 
   return (
@@ -260,15 +306,20 @@ export default function ApplicationsPage() {
         }
       />
 
-      {dateFilter && (
+      {(fromDate || toDate) && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-mayzax-blue/20 bg-mayzax-blue/5 px-3 py-2 text-sm text-slate-700">
           <span>
-            Filtered by business date: <span className="font-medium text-slate-900">{formatBusinessDateLabel(dateFilter)}</span>
+            Filtered by business date: {' '}
+            <span className="font-medium text-slate-900">
+              {fromDate === toDate && fromDate
+                ? formatBusinessDateLabel(fromDate)
+                : `${fromDate ? formatBusinessDateLabel(fromDate) : 'Start'} – ${toDate ? formatBusinessDateLabel(toDate) : 'Present'}`}
+            </span>
           </span>
           <button
-            onClick={clearDateFilter}
+            onClick={clearDateRange}
             className="ml-1 flex items-center gap-1 rounded-full p-0.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-600"
-            aria-label="Clear date filter"
+            aria-label="Clear date range"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -295,38 +346,72 @@ export default function ApplicationsPage() {
         </div>
       )}
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative w-full max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            placeholder="Search by company, title, or candidate..."
-            className="pl-9"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between flex-wrap">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center flex-wrap w-full sm:w-auto">
+          <div className="relative w-full sm:w-72">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              placeholder="Search by company, title, or candidate..."
+              className="pl-9"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+          <Select
+            value={status}
+            onValueChange={(value) => {
+              setStatus(value as ApplicationStatus | typeof ALL);
               setPage(1);
             }}
-          />
+          >
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All Statuses</SelectItem>
+              {ALL_STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {formatEnumLabel(s)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select
-          value={status}
-          onValueChange={(value) => {
-            setStatus(value as ApplicationStatus | typeof ALL);
-            setPage(1);
-          }}
-        >
-          <SelectTrigger className="w-full sm:w-52">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All Statuses</SelectItem>
-            {ALL_STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>
-                {formatEnumLabel(s)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+
+        {/* Date Range Calendar Filter */}
+        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 shadow-sm w-full sm:w-auto justify-between sm:justify-start">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-4 w-4 text-mayzax-blue shrink-0" />
+            <span className="font-medium text-slate-500">From:</span>
+            <Input
+              type="date"
+              className="h-7 w-32 border-0 bg-transparent p-0 text-xs focus:ring-0 cursor-pointer"
+              value={fromDate}
+              onChange={(e) => handleDateChange(e.target.value, toDate)}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium text-slate-500">To:</span>
+            <Input
+              type="date"
+              className="h-7 w-32 border-0 bg-transparent p-0 text-xs focus:ring-0 cursor-pointer"
+              value={toDate}
+              onChange={(e) => handleDateChange(fromDate, e.target.value)}
+            />
+          </div>
+          {(fromDate || toDate) && (
+            <button
+              onClick={clearDateRange}
+              className="rounded-full p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+              title="Clear date filter"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -338,8 +423,8 @@ export default function ApplicationsPage() {
             icon={FileText}
             title="No applications found"
             description={
-              dateFilter
-                ? `No applications were logged on ${formatBusinessDateLabel(dateFilter)}.`
+              fromDate || toDate
+                ? `No applications were logged in the selected date range.`
                 : search || status !== ALL
                   ? 'Try adjusting your search or filters.'
                   : 'Log your first job application to start tracking submissions.'
@@ -347,7 +432,8 @@ export default function ApplicationsPage() {
             action={
               !search &&
               status === ALL &&
-              !dateFilter && (
+              !fromDate &&
+              !toDate && (
                 <Button variant="brand" size="sm" onClick={() => setFormOpen(true)}>
                   <Plus className="h-4 w-4" /> Log Application
                 </Button>
