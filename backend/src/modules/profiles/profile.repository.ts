@@ -102,6 +102,8 @@ export function buildWhereClause(
   } else if (requester.role === Role.TEAM_LEADER) {
     conditions.push({
       OR: [
+        { assignedRecruiterId: requester.id },
+        { assignedRecruiterAssignments: { some: { recruiterId: requester.id } } },
         { assignedRecruiter: { createdById: requester.id } },
         { assignedRecruiterAssignments: { some: { recruiter: { createdById: requester.id } } } },
       ],
