@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -109,6 +109,13 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
   const recruiters = recruitersData?.data ?? [];
+  const [recruiterSearch, setRecruiterSearch] = useState('');
+
+  const filteredRecruiters = recruiters.filter(
+    (r) =>
+      r.name.toLowerCase().includes(recruiterSearch.toLowerCase()) ||
+      r.email.toLowerCase().includes(recruiterSearch.toLowerCase())
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,17 +163,34 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
                   <Label>Assigned Recruiters</Label>
                   <span className="text-xs text-slate-400">{selectedRecruiterIds.length}/5 selected</span>
                 </div>
-                <div className="max-h-56 space-y-2 overflow-y-auto rounded-lg border border-slate-200 p-3">
-                  {recruiters.length === 0 ? (
-                    <p className="text-sm text-slate-400">No active recruiters available.</p>
+
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    placeholder="Search recruiter by name or email..."
+                    className="pl-8 h-8 text-xs"
+                    value={recruiterSearch}
+                    onChange={(e) => setRecruiterSearch(e.target.value)}
+                  />
+                </div>
+
+                <div className="max-h-52 space-y-1.5 overflow-y-auto rounded-lg border border-slate-200 p-2.5">
+                  {filteredRecruiters.length === 0 ? (
+                    <p className="text-xs text-slate-400 py-2 text-center">
+                      {recruiters.length === 0
+                        ? user?.role === 'TEAM_LEADER'
+                          ? 'No active recruiters found in your team.'
+                          : 'No active recruiters available.'
+                        : 'No matching recruiters found.'}
+                    </p>
                   ) : (
-                    recruiters.map((recruiter) => {
+                    filteredRecruiters.map((recruiter) => {
                       const checked = selectedRecruiterIds.includes(recruiter.id);
                       const disabled = !checked && selectedRecruiterIds.length >= 5;
                       return (
                         <label
                           key={recruiter.id}
-                          className={`flex cursor-pointer items-start gap-3 rounded-md px-2 py-2 transition ${disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-slate-50'}`}
+                          className={`flex cursor-pointer items-start gap-3 rounded-md px-2 py-1.5 transition ${disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-slate-50'}`}
                         >
                           <input
                             type="checkbox"
@@ -182,8 +206,8 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
                             }}
                           />
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-slate-900">{recruiter.name}</p>
-                            <p className="text-xs text-slate-400">{recruiter.email}</p>
+                            <p className="text-xs font-medium text-slate-900">{recruiter.name}</p>
+                            <p className="text-[11px] text-slate-400">{recruiter.email}</p>
                           </div>
                         </label>
                       );

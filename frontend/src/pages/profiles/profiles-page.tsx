@@ -81,17 +81,15 @@ export default function ProfilesPage() {
               : 'Candidate profiles currently assigned to you.'
           }
           actions={
-            user?.role !== 'TEAM_LEADER' ? (
-              <Button
-                variant="brand"
-                onClick={() => {
-                  setEditingProfile(null);
-                  setFormOpen(true);
-                }}
-              >
-                <Plus className="h-4 w-4" /> New Profile
-              </Button>
-            ) : undefined
+            <Button
+              variant="brand"
+              onClick={() => {
+                setEditingProfile(null);
+                setFormOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" /> New Profile
+            </Button>
           }
         />
       </Reveal>
@@ -137,7 +135,7 @@ export default function ProfilesPage() {
                 : 'No profiles have been assigned to you yet.'
           }
           action={
-            !search && user?.role !== 'TEAM_LEADER' && (
+            !search && (
               <Button variant="brand" size="sm" onClick={() => setFormOpen(true)}>
                 <Plus className="h-4 w-4" /> New Profile
               </Button>
@@ -185,17 +183,15 @@ export default function ProfilesPage() {
                           >
                             <FileText className="h-4 w-4 mr-2" /> View Applications
                           </DropdownMenuItem>
-                          {user?.role !== 'TEAM_LEADER' && (
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setEditingProfile(profile);
-                                setFormOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4 mr-2" /> Edit
-                            </DropdownMenuItem>
-                          )}
-                          {user?.role !== 'TEAM_LEADER' && isManager && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditingProfile(profile);
+                              setFormOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4 mr-2" /> {isManager ? 'Edit / Reassign' : 'Edit'}
+                          </DropdownMenuItem>
+                          {isAdmin && (
                             <DropdownMenuItem
                               onClick={() => setDeleteTarget(profile)}
                               className="text-red-600 focus:text-red-600"

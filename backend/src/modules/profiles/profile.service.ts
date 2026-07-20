@@ -63,9 +63,6 @@ async function syncProfileAssignments(profileId: string, recruiterIds: string[])
 }
 
 export async function createProfile(input: CreateProfileInput, actor: Requester, meta?: Meta) {
-  if (actor.role === Role.TEAM_LEADER) {
-    throw ApiError.forbidden('Team Leaders cannot create client profiles');
-  }
   const recruiterIds = actor.role === Role.RECRUITER
     ? [actor.id]
     : input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
@@ -112,7 +109,8 @@ export async function updateProfile(id: string, input: UpdateProfileInput, actor
   }
 
   if (actor.role === Role.TEAM_LEADER) {
-    throw ApiError.forbidden('Team Leaders cannot edit client profiles');
+    const inTeam = await isProfileInTeam(id, actor.id);
+    if (!inTeam) throw ApiError.forbidden('You can only edit profiles belonging to your team');
   }
 
   if (input.assignedRecruiterIds !== undefined || input.assignedRecruiterId !== undefined) {
@@ -162,7 +160,8 @@ export async function assignRecruiter(id: string, assignedRecruiterIds: string[]
   if (!existing) throw ApiError.notFound('Client profile not found');
 
   if (actor.role === Role.TEAM_LEADER) {
-    throw ApiError.forbidden('Team Leaders cannot assign recruiters to client profiles');
+    const inTeam = await isProfileInTeam(id, actor.id);
+    if (!inTeam) throw ApiError.forbidden('You can only reassign profiles belonging to your team');
   }
 
   await assertRecruitersExist(assignedRecruiterIds, actor);
