@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { initials, formatDateTime } from '@/lib/utils';
+import { initials } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { UserStatusSelector } from '@/components/activity/user-status-selector';
 import { useUpdates, useMarkUpdateAsRead } from '@/hooks/use-updates';

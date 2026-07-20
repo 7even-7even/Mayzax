@@ -20,6 +20,15 @@ export function getAccessToken() {
   return accessToken;
 }
 
+export function getAssetUrl(path: string | null | undefined): string {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
+
+  const serverBase = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${serverBase}${cleanPath}`;
+}
+
 function onRefreshed(token: string) {
   refreshSubscribers.forEach((cb) => cb(token));
   refreshSubscribers = [];

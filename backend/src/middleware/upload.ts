@@ -3,7 +3,7 @@ import fs from 'fs';
 import multer from 'multer';
 import { ApiError } from '@/utils/apiError';
 
-const uploadsDir = path.join(process.cwd(), 'uploads', 'updates');
+const uploadsDir = path.resolve(__dirname, '../../uploads/updates');
 
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });

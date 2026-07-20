@@ -271,6 +271,12 @@ export default function ActivityTrackingPage() {
   const logs = historyData?.data ?? [];
   const members = liveData?.members ?? [];
 
+  const filteredMembers = members.filter((m) => {
+    if (selectedUserId !== ALL && m.userId !== selectedUserId) return false;
+    if (statusFilter !== ALL && m.status !== statusFilter) return false;
+    return true;
+  });
+
   const handleExportExcel = async () => {
     setIsExporting(true);
     try {
@@ -483,11 +489,11 @@ export default function ActivityTrackingPage() {
                 <Download className="h-4 w-4" /> Download Attendance Sheet
               </Button>
             )}
-            {isAdmin && (
+            {/* {isAdmin && (
               <Button variant="outline" onClick={handleExportExcel} disabled={isExporting || logs.length === 0}>
                 <Download className="h-4 w-4" /> Export Raw Logs
               </Button>
-            )}
+            )} */}
           </div>
         }
       />
@@ -667,28 +673,47 @@ export default function ActivityTrackingPage() {
         </div>
       </div>
 
-      {/* Admin Monitoring View: User Summary List */}
-      {isAdmin && selectedUserId === ALL && !fromDate && !toDate && statusFilter === ALL ? (
+      {/* Admin / TL Live User Status Summary Table */}
+      {(isAdmin || isTL) && selectedUserId === ALL && !fromDate && !toDate ? (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-900 mb-3">Live User Shift & Status Summary</h3>
-          {liveLoading && <TableSkeleton rows={6} cols={5} />}
-          {!liveLoading && members.length === 0 && (
-            <EmptyState icon={ShieldCheck} title="No user activity records" description="No active recruiters or team leaders found." />
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-900">
+              {statusFilter !== ALL
+                ? `Users currently in ${STATUS_CONFIG[statusFilter]?.label ?? statusFilter} status`
+                : 'Live User Shift & Status Summary'}
+            </h3>
+            <span className="text-xs text-slate-400 font-medium">
+              {filteredMembers.length} User{filteredMembers.length === 1 ? '' : 's'}
+            </span>
+          </div>
+          {liveLoading && <TableSkeleton rows={6} cols={7} />}
+          {!liveLoading && filteredMembers.length === 0 && (
+            <EmptyState
+              icon={ShieldCheck}
+              title="No users found"
+              description={
+                statusFilter !== ALL
+                  ? `No users are currently in ${STATUS_CONFIG[statusFilter]?.label ?? statusFilter} status.`
+                  : 'No active recruiters or team leaders found.'
+              }
+            />
           )}
-          {!liveLoading && members.length > 0 && (
+          {!liveLoading && filteredMembers.length > 0 && (
             <Table>
               <TableHeader>
                 <TableRow className="text-xs">
                   <TableHead>User Name</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Current Status</TableHead>
+                  <TableHead>Duration in Status</TableHead>
                   <TableHead>Total Shift Logged In</TableHead>
                   <TableHead>Total Productive</TableHead>
                   <TableHead>Total Break</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {members.map((m) => {
+                {filteredMembers.map((m) => {
                   const cfg = STATUS_CONFIG[m.status];
                   return (
                     <TableRow key={m.userId} className="text-xs">
@@ -706,6 +731,9 @@ export default function ActivityTrackingPage() {
                         </span>
                       </TableCell>
                       <TableCell className="font-mono text-slate-700 font-medium">
+                        {formatHoursMinutes(m.currentDurationSeconds)}
+                      </TableCell>
+                      <TableCell className="font-mono text-slate-700 font-medium">
                         {formatHoursMinutes(m.todayLoggedInSeconds)}
                       </TableCell>
                       <TableCell className="font-mono text-emerald-700 font-medium">
@@ -713,6 +741,16 @@ export default function ActivityTrackingPage() {
                       </TableCell>
                       <TableCell className="font-mono text-amber-700 font-medium">
                         {formatHoursMinutes(m.todayBreakSeconds)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs font-semibold text-mayzax-blue hover:text-mayzax-blue-700 hover:bg-mayzax-blue-50"
+                          onClick={() => { setSelectedUserId(m.userId); setPage(1); }}
+                        >
+                          View Event Logs →
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
@@ -722,8 +760,27 @@ export default function ActivityTrackingPage() {
           )}
         </div>
       ) : (
-        /* Detailed Event Logs Table (for TL, Recruiter, or Admin when filtered by specific User/Date) */
+        /* Detailed Event Logs Table (for specific user selection, date range filter, or recruiter view) */
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          {selectedUserId !== ALL && (isAdmin || isTL) && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  Event Logs for {activityUsers?.find((u) => u.id === selectedUserId)?.name || 'Selected User'}
+                </h3>
+                <p className="text-xs text-slate-400">Detailed status transition history and duration logs</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs gap-1 border-slate-200 hover:bg-slate-50"
+                onClick={() => { setSelectedUserId(ALL); setPage(1); }}
+              >
+                ← Back to All Users Summary
+              </Button>
+            </div>
+          )}
+
           {historyLoading && <TableSkeleton rows={6} cols={6} />}
           {isError && <ErrorState onRetry={() => refetch()} />}
 

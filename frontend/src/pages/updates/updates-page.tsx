@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { getAssetUrl } from '@/lib/api-client';
 import {
   useUpdates,
   useMarkUpdateAsRead,
@@ -24,7 +25,8 @@ import {
 import { TableSkeleton } from '@/components/shared/table-skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { formatDateTime } from '@/lib/utils';
-import { Bell, FileText, Download, Plus, Trash2, Eye, ExternalLink, Sparkles, CheckCircle2, Loader2 } from 'lucide-react';
+import { Bell, FileText, Download, Plus, Trash2, Eye, ExternalLink, Sparkles, Loader2 } from 'lucide-react';
+import { saveAs } from 'file-saver';
 import { toast } from 'sonner';
 
 export default function UpdatesPage() {
@@ -41,10 +43,31 @@ export default function UpdatesPage() {
   const [version, setVersion] = useState('');
   const [description, setDescription] = useState('');
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
 
   const updates = updatesData?.updates ?? [];
+
+  const handleDownloadPdf = async (e: React.MouseEvent, item: SystemUpdateItem) => {
+    e.stopPropagation();
+    if (!item.pdfUrl) return;
+    handleRead(item);
+    const fullUrl = getAssetUrl(item.pdfUrl);
+    setDownloadingId(item.id);
+    try {
+      const response = await fetch(fullUrl);
+      if (!response.ok) throw new Error('Download failed');
+      const blob = await response.blob();
+      saveAs(blob, item.pdfOriginalName || 'Release_Documentation.pdf');
+      toast.success('PDF download started.');
+    } catch {
+      toast.error('Could not download PDF directly. Opening in browser...');
+      window.open(fullUrl, '_blank');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const handlePostUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,22 +214,25 @@ export default function UpdatesPage() {
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRead(item);
-                          setPreviewPdfUrl(item.pdfUrl);
+                          setPreviewPdfUrl(getAssetUrl(item.pdfUrl));
                         }}
                       >
                         <Eye className="h-3.5 w-3.5" /> View PDF
                       </Button>
-                      <a
-                        href={item.pdfUrl}
-                        download={item.pdfOriginalName || 'Release_Documentation.pdf'}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
+                      <Button
+                        variant="brand"
+                        size="sm"
+                        className="h-8 text-xs gap-1"
+                        disabled={downloadingId === item.id}
+                        onClick={(e) => handleDownloadPdf(e, item)}
                       >
-                        <Button variant="brand" size="sm" className="h-8 text-xs gap-1">
-                          <Download className="h-3.5 w-3.5" /> Download
-                        </Button>
-                      </a>
+                        {downloadingId === item.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                        Download
+                      </Button>
                     </div>
                   </div>
                 )}

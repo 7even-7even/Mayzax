@@ -17,7 +17,7 @@ const router = Router();
 
 router.post('/signup', authRateLimiter, validate({ body: signupSchema }), authController.signup);
 router.post('/login', authRateLimiter, validate({ body: loginSchema }), authController.login);
-router.post('/refresh', authRateLimiter, authController.refresh);
+router.post('/refresh', authController.refresh);
 router.post('/forgot-password/question', authRateLimiter, validate({ body: forgotPasswordQuestionSchema }), authController.forgotPasswordQuestion);
 router.post('/forgot-password/reset', authRateLimiter, validate({ body: forgotPasswordResetSchema }), authController.forgotPasswordReset);
 router.post('/logout', requireAuth, authController.logout);
