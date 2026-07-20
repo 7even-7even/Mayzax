@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, X, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, X, UserCircle, Activity, Bell } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
@@ -10,12 +10,16 @@ const adminNav = [
   { to: '/recruiters', label: 'Recruiters', icon: Users },
   { to: '/profiles', label: 'Client Profiles', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
+  { to: '/activity', label: 'Monitoring', icon: Activity },
+  { to: '/updates', label: 'Updates', icon: Bell },
   { to: '/profile', label: 'Profile', icon: UserCircle },
 ];
 const recruiterNav = [
   { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/profiles', label: 'My Profiles', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
+  { to: '/activity', label: 'Shift Tracking', icon: Activity },
+  { to: '/updates', label: 'Updates', icon: Bell },
   { to: '/profile', label: 'Profile', icon: UserCircle },
 ];
 
@@ -27,9 +31,11 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
     if (user?.role === 'TEAM_LEADER') {
       if (item.to === '/dashboard') return { ...item, label: 'TL Dashboard' };
       if (item.to === '/recruiters') return { ...item, label: 'My Team' };
+      if (item.to === '/activity') return { ...item, label: 'Shift Tracking' };
     }
     if (user?.role === 'ADMIN') {
       if (item.to === '/recruiters') return { ...item, label: 'User Management' };
+      if (item.to === '/activity') return { ...item, label: 'Monitoring' };
     }
     return item;
   });

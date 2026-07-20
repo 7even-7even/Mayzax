@@ -1,5 +1,14 @@
 export type Role = 'ADMIN' | 'TEAM_LEADER' | 'RECRUITER';
 
+export type UserStatus =
+  | 'ACTIVE'
+  | 'SHORT_BREAK'
+  | 'DINNER_BREAK'
+  | 'BRIEFING_TRAINING'
+  | 'MEETING'
+  | 'SYSTEM_ISSUE'
+  | 'OFFLINE';
+
 export interface User {
   id: string;
   name: string;

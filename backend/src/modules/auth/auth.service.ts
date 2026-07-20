@@ -20,6 +20,7 @@ import {
   ForgotPasswordResetInput,
 } from './auth.validation';
 import * as recruiterRepo from '@/modules/recruiters/recruiter.repository';
+import { handleLoginEvent, handleLogoutEvent } from '@/modules/activity/activity.service';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -112,6 +113,8 @@ export async function login(input: LoginInput, meta: SessionMeta) {
 
   await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
 
+  await handleLoginEvent(user.id, user.role);
+
   return {
     tokens,
     user: sanitizeUser(user),
@@ -198,6 +201,15 @@ export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta)
 export async function logout(refreshTokenRaw?: string) {
   if (!refreshTokenRaw) return;
   const tokenHash = hashToken(refreshTokenRaw);
+  const storedToken = await prisma.refreshToken.findUnique({
+    where: { tokenHash },
+    select: { userId: true, user: { select: { role: true } } },
+  });
+
+  if (storedToken?.user) {
+    await handleLogoutEvent(storedToken.userId, storedToken.user.role);
+  }
+
   await prisma.refreshToken.updateMany({
     where: { tokenHash, revokedAt: null },
     data: { revokedAt: new Date() },

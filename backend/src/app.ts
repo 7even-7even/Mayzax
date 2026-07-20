@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -29,7 +30,7 @@ export function createApp() {
 
   app.set('trust proxy', 1);
 
-  app.use(helmet());
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(
     cors({
       origin(origin, callback) {
@@ -47,6 +48,9 @@ export function createApp() {
   app.use(cookieParser());
   app.use(requestLogger);
   app.use(globalRateLimiter);
+
+  // Serve uploaded update PDFs
+  app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
   // API versioning: all routes mounted under API_PREFIX (e.g. /api/v1)
   app.use(env.API_PREFIX, apiRouter);

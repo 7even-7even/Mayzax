@@ -12,6 +12,7 @@ import { PaginationControls } from '@/components/ui/pagination-controls';
 import { Reveal } from '@/components/motion/reveal';
 import { SummaryCards } from './summary-cards';
 import { RecruiterRow } from './recruiter-row';
+import { LiveStatusCard } from './live-status-card';
 import { useDashboardOverview } from '@/hooks/use-analytics';
 import { useDebounce } from '@/hooks/use-debounce';
 
@@ -53,8 +54,10 @@ export default function DashboardPage() {
         />
       </Reveal>
 
-      <div className="mb-6">
+      <div className="mb-6 space-y-6">
         <SummaryCards />
+        <LiveStatusCard />
+
       </div>
 
       <Reveal delay={0.15}>
