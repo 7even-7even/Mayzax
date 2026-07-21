@@ -9,4 +9,16 @@ export const createUpdateSchema = z.object({
     .nullable()
     .transform((val) => (val === '' ? null : val)),
   description: z.string().trim().min(5, 'Description must be at least 5 characters'),
+  pdfUrl: z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .transform((val) => (val === '' ? null : val)),
+  pdfOriginalName: z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .transform((val) => (val === '' ? null : val)),
 });

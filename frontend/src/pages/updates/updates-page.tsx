@@ -42,6 +42,7 @@ export default function UpdatesPage() {
   const [title, setTitle] = useState('');
   const [version, setVersion] = useState('');
   const [description, setDescription] = useState('');
+  const [driveUrl, setDriveUrl] = useState('');
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
@@ -53,6 +54,10 @@ export default function UpdatesPage() {
     e.stopPropagation();
     if (!item.pdfUrl) return;
     handleRead(item);
+    if (item.pdfUrl.startsWith('http://') || item.pdfUrl.startsWith('https://')) {
+      window.open(item.pdfUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
     const fullUrl = getAssetUrl(item.pdfUrl);
     setDownloadingId(item.id);
     try {
@@ -80,6 +85,7 @@ export default function UpdatesPage() {
     formData.append('title', title.trim());
     if (version.trim()) formData.append('version', version.trim());
     formData.append('description', description.trim());
+    if (driveUrl.trim()) formData.append('pdfUrl', driveUrl.trim());
     if (pdfFile) formData.append('pdfFile', pdfFile);
 
     try {
@@ -89,6 +95,7 @@ export default function UpdatesPage() {
       setTitle('');
       setVersion('');
       setDescription('');
+      setDriveUrl('');
       setPdfFile(null);
     } catch (err) {
       toast.error(extractErrorMessage(err, 'Failed to post update. Please try again.'));
@@ -202,37 +209,56 @@ export default function UpdatesPage() {
                     <FileText className="h-5 w-5 text-mayzax-blue shrink-0" />
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-semibold text-slate-800 truncate">
-                        {item.pdfOriginalName || 'Release_Notes_Documentation.pdf'}
+                        {item.pdfOriginalName || 'Release_Notes_Documentation'}
                       </p>
-                      <p className="text-[11px] text-slate-400">PDF Document Attachment</p>
+                      <p className="text-[11px] text-slate-400">
+                        {item.pdfUrl.startsWith('http') ? 'Google Drive / External Link' : 'PDF Document Attachment'}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs gap-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRead(item);
-                          setPreviewPdfUrl(getAssetUrl(item.pdfUrl));
-                        }}
-                      >
-                        <Eye className="h-3.5 w-3.5" /> View PDF
-                      </Button>
-                      <Button
-                        variant="brand"
-                        size="sm"
-                        className="h-8 text-xs gap-1"
-                        disabled={downloadingId === item.id}
-                        onClick={(e) => handleDownloadPdf(e, item)}
-                      >
-                        {downloadingId === item.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Download className="h-3.5 w-3.5" />
-                        )}
-                        Download
-                      </Button>
+                      {item.pdfUrl.startsWith('http') ? (
+                        <Button
+                          variant="brand"
+                          size="sm"
+                          className="h-8 text-xs gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRead(item);
+                            window.open(item.pdfUrl!, '_blank', 'noopener,noreferrer');
+                          }}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" /> Open Document
+                        </Button>
+                      ) : (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRead(item);
+                              setPreviewPdfUrl(getAssetUrl(item.pdfUrl));
+                            }}
+                          >
+                            <Eye className="h-3.5 w-3.5" /> View PDF
+                          </Button>
+                          <Button
+                            variant="brand"
+                            size="sm"
+                            className="h-8 text-xs gap-1"
+                            disabled={downloadingId === item.id}
+                            onClick={(e) => handleDownloadPdf(e, item)}
+                          >
+                            {downloadingId === item.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Download className="h-3.5 w-3.5" />
+                            )}
+                            Download
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -247,7 +273,7 @@ export default function UpdatesPage() {
           <DialogHeader>
             <DialogTitle>Post System Update & Announcement</DialogTitle>
             <DialogDescription>
-              Share new feature updates, release notes, and PDF documentation with all users.
+              Share new feature updates, release notes, and Google Drive documentation with all users.
             </DialogDescription>
           </DialogHeader>
 
@@ -286,14 +312,31 @@ export default function UpdatesPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="pdfFile">Attach PDF Documentation (Optional)</Label>
+              <Label htmlFor="driveUrl">Google Drive / Document Link (URL)</Label>
+              <Input
+                id="driveUrl"
+                type="url"
+                placeholder="https://drive.google.com/file/d/..."
+                value={driveUrl}
+                onChange={(e) => setDriveUrl(e.target.value)}
+              />
+              <p className="text-[11px] text-slate-400">Paste a Google Drive link, Google Docs link, or external PDF URL.</p>
+            </div>
+
+            <div className="relative flex items-center justify-center my-1">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
+              <span className="relative bg-white px-2 text-[10px] font-bold text-slate-400 uppercase">Or</span>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="pdfFile">Attach PDF File (Local Upload)</Label>
               <Input
                 id="pdfFile"
                 type="file"
                 accept=".pdf,application/pdf"
                 onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
               />
-              <p className="text-[11px] text-slate-400">Upload user manual or feature release notes PDF (max 15MB).</p>
+              <p className="text-[11px] text-slate-400">Upload PDF from your computer (max 25MB).</p>
             </div>
 
             <DialogFooter className="pt-2">

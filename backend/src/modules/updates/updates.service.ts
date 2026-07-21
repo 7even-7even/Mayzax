@@ -34,15 +34,21 @@ export async function getUpdatesForUser(userId: string): Promise<UpdatesResponse
 
 export async function createUpdate(
   userId: string,
-  data: { title: string; version?: string | null; description: string },
+  data: { title: string; version?: string | null; description: string; pdfUrl?: string | null; pdfOriginalName?: string | null },
   file?: Express.Multer.File
 ) {
-  let pdfUrl: string | null = null;
-  let pdfOriginalName: string | null = null;
+  let pdfUrl: string | null = data.pdfUrl ?? null;
+  let pdfOriginalName: string | null = data.pdfOriginalName ?? null;
 
   if (file) {
     pdfUrl = `/uploads/updates/${file.filename}`;
     pdfOriginalName = file.originalname;
+  } else if (pdfUrl) {
+    if (pdfUrl.includes('drive.google.com') || pdfUrl.includes('docs.google.com')) {
+      pdfOriginalName = 'Google Drive Document';
+    } else if (!pdfOriginalName) {
+      pdfOriginalName = 'Documentation Link';
+    }
   }
 
   const update = await prisma.systemUpdate.create({
