@@ -113,15 +113,17 @@ export default function ProfilesPage() {
               : 'Candidate profiles currently assigned to you.'
           }
           actions={
-            <Button
-              variant="brand"
-              onClick={() => {
-                setEditingProfile(null);
-                setFormOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4" /> New Profile
-            </Button>
+            isManager ? (
+              <Button
+                variant="brand"
+                onClick={() => {
+                  setEditingProfile(null);
+                  setFormOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4" /> New Profile
+              </Button>
+            ) : undefined
           }
         />
       </Reveal>
@@ -189,7 +191,7 @@ export default function ProfilesPage() {
                 : 'No profiles have been assigned to you yet.'
           }
           action={
-            !search && (
+            !search && isManager && (
               <Button variant="brand" size="sm" onClick={() => setFormOpen(true)}>
                 <Plus className="h-4 w-4" /> New Profile
               </Button>

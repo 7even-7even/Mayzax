@@ -63,9 +63,10 @@ async function syncProfileAssignments(profileId: string, recruiterIds: string[])
 }
 
 export async function createProfile(input: CreateProfileInput, actor: Requester, meta?: Meta) {
-  const recruiterIds = actor.role === Role.RECRUITER
-    ? [actor.id]
-    : input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
+  if (actor.role === Role.RECRUITER) {
+    throw ApiError.forbidden('Recruiters are not allowed to create new client profiles');
+  }
+  const recruiterIds = input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
   await assertRecruitersExist(recruiterIds, actor);
 
   const profile = await repo.create({
