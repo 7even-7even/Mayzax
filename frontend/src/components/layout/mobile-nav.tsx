@@ -11,7 +11,7 @@ const adminNav = [
   { to: '/profiles', label: 'Client Profiles', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
   { to: '/activity', label: 'Monitoring', icon: Activity },
-  { to: '/updates', label: 'Updates', icon: Bell },
+  { to: '/updates', label: 'Updates & Announcements', icon: Bell },
   { to: '/profile', label: 'Profile', icon: UserCircle },
 ];
 const recruiterNav = [
@@ -19,7 +19,7 @@ const recruiterNav = [
   { to: '/profiles', label: 'My Profiles', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
   { to: '/activity', label: 'Shift Tracking', icon: Activity },
-  { to: '/updates', label: 'Updates', icon: Bell },
+  { to: '/updates', label: 'Updates & Announcements', icon: Bell },
   { to: '/profile', label: 'Profile', icon: UserCircle },
 ];
 

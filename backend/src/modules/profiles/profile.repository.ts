@@ -100,21 +100,42 @@ export function buildWhereClause(
       ],
     });
   } else if (requester.role === Role.TEAM_LEADER) {
-    conditions.push({
-      OR: [
-        { assignedRecruiterId: requester.id },
-        { assignedRecruiterAssignments: { some: { recruiterId: requester.id } } },
-        { assignedRecruiter: { createdById: requester.id } },
-        { assignedRecruiterAssignments: { some: { recruiter: { createdById: requester.id } } } },
-      ],
-    });
+    if (query.assignedRecruiterId === 'unassigned') {
+      conditions.push({
+        assignedRecruiterId: null,
+        assignedRecruiterAssignments: { none: {} },
+      });
+    } else if (query.assignedRecruiterId) {
+      conditions.push({
+        OR: [
+          { assignedRecruiterId: query.assignedRecruiterId },
+          { assignedRecruiterAssignments: { some: { recruiterId: query.assignedRecruiterId } } },
+        ],
+      });
+    } else {
+      conditions.push({
+        OR: [
+          { assignedRecruiterId: requester.id },
+          { assignedRecruiterAssignments: { some: { recruiterId: requester.id } } },
+          { assignedRecruiter: { createdById: requester.id } },
+          { assignedRecruiterAssignments: { some: { recruiter: { createdById: requester.id } } } },
+        ],
+      });
+    }
   } else if (query.assignedRecruiterId) {
-    conditions.push({
-      OR: [
-        { assignedRecruiterId: query.assignedRecruiterId },
-        { assignedRecruiterAssignments: { some: { recruiterId: query.assignedRecruiterId } } },
-      ],
-    });
+    if (query.assignedRecruiterId === 'unassigned') {
+      conditions.push({
+        assignedRecruiterId: null,
+        assignedRecruiterAssignments: { none: {} },
+      });
+    } else {
+      conditions.push({
+        OR: [
+          { assignedRecruiterId: query.assignedRecruiterId },
+          { assignedRecruiterAssignments: { some: { recruiterId: query.assignedRecruiterId } } },
+        ],
+      });
+    }
   }
 
   return { AND: conditions };

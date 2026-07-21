@@ -104,8 +104,13 @@ export async function updateProfile(id: string, input: UpdateProfileInput, actor
     ...(existing.assignedRecruiterAssignments?.map((row) => row.recruiterId) ?? []),
   ];
 
-  if (actor.role === Role.RECRUITER && !assignedRecruiterIds.includes(actor.id)) {
-    throw ApiError.forbidden('You can only edit profiles assigned to you');
+  if (actor.role === Role.RECRUITER) {
+    if (!assignedRecruiterIds.includes(actor.id)) {
+      throw ApiError.forbidden('You can only edit profiles assigned to you');
+    }
+    if (input.candidateName && input.candidateName.trim() !== existing.candidateName) {
+      throw ApiError.forbidden('Recruiters are not allowed to edit candidate name');
+    }
   }
 
   if (actor.role === Role.TEAM_LEADER) {
@@ -180,6 +185,60 @@ export async function assignRecruiter(id: string, assignedRecruiterIds: string[]
   });
 
   return updated;
+}
+
+export async function bulkAssignProfiles(
+  profileIds: string[],
+  assignedRecruiterIds: string[],
+  actor: Requester,
+  meta?: Meta,
+) {
+  if (actor.role === Role.RECRUITER) {
+    throw ApiError.forbidden('Only admins and team leaders can reassign profiles');
+  }
+
+  await assertRecruitersExist(assignedRecruiterIds, actor);
+
+  for (const id of profileIds) {
+    const profile = await repo.findActiveById(id);
+    if (!profile) continue;
+    if (actor.role === Role.TEAM_LEADER) {
+      const inTeam = await isProfileInTeam(id, actor.id);
+      if (!inTeam) throw ApiError.forbidden(`Profile "${profile.candidateName}" does not belong to your team`);
+    }
+    await repo.update(id, { assignedRecruiterId: assignedRecruiterIds[0] });
+    await repo.replaceRecruiterAssignments(id, assignedRecruiterIds);
+  }
+
+  await writeAuditLog({
+    userId: actor.id,
+    action: 'PROFILES_BULK_REASSIGNED',
+    entity: 'ClientProfile',
+    metadata: { count: profileIds.length, profileIds, assignedRecruiterIds },
+    ...meta,
+  });
+
+  return { updatedCount: profileIds.length };
+}
+
+export async function bulkDeleteProfiles(profileIds: string[], actor: Requester, meta?: Meta) {
+  if (actor.role !== Role.ADMIN) {
+    throw ApiError.forbidden('Only admins can bulk delete client profiles');
+  }
+
+  for (const id of profileIds) {
+    await repo.softDelete(id);
+  }
+
+  await writeAuditLog({
+    userId: actor.id,
+    action: 'PROFILES_BULK_DELETED',
+    entity: 'ClientProfile',
+    metadata: { count: profileIds.length, profileIds },
+    ...meta,
+  });
+
+  return { deletedCount: profileIds.length };
 }
 
 export async function getProfile(id: string, actor: Requester) {

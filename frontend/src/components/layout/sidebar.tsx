@@ -38,7 +38,6 @@ export function Sidebar() {
   const { data: summary } = useGlobalSummary();
   const { data: updatesData } = useUpdates();
   const unreadCount = updatesData?.unreadCount ?? 0;
-
   const rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? adminNav : recruiterNav;
 
   const nav = rawNav.map((item) => {

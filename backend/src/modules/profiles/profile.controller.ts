@@ -39,3 +39,13 @@ export const listProfiles = asyncHandler(async (req: Request, res: Response) => 
   const result = await profileService.listProfiles(req.query as any, actor(req));
   res.status(200).json({ success: true, data: result.items, pagination: result.pagination });
 });
+
+export const bulkAssignProfiles = asyncHandler(async (req: Request, res: Response) => {
+  const result = await profileService.bulkAssignProfiles(req.body.profileIds, req.body.assignedRecruiterIds, actor(req), meta(req));
+  res.status(200).json({ success: true, data: result });
+});
+
+export const bulkDeleteProfiles = asyncHandler(async (req: Request, res: Response) => {
+  const result = await profileService.bulkDeleteProfiles(req.body.profileIds, actor(req), meta(req));
+  res.status(200).json({ success: true, data: result });
+});
