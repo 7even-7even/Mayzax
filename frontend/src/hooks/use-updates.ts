@@ -31,7 +31,7 @@ export function useUpdates() {
       const { data } = await apiClient.get<ApiSuccess<UpdatesData>>('/updates');
       return data.data;
     },
-    refetchInterval: 30000, // Refetch every 30 seconds for new update badges
+    refetchInterval: 120000, // Refetch every 2 minutes for new update badges
   });
 }
 
