@@ -13,6 +13,7 @@ import RecruitersPage from '@/pages/recruiters/recruiters-page';
 import ProfilesPage from '@/pages/profiles/profiles-page';
 import ProfilePage from '@/pages/profile/profile-page';
 import ApplicationsPage from '@/pages/applications/applications-page';
+import UpdatesPage from '@/pages/updates/updates-page';
 import NotFoundPage from '@/pages/not-found-page';
 import UnauthorizedPage from '@/pages/unauthorized-page';
 import HomeRedirect from '@/pages/home-redirect';
@@ -75,6 +76,7 @@ export default function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/profiles" element={<ProfilesPage />} />
             <Route path="/applications" element={<ApplicationsPage />} />
+            <Route path="/updates" element={<UpdatesPage />} />
           </Route>
         </Route>
 

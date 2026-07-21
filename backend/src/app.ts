@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -29,7 +30,13 @@ export function createApp() {
 
   app.set('trust proxy', 1);
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      frameguard: false,
+      contentSecurityPolicy: false,
+    }),
+  );
   app.use(
     cors({
       origin(origin, callback) {
@@ -47,6 +54,20 @@ export function createApp() {
   app.use(cookieParser());
   app.use(requestLogger);
   app.use(globalRateLimiter);
+
+  // Serve uploaded update PDFs
+  const staticUploadsDir = path.resolve(__dirname, '../uploads');
+  app.use(
+    '/uploads',
+    express.static(staticUploadsDir, {
+      setHeaders(res) {
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Content-Security-Policy', "frame-ancestors *");
+        res.removeHeader('X-Frame-Options');
+      },
+    }),
+  );
 
   // API versioning: all routes mounted under API_PREFIX (e.g. /api/v1)
   app.use(env.API_PREFIX, apiRouter);

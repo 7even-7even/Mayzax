@@ -92,6 +92,8 @@ model User {
   applications     JobApplication[] @relation("RecruiterApplications")
   refreshTokens    RefreshToken[]
   auditLogs        AuditLog[]
+  createdUpdates   SystemUpdate[] @relation("UserCreatedUpdates")
+  updateReadLogs   UserUpdateRead[]
 
   @@index([role])
   @@index([isActive])
@@ -229,4 +231,37 @@ model AuditLog {
   @@index([userId])
   @@index([entity, entityId])
   @@map("audit_logs")
+}
+
+// ---------------------------------------------------------
+// System Updates & Release Announcements
+// ---------------------------------------------------------
+
+model SystemUpdate {
+  id              String   @id @default(uuid())
+  title           String
+  version         String?
+  description     String
+  pdfUrl          String?
+  pdfOriginalName String?
+  createdById     String
+  createdBy       User     @relation("UserCreatedUpdates", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  readLogs UserUpdateRead[]
+
+  @@map("system_updates")
+}
+
+model UserUpdateRead {
+  id       String       @id @default(uuid())
+  updateId String
+  update   SystemUpdate @relation(fields: [updateId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt   DateTime     @default(now())
+
+  @@unique([updateId, userId])
+  @@map("user_update_reads")
 }

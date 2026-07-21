@@ -9,3 +9,4 @@ coverage/
 generated/
 *.txt
 CHANGELOG.md
+*.pdf

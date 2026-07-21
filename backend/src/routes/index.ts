@@ -4,6 +4,7 @@ import recruiterRoutes from '@/modules/recruiters/recruiter.routes';
 import profileRoutes from '@/modules/profiles/profile.routes';
 import applicationRoutes from '@/modules/applications/application.routes';
 import analyticsRoutes from '@/modules/analytics/analytics.routes';
+import updatesRoutes from '@/modules/updates/updates.routes';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/recruiters', recruiterRoutes);
 router.use('/profiles', profileRoutes);
 router.use('/applications', applicationRoutes);
 router.use('/analytics', analyticsRoutes);
+router.use('/updates', updatesRoutes);
 
 export default router;

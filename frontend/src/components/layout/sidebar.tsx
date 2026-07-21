@@ -6,9 +6,11 @@ import {
   FileText,
   BarChart3,
   UserCircle,
+  Bell,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useGlobalSummary } from '@/hooks/use-analytics';
+import { useUpdates } from '@/hooks/use-updates';
 import { cn } from '@/lib/utils';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
 
@@ -31,6 +33,8 @@ const recruiterNav = [
 export function Sidebar() {
   const { user } = useAuth();
   const { data: summary } = useGlobalSummary();
+  const { data: updatesData } = useUpdates();
+  const unreadCount = updatesData?.unreadCount ?? 0;
   const rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? adminNav : recruiterNav;
 
   const nav = rawNav.map((item) => {
@@ -40,8 +44,7 @@ export function Sidebar() {
     }
     if (user?.role === 'ADMIN') {
       if (item.to === '/recruiters') return { ...item, label: 'Management' };
-      //if /profiles return Client
-      if (item.to === '/profiles') return {  ...item, label: 'Clients' };
+      if (item.to === '/profiles') return { ...item, label: 'Clients' };
     }
     return item;
   });
@@ -76,7 +79,29 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-slate-100 p-4">
+      <div className="border-t border-slate-100 p-4 space-y-3">
+        <NavLink
+          to="/updates"
+          className={({ isActive }) =>
+            cn(
+              'flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition-colors border',
+              isActive
+                ? 'bg-mayzax-blue-50 text-mayzax-blue-700 border-mayzax-blue-200'
+                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-slate-200',
+            )
+          }
+        >
+          <div className="flex items-center gap-2">
+            <Bell className="h-3.5 w-3.5 text-mayzax-blue" />
+            <span>Updates & Announcements</span>
+          </div>
+          {unreadCount > 0 && (
+            <span className="rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
+              {unreadCount}
+            </span>
+          )}
+        </NavLink>
+
         <div className="rounded-lg bg-mayzax-gradient p-3 text-white">
           <p className="text-xs font-semibold">Business Shift</p>
           <p className="text-[11px] opacity-90">{summary?.shiftWindowText || '6:00 PM – 9:00 AM IST'}</p>

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, X, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, X, UserCircle, Bell } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
@@ -10,12 +10,14 @@ const adminNav = [
   { to: '/recruiters', label: 'Recruiters', icon: Users },
   { to: '/profiles', label: 'Client Profiles', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
+  { to: '/updates', label: 'Updates & Announcements', icon: Bell },
   { to: '/profile', label: 'Profile', icon: UserCircle },
 ];
 const recruiterNav = [
   { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/profiles', label: 'My Profiles', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
+  { to: '/updates', label: 'Updates & Announcements', icon: Bell },
   { to: '/profile', label: 'Profile', icon: UserCircle },
 ];
 
