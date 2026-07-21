@@ -8,6 +8,8 @@ import {
   listProfilesQuerySchema,
   idParamSchema,
   assignRecruiterSchema,
+  bulkAssignProfilesSchema,
+  bulkDeleteProfilesSchema,
 } from './profile.validation';
 import * as profileController from './profile.controller';
 
@@ -16,6 +18,18 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/', validate({ query: listProfilesQuerySchema }), profileController.listProfiles);
+router.post(
+  '/bulk-assign',
+  requireRole(Role.ADMIN, Role.TEAM_LEADER),
+  validate({ body: bulkAssignProfilesSchema }),
+  profileController.bulkAssignProfiles,
+);
+router.post(
+  '/bulk-delete',
+  requireRole(Role.ADMIN),
+  validate({ body: bulkDeleteProfilesSchema }),
+  profileController.bulkDeleteProfiles,
+);
 router.get('/:id', validate({ params: idParamSchema }), profileController.getProfile);
 router.post('/', requireRole(Role.ADMIN, Role.TEAM_LEADER, Role.RECRUITER), validate({ body: createProfileSchema }), profileController.createProfile);
 router.patch('/:id', requireRole(Role.ADMIN, Role.TEAM_LEADER, Role.RECRUITER), validate({ params: idParamSchema, body: updateProfileSchema }), profileController.updateProfile);

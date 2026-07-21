@@ -39,6 +39,17 @@ export const assignRecruiterSchema = z.object({
   assignedRecruiterId: z.string().uuid().optional(),
 });
 
+export const bulkAssignProfilesSchema = z.object({
+  profileIds: z.array(z.string().uuid('Invalid profile ID')).min(1, 'Select at least 1 profile'),
+  assignedRecruiterIds: z.array(z.string().uuid()).min(1, 'Assign at least 1 recruiter').max(5, 'You can assign up to 5 recruiters'),
+});
+
+export const bulkDeleteProfilesSchema = z.object({
+  profileIds: z.array(z.string().uuid('Invalid profile ID')).min(1, 'Select at least 1 profile'),
+});
+
 export type CreateProfileInput = z.infer<typeof createProfileSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ListProfilesQuery = z.infer<typeof listProfilesQuerySchema>;
+export type BulkAssignProfilesInput = z.infer<typeof bulkAssignProfilesSchema>;
+export type BulkDeleteProfilesInput = z.infer<typeof bulkDeleteProfilesSchema>;

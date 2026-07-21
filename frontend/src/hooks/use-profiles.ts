@@ -87,3 +87,30 @@ export function useDeleteProfile() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['profiles'] }),
   });
 }
+
+export function useBulkAssignProfiles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ profileIds, assignedRecruiterIds }: { profileIds: string[]; assignedRecruiterIds: string[] }) => {
+      const { data } = await apiClient.post<ApiSuccess<{ updatedCount: number }>>('/profiles/bulk-assign', {
+        profileIds,
+        assignedRecruiterIds,
+      });
+      return data.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['profiles'] }),
+  });
+}
+
+export function useBulkDeleteProfiles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (profileIds: string[]) => {
+      const { data } = await apiClient.post<ApiSuccess<{ deletedCount: number }>>('/profiles/bulk-delete', {
+        profileIds,
+      });
+      return data.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['profiles'] }),
+  });
+}
