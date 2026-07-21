@@ -19,7 +19,7 @@ export const updateProfileSchema = createProfileSchema.partial();
 export const listProfilesQuerySchema = z.object({
   search: z.string().optional(),
   technology: z.string().optional(),
-  assignedRecruiterId: z.string().uuid().optional(),
+  assignedRecruiterId: z.string().optional(),
   isActive: z
     .enum(['true', 'false'])
     .optional()

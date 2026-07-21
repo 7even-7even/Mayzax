@@ -29,6 +29,7 @@ import { ErrorState } from '@/components/shared/error-state';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { ProfileFormDialog } from './profile-form-dialog';
 import { useDeleteProfile, useProfiles } from '@/hooks/use-profiles';
+import { useRecruiters } from '@/hooks/use-recruiters';
 import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage } from '@/lib/api-client';
 import { useAuth } from '@/context/auth-context';
@@ -41,6 +42,7 @@ export default function ProfilesPage() {
   const isManager = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER';
 
   const [search, setSearch] = useState('');
+  const [assignedRecruiterFilter, setAssignedRecruiterFilter] = useState<string>('ALL');
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search);
 
@@ -48,8 +50,15 @@ export default function ProfilesPage() {
   const [editingProfile, setEditingProfile] = useState<ClientProfile | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ClientProfile | null>(null);
 
+  const { data: recruitersData } = useRecruiters({
+    isActive: true,
+    pageSize: 100,
+  });
+  const recruiters = recruitersData?.data ?? [];
+
   const { data, isLoading, isError, refetch } = useProfiles({
     search: debouncedSearch || undefined,
+    assignedRecruiterId: assignedRecruiterFilter === 'ALL' ? undefined : assignedRecruiterFilter,
     page,
     pageSize: 12,
     sortBy: 'createdAt',
@@ -95,8 +104,8 @@ export default function ProfilesPage() {
       </Reveal>
 
       <Reveal delay={0.05}>
-        <div className="mb-4 flex items-center gap-3">
-          <div className="relative w-full max-w-sm">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="relative w-full sm:w-80">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               placeholder="Search by name, email, phone, or tech..."
@@ -108,6 +117,28 @@ export default function ProfilesPage() {
               }}
             />
           </div>
+
+          {isManager && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-500">Assigned To:</span>
+              <select
+                className="h-9 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 font-medium shadow-sm focus:border-mayzax-blue focus:outline-none focus:ring-1 focus:ring-mayzax-blue cursor-pointer"
+                value={assignedRecruiterFilter}
+                onChange={(e) => {
+                  setAssignedRecruiterFilter(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="ALL">All Recruiters</option>
+                <option value="unassigned">Unassigned Profiles</option>
+                {recruiters.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name} ({r.role === 'TEAM_LEADER' ? 'TL' : 'Recruiter'})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </Reveal>
 
