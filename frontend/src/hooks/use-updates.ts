@@ -53,7 +53,7 @@ export function useCreateUpdate() {
   return useMutation({
     mutationFn: async (formData: FormData) => {
       const { data } = await apiClient.post<ApiSuccess<SystemUpdateItem>>('/updates', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': undefined },
       });
       return data.data;
     },

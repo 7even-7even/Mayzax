@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
-import { getAssetUrl } from '@/lib/api-client';
+import { getAssetUrl, extractErrorMessage } from '@/lib/api-client';
 import {
   useUpdates,
   useMarkUpdateAsRead,
@@ -90,8 +90,8 @@ export default function UpdatesPage() {
       setVersion('');
       setDescription('');
       setPdfFile(null);
-    } catch {
-      toast.error('Failed to post update. Please try again.');
+    } catch (err) {
+      toast.error(extractErrorMessage(err, 'Failed to post update. Please try again.'));
     }
   };
 
@@ -100,8 +100,8 @@ export default function UpdatesPage() {
     try {
       await deleteUpdateMutation.mutateAsync(id);
       toast.success('Update deleted.');
-    } catch {
-      toast.error('Failed to delete update.');
+    } catch (err) {
+      toast.error(extractErrorMessage(err, 'Failed to delete update.'));
     }
   };
 
