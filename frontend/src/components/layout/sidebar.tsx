@@ -39,7 +39,7 @@ export function Sidebar() {
 
   const nav = rawNav.map((item) => {
     if (user?.role === 'TEAM_LEADER') {
-      if (item.to === '/dashboard') return { ...item, label: 'TL Dashboard' };
+      if (item.to === '/dashboard') return { ...item, label: 'Dashboard' };
       if (item.to === '/recruiters') return { ...item, label: 'My Team' };
     }
     if (user?.role === 'ADMIN') {
@@ -54,7 +54,7 @@ export function Sidebar() {
       <div className="flex h-16 items-center gap-3 border-b border-slate-100 px-6">
         <img src={mayzaxLogo} alt="Mayzax" className="h-9 w-9 rounded-lg" />
         <div className="leading-tight">
-          <p className="text-sm font-bold text-slate-900">Mayzax Solutions</p>
+          <p className="text-base font-bold text-slate-900">MAYZAX</p>
           <p className="text-[11px] text-slate-400">Recruitment ATS</p>
         </div>
       </div>
