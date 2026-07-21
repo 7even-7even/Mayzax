@@ -31,7 +31,7 @@ router.post(
   profileController.bulkDeleteProfiles,
 );
 router.get('/:id', validate({ params: idParamSchema }), profileController.getProfile);
-router.post('/', requireRole(Role.ADMIN, Role.TEAM_LEADER, Role.RECRUITER), validate({ body: createProfileSchema }), profileController.createProfile);
+router.post('/', requireRole(Role.ADMIN, Role.TEAM_LEADER), validate({ body: createProfileSchema }), profileController.createProfile);
 router.patch('/:id', requireRole(Role.ADMIN, Role.TEAM_LEADER, Role.RECRUITER), validate({ params: idParamSchema, body: updateProfileSchema }), profileController.updateProfile);
 router.patch(
   '/:id/assign',

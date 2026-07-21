@@ -90,6 +90,10 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
   }, [open, profile]);
 
   const onSubmit = async (values: ProfileForm) => {
+    if (!isEdit && !isManager) {
+      toast.error('Only admins and team leaders can create client profiles');
+      return;
+    }
     try {
       const payload = { ...values, notes: values.notes || undefined };
       if (isEdit && profile) {
