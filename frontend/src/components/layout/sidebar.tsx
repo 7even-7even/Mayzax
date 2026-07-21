@@ -42,7 +42,7 @@ export function Sidebar() {
 
   const nav = rawNav.map((item) => {
     if (user?.role === 'TEAM_LEADER') {
-      if (item.to === '/dashboard') return { ...item, label: 'TL Dashboard' };
+      if (item.to === '/dashboard') return { ...item, label: 'Dashboard' };
       if (item.to === '/recruiters') return { ...item, label: 'My Team' };
       if (item.to === '/activity') return { ...item, label: 'Team Tracking' };
     }
