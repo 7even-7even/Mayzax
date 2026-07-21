@@ -131,7 +131,15 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 space-y-1.5">
               <Label htmlFor="candidateName">Candidate Name</Label>
-              <Input id="candidateName" placeholder="e.g. John Doe" {...form.register('candidateName')} />
+              <Input
+                id="candidateName"
+                placeholder="e.g. John Doe"
+                disabled={isEdit && user?.role === 'RECRUITER'}
+                {...form.register('candidateName')}
+              />
+              {isEdit && user?.role === 'RECRUITER' && (
+                <p className="text-[11px] text-slate-400">Candidate name can only be edited by Team Leaders and Admins.</p>
+              )}
               {form.formState.errors.candidateName && (
                 <p className="text-xs text-red-600">{form.formState.errors.candidateName.message}</p>
               )}

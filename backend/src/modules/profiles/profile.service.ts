@@ -104,8 +104,13 @@ export async function updateProfile(id: string, input: UpdateProfileInput, actor
     ...(existing.assignedRecruiterAssignments?.map((row) => row.recruiterId) ?? []),
   ];
 
-  if (actor.role === Role.RECRUITER && !assignedRecruiterIds.includes(actor.id)) {
-    throw ApiError.forbidden('You can only edit profiles assigned to you');
+  if (actor.role === Role.RECRUITER) {
+    if (!assignedRecruiterIds.includes(actor.id)) {
+      throw ApiError.forbidden('You can only edit profiles assigned to you');
+    }
+    if (input.candidateName && input.candidateName.trim() !== existing.candidateName) {
+      throw ApiError.forbidden('Recruiters are not allowed to edit candidate name');
+    }
   }
 
   if (actor.role === Role.TEAM_LEADER) {
