@@ -334,15 +334,6 @@ export default function ProfilesPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-1.5 text-sm text-slate-500">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3.5 w-3.5" /> {profile.email}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-3.5 w-3.5" /> {profile.phone}
-                        </div>
-                      </div>
-
                       {profile.notes && <p className="mt-2 line-clamp-2 text-xs text-slate-400">{profile.notes}</p>}
 
                       <div className="mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-2">
