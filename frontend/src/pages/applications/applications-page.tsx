@@ -451,7 +451,6 @@ export default function ApplicationsPage() {
                   <TableHead>Company / Title</TableHead>
                   <TableHead>Portal</TableHead>
                   <TableHead>Applied By</TableHead>
-                  <TableHead>Verification</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Business Date</TableHead>
                   <TableHead>Applied</TableHead>
@@ -473,19 +472,6 @@ export default function ApplicationsPage() {
                     <TableCell>
                       <p className="text-sm font-medium text-slate-700">{app.recruiter?.name ?? 'Unknown'}</p>
                       <p className="text-xs text-slate-400">{app.recruiter?.email}</p>
-                    </TableCell>
-                    <TableCell>
-                      {app.verified ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          Verified
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600 border border-slate-200">
-                          <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-                          Unverified
-                        </span>
-                      )}
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={app.status} />
