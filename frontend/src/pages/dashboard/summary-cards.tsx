@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp, UserCheck2, UserRoundCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StatCard } from '@/components/motion/stat-card';
 import { useGlobalSummary } from '@/hooks/use-analytics';
 import { useAuth } from '@/context/auth-context';
+import { useMyRecruiterStats } from '@/hooks/use-recruiters';
 
 const cardConfig = [
   { key: 'totalRecruiters', label: 'Total Recruiters', icon: Users, color: 'text-mayzax-blue bg-mayzax-blue-50' },
@@ -16,12 +17,14 @@ const cardConfig = [
 export function SummaryCards() {
   const { user } = useAuth();
   const { data, isLoading } = useGlobalSummary();
+  const { data: myStats, isLoading: myStatsLoading } = useMyRecruiterStats();
   const isAdmin = user?.role === 'ADMIN';
+  const isTL = user?.role === 'TEAM_LEADER';
   const [teamsExpanded, setTeamsExpanded] = useState(false);
 
   return (
     <div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {cardConfig.map((card, i) => (
           <StatCard
             key={card.key}
@@ -33,6 +36,26 @@ export function SummaryCards() {
             index={i}
           />
         ))}
+        {isTL && (
+          <>
+            <StatCard
+              icon={Briefcase}
+              label="My Total Applications"
+              value={myStats?.totalApplications ?? 0}
+              isLoading={myStatsLoading}
+              colorClass="text-orange-600 bg-orange-50 border-orange-200"
+              index={5}
+            />
+            <StatCard
+              icon={Clock}
+              label="My Shift Applications"
+              value={myStats?.currentShiftApplications ?? 0}
+              isLoading={myStatsLoading}
+              colorClass="text-violet-600 bg-violet-50 border-violet-200"
+              index={6}
+            />
+          </>
+        )}
       </div>
 
       {/* Team Count Card — Admin only */}
