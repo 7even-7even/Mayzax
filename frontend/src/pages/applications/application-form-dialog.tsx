@@ -144,8 +144,7 @@ function detectJobPortal(url: string): (typeof ALL_JOB_PORTALS)[number] | null {
 }
 
 
-import { useExtensionVerification } from '@/hooks/use-extension-verification';
-import { ExtensionVerificationBadge } from '@/components/shared/extension-verification-badge';
+
 
 const applicationSchema = z.object({
   profileId: z.string().uuid('Please select a profile'),
@@ -220,18 +219,7 @@ export function ApplicationFormDialog({
 
   const debouncedLink = useDebounce(jobLink, 500);
 
-  const { isVerified, isChecking, verificationResult } = useExtensionVerification(debouncedLink);
 
-  // Auto-fill values if verified via extension
-  useEffect(() => {
-    if (isVerified && verificationResult) {
-      form.setValue('verified', true);
-      form.setValue('verificationMethod', 'Browser Extension');
-    } else {
-      form.setValue('verified', false);
-      form.setValue('verificationMethod', null);
-    }
-  }, [isVerified, verificationResult]);
 
 
   const [duplicateResult, setDuplicateResult] =
@@ -490,11 +478,7 @@ useEffect(() => {
               {...form.register('jobLink')}
             />
 
-            <ExtensionVerificationBadge
-              isVerified={isVerified}
-              isChecking={isChecking}
-              result={verificationResult}
-            />
+
 
 
 

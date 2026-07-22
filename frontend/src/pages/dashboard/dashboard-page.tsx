@@ -53,7 +53,7 @@ function TlTeamCard() {
   const handleCancel = () => setEditing(false);
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col justify-between">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
@@ -143,11 +143,13 @@ export default function DashboardPage() {
 
       <div className="mb-6 space-y-6">
         {user?.role === 'TEAM_LEADER' && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+            <div className="lg:col-span-2 h-full">
               <SummaryCards />
             </div>
-            <TlTeamCard />
+            <div className="h-full">
+              <TlTeamCard />
+            </div>
           </div>
         )}
         {user?.role !== 'TEAM_LEADER' && <SummaryCards />}

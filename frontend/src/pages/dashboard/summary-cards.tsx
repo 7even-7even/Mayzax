@@ -1,33 +1,49 @@
 import { useState } from 'react';
-import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp, Zap, Coffee, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StatCard } from '@/components/motion/stat-card';
 import { useGlobalSummary } from '@/hooks/use-analytics';
 import { useAuth } from '@/context/auth-context';
 
-const cardConfig = [
+const adminCardConfig = [
   { key: 'totalRecruiters', label: 'Total Recruiters', icon: Users, color: 'text-mayzax-blue bg-mayzax-blue-50' },
   { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, color: 'text-emerald-600 bg-emerald-50' },
   { key: 'totalProfiles', label: 'Total Client Profiles', icon: UserSquare2, color: 'text-mayzax-green bg-mayzax-green-50' },
   { key: 'totalApplications', label: 'Total Applications', icon: Briefcase, color: 'text-amber-600 bg-amber-50' },
-  { key: 'currentShiftApplications', label: "Today's Shift Applications", icon: Clock, color: 'text-purple-600 bg-purple-50' },
+  { key: 'currentShiftApplications', label: "Today's Applications", icon: Clock, color: 'text-purple-600 bg-purple-50' },
+] as const;
+
+const tlCardConfig = [
+  { key: 'totalRecruiters', label: 'Team Recruiters', icon: Users, color: 'text-mayzax-blue bg-mayzax-blue-50' },
+  { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, color: 'text-emerald-600 bg-emerald-50' },
+  { key: 'totalProfiles', label: 'Team Clients Profiles', icon: UserSquare2, color: 'text-mayzax-green bg-mayzax-green-50' },
+  { key: 'totalApplications', label: 'Total Team Applications', icon: Briefcase, color: 'text-amber-600 bg-amber-50' },
+  { key: 'currentShiftApplications', label: "Today's Team Applications", icon: Clock, color: 'text-purple-600 bg-purple-50' },
+  { key: 'myTotalApplications', label: 'My Total Applications', icon: Briefcase, color: 'text-amber-600 bg-amber-50' },
+  { key: 'myCurrentShiftApplications', label: "My Current Applications", icon: Clock, color: 'text-purple-600 bg-purple-50' },
+  { key: 'activeMemberCount', label: 'Active Team Members', icon: Zap, color: 'text-emerald-600 bg-emerald-50' },
+  { key: 'onBreakMemberCount', label: 'Members on Break', icon: Coffee, color: 'text-blue-600 bg-blue-50' },
+  { key: 'topPerformer', label: 'Top Performer Today', icon: Trophy, color: 'text-indigo-600 bg-indigo-50' },
 ] as const;
 
 export function SummaryCards() {
   const { user } = useAuth();
   const { data, isLoading } = useGlobalSummary();
   const isAdmin = user?.role === 'ADMIN';
+  const isTeamLeader = user?.role === 'TEAM_LEADER';
   const [teamsExpanded, setTeamsExpanded] = useState(false);
+
+  const visibleCards = isTeamLeader ? tlCardConfig : adminCardConfig;
 
   return (
     <div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        {cardConfig.map((card, i) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {visibleCards.map((card, i) => (
           <StatCard
             key={card.key}
             icon={card.icon}
             label={card.label}
-            value={data ? data[card.key] : 0}
+            value={data ? (data[card.key] ?? 0) : 0}
             isLoading={isLoading}
             colorClass={card.color}
             index={i}
