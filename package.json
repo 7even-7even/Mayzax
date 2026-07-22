@@ -6,7 +6,8 @@
   "scripts": {
     "install:backend": "npm install --prefix backend",
     "install:frontend": "npm install --prefix frontend",
-    "install:all": "npm run install:backend && npm run install:frontend",
+    "install:extension": "npm install --prefix extension",
+    "install:all": "npm run install:backend && npm run install:frontend && npm run install:extension",
     "env:backend": "cp -n backend/.env.example backend/.env || true",
     "env:frontend": "cp -n frontend/.env.example frontend/.env || true",
     "env:all": "npm run env:backend && npm run env:frontend",
@@ -20,10 +21,12 @@
     "setup": "npm run install:all && npm run env:all && npm run db:generate && npm run db:migrate && npm run db:seed",
     "dev:backend": "npm run dev --prefix backend",
     "dev:frontend": "npm run dev --prefix frontend",
-    "dev": "concurrently -n API,WEB -c blue,green \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:extension": "npm run dev --prefix extension",
+    "dev": "concurrently -n API,WEB,EXT -c blue,green,yellow \"npm:dev:backend\" \"npm:dev:frontend\" \"npm:dev:extension\"",
     "build:backend": "npm run build --prefix backend",
     "build:frontend": "npm run build --prefix frontend",
-    "build": "npm run build:backend && npm run build:frontend",
+    "build:extension": "npm run build --prefix extension",
+    "build": "npm run build:backend && npm run build:frontend && npm run build:extension",
     "start:backend": "npm run start --prefix backend",
     "start:frontend": "npm run dev --prefix frontend",
     "start": "concurrently -n API,WEB -c blue,green \"npm:start:backend\" \"npm:start:frontend\"",
@@ -34,7 +37,7 @@
     "typecheck:backend": "npm run typecheck --prefix backend",
     "typecheck:frontend": "npm run typecheck --prefix frontend",
     "typecheck": "npm run typecheck:backend && npm run typecheck:frontend",
-    "clean": "rimraf backend/dist backend/node_modules frontend/dist frontend/node_modules node_modules"
+    "clean": "rimraf backend/dist backend/node_modules frontend/dist frontend/node_modules extension/dist extension/node_modules node_modules"
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.7",
