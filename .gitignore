@@ -10,3 +10,7 @@ generated/
 *.txt
 CHANGELOG.md
 *.pdf
+
+# Vite config timestamp files
+vite.config.ts.timestamp-*
+*.timestamp-*.mjs
