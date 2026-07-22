@@ -76,21 +76,26 @@ export function useExtensionVerification(jobLink: string) {
 
     // Query external extension port
     try {
-      chrome.runtime.sendMessage(
-        extensionId,
-        { action: 'VERIFY_URL', url: jobLink },
-        (response: ExtensionVerificationResult & { error?: string }) => {
-          setIsChecking(false);
-          if (chrome.runtime.lastError) {
-            console.warn('[Mayzax Extension Hook] Extension not detected or not connectable:', chrome.runtime.lastError.message);
-            return;
+      const chromeObj = (window as any).chrome;
+      if (chromeObj?.runtime?.sendMessage) {
+        chromeObj.runtime.sendMessage(
+          extensionId,
+          { action: 'VERIFY_URL', url: jobLink },
+          (response: ExtensionVerificationResult & { error?: string }) => {
+            setIsChecking(false);
+            if (chromeObj.runtime.lastError) {
+              console.warn('[Mayzax Extension Hook] Extension not detected or not connectable:', chromeObj.runtime.lastError.message);
+              return;
+            }
+            if (response && response.verified) {
+              setIsVerified(true);
+              setVerificationResult(response);
+            }
           }
-          if (response && response.verified) {
-            setIsVerified(true);
-            setVerificationResult(response);
-          }
-        }
-      );
+        );
+      } else {
+        setIsChecking(false);
+      }
     } catch (err) {
       console.warn('[Mayzax Extension Hook] External messaging failed:', err);
       setIsChecking(false);
