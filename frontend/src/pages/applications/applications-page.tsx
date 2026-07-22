@@ -452,6 +452,7 @@ export default function ApplicationsPage() {
                   <TableHead>Portal</TableHead>
                   <TableHead>Applied By</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Verification</TableHead>
                   <TableHead>Business Date</TableHead>
                   <TableHead>Applied</TableHead>
                   <TableHead className="text-right">Link</TableHead>
@@ -475,6 +476,19 @@ export default function ApplicationsPage() {
                     </TableCell>
                     <TableCell>
                       <StatusBadge status={app.status} />
+                    </TableCell>
+                    <TableCell>
+                      {app.verified ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/10">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                          Verified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-500/10">
+                          <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                          Unverified
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="text-xs text-slate-500">{app.businessDate.slice(0, 10)}</TableCell>
                     <TableCell className="text-xs text-slate-500">{formatDateTime(app.appliedAt)}</TableCell>

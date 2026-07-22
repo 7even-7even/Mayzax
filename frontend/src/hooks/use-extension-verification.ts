@@ -29,7 +29,8 @@ const VERIFICATION_KEYWORDS = [
   'post-apply',
   'already-applied',
   'alreadyapplied',
-  'previously-applied'
+  'previously-applied',
+  'applied'
 ];
 
 export function useExtensionVerification(jobLink: string) {
