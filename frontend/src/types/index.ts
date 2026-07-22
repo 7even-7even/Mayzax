@@ -195,6 +195,11 @@ export interface GlobalSummary {
   shiftWindowText: string;
   totalTeams?: number;
   teams?: Array<{ tlId: string; tlName: string; teamName: string | null; memberCount: number }>;
+  myTotalApplications?: number;
+  myCurrentShiftApplications?: number;
+  activeMemberCount?: number;
+  onBreakMemberCount?: number;
+  topPerformer?: string;
 }
 
 export interface DailyCount {

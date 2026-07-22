@@ -279,7 +279,18 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
 
   const isTeamLeader = actor.role === Role.TEAM_LEADER;
 
-  const [totalRecruiters, activeRecruiters, totalProfiles, totalApplications, todayApplications, teamLeaders] = await Promise.all([
+  const [
+    totalRecruiters,
+    activeRecruiters,
+    totalProfiles,
+    totalApplications,
+    todayApplications,
+    teamLeaders,
+    myTotalApplications,
+    myTodayApplications,
+    teamOpenLogs,
+    teamApplicationsToday,
+  ] = await Promise.all([
     prisma.user.count({
       where: {
         role: Role.RECRUITER,
@@ -330,7 +341,62 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
           },
           orderBy: { name: 'asc' },
         }),
+    prisma.jobApplication.count({
+      where: { recruiterId: actor.id },
+    }),
+    prisma.jobApplication.count({
+      where: {
+        recruiterId: actor.id,
+        businessDate: businessDateFilter,
+      },
+    }),
+    prisma.activityLog.findMany({
+      where: {
+        user: {
+          role: Role.RECRUITER,
+          deletedAt: null,
+          ...(isTeamLeader ? { createdById: actor.id } : {}),
+        },
+        endedAt: null,
+      },
+      select: {
+        status: true,
+      },
+    }),
+    prisma.jobApplication.groupBy({
+      by: ['recruiterId'],
+      where: {
+        businessDate: businessDateFilter,
+        recruiter: {
+          role: Role.RECRUITER,
+          deletedAt: null,
+          ...(isTeamLeader ? { createdById: actor.id } : {}),
+        },
+      },
+      _count: {
+        _all: true,
+      },
+    }),
   ]);
+
+  const activeMemberCount = teamOpenLogs.filter((log) => log.status === 'ACTIVE').length;
+  const onBreakMemberCount = teamOpenLogs.filter(
+    (log) => log.status === 'SHORT_BREAK' || log.status === 'DINNER_BREAK'
+  ).length;
+
+  let topPerformer = '-';
+  if (teamApplicationsToday.length > 0) {
+    const top = teamApplicationsToday.reduce((prev, current) =>
+      prev._count._all > current._count._all ? prev : current
+    );
+    const topUser = await prisma.user.findUnique({
+      where: { id: top.recruiterId },
+      select: { name: true },
+    });
+    if (topUser) {
+      topPerformer = `${topUser.name} (${top._count._all})`;
+    }
+  }
 
   const teams = teamLeaders.map((tl) => ({
     tlId: tl.id,
@@ -349,6 +415,11 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
     shiftWindowText: getShiftWindowText(),
     totalTeams: teams.length,
     teams,
+    myTotalApplications,
+    myCurrentShiftApplications: myTodayApplications,
+    activeMemberCount,
+    onBreakMemberCount,
+    topPerformer,
   };
 }
 
