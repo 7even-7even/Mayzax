@@ -21,8 +21,8 @@ const tlCardConfig = [
   { key: 'currentShiftApplications', label: "Today's Team Applications", icon: Clock, color: 'text-purple-600 bg-purple-50' },
   { key: 'myTotalApplications', label: 'My Total Applications', icon: Briefcase, color: 'text-amber-600 bg-amber-50' },
   { key: 'myCurrentShiftApplications', label: "My Current Applications", icon: Clock, color: 'text-purple-600 bg-purple-50' },
-  { key: 'activeMemberCount', label: 'Active Team Members', icon: Zap, color: 'text-emerald-600 bg-emerald-50' },
-  { key: 'onBreakMemberCount', label: 'Members on Break', icon: Coffee, color: 'text-blue-600 bg-blue-50' },
+  { key: 'activeMemberCount', label: 'Logged In Members', icon: Zap, color: 'text-emerald-600 bg-emerald-50' },
+  { key: 'onBreakMemberCount', label: 'On Break Members', icon: Coffee, color: 'text-blue-600 bg-blue-50' },
   { key: 'topPerformer', label: 'Top Performer Today', icon: Trophy, color: 'text-indigo-600 bg-indigo-50' },
 ] as const;
 

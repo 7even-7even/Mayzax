@@ -74,10 +74,13 @@ export function useExtensionVerification(jobLink: string) {
 
     // Query external extension port using the loaded extension ID
     const extensionId = import.meta.env.VITE_EXTENSION_ID || 'nmbkoelklehokgbdakioefnikogeakpc';
+    const chromeObj = (window as any).chrome;
+
+    console.log('[Mayzax Extension Hook] Target Extension ID:', extensionId);
+    console.log('[Mayzax Extension Hook] chrome.runtime available:', !!chromeObj?.runtime?.sendMessage);
 
     // Query external extension port
     try {
-      const chromeObj = (window as any).chrome;
       if (chromeObj?.runtime?.sendMessage) {
         chromeObj.runtime.sendMessage(
           extensionId,

@@ -32,6 +32,8 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage } from '@/lib/api-client';
 import { ALL_JOB_PORTALS, formatEnumLabel } from '@/components/shared/status-badge';
 import { useAuth } from '@/context/auth-context';
+import { useExtensionVerification } from '@/hooks/use-extension-verification';
+import { ExtensionVerificationBadge } from '@/components/shared/extension-verification-badge';
 
 
 function detectJobPortal(url: string): (typeof ALL_JOB_PORTALS)[number] | null {
@@ -219,6 +221,7 @@ export function ApplicationFormDialog({
 
   const debouncedLink = useDebounce(jobLink, 500);
 
+  const { isVerified, isChecking, verificationResult } = useExtensionVerification(debouncedLink);
 
 
 
@@ -242,6 +245,8 @@ export function ApplicationFormDialog({
         companyName: '',
         jobTitle: '',
         jobPortal: 'OTHER',
+        verified: false,
+        verificationMethod: null,
       });
 
       setDuplicateResult(null);
@@ -305,6 +310,27 @@ export function ApplicationFormDialog({
   ]);
 
 
+  useEffect(() => {
+    if (isVerified && verificationResult) {
+      form.setValue('verified', true);
+      const isKeywordMatch = verificationResult.matchedRules?.includes('URL_KEYWORD_MATCH');
+      form.setValue('verificationMethod', isKeywordMatch ? 'Keyword Match' : 'Browser Extension');
+      
+      if (verificationResult.company) {
+        form.setValue('companyName', verificationResult.company, { shouldDirty: true });
+      }
+      if (verificationResult.jobTitle) {
+        form.setValue('jobTitle', verificationResult.jobTitle, { shouldDirty: true });
+      }
+      if (verificationResult.portal) {
+        form.setValue('jobPortal', verificationResult.portal, { shouldDirty: true });
+      }
+    } else {
+      form.setValue('verified', false);
+      form.setValue('verificationMethod', null);
+    }
+  }, [isVerified, verificationResult, form]);
+
 
 
   const onSubmit = async (values: ApplicationForm) => {
@@ -324,6 +350,8 @@ export function ApplicationFormDialog({
         companyName: '',
         jobTitle: '',
         jobPortal: 'OTHER',
+        verified: false,
+        verificationMethod: null,
       });
       setDuplicateResult(null);
 
@@ -478,40 +506,27 @@ useEffect(() => {
               {...form.register('jobLink')}
             />
 
-
-
-
-
-            {
-              duplicateResult?.isDuplicate && (
-
-                <p className="flex items-center gap-1.5 rounded-md bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700">
-
-                  <AlertTriangle className="h-3.5 w-3.5" />
-
-                  This profile has already applied to this job.
-
-                </p>
-
-              )
-            }
-
-
-
-            {
-              duplicateResult &&
-              !duplicateResult.isDuplicate && (
-
-                <p className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-700">
-
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-
-                  No duplicate found.
-
-                </p>
-
-              )
-            }
+            {debouncedLink && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                <ExtensionVerificationBadge
+                  isVerified={isVerified}
+                  isChecking={isChecking}
+                  result={verificationResult}
+                />
+                {duplicateResult?.isDuplicate && (
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 border border-red-100">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    This profile has already applied to this job.
+                  </span>
+                )}
+                {duplicateResult && !duplicateResult.isDuplicate && (
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700 border border-emerald-100">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    No duplicate found.
+                  </span>
+                )}
+              </div>
+            )}
 
 
 
