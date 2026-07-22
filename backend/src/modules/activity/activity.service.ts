@@ -1,6 +1,7 @@
 import { UserStatus, Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/utils/apiError';
+import { getBusinessDateString, getBusinessShiftBounds } from '@/utils/businessDate';
 import {
   ActivityRequester,
   CurrentStatusResponse,
@@ -530,9 +531,11 @@ export async function getActivityHistory(
   }
 
   if (query.fromDate || query.toDate) {
+    const startBounds = query.fromDate ? getBusinessShiftBounds(query.fromDate) : null;
+    const endBounds = query.toDate ? getBusinessShiftBounds(query.toDate) : null;
     where.startedAt = {
-      ...(query.fromDate ? { gte: new Date(`${query.fromDate}T00:00:00.000Z`) } : {}),
-      ...(query.toDate ? { lte: new Date(`${query.toDate}T23:59:59.999Z`) } : {}),
+      ...(startBounds ? { gte: startBounds.start } : {}),
+      ...(endBounds ? { lte: endBounds.end } : {}),
     };
   }
 
@@ -575,15 +578,18 @@ export async function getProductivityMetrics(
   requester: ActivityRequester
 ): Promise<ProductivityMetrics> {
   const now = new Date();
-  const defaultFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString().slice(0, 10);
+  const defaultFrom = getBusinessDateString(now);
 
   const fromDate = query.fromDate || defaultFrom;
   const toDate = query.toDate || defaultFrom;
 
+  const startBounds = getBusinessShiftBounds(fromDate);
+  const endBounds = getBusinessShiftBounds(toDate);
+
   const where: any = {
     startedAt: {
-      gte: new Date(`${fromDate}T00:00:00.000Z`),
-      lte: new Date(`${toDate}T23:59:59.999Z`),
+      gte: startBounds.start,
+      lte: endBounds.end,
     },
   };
 
@@ -643,7 +649,7 @@ export async function getAttendanceReport(
   requester: ActivityRequester
 ) {
   const now = new Date();
-  const defaultDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0).toISOString().slice(0, 10);
+  const defaultDate = getBusinessDateString(now);
   const fromDate = query.fromDate || defaultDate;
   const toDate = query.toDate || defaultDate;
 
@@ -671,12 +677,15 @@ export async function getAttendanceReport(
     orderBy: { name: 'asc' },
   });
 
+  const startBounds = getBusinessShiftBounds(fromDate);
+  const endBounds = getBusinessShiftBounds(toDate);
+
   const logs = await prisma.activityLog.findMany({
     where: {
       userId: { in: users.map((u) => u.id) },
       startedAt: {
-        gte: new Date(`${fromDate}T00:00:00.000Z`),
-        lte: new Date(`${toDate}T23:59:59.999Z`),
+        gte: startBounds.start,
+        lte: endBounds.end,
       },
     },
     orderBy: { startedAt: 'asc' },
