@@ -279,7 +279,7 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
 
   const isTeamLeader = actor.role === Role.TEAM_LEADER;
 
-  const [totalRecruiters, activeRecruiters, totalProfiles, totalApplications, todayApplications] = await Promise.all([
+  const [totalRecruiters, activeRecruiters, totalProfiles, totalApplications, todayApplications, teamLeaders] = await Promise.all([
     prisma.user.count({
       where: {
         role: Role.RECRUITER,
@@ -317,7 +317,27 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
         ...(isTeamLeader ? { recruiter: { createdById: actor.id } } : {}),
       },
     }),
+    // Fetch TLs with their member count (Admin only; TL sees just themselves)
+    isTeamLeader
+      ? Promise.resolve([] as { id: string; name: string; teamName: string | null; _count: { createdUsers: number } }[])
+      : prisma.user.findMany({
+          where: { role: Role.TEAM_LEADER, deletedAt: null, isActive: true },
+          select: {
+            id: true,
+            name: true,
+            teamName: true,
+            _count: { select: { createdUsers: { where: { deletedAt: null } } } },
+          },
+          orderBy: { name: 'asc' },
+        }),
   ]);
+
+  const teams = teamLeaders.map((tl) => ({
+    tlId: tl.id,
+    tlName: tl.name,
+    teamName: tl.teamName ?? null,
+    memberCount: tl._count.createdUsers,
+  }));
 
   return {
     totalRecruiters,
@@ -327,6 +347,8 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
     currentShiftApplications: todayApplications,
     currentBusinessDate: todayBusinessDate,
     shiftWindowText: getShiftWindowText(),
+    totalTeams: teams.length,
+    teams,
   };
 }
 

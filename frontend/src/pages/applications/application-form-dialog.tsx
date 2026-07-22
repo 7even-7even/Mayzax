@@ -144,6 +144,9 @@ function detectJobPortal(url: string): (typeof ALL_JOB_PORTALS)[number] | null {
 }
 
 
+import { useExtensionVerification } from '@/hooks/use-extension-verification';
+import { ExtensionVerificationBadge } from '@/components/shared/extension-verification-badge';
+
 const applicationSchema = z.object({
   profileId: z.string().uuid('Please select a profile'),
 
@@ -160,6 +163,9 @@ const applicationSchema = z.object({
     .max(200, 'Job title must be 200 characters or less'),
 
   jobPortal: z.enum(ALL_JOB_PORTALS),
+
+  verified: z.boolean().default(false),
+  verificationMethod: z.string().nullable().optional(),
 });
 
 
@@ -203,6 +209,8 @@ export function ApplicationFormDialog({
       companyName: '',
       jobTitle: '',
       jobPortal: 'OTHER',
+      verified: false,
+      verificationMethod: null,
     },
   });
 
@@ -211,6 +219,19 @@ export function ApplicationFormDialog({
   const profileId = form.watch('profileId');
 
   const debouncedLink = useDebounce(jobLink, 500);
+
+  const { isVerified, isChecking, verificationResult } = useExtensionVerification(debouncedLink);
+
+  // Auto-fill values if verified via extension
+  useEffect(() => {
+    if (isVerified && verificationResult) {
+      form.setValue('verified', true);
+      form.setValue('verificationMethod', 'Browser Extension');
+    } else {
+      form.setValue('verified', false);
+      form.setValue('verificationMethod', null);
+    }
+  }, [isVerified, verificationResult]);
 
 
   const [duplicateResult, setDuplicateResult] =
@@ -467,6 +488,12 @@ useEffect(() => {
               id="jobLink"
               placeholder="https://www.linkedin.com/jobs/view/..."
               {...form.register('jobLink')}
+            />
+
+            <ExtensionVerificationBadge
+              isVerified={isVerified}
+              isChecking={isChecking}
+              result={verificationResult}
             />
 
 

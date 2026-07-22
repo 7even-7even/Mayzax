@@ -71,6 +71,8 @@ export const createApplicationSchema = z.object({
   applicationCompleted: applicationCompletedSchema,
   status: applicationStatusEnum.default('APPLIED'),
   appliedAt: z.coerce.date().optional(),
+  verified: z.boolean().default(false).optional(),
+  verificationMethod: z.string().trim().max(100).nullable().optional(),
 });
 
 export const updateApplicationSchema = z.object({

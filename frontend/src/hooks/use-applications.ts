@@ -34,6 +34,8 @@ export interface CreateApplicationInput {
   jobPortal: JobPortal;
   applicationCompleted?: boolean;
   status?: ApplicationStatus;
+  verified?: boolean;
+  verificationMethod?: string | null;
 }
 
 export function useCreateApplication() {

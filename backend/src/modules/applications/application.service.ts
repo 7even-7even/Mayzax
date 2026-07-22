@@ -86,6 +86,8 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
       status: input.status,
       appliedAt,
       businessDate,
+      verified: input.verified,
+      verificationMethod: input.verificationMethod,
     });
 
     await writeAuditLog({

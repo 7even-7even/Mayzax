@@ -69,6 +69,21 @@ export async function createProfile(input: CreateProfileInput, actor: Requester,
   const recruiterIds = input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
   await assertRecruitersExist(recruiterIds, actor);
 
+  // Check if active profile with same email or phone number already exists
+  const duplicate = await prisma.clientProfile.findFirst({
+    where: {
+      deletedAt: null,
+      OR: [
+        { email: { equals: input.email, mode: 'insensitive' as const } },
+        { phone: input.phone },
+      ],
+    },
+  });
+
+  if (duplicate) {
+    throw ApiError.badRequest('Existing Client with same Email/Phone Number');
+  }
+
   const profile = await repo.create({
     candidateName: input.candidateName,
     email: input.email,
@@ -126,6 +141,24 @@ export async function updateProfile(id: string, input: UpdateProfileInput, actor
     const recruiterIds = input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
     await assertRecruitersExist(recruiterIds, actor);
     await syncProfileAssignments(id, recruiterIds);
+  }
+
+  // Check if active profile with same email or phone number already exists (excluding current profile)
+  if (input.email || input.phone) {
+    const duplicate = await prisma.clientProfile.findFirst({
+      where: {
+        deletedAt: null,
+        id: { not: id },
+        OR: [
+          ...(input.email ? [{ email: { equals: input.email, mode: 'insensitive' as const } }] : []),
+          ...(input.phone ? [{ phone: input.phone }] : []),
+        ],
+      },
+    });
+
+    if (duplicate) {
+      throw ApiError.badRequest('Existing Client with same Email/Phone Number');
+    }
   }
 
   const rest = { ...(input as any) };

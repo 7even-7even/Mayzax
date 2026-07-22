@@ -24,7 +24,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { formatDateTime, generateExportFilename } from '@/lib/utils';
-import { Calendar, Clock, Download, Activity, Coffee, ShieldCheck, PieChart as PieChartIcon, User as UserIcon, UserCheck, AlertCircle, UserX } from 'lucide-react';
+import { Calendar, Clock, Download, Activity, Coffee, ShieldCheck, PieChart as PieChartIcon, User as UserIcon, UserCheck, AlertCircle, UserX, Users as UsersIcon } from 'lucide-react';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -50,6 +50,7 @@ interface AttendanceReportItem {
 }
 
 const ALL = '__all__';
+const ALL_TEAMS = '__all_teams__';
 
 function formatHoursMinutes(totalSeconds: number): string {
   const hours = Math.floor(totalSeconds / 3600);
@@ -59,20 +60,41 @@ function formatHoursMinutes(totalSeconds: number): string {
   return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
 }
 
+function formatDecimalHoursToHMS(hours: number): string {
+  const totalSeconds = Math.round(hours * 3600);
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
 interface ShiftActivityPieChartProps {
   todayData?: TodayActivityData;
   liveData?: LiveStatusMetricsData;
+  filteredMembers?: LiveStatusMetricsData['members'];
   isAdminView?: boolean;
 }
 
-function ShiftActivityPieChart({ todayData, liveData, isAdminView }: ShiftActivityPieChartProps) {
+function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminView }: ShiftActivityPieChartProps) {
   if (isAdminView && liveData) {
-    const totalMembers = liveData.members.length;
+    // Use filteredMembers if provided (team filter active), else all members
+    const displayMembers = filteredMembers ?? liveData.members;
+    const totalMembers = displayMembers.length;
+
+    let activeCount = 0, breakCount = 0, issueCount = 0, offlineCount = 0;
+    displayMembers.forEach((m) => {
+      if (m.status === 'ACTIVE') activeCount++;
+      else if (m.status === 'SYSTEM_ISSUE') issueCount++;
+      else if (m.status === 'OFFLINE') offlineCount++;
+      else breakCount++;
+    });
+
     const chartData = [
-      { name: 'Active (Productive)', value: liveData.totalActiveCount, color: '#10B981' },
-      { name: 'On Break', value: liveData.totalBreakCount, color: '#F59E0B' },
-      { name: 'System Issue', value: liveData.totalIssueCount, color: '#F43F5E' },
-      { name: 'Offline', value: liveData.totalOfflineCount, color: '#94A3B8' },
+      { name: 'Active (Productive)', value: activeCount, color: '#10B981' },
+      { name: 'On Break', value: breakCount, color: '#F59E0B' },
+      { name: 'System Issue', value: issueCount, color: '#F43F5E' },
+      { name: 'Offline', value: offlineCount, color: '#94A3B8' },
     ].filter((d) => d.value > 0);
 
     return (
@@ -121,7 +143,7 @@ function ShiftActivityPieChart({ todayData, liveData, isAdminView }: ShiftActivi
                   </RechartsPieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-xl font-bold text-slate-900">{liveData.totalActiveCount}</span>
+                  <span className="text-xl font-bold text-slate-900">{activeCount}</span>
                   <span className="text-[10px] uppercase font-semibold text-slate-400">Active Now</span>
                 </div>
               </div>
@@ -248,6 +270,7 @@ export default function ActivityTrackingPage() {
   const isTL = user?.role === 'TEAM_LEADER';
 
   const [selectedUserId, setSelectedUserId] = useState<string | typeof ALL>(ALL);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | typeof ALL_TEAMS>(ALL_TEAMS);
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<UserStatus | typeof ALL>(ALL);
@@ -271,7 +294,16 @@ export default function ActivityTrackingPage() {
   const logs = historyData?.data ?? [];
   const members = liveData?.members ?? [];
 
+  // Derive team options from live members (TLs are members with role TEAM_LEADER)
+  const teamOptions = members
+    .filter((m) => m.role === 'TEAM_LEADER')
+    .map((tl) => ({ id: tl.userId, label: tl.teamName ? `${tl.teamName}` : tl.name, tlName: tl.name }));
+
   const filteredMembers = members.filter((m) => {
+    if (selectedTeamId !== ALL_TEAMS) {
+      // include the TL themselves and their recruiters
+      if (m.userId !== selectedTeamId && m.createdById !== selectedTeamId) return false;
+    }
     if (selectedUserId !== ALL && m.userId !== selectedUserId) return false;
     if (statusFilter !== ALL && m.status !== statusFilter) return false;
     return true;
@@ -399,14 +431,14 @@ export default function ActivityTrackingPage() {
         'Attendance Status',
         'First Login Time',
         'Last Logout Time',
-        'Logged In (hrs)',
-        'Productive (hrs)',
-        'Total Break (hrs)',
-        'Short Break (hrs)',
-        'Dinner Break (hrs)',
-        'Meetings (hrs)',
-        'Briefing/Training (hrs)',
-        'System Downtime (hrs)',
+        'Logged In (hh:mm:ss)',
+        'Productive (hh:mm:ss)',
+        'Total Break (hh:mm:ss)',
+        'Short Break (hh:mm:ss)',
+        'Dinner Break (hh:mm:ss)',
+        'Meetings (hh:mm:ss)',
+        'Briefing/Training (hh:mm:ss)',
+        'System Downtime (hh:mm:ss)',
         'Shift Utilization (%)',
       ];
 
@@ -427,14 +459,14 @@ export default function ActivityTrackingPage() {
           item.attendanceStatus,
           item.firstLogin ? formatDateTime(item.firstLogin) : 'N/A',
           item.lastLogout ? formatDateTime(item.lastLogout) : 'Active / N/A',
-          item.totalLoggedInHours,
-          item.totalProductiveHours,
-          item.totalBreakHours,
-          item.shortBreakHours,
-          item.dinnerBreakHours,
-          item.meetingHours,
-          item.briefingHours,
-          item.downtimeHours,
+          formatDecimalHoursToHMS(item.totalLoggedInHours),
+          formatDecimalHoursToHMS(item.totalProductiveHours),
+          formatDecimalHoursToHMS(item.totalBreakHours),
+          formatDecimalHoursToHMS(item.shortBreakHours),
+          formatDecimalHoursToHMS(item.dinnerBreakHours),
+          formatDecimalHoursToHMS(item.meetingHours),
+          formatDecimalHoursToHMS(item.briefingHours),
+          formatDecimalHoursToHMS(item.downtimeHours),
           `${item.shiftUtilization}%`,
         ]);
 
@@ -615,11 +647,39 @@ export default function ActivityTrackingPage() {
       )}
 
       {/* Aesthetic Shift Activity Pie / Donut Chart */}
-      <ShiftActivityPieChart todayData={todayData} liveData={liveData} isAdminView={isAdmin} />
+      <ShiftActivityPieChart
+        todayData={todayData}
+        liveData={liveData}
+        filteredMembers={isAdmin && selectedTeamId !== ALL_TEAMS ? filteredMembers : undefined}
+        isAdminView={isAdmin}
+      />
 
       {/* Filter Controls */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between flex-wrap">
         <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+          {/* Team Filter — Admin only */}
+          {isAdmin && teamOptions.length > 0 && (
+            <Select value={selectedTeamId} onValueChange={(v) => { setSelectedTeamId(v); setSelectedUserId(ALL); setPage(1); }}>
+              <SelectTrigger className="w-full sm:w-52">
+                <SelectValue placeholder="Filter by Team" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_TEAMS}>All Teams</SelectItem>
+                {teamOptions.map((team) => (
+                  <SelectItem key={team.id} value={team.id}>
+                    <span className="flex items-center gap-1.5">
+                      <UsersIcon className="h-3 w-3 text-slate-400" />
+                      {team.label}
+                      {team.label !== team.tlName && (
+                        <span className="text-xs text-slate-400">({team.tlName})</span>
+                      )}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
           {/* User Filter Dropdown for Admin and TL */}
           {(isAdmin || isTL) && (
             <Select value={selectedUserId} onValueChange={(v) => { setSelectedUserId(v); setPage(1); }}>
@@ -720,9 +780,17 @@ export default function ActivityTrackingPage() {
                       <TableCell>
                         <p className="font-medium text-slate-900">{m.name}</p>
                         <p className="text-[11px] text-slate-400">{m.email}</p>
+                        {m.role === 'TEAM_LEADER' && m.teamName && (
+                          <p className="text-[10px] text-purple-500 font-medium mt-0.5">{m.teamName}</p>
+                        )}
                       </TableCell>
                       <TableCell className="text-slate-600 font-medium">
-                        {m.role === 'TEAM_LEADER' ? 'Team Leader' : 'Recruiter'}
+                        {m.role === 'TEAM_LEADER' ? (
+                          <span className="inline-flex items-center gap-1">
+                            Team Leader
+                            <span className="rounded bg-purple-100 px-1 py-px text-[10px] font-semibold text-purple-600">TL</span>
+                          </span>
+                        ) : 'Recruiter'}
                       </TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-medium border ${cfg.bgColor} ${cfg.textColor} ${cfg.borderColor}`}>

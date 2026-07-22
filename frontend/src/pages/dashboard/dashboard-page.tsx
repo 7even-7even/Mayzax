@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Users } from 'lucide-react';
+import { Check, Pencil, Search, Users, X } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
 import { useAuth } from '@/context/auth-context';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,16 @@ import { TableSkeleton } from '@/components/shared/table-skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
 import { PaginationControls } from '@/components/ui/pagination-controls';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Reveal } from '@/components/motion/reveal';
 import { SummaryCards } from './summary-cards';
 import { RecruiterRow } from './recruiter-row';
 import { LiveStatusCard } from './live-status-card';
 import { useDashboardOverview } from '@/hooks/use-analytics';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useMyRecruiterStats, useUpdateMyTeamName } from '@/hooks/use-recruiters';
+import { toast } from 'sonner';
 
 const sortOptions = [
   { value: 'totalApplications', label: 'Total Applications' },
@@ -22,6 +26,89 @@ const sortOptions = [
   { value: 'name', label: 'Name' },
   { value: 'lastActiveAt', label: 'Last Active' },
 ];
+
+function TlTeamCard() {
+  const { data: stats, isLoading } = useMyRecruiterStats();
+  const updateTeamName = useUpdateMyTeamName();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+
+  const currentTeamName = stats?.recruiter?.teamName ?? '';
+
+  const handleEdit = () => {
+    setDraft(currentTeamName);
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      await updateTeamName.mutateAsync(draft.trim() || null);
+      toast.success('Team name updated');
+      setEditing(false);
+    } catch {
+      toast.error('Failed to update team name');
+    }
+  };
+
+  const handleCancel = () => setEditing(false);
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Users className="h-4 w-4 text-purple-500" /> My Team
+          </CardTitle>
+          {!editing && (
+            <button
+              onClick={handleEdit}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+              title="Edit team name"
+            >
+              <Pencil className="h-3 w-3" />
+              Edit
+            </button>
+          )}
+        </div>
+        <CardDescription>Your team name and member count.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+        ) : editing ? (
+          <div className="flex items-center gap-2">
+            <Input
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') handleCancel(); }}
+              placeholder="Enter team name..."
+              className="h-8 text-sm"
+            />
+            <button onClick={handleSave} disabled={updateTeamName.isPending} className="rounded-md p-1 text-emerald-600 hover:bg-emerald-50 transition-colors">
+              <Check className="h-4 w-4" />
+            </button>
+            <button onClick={handleCancel} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 transition-colors">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-slate-800">
+              {currentTeamName || <span className="italic text-slate-400">No team name set yet</span>}
+            </p>
+            <p className="text-xs text-slate-500">
+              <span className="font-medium text-slate-700">{stats?.membersCount ?? 0}</span> team member{stats?.membersCount !== 1 ? 's' : ''}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -55,9 +142,16 @@ export default function DashboardPage() {
       </Reveal>
 
       <div className="mb-6 space-y-6">
-        <SummaryCards />
+        {user?.role === 'TEAM_LEADER' && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <SummaryCards />
+            </div>
+            <TlTeamCard />
+          </div>
+        )}
+        {user?.role !== 'TEAM_LEADER' && <SummaryCards />}
         <LiveStatusCard />
-
       </div>
 
       <Reveal delay={0.15}>

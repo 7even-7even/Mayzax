@@ -4,7 +4,7 @@ import { ApiError } from '@/utils/apiError';
 import { hashPassword } from '@/modules/auth/auth.service';
 import { getBusinessDateString } from '@/utils/businessDate';
 import * as repo from './recruiter.repository';
-import { CreateRecruiterInput, UpdateRecruiterInput, ListRecruitersQuery } from './recruiter.validation';
+import { CreateRecruiterInput, UpdateRecruiterInput, ListRecruitersQuery, TeamNameInput } from './recruiter.validation';
 import { writeAuditLog } from '@/modules/shared/audit.service';
 
 interface Requester {
@@ -220,6 +220,14 @@ export async function getRecruiterStats(id: string, actor: Requester) {
     currentShiftApplicationsByProfile.map((row) => [row.profileId, row._count._all]),
   );
 
+  const membersCount = user.role === Role.TEAM_LEADER
+    ? await prisma.user.count({ where: { createdById: id, deletedAt: null } })
+    : undefined;
+
+  const teamLeader = user.role === Role.RECRUITER && user.createdBy
+    ? { id: user.createdBy.id, name: user.createdBy.name, email: user.createdBy.email, teamName: user.createdBy.teamName }
+    : null;
+
   return {
     recruiter: sanitizeUser(user),
     assignedProfilesCount: assignedProfiles.length,
@@ -236,7 +244,18 @@ export async function getRecruiterStats(id: string, actor: Requester) {
       currentShiftApplications: currentShiftApplicationCountMap.get(profile.id) ?? 0,
     })),
     lastActiveAt: user.lastActiveAt,
+    teamLeader,
+    membersCount,
   };
+}
+
+export async function updateMyTeamName(userId: string, input: TeamNameInput) {
+  const user = await repo.findActiveById(userId);
+  if (!user) throw ApiError.notFound('User not found');
+  if (user.role !== Role.TEAM_LEADER) throw ApiError.forbidden('Only Team Leaders can set a team name');
+
+  const updated = await repo.updateUser(userId, { teamName: input.teamName ?? null });
+  return sanitizeUser(updated);
 }
 
 function sanitizeUser<T extends { passwordHash?: string }>(user: T) {

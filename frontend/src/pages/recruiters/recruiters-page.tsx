@@ -190,6 +190,9 @@ export default function RecruitersPage() {
                 <TableRow>
                   <TableHead className="pl-[80px]">Name</TableHead>
                   <TableHead className="pl-[40px]">Role</TableHead>
+                  {user?.role === 'ADMIN' && roleFilter === 'RECRUITER' && (
+                    <TableHead className="pl-[40px]">Team Leader</TableHead>
+                  )}
                   <TableHead className="pl-[40px]">Status</TableHead>
                   <TableHead>Last Active</TableHead>
                   <TableHead className="text-right pr-[80px]">Actions</TableHead>
@@ -230,6 +233,20 @@ export default function RecruitersPage() {
                         {recruiter.role === 'TEAM_LEADER' ? 'Team Leader' : recruiter.role}
                       </Badge>
                     </TableCell>
+                    {user?.role === 'ADMIN' && roleFilter === 'RECRUITER' && (
+                      <TableCell className="pl-[40px]">
+                        {recruiter.createdBy ? (
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-slate-900">{recruiter.createdBy.name}</span>
+                            {recruiter.createdBy.teamName && (
+                              <span className="text-xs text-slate-500">{recruiter.createdBy.teamName}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">None</span>
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Switch

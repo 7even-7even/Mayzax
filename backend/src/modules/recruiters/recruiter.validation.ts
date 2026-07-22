@@ -20,6 +20,10 @@ export const updateRecruiterSchema = z.object({
   createdById: z.string().uuid().nullable().optional(),
 });
 
+export const teamNameSchema = z.object({
+  teamName: z.string().max(100).optional().nullable(),
+});
+
 export const toggleActiveSchema = z.object({
   isActive: z.boolean(),
 });
@@ -45,3 +49,4 @@ export const idParamSchema = z.object({
 export type CreateRecruiterInput = z.infer<typeof createRecruiterSchema>;
 export type UpdateRecruiterInput = z.infer<typeof updateRecruiterSchema>;
 export type ListRecruitersQuery = z.infer<typeof listRecruitersQuerySchema>;
+export type TeamNameInput = z.infer<typeof teamNameSchema>;

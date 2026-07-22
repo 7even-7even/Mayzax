@@ -63,3 +63,8 @@ export const getMyRecruiterStats = asyncHandler(async (req: Request, res: Respon
   );
   res.status(200).json({ success: true, data: stats });
 });
+
+export const updateMyTeamName = asyncHandler(async (req: Request, res: Response) => {
+  const result = await recruiterService.updateMyTeamName(req.user!.sub, req.body);
+  res.status(200).json({ success: true, data: result });
+});

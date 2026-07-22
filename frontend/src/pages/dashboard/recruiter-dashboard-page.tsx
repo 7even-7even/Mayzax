@@ -1,4 +1,4 @@
-import { BarChart3, Briefcase, ExternalLink, Users } from 'lucide-react';
+import { BarChart3, Briefcase, ExternalLink, Shield, Users } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,7 +38,7 @@ export default function RecruiterDashboardPage() {
         description={`Welcome${user?.name ? `, ${user.name}` : ''}. Track your job portal performance and latest application activity.`}
       />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -85,7 +85,39 @@ export default function RecruiterDashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Shield className="h-4 w-4 text-purple-500" /> My Team
+            </CardTitle>
+            <CardDescription>Your assigned team and team leader.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isRecruiterStatsLoading ? (
+              <div className="space-y-1.5">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+            ) : recruiterStats?.teamLeader ? (
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-slate-800">
+                  {recruiterStats.teamLeader.teamName ?? <span className="italic text-slate-400">No team name set</span>}
+                </p>
+                <p className="text-xs text-slate-500">
+                  <span className="font-medium text-slate-600">Team Leader:</span> {recruiterStats.teamLeader.name}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <p className="text-sm italic text-slate-400">No team assigned yet</p>
+                <p className="text-xs text-slate-400">Contact your admin to be placed in a team.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
 
       <div className="mb-6">
         <JobPortalAnalyticsCard

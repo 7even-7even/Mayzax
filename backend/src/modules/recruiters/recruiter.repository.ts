@@ -7,7 +7,14 @@ export function findByEmail(email: string) {
 }
 
 export function findActiveById(id: string) {
-  return prisma.user.findFirst({ where: { id, deletedAt: null } });
+  return prisma.user.findFirst({
+    where: { id, deletedAt: null },
+    include: {
+      createdBy: {
+        select: { id: true, name: true, email: true, teamName: true },
+      },
+    },
+  });
 }
 
 export function createUser(data: {
@@ -22,7 +29,7 @@ export function createUser(data: {
   });
 }
 
-export function updateUser(id: string, data: Partial<{ name: string; email: string; role: Role; createdById?: string | null }>) {
+export function updateUser(id: string, data: Partial<{ name: string; email: string; role: Role; createdById?: string | null; teamName?: string | null }>) {
   return prisma.user.update({
     where: { id },
     data: data.email ? { ...data, email: data.email.toLowerCase() } : data,
@@ -73,6 +80,15 @@ export function listRecruiters(query: ListRecruitersQuery) {
         lastActiveAt: true,
         createdAt: true,
         updatedAt: true,
+        createdById: true,
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            teamName: true,
+          },
+        },
       },
     }),
     prisma.user.count({ where }),

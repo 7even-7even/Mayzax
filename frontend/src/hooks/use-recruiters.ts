@@ -43,6 +43,19 @@ export function useMyRecruiterStats() {
   });
 }
 
+export function useUpdateMyTeamName() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (teamName: string | null) => {
+      const { data } = await apiClient.patch<ApiSuccess<RecruiterStats['recruiter']>>('/recruiters/me/team-name', { teamName });
+      return data.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recruiter-stats', 'me'] });
+    },
+  });
+}
+
 export function useCreateRecruiter() {
   const qc = useQueryClient();
   return useMutation({

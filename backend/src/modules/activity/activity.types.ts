@@ -55,6 +55,7 @@ export interface LiveStatusItem {
   email: string;
   role: Role;
   createdById: string | null;
+  teamName: string | null;
   status: UserStatus;
   startedAt: Date;
   currentDurationSeconds: number;

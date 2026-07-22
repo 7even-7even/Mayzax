@@ -1,7 +1,9 @@
-import { Users, UserCheck, UserSquare2, Briefcase, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { StatCard } from '@/components/motion/stat-card';
 import { useGlobalSummary } from '@/hooks/use-analytics';
+import { useAuth } from '@/context/auth-context';
 
 const cardConfig = [
   { key: 'totalRecruiters', label: 'Total Recruiters', icon: Users, color: 'text-mayzax-blue bg-mayzax-blue-50' },
@@ -12,7 +14,10 @@ const cardConfig = [
 ] as const;
 
 export function SummaryCards() {
+  const { user } = useAuth();
   const { data, isLoading } = useGlobalSummary();
+  const isAdmin = user?.role === 'ADMIN';
+  const [teamsExpanded, setTeamsExpanded] = useState(false);
 
   return (
     <div>
@@ -29,6 +34,80 @@ export function SummaryCards() {
           />
         ))}
       </div>
+
+      {/* Team Count Card — Admin only */}
+      {isAdmin && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-4 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+        >
+          <button
+            onClick={() => setTeamsExpanded((prev) => !prev)}
+            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50/60 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                <Users className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-700">Teams</p>
+                <p className="text-xl font-bold text-slate-900">
+                  {isLoading ? '...' : (data?.totalTeams ?? 0)}
+                  <span className="ml-1.5 text-xs font-normal text-slate-400">active teams</span>
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-slate-400">
+              <span className="text-xs">{teamsExpanded ? 'Collapse' : 'View Teams'}</span>
+              {teamsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </div>
+          </button>
+
+          <AnimatePresence>
+            {teamsExpanded && (
+              <motion.div
+                key="team-list"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="border-t border-slate-100 px-4 pb-3 pt-2">
+                  {isLoading && (
+                    <p className="py-4 text-center text-xs text-slate-400">Loading teams...</p>
+                  )}
+                  {!isLoading && (!data?.teams || data.teams.length === 0) && (
+                    <p className="py-4 text-center text-xs text-slate-400">No teams found. Assign Team Leaders to create teams.</p>
+                  )}
+                  {!isLoading && data?.teams && data.teams.length > 0 && (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 pt-1">
+                      {data.teams.map((team) => (
+                        <div key={team.tlId} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-semibold text-slate-800">
+                              {team.teamName || <span className="italic text-slate-400">No team name</span>}
+                            </p>
+                            <p className="truncate text-[11px] text-slate-500">
+                              TL: <span className="font-medium text-slate-700">{team.tlName}</span>
+                            </p>
+                          </div>
+                          <span className="ml-2 shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+                            {team.memberCount} member{team.memberCount !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+
       {data && (
         <motion.p
           initial={{ opacity: 0 }}

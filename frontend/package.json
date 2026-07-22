@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.9.0",
+    "@types/chrome": "^0.2.2",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^20.16.9",
     "@types/react": "^18.3.11",

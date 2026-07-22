@@ -25,6 +25,14 @@ export interface User {
 export interface Recruiter extends User {
   updatedAt?: string;
   deletedAt?: string | null;
+  teamName?: string | null;
+  createdById?: string | null;
+  createdBy?: {
+    id: string;
+    name: string;
+    email: string;
+    teamName: string | null;
+  } | null;
 }
 
 export interface RecruiterStats {
@@ -43,6 +51,8 @@ export interface RecruiterStats {
     currentShiftApplications: number;
   }>;
   lastActiveAt: string | null;
+  teamLeader?: { id: string; name: string; email: string; teamName?: string | null } | null;
+  membersCount?: number;
 }
 
 export interface ClientProfile {
@@ -111,6 +121,8 @@ export interface JobApplication {
   businessDate: string;
   createdAt: string;
   updatedAt: string;
+  verified?: boolean;
+  verificationMethod?: string | null;
   profile?: { id: string; candidateName: string; technology: string };
   recruiter?: { id: string; name: string; email: string };
 }
@@ -181,6 +193,8 @@ export interface GlobalSummary {
   currentShiftApplications: number;
   currentBusinessDate: string;
   shiftWindowText: string;
+  totalTeams?: number;
+  teams?: Array<{ tlId: string; tlName: string; teamName: string | null; memberCount: number }>;
 }
 
 export interface DailyCount {

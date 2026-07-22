@@ -8,12 +8,14 @@ import {
   toggleActiveSchema,
   listRecruitersQuerySchema,
   idParamSchema,
+  teamNameSchema,
 } from './recruiter.validation';
 import * as recruiterController from './recruiter.controller';
 
 const router = Router();
 
 router.get('/me/stats', requireAuth, recruiterController.getMyRecruiterStats);
+router.patch('/me/team-name', requireAuth, requireRole(Role.TEAM_LEADER), validate({ body: teamNameSchema }), recruiterController.updateMyTeamName);
 
 router.use(requireAuth, requireRole(Role.ADMIN, Role.TEAM_LEADER));
 
