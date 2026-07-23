@@ -7,8 +7,8 @@ import mayzaxLogo from '@/assets/mayzax-logo.png';
 const adminNav = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/recruiters', label: 'Recruiters', icon: Users },
-  { to: '/profiles', label: 'Client Profiles', icon: UserSquare2 },
+  { to: '/recruiters', label: 'Users', icon: Users },
+  { to: '/profiles', label: 'Clients', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
   { to: '/activity', label: 'Monitoring', icon: Activity },
   { to: '/updates', label: 'Updates & Announcements', icon: Bell },
@@ -16,7 +16,7 @@ const adminNav = [
 ];
 const recruiterNav = [
   { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/profiles', label: 'My Profiles', icon: UserSquare2 },
+  { to: '/profiles', label: 'My Clients', icon: UserSquare2 },
   { to: '/applications', label: 'Applications', icon: FileText },
   { to: '/activity', label: 'Shift Tracking', icon: Activity },
   { to: '/updates', label: 'Updates & Announcements', icon: Bell },
@@ -34,7 +34,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
       if (item.to === '/activity') return { ...item, label: 'Shift Tracking' };
     }
     if (user?.role === 'ADMIN') {
-      if (item.to === '/recruiters') return { ...item, label: 'User Management' };
+      if (item.to === '/recruiters') return { ...item, label: 'Management' };
       if (item.to === '/activity') return { ...item, label: 'Monitoring' };
     }
     return item;
