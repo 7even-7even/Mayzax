@@ -103,12 +103,25 @@ export async function changeStatus(
 }
 
 /**
- * Called on user login: closes any stale activity and starts ACTIVE status.
+ * Called on user login / session restore: starts ACTIVE status.
+ * Skipped if the user already has an open (non-OFFLINE) activity log,
+ * so a page refresh does not interrupt an in-progress status change.
  */
 export async function handleLoginEvent(userId: string, role: Role) {
   if (!isTrackedRole(role)) return;
 
   const now = new Date();
+
+  // Check for an existing open log
+  const openLog = await prisma.activityLog.findFirst({
+    where: { userId, endedAt: null },
+    orderBy: { startedAt: 'desc' },
+  });
+
+  // If already tracking an active (non-OFFLINE) status, do nothing
+  if (openLog && openLog.status !== UserStatus.OFFLINE) return;
+
+  // Close any stale log first (e.g. a dangling OFFLINE record)
   await closeOpenActivityLog(userId, now);
 
   await prisma.activityLog.create({

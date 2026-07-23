@@ -35,6 +35,15 @@ export function SummaryCards() {
 
   const visibleCards = isTeamLeader ? tlCardConfig : adminCardConfig;
 
+  /** Formats "Sneha Reddy" → "Sneha R." (ignores non-letter tokens like parentheses) */
+  const abbreviateName = (fullName: unknown): string => {
+    if (typeof fullName !== 'string' || !fullName.trim()) return '—';
+    const parts = fullName.trim().split(/\s+/).filter(p => /^[A-Za-z]/.test(p));
+    if (parts.length === 0) return '—';
+    if (parts.length === 1) return parts[0];
+    return `${parts[0]} ${parts[1][0].toUpperCase()}.`;
+  };
+
   return (
     <div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -43,7 +52,13 @@ export function SummaryCards() {
             key={card.key}
             icon={card.icon}
             label={card.label}
-            value={data ? (data[card.key] ?? 0) : 0}
+            value={
+              card.key === 'topPerformer'
+                ? abbreviateName(data?.[card.key])
+                : data
+                  ? (data[card.key] ?? 0)
+                  : 0
+            }
             isLoading={isLoading}
             colorClass={card.color}
             index={i}
