@@ -45,7 +45,7 @@ function TlTeamCard() {
 
   const isLoading = statsLoading || summaryLoading;
   const currentTeamName = stats?.recruiter?.teamName ?? '';
-  const currentApps = summary?.myCurrentShiftApplications ?? 0;
+  const currentApps = summary?.currentShiftApplications ?? 0;
   const pct = shiftGoal > 0 ? Math.min(100, Math.round((currentApps / shiftGoal) * 100)) : 0;
   const goalMet = currentApps >= shiftGoal && shiftGoal > 0;
 
