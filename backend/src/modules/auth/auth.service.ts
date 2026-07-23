@@ -192,6 +192,10 @@ export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta)
 
   await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
 
+  // Restore ACTIVE status on session bootstrap (page reload / silent refresh),
+  // mirroring what the /auth/login endpoint does via handleLoginEvent.
+  await handleLoginEvent(user.id, user.role);
+
   return {
     tokens: newTokens,
     user: sanitizeUser(user),
