@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { JobPortal } from '../types';
 
 export interface ExtensionVerificationResult {
@@ -12,6 +12,8 @@ export interface ExtensionVerificationResult {
   matchedRules: string[];
   matchedKeywords: string[];
 }
+
+export type ExtensionState = 'idle' | 'checking' | 'verified' | 'not_verified' | 'not_installed' | 'unavailable';
 
 const VERIFICATION_KEYWORDS = [
   'completed',
@@ -30,30 +32,79 @@ const VERIFICATION_KEYWORDS = [
   'already-applied',
   'alreadyapplied',
   'previously-applied',
-  'applied'
+  'applied',
 ];
 
-export function useExtensionVerification(jobLink: string) {
+interface UseExtensionVerificationReturn {
+  isVerified: boolean;
+  isChecking: boolean;
+  state: ExtensionState;
+  verificationResult: ExtensionVerificationResult | null;
+  isExtensionInstalled: boolean;
+  isExtensionAvailable: boolean;
+  extensionId: string;
+  installUrl: string | null;
+  retry: () => void;
+}
+
+const DEFAULT_EXTENSION_ID = 'nmbkoelklehokgbdakioefnikogeakpc';
+const CHROME_WEBSTORE_URL = 'https://chrome.google.com/webstore'; // Replace with actual listing when published
+
+function getExtensionId(): string {
+  const envId = import.meta.env.VITE_EXTENSION_ID as string | undefined;
+  // Allow comma-separated fallback list for dev vs prod
+  if (envId) {
+    const first = envId.split(',')[0].trim();
+    if (first) return first;
+  }
+  return DEFAULT_EXTENSION_ID;
+}
+
+function isChromeRuntimeAvailable(): boolean {
+  const chromeObj = (window as any).chrome;
+  return !!(chromeObj?.runtime?.sendMessage);
+}
+
+export function useExtensionVerification(jobLink: string): UseExtensionVerificationReturn {
+  const extensionId = getExtensionId();
+  const [state, setState] = useState<ExtensionState>('idle');
   const [isVerified, setIsVerified] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
   const [verificationResult, setVerificationResult] = useState<ExtensionVerificationResult | null>(null);
+  const [isExtensionInstalled, setIsExtensionInstalled] = useState(false);
+  const [retryCounter, setRetryCounter] = useState(0);
+
+  const isExtensionAvailable = isChromeRuntimeAvailable();
+
+  const retry = useCallback(() => {
+    setRetryCounter((c) => c + 1);
+  }, []);
 
   useEffect(() => {
-    setIsVerified(false);
-    setVerificationResult(null);
+    let cancelled = false;
+
+    const reset = () => {
+      setIsVerified(false);
+      setVerificationResult(null);
+      setState('idle');
+      setIsExtensionInstalled(false);
+    };
+
+    reset();
 
     if (!jobLink) return;
 
     try {
       new URL(jobLink);
     } catch {
-      return; // Invalid URL
+      setState('not_verified');
+      return;
     }
 
     const lowercaseUrl = jobLink.toLowerCase();
-    const hasKeyword = VERIFICATION_KEYWORDS.some(keyword => lowercaseUrl.includes(keyword));
+    const hasKeyword = VERIFICATION_KEYWORDS.some((kw) => lowercaseUrl.includes(kw));
 
     if (hasKeyword) {
+      // Fast-path URL keyword heuristic - still counts as verified without extension
       setIsVerified(true);
       setVerificationResult({
         verified: true,
@@ -64,47 +115,94 @@ export function useExtensionVerification(jobLink: string) {
         pageTitle: '',
         timestamp: Date.now(),
         matchedRules: ['URL_KEYWORD_MATCH'],
-        matchedKeywords: []
+        matchedKeywords: VERIFICATION_KEYWORDS.filter((k) => lowercaseUrl.includes(k)),
       });
-      setIsChecking(false);
+      setState('verified');
+      setIsExtensionInstalled(true);
       return;
     }
 
-    setIsChecking(true);
+    if (!isChromeRuntimeAvailable()) {
+      setState('not_installed');
+      return;
+    }
 
-    // Query external extension port using the loaded extension ID
-    const extensionId = import.meta.env.VITE_EXTENSION_ID || 'nmbkoelklehokgbdakioefnikogeakpc';
+    setState('checking');
     const chromeObj = (window as any).chrome;
 
-    console.log('[Mayzax Extension Hook] Target Extension ID:', extensionId);
-    console.log('[Mayzax Extension Hook] chrome.runtime available:', !!chromeObj?.runtime?.sendMessage);
+    // Try primary ID, then fallback default if different
+    const idsToTry = [extensionId];
+    if (extensionId !== DEFAULT_EXTENSION_ID) idsToTry.push(DEFAULT_EXTENSION_ID);
 
-    // Query external extension port
-    try {
-      if (chromeObj?.runtime?.sendMessage) {
+    let attempt = 0;
+
+    const tryNextId = () => {
+      if (cancelled) return;
+      if (attempt >= idsToTry.length) {
+        setState('not_installed');
+        return;
+      }
+
+      const currentId = idsToTry[attempt];
+      attempt++;
+
+      try {
         chromeObj.runtime.sendMessage(
-          extensionId,
+          currentId,
           { action: 'VERIFY_URL', url: jobLink },
           (response: ExtensionVerificationResult & { error?: string }) => {
-            setIsChecking(false);
+            if (cancelled) return;
+
             if (chromeObj.runtime.lastError) {
-              console.warn('[Mayzax Extension Hook] Extension not detected or not connectable:', chromeObj.runtime.lastError.message);
+              // If error, try next ID or mark not installed
+              console.debug('[Mayzax Verification] runtime.lastError:', chromeObj.runtime.lastError.message, 'for ID', currentId);
+              if (attempt < idsToTry.length) {
+                tryNextId();
+              } else {
+                setState('not_installed');
+              }
               return;
             }
+
+            // We got a response -> extension is installed
+            setIsExtensionInstalled(true);
+
             if (response && response.verified) {
               setIsVerified(true);
               setVerificationResult(response);
+              setState('verified');
+            } else {
+              setState('not_verified');
             }
           }
         );
-      } else {
-        setIsChecking(false);
+      } catch (err) {
+        console.warn('[Mayzax Extension] External messaging failed:', err);
+        if (attempt < idsToTry.length) {
+          tryNextId();
+        } else {
+          setState('not_installed');
+        }
       }
-    } catch (err) {
-      console.warn('[Mayzax Extension Hook] External messaging failed:', err);
-      setIsChecking(false);
-    }
-  }, [jobLink]);
+    };
 
-  return { isVerified, isChecking, verificationResult };
+    tryNextId();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobLink, retryCounter, extensionId]);
+
+  return {
+    isVerified,
+    isChecking: state === 'checking',
+    state,
+    verificationResult,
+    isExtensionInstalled,
+    isExtensionAvailable,
+    extensionId,
+    installUrl: CHROME_WEBSTORE_URL,
+    retry,
+  };
 }

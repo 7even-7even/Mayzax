@@ -221,7 +221,16 @@ export function ApplicationFormDialog({
 
   const debouncedLink = useDebounce(jobLink, 500);
 
-  const { isVerified, isChecking, verificationResult } = useExtensionVerification(debouncedLink);
+  const {
+    isVerified,
+    isChecking,
+    verificationResult,
+    state: verificationState,
+    isExtensionInstalled,
+    installUrl,
+    extensionId,
+    retry: retryVerification,
+  } = useExtensionVerification(debouncedLink);
 
 
 
@@ -507,24 +516,31 @@ useEffect(() => {
             />
 
             {debouncedLink && (
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-col gap-2">
                 <ExtensionVerificationBadge
                   isVerified={isVerified}
                   isChecking={isChecking}
                   result={verificationResult}
+                  state={verificationState}
+                  isExtensionInstalled={isExtensionInstalled}
+                  installUrl={installUrl}
+                  extensionId={extensionId}
+                  onRetry={retryVerification}
                 />
-                {duplicateResult?.isDuplicate && (
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 border border-red-100">
-                    <AlertTriangle className="h-3.5 w-3.5" />
-                    This profile has already applied to this job.
-                  </span>
-                )}
-                {duplicateResult && !duplicateResult.isDuplicate && (
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700 border border-emerald-100">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    No duplicate found.
-                  </span>
-                )}
+                <div className="flex flex-wrap gap-2">
+                  {duplicateResult?.isDuplicate && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700 border border-red-200 shadow-sm">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                      Duplicate — already applied{duplicateResult?.appliedByRecruiter?.name ? ` by ${duplicateResult.appliedByRecruiter.name}` : ''}
+                    </span>
+                  )}
+                  {duplicateResult && !duplicateResult.isDuplicate && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 border border-emerald-200 shadow-sm">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      No duplicate found — safe to submit
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 

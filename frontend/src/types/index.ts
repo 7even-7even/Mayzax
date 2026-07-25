@@ -20,6 +20,19 @@ export interface User {
   createdAt?: string;
   securityQuestion?: string | null;
   hasSecurityQuestion?: boolean;
+  // Premium enrichments
+  avatarUrl?: string | null;
+  bio?: string | null;
+  department?: string | null;
+  location?: string | null;
+  designation?: string | null;
+  employeeId?: string | null;
+  joinDate?: string | null;
+  shiftPreference?: string | null;
+  skills?: string[];
+  linkedInUrl?: string | null;
+  displayColor?: string | null;
+  teamName?: string | null;
 }
 
 export interface Recruiter extends User {

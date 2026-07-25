@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Calendar, Download, ExternalLink, FileText, Loader2, Plus, Search, X } from 'lucide-react';
+import { Calendar, Download, ExternalLink, FileText, Loader2, Plus, Search, X, Sparkles } from 'lucide-react';
 import { PageHeader } from '@/components/shared/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,11 +16,10 @@ import { useApplications } from '@/hooks/use-applications';
 import { useDebounce } from '@/hooks/use-debounce';
 import { apiClient } from '@/lib/api-client';
 import { formatDateTime, generateExportFilename } from '@/lib/utils';
-import { useAuth } from '@/context/auth-context';
+import { usePermissions } from '@/hooks/use-permissions';
 import { ApiSuccess, ApplicationStatus, JobApplication } from '@/types';
 import { toast } from 'sonner';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
+import { VirtualizedTable } from '@/components/shared/virtualized-table';
 
 const ALL = '__all__';
 
@@ -30,13 +29,15 @@ function formatBusinessDateLabel(dateStr: string): string {
 }
 
 async function downloadApplicationsExcel(applications: JobApplication[], isAdmin: boolean, filename: string) {
+  // Dynamic import to avoid bundling 400KB+ exceljs in main chunk
+  const ExcelJS = await import('exceljs').then((m) => m.default ?? m);
+  const { saveAs } = await import('file-saver');
+
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Mayzax ATS';
   workbook.created = new Date();
 
   const worksheet = workbook.addWorksheet('Applications');
-
-  // Freeze the header row (first row)
   worksheet.views = [{ state: 'frozen', ySplit: 1 }];
 
   const headers = [
@@ -53,16 +54,11 @@ async function downloadApplicationsExcel(applications: JobApplication[], isAdmin
     'Job Link',
   ];
 
-  // Add headers and style them professionally
   const headerRow = worksheet.addRow(headers);
   headerRow.height = 28;
   headerRow.eachCell((cell) => {
     cell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF2A5DA8' }, // Mayzax Blue (#2A5DA8)
-    };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A5DA8' } };
     cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
     cell.border = {
       top: { style: 'thin', color: { argb: 'FF1A3966' } },
@@ -72,7 +68,6 @@ async function downloadApplicationsExcel(applications: JobApplication[], isAdmin
     };
   });
 
-  // Populate data rows
   applications.forEach((app) => {
     worksheet.addRow([
       app.profile?.candidateName ?? '',
@@ -89,13 +84,10 @@ async function downloadApplicationsExcel(applications: JobApplication[], isAdmin
     ]);
   });
 
-  // Format data cells
   worksheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return; // skip header
-
+    if (rowNumber === 1) return;
     row.height = 22;
     const isEven = rowNumber % 2 === 0;
-
     row.eachCell((cell, colNumber) => {
       cell.font = { name: 'Segoe UI', size: 10 };
       cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
@@ -105,63 +97,46 @@ async function downloadApplicationsExcel(applications: JobApplication[], isAdmin
         bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
         right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
       };
-
-      // Alternate row shading using Mayzax Blue 50
       if (isEven) {
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFEBF1FA' },
-        };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEBF1FA' } };
       }
-
-      // Center Status, Business Date, and Applied At columns
       if (colNumber === 8 || colNumber === 9 || colNumber === 10) {
         cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
       }
-
-      // Highlight Job Link column as hyperlink
       if (colNumber === 11) {
         const urlStr = cell.value;
         if (typeof urlStr === 'string' && urlStr.startsWith('http')) {
-          cell.value = { text: urlStr, hyperlink: urlStr };
-          cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF2A5DA8' }, underline: true };
+          cell.value = { text: urlStr, hyperlink: urlStr } as any;
+          cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF2A5DA8' }, underline: true } as any;
         }
       }
     });
   });
 
-  // Enable auto filter
   worksheet.autoFilter = 'A1:K1';
-
-  // Compute dynamic column widths
   worksheet.columns.forEach((col) => {
     let maxLen = 12;
     col.eachCell?.((cell) => {
       let text = '';
       if (cell.value) {
-        if (typeof cell.value === 'object' && 'text' in cell.value) {
-          text = String(cell.value.text);
+        if (typeof cell.value === 'object' && 'text' in (cell.value as any)) {
+          text = String((cell.value as any).text);
         } else {
           text = String(cell.value);
         }
       }
-      if (text.length > maxLen) {
-        maxLen = text.length;
-      }
+      if (text.length > maxLen) maxLen = text.length;
     });
-    col.width = Math.min(maxLen + 4, 50); // limit max width to 50 to avoid overflow
+    col.width = Math.min(maxLen + 4, 50);
   });
 
-  // Write and trigger download
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   saveAs(blob, filename);
 }
 
 export default function ApplicationsPage() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
+  const { isAdmin } = usePermissions();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const dateFilter = searchParams.get('date'); // YYYY-MM-DD, from heatmap click
@@ -414,94 +389,164 @@ export default function ApplicationsPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        {isLoading && <TableSkeleton rows={6} cols={7} />}
-        {isError && <ErrorState onRetry={() => refetch()} />}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        {isLoading && <div className="p-4"><TableSkeleton rows={6} cols={7} /></div>}
+        {isError && <div className="p-4"><ErrorState onRetry={() => refetch()} /></div>}
 
         {!isLoading && !isError && applications.length === 0 && (
-          <EmptyState
-            icon={FileText}
-            title="No applications found"
-            description={
-              fromDate || toDate
-                ? `No applications were logged in the selected date range.`
-                : search || status !== ALL
-                  ? 'Try adjusting your search or filters.'
-                  : 'Log your first job application to start tracking submissions.'
-            }
-            action={
-              !search &&
-              status === ALL &&
-              !fromDate &&
-              !toDate && (
-                <Button variant="brand" size="sm" onClick={() => setFormOpen(true)}>
-                  <Plus className="h-4 w-4" /> Log Application
-                </Button>
-              )
-            }
-          />
+          <div className="p-4">
+            <EmptyState
+              icon={FileText}
+              title="No applications found"
+              description={
+                fromDate || toDate
+                  ? `No applications were logged in the selected date range.`
+                  : search || status !== ALL
+                    ? 'Try adjusting your search or filters.'
+                    : 'Log your first job application to start tracking submissions.'
+              }
+              action={
+                !search &&
+                status === ALL &&
+                !fromDate &&
+                !toDate && (
+                  <Button variant="brand" size="sm" onClick={() => setFormOpen(true)}>
+                    <Plus className="h-4 w-4" /> Log Application
+                  </Button>
+                )
+              }
+            />
+          </div>
         )}
 
         {!isLoading && !isError && applications.length > 0 && (
           <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Candidate</TableHead>
-                  <TableHead>Company / Title</TableHead>
-                  <TableHead>Portal</TableHead>
-                  <TableHead>Applied By</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Verification</TableHead>
-                  <TableHead>Business Date</TableHead>
-                  <TableHead>Applied</TableHead>
-                  <TableHead className="text-right">Link</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {applications.map((app) => (
-                  <TableRow key={app.id}>
-                    <TableCell>
-                      <p className="text-sm font-medium text-slate-900">{app.profile?.candidateName}</p>
-                      <p className="text-xs text-slate-400">{app.profile?.technology}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="text-sm font-medium text-slate-900">{app.companyName || 'Company not provided'}</p>
-                      <p className="text-xs text-slate-500">{app.jobTitle || 'Job title not provided'}</p>
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-500">{formatEnumLabel(app.jobPortal)}</TableCell>
-                    <TableCell>
-                      <p className="text-sm font-medium text-slate-700">{app.recruiter?.name ?? 'Unknown'}</p>
-                      <p className="text-xs text-slate-400">{app.recruiter?.email}</p>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={app.status} />
-                    </TableCell>
-                    <TableCell>
+            {/* Premium header with glass effect */}
+            <div className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-200 px-4 py-2 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Sparkles className="h-3.5 w-3.5 text-mayzax-blue" />
+                <span className="font-medium">{totalApplications} applications</span>
+                <span className="h-3 w-px bg-slate-200" />
+                <span>Virtualized • 60fps scrolling</span>
+              </div>
+              <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live business date grouping
+              </div>
+            </div>
+
+            {/* Classic table for <=20 rows, virtualized for larger sets - seamless UX */}
+            {applications.length <= 20 ? (
+              <div className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/50">
+                      <TableHead className="font-semibold">Candidate</TableHead>
+                      <TableHead className="font-semibold">Company / Title</TableHead>
+                      <TableHead className="font-semibold">Portal</TableHead>
+                      <TableHead className="font-semibold">Applied By</TableHead>
+                      <TableHead className="font-semibold">Status</TableHead>
+                      <TableHead className="font-semibold">Verification</TableHead>
+                      <TableHead className="font-semibold">Business Date</TableHead>
+                      <TableHead className="font-semibold">Applied</TableHead>
+                      <TableHead className="text-right font-semibold">Link</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {applications.map((app) => (
+                      <TableRow key={app.id} className="hover:bg-slate-50/70 transition-colors">
+                        <TableCell>
+                          <p className="text-sm font-medium text-slate-900">{app.profile?.candidateName}</p>
+                          <p className="text-xs text-slate-400">{app.profile?.technology}</p>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-sm font-medium text-slate-900">{app.companyName || 'Company not provided'}</p>
+                          <p className="text-xs text-slate-500">{app.jobTitle || 'Job title not provided'}</p>
+                        </TableCell>
+                        <TableCell className="text-xs text-slate-500">{formatEnumLabel(app.jobPortal)}</TableCell>
+                        <TableCell>
+                          <p className="text-sm font-medium text-slate-700">{app.recruiter?.name ?? 'Unknown'}</p>
+                          <p className="text-xs text-slate-400">{app.recruiter?.email}</p>
+                        </TableCell>
+                        <TableCell><StatusBadge status={app.status} /></TableCell>
+                        <TableCell>
+                          {app.verified ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/10">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Verified
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-500/10">
+                              <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />Unverified
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-slate-500">{app.businessDate.slice(0, 10)}</TableCell>
+                        <TableCell className="text-xs text-slate-500">{formatDateTime(app.appliedAt)}</TableCell>
+                        <TableCell className="text-right">
+                          <a href={app.jobLink} target="_blank" rel="noreferrer" className="inline-flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 text-mayzax-blue">
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <VirtualizedTable
+                data={applications}
+                estimateRowHeight={78}
+                maxHeight="560px"
+                header={
+                  <div className="grid grid-cols-[1.2fr_1.4fr_0.6fr_1fr_0.6fr_0.7fr_0.6fr_0.7fr_0.3fr] gap-2 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-50/80">
+                    <span>Candidate</span>
+                    <span>Company / Title</span>
+                    <span>Portal</span>
+                    <span>Applied By</span>
+                    <span>Status</span>
+                    <span>Verification</span>
+                    <span>Business Date</span>
+                    <span>Applied</span>
+                    <span className="text-right">Link</span>
+                  </div>
+                }
+                renderRow={(app) => (
+                  <div className="grid grid-cols-[1.2fr_1.4fr_0.6fr_1fr_0.6fr_0.7fr_0.6fr_0.7fr_0.3fr] gap-2 px-4 py-3 border-b border-slate-100 hover:bg-slate-50/60 transition-colors items-center">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate">{app.profile?.candidateName}</p>
+                      <p className="text-xs text-slate-400 truncate">{app.profile?.technology}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-900 truncate">{app.companyName || '—'}</p>
+                      <p className="text-xs text-slate-500 truncate">{app.jobTitle || '—'}</p>
+                    </div>
+                    <div className="text-xs text-slate-600 font-medium">{formatEnumLabel(app.jobPortal)}</div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-700 truncate">{app.recruiter?.name ?? 'Unknown'}</p>
+                    </div>
+                    <div><StatusBadge status={app.status} /></div>
+                    <div>
                       {app.verified ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/10">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                          Verified
-                        </span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">● Verified</span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600 ring-1 ring-inset ring-slate-500/10">
-                          <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-                          Unverified
-                        </span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">○ Unverified</span>
                       )}
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-500">{app.businessDate.slice(0, 10)}</TableCell>
-                    <TableCell className="text-xs text-slate-500">{formatDateTime(app.appliedAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <a href={app.jobLink} target="_blank" rel="noreferrer" className="text-mayzax-blue hover:underline">
-                        <ExternalLink className="ml-auto h-4 w-4" />
+                    </div>
+                    <div className="text-xs text-slate-500">{app.businessDate.slice(0,10)}</div>
+                    <div className="text-xs text-slate-500">{formatDateTime(app.appliedAt)}</div>
+                    <div className="text-right">
+                      <a href={app.jobLink} target="_blank" rel="noreferrer" className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-50 hover:bg-mayzax-blue-50 text-slate-400 hover:text-mayzax-blue transition-colors">
+                        <ExternalLink className="h-3.5 w-3.5" />
                       </a>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
+                    </div>
+                  </div>
+                )}
+              />
+            )}
+
+            <div className="p-3 border-t border-slate-100">
+              <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
+            </div>
           </>
         )}
       </div>

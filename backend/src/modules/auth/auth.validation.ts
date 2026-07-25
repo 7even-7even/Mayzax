@@ -38,6 +38,16 @@ export const updateProfileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(120).optional(),
   email: z.string().email('A valid email is required').optional(),
   phone: z.string().trim().max(30, 'Phone number must be 30 characters or less').optional().or(z.literal('')),
+  avatarUrl: z.string().url().max(500).optional().or(z.literal('')).nullable(),
+  bio: z.string().max(1000).optional().or(z.literal('')).nullable(),
+  department: z.string().max(100).optional().or(z.literal('')).nullable(),
+  location: z.string().max(100).optional().or(z.literal('')).nullable(),
+  designation: z.string().max(100).optional().or(z.literal('')).nullable(),
+  employeeId: z.string().max(50).optional().or(z.literal('')).nullable(),
+  shiftPreference: z.string().max(50).optional().or(z.literal('')).nullable(),
+  skills: z.array(z.string().max(50)).max(20).optional(),
+  linkedInUrl: z.string().url().max(500).optional().or(z.literal('')).nullable(),
+  displayColor: z.string().max(20).optional().or(z.literal('')).nullable(),
 });
 
 export const securityQuestionSchema = z.object({

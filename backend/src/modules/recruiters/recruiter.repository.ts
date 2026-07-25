@@ -81,6 +81,15 @@ export function listRecruiters(query: ListRecruitersQuery) {
         createdAt: true,
         updatedAt: true,
         createdById: true,
+        teamName: true,
+        avatarUrl: true,
+        department: true,
+        location: true,
+        designation: true,
+        employeeId: true,
+        joinDate: true,
+        shiftPreference: true,
+        displayColor: true,
         createdBy: {
           select: {
             id: true,

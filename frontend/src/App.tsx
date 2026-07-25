@@ -19,6 +19,7 @@ import NotFoundPage from '@/pages/not-found-page';
 import UnauthorizedPage from '@/pages/unauthorized-page';
 import HomeRedirect from '@/pages/home-redirect';
 import { MayzaxIntro } from '@/components/shared/mayzax-intro';
+import { ErrorBoundary } from '@/components/shared/error-boundary';
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(() => {
@@ -49,7 +50,7 @@ export default function App() {
   };
 
   return (
-    <>
+    <ErrorBoundary>
       <AnimatePresence mode="popLayout">
         {showIntro && <MayzaxIntro key="intro" onComplete={handleIntroComplete} />}
       </AnimatePresence>
@@ -84,6 +85,6 @@ export default function App() {
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-    </>
+    </ErrorBoundary>
   );
 }
