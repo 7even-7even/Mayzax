@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Check, Pencil, Search, Target, Users, X } from 'lucide-react';
-import { PageHeader } from '@/components/shared/page-header';
+import { Check, Pencil, Search, Target, Users, X, Sparkles, Zap, Trophy, Activity } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
+import { usePermissions } from '@/hooks/use-permissions';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,6 +11,7 @@ import { ErrorState } from '@/components/shared/error-state';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { Reveal } from '@/components/motion/reveal';
 import { SummaryCards } from './summary-cards';
 import { RecruiterRow } from './recruiter-row';
@@ -19,6 +20,7 @@ import { useDashboardOverview, useGlobalSummary } from '@/hooks/use-analytics';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useMyRecruiterStats, useUpdateMyTeamName } from '@/hooks/use-recruiters';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 const sortOptions = [
   { value: 'totalApplications', label: 'Total Applications' },
@@ -51,136 +53,89 @@ function TlTeamCard() {
 
   const handleEdit = () => { setDraft(currentTeamName); setEditing(true); };
   const handleSave = async () => {
-    try {
-      await updateTeamName.mutateAsync(draft.trim() || null);
-      toast.success('Team name updated');
-      setEditing(false);
-    } catch {
-      toast.error('Failed to update team name');
-    }
+    try { await updateTeamName.mutateAsync(draft.trim() || null); toast.success('Team name updated'); setEditing(false); } catch { toast.error('Failed to update team name'); }
   };
   const handleCancel = () => setEditing(false);
-
   const handleGoalEdit = () => { setGoalDraft(String(shiftGoal)); setEditingGoal(true); };
   const handleGoalSave = () => {
     const val = parseInt(goalDraft, 10);
-    if (!isNaN(val) && val > 0) {
-      setShiftGoal(val);
-      localStorage.setItem(SHIFT_GOAL_KEY, String(val));
-    }
+    if (!isNaN(val) && val > 0) { setShiftGoal(val); localStorage.setItem(SHIFT_GOAL_KEY, String(val)); }
     setEditingGoal(false);
   };
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-2">
+    <Card className="h-full flex flex-col border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-violet-600 to-indigo-600" />
+      <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4 text-purple-500" /> My Team
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-md">
+              <Users className="h-4 w-4" />
+            </div>
+            My Team
+            <Badge className="bg-slate-900 text-white text-[10px]">PREMIUM</Badge>
           </CardTitle>
           {!editing && (
-            <button
-              onClick={handleEdit}
-              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-              title="Edit team name"
-            >
-              <Pencil className="h-3 w-3" />
-              Edit
+            <button onClick={handleEdit} className="flex items-center gap-1 rounded-full bg-white border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 shadow-sm">
+              <Pencil className="h-3 w-3" /> Edit
             </button>
           )}
         </div>
-        <CardDescription>Your team name and member count.</CardDescription>
+        <CardDescription className="text-xs">Team identity • Shift goals • Performance</CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4 flex-1">
-        {/* Team name / edit row */}
+      <CardContent className="flex flex-col gap-4 flex-1 p-5">
         {isLoading ? (
           <div className="space-y-2">
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-5 w-40 rounded-xl" />
+            <Skeleton className="h-4 w-24 rounded-xl" />
           </div>
         ) : editing ? (
           <div className="flex items-center gap-2">
-            <Input
-              autoFocus
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') handleCancel(); }}
-              placeholder="Enter team name..."
-              className="h-8 text-sm"
-            />
-            <button onClick={handleSave} disabled={updateTeamName.isPending} className="rounded-md p-1 text-emerald-600 hover:bg-emerald-50 transition-colors">
-              <Check className="h-4 w-4" />
-            </button>
-            <button onClick={handleCancel} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 transition-colors">
-              <X className="h-4 w-4" />
-            </button>
+            <Input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') handleCancel(); }} placeholder="Enter team name..." className="h-9 text-sm rounded-xl" />
+            <button onClick={handleSave} disabled={updateTeamName.isPending} className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white hover:bg-emerald-600"><Check className="h-4 w-4" /></button>
+            <button onClick={handleCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200"><X className="h-4 w-4" /></button>
           </div>
         ) : (
-          <div className="space-y-0.5">
-            <p className="text-sm font-semibold text-slate-800">
-              {currentTeamName || <span className="italic text-slate-400">No team name set yet</span>}
+          <div>
+            <p className="text-base font-bold tracking-tight text-slate-900 flex items-center gap-2">
+              {currentTeamName || <span className="italic text-slate-400">No team name set</span>}
+              {currentTeamName && <Sparkles className="h-3.5 w-3.5 text-violet-500" />}
             </p>
-            <p className="text-xs text-slate-500">
-              <span className="font-medium text-slate-700">{stats?.membersCount ?? 0}</span>{' '}
-              team member{stats?.membersCount !== 1 ? 's' : ''}
-            </p>
+            <p className="text-xs text-slate-500 mt-1"><span className="font-semibold text-slate-700">{stats?.membersCount ?? 0}</span> team member{stats?.membersCount !== 1 ? 's' : ''} • Live roster</p>
           </div>
         )}
 
-        {/* Shift Goal */}
-        <div className="mt-auto rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-3 space-y-2">
+        <div className="mt-auto rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-white p-4 space-y-3 shadow-inner">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-              <Target className="h-3.5 w-3.5 text-purple-500" />
+            <div className="flex items-center gap-2 text-xs font-bold tracking-wide uppercase text-slate-600">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-white">
+                <Target className="h-3.5 w-3.5" />
+              </div>
               Shift Goal
             </div>
             {editingGoal ? (
               <div className="flex items-center gap-1">
-                <input
-                  autoFocus
-                  type="number"
-                  min={1}
-                  value={goalDraft}
-                  onChange={(e) => setGoalDraft(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleGoalSave(); if (e.key === 'Escape') setEditingGoal(false); }}
-                  className="w-16 rounded border border-slate-200 bg-white px-1.5 py-0.5 text-right text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-400"
-                />
-                <button onClick={handleGoalSave} className="rounded p-0.5 text-emerald-600 hover:bg-emerald-50">
-                  <Check className="h-3.5 w-3.5" />
-                </button>
-                <button onClick={() => setEditingGoal(false)} className="rounded p-0.5 text-slate-400 hover:bg-slate-100">
-                  <X className="h-3.5 w-3.5" />
-                </button>
+                <input autoFocus type="number" min={1} value={goalDraft} onChange={(e) => setGoalDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleGoalSave(); if (e.key === 'Escape') setEditingGoal(false); }} className="w-16 rounded-xl border border-slate-200 bg-white px-2 py-1 text-right text-xs font-bold focus:outline-none focus:ring-2 focus:ring-violet-200" />
+                <button onClick={handleGoalSave} className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white"><Check className="h-3.5 w-3.5" /></button>
+                <button onClick={() => setEditingGoal(false)} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500"><X className="h-3.5 w-3.5" /></button>
               </div>
             ) : (
-              <button
-                onClick={handleGoalEdit}
-                className="text-[11px] text-slate-400 hover:text-slate-700 transition-colors"
-              >
-                {isLoading ? '…' : `${currentApps} / ${shiftGoal} apps`}
+              <button onClick={handleGoalEdit} className="rounded-full bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 shadow-sm">
+                {isLoading ? '—' : `${currentApps} / ${shiftGoal}`}
               </button>
             )}
           </div>
 
-          {/* Progress bar */}
-          {isLoading ? (
-            <Skeleton className="h-2 w-full rounded-full" />
-          ) : (
-            <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ease-out ${
-                  goalMet ? 'bg-emerald-500' : 'bg-purple-500'
-                }`}
-                style={{ width: `${pct}%` }}
-              />
+          {isLoading ? <Skeleton className="h-2.5 w-full rounded-full" /> : (
+            <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
+              <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1, ease: 'easeOut' }} className={`h-full rounded-full ${goalMet ? 'bg-gradient-to-r from-emerald-500 to-teal-600' : 'bg-gradient-to-r from-violet-600 to-indigo-600'}`} />
+              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
             </div>
           )}
 
-          <p className="text-[10px] text-slate-400">
-            {isLoading ? '' : goalMet
-              ? `🎉 Goal reached! ${currentApps - shiftGoal > 0 ? `+${currentApps - shiftGoal} over target` : ''}`
-              : `${shiftGoal - currentApps} more to hit today's target`}
+          <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5">
+            {goalMet ? <><Trophy className="h-3 w-3 text-amber-500" /> Goal reached! {currentApps - shiftGoal > 0 ? `+${currentApps - shiftGoal} over` : ''}</> : <><Zap className="h-3 w-3 text-violet-500" />{shiftGoal - currentApps} more to hit target</>}
           </p>
         </div>
       </CardContent>
@@ -190,6 +145,7 @@ function TlTeamCard() {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { isTeamLeader } = usePermissions();
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('totalApplications');
   const [page, setPage] = useState(1);
@@ -207,21 +163,44 @@ export default function DashboardPage() {
   const rows = data?.data ?? [];
 
   return (
-    <div>
+    <div className="space-y-6">
       <Reveal>
-        <PageHeader
-          title={user?.role === 'TEAM_LEADER' ? 'TL Dashboard' : 'Admin Dashboard'}
-          description={
-            user?.role === 'TEAM_LEADER'
-              ? "Real-time overview of your team's recruiter performance."
-              : 'Real-time overview of recruiter performance across Mayzax ATS.'
-          }
-        />
+        <div className="relative overflow-hidden rounded-[20px] border border-slate-200/60 bg-gradient-to-br from-white via-indigo-50/10 to-violet-50/20 p-[1px] shadow-sm">
+          <div className="rounded-[19px] bg-white">
+            <div className="p-6 sm:p-7 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 to-slate-700 text-white shadow-lg">
+                  <Activity className="h-6 w-6" />
+                </div>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
+                    {isTeamLeader ? 'Team Command Center' : 'Admin Command Center'}
+                    <Badge className="bg-slate-900 text-white border-0 text-[10px]">LIVE</Badge>
+                  </h1>
+                  <p className="mt-1 text-sm text-slate-500 max-w-2xl">
+                    {isTeamLeader ? "Real-time pulse of your team's performance • Shift goals • Live availability" : 'Organization-wide recruiter performance • Premium analytics • Live team monitoring'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 font-medium text-emerald-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Real-time
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 border border-violet-200 px-3 py-1.5 font-medium text-violet-700">
+                  <Sparkles className="h-3 w-3" />
+                  Premium
+                </span>
+              </div>
+            </div>
+            <div className="h-1 w-full bg-gradient-to-r from-slate-900 via-violet-600 to-indigo-600" />
+          </div>
+        </div>
       </Reveal>
 
-      <div className="mb-6 space-y-6">
-        {user?.role === 'TEAM_LEADER' && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
+      <div className="space-y-6">
+        {user?.role === 'TEAM_LEADER' ? (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-stretch">
             <div className="lg:col-span-2 h-full">
               <SummaryCards />
             </div>
@@ -229,76 +208,80 @@ export default function DashboardPage() {
               <TlTeamCard />
             </div>
           </div>
+        ) : (
+          <SummaryCards />
         )}
-        {user?.role !== 'TEAM_LEADER' && <SummaryCards />}
         <LiveStatusCard />
       </div>
 
       <Reveal delay={0.15}>
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative w-full max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              placeholder="Search recruiters..."
-              className="pl-9"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-            />
+        <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-gradient-to-r from-slate-50/80 to-white border-b border-slate-100 px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
+                <Users className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Recruiter Leaderboard</h3>
+                <p className="text-xs text-slate-500">Search, sort & expand for breakdown</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input placeholder="Search recruiters..." className="pl-9 w-full sm:w-64 bg-white rounded-full shadow-sm border-slate-200" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+              </div>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full sm:w-52 bg-white rounded-full shadow-sm border-slate-200">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  {sortOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      Sort by {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full sm:w-56">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              {sortOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  Sort by {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </Reveal>
 
-      <Reveal delay={0.2} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        {isLoading && <TableSkeleton rows={6} cols={6} />}
-        {isError && <ErrorState onRetry={() => refetch()} />}
+          <div className="p-0">
+            {isLoading && <div className="p-4"><TableSkeleton rows={6} cols={6} /></div>}
+            {isError && <div className="p-4"><ErrorState onRetry={() => refetch()} /></div>}
 
-        {!isLoading && !isError && rows.length === 0 && (
-          <EmptyState icon={Users} title="No recruiters found" description="Try adjusting your search." />
-        )}
+            {!isLoading && !isError && rows.length === 0 && (
+              <div className="p-8">
+                <EmptyState icon={Users} title="No recruiters found" description="Try adjusting your search." />
+              </div>
+            )}
 
-        {!isLoading && !isError && rows.length > 0 && (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Recruiter</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Assigned Profiles</TableHead>
-                  <TableHead>Total Applications</TableHead>
-                  <TableHead>Current Shift</TableHead>
-                  <TableHead>Last Active</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((row, i) => (
-                  <RecruiterRow
-                    key={row.id}
-                    row={row}
-                    index={i}
-                    expanded={expandedId === row.id}
-                    onToggle={() => setExpandedId(expandedId === row.id ? null : row.id)}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-            <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
-          </>
-        )}
+            {!isLoading && !isError && rows.length > 0 && (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/60">
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Recruiter</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Status</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Profiles</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Total Apps</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Current Shift</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Last Active</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rows.map((row, i) => (
+                      <RecruiterRow key={row.id} row={row} index={i} expanded={expandedId === row.id} onToggle={() => setExpandedId(expandedId === row.id ? null : row.id)} />
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="p-3 border-t border-slate-100 bg-slate-50/30">
+                  <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
+                </div>
+              </>
+            )}
+          </div>
+        </Card>
       </Reveal>
     </div>
   );

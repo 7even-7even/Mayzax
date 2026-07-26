@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Loader2, Lock, Mail, User } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, Mail, User, Sparkles, ArrowRight, ShieldCheck, Users } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,157 +55,144 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen overflow-hidden bg-slate-50">
-      <div className="relative hidden w-3/5 flex-col justify-center overflow-hidden bg-mayzax-gradient px-16 lg:flex">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/60 via-slate-900/30 to-transparent" />
-        <div className="absolute -top-20 -left-20 h-96 w-96 rounded-full bg-mayzax-blue/30 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-mayzax-green/20 blur-3xl" />
+    <div className="relative flex min-h-screen overflow-hidden bg-[#04070f]">
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-slate-900 to-black" />
+        <div className="absolute -top-32 -left-32 h-[600px] w-[600px] rounded-full bg-gradient-to-br from-violet-600/40 to-indigo-600/30 blur-[80px] animate-pulse" />
+        <div className="absolute -bottom-32 -right-32 h-[700px] w-[700px] rounded-full bg-gradient-to-br from-amber-600/20 to-orange-600/20 blur-[90px] animate-pulse [animation-delay:1s]" />
+      </div>
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:48px_48px]" />
+
+      <div className="relative hidden w-[58%] flex-col justify-between overflow-hidden px-16 py-12 lg:flex">
+        <div>
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex items-center gap-3">
+            <img src={mayzaxLogo} alt="Mayzax" className="h-10 w-10 rounded-xl bg-white p-2 shadow-lg shadow-violet-500/20 ring-1 ring-white/20" />
+            <span className="text-sm font-semibold tracking-wider text-white/70 uppercase">Mayzax Solutions</span>
+          </motion.div>
+        </div>
+
+        <div className="relative z-10 flex flex-col gap-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl px-3 py-1 text-xs font-medium text-white/70">
+              <Users className="h-3.5 w-3.5 text-emerald-300" />
+              Join 500+ recruiters shipping 2k+ applications daily
+            </div>
+            <h1 className="mt-6 text-5xl font-bold tracking-tight text-white leading-[1.1]">
+              Start hiring
+              <br />
+              <span className="bg-gradient-to-r from-violet-200 via-indigo-200 to-cyan-200 bg-clip-text text-transparent">at the speed of light</span>
+            </h1>
+            <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-white/50">
+              Create your recruiter account in seconds. Get instant access to candidate profiles, verified application tracking, and team analytics.
+            </p>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="grid grid-cols-3 gap-3 max-w-lg">
+            {[
+              { label: 'Setup in 30s', sub: 'No credit card' },
+              { label: 'Free for recruiters', sub: 'Admin approval' },
+              { label: 'Chrome extension', sub: 'Auto-verify' },
+            ].map((f, i) => (
+              <div key={i} className="rounded-2xl bg-white/[0.04] border border-white/[0.06] backdrop-blur-xl p-3">
+                <p className="text-xs font-semibold text-white/80">{f.label}</p>
+                <p className="text-[11px] text-white/40 mt-0.5">{f.sub}</p>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
+        <div className="text-xs text-white/30">© 2026 Mayzax • Built for dazzling eyes ✨</div>
 
         <FloatingCube size={90} top="12%" left="15%" variant="blue" duration={10} />
         <FloatingCube size={50} top="25%" right="18%" variant="white" duration={7} delay={0.5} />
         <FloatingCube size={65} bottom="20%" left="10%" variant="green" duration={9} delay={1} />
-        <FloatingCube size={40} bottom="30%" right="22%" variant="white" duration={8} delay={1.5} opacity={0.7} />
-        <FloatingCube size={110} bottom="-5%" right="-5%" variant="blue" duration={12} delay={0.3} opacity={0.5} />
-
-        <div className="relative z-10 flex flex-col gap-6">
-          <div className="flex items-center gap-4">
-            <motion.img
-              layoutId="mayzax-logo"
-              src={mayzaxLogo}
-              alt="Mayzax"
-              className="ml-12 h-25 w-25 rounded-2xl bg-white pl-1.5 pt-1.5 shadow-xl ring-1 ring-slate-200"
-            />
-            <div>
-              <h1 className="pb-[15px] pl-[15px] text-5xl font-bold text-white">Mayzax Solutions</h1>
-              <p className="pl-[17px] text-2xl font-bold text-white/70">Recruitment ATS</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="pointer-events-none absolute right-0 top-0 z-0 h-full w-80 bg-gradient-to-r from-transparent via-slate-50/20 to-slate-50" />
       </div>
 
-      <div className="relative flex w-full flex-col items-center justify-center px-4 lg:w-1/2">
-        <FloatingCube size={45} top="10%" right="10%" variant="white" duration={11} opacity={0.5} />
+      <div className="relative flex w-full flex-col items-center justify-center px-4 py-8 lg:w-[42%] lg:bg-white lg:rounded-l-[32px] lg:shadow-[-20px_0_80px_rgba(0,0,0,0.3)]">
+        <div className="relative z-10 w-full max-w-[380px]">
+          <div className="relative overflow-hidden rounded-[24px] border border-slate-200/60 bg-white p-8 shadow-[0_20px_80px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.03)]">
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-violet-500 via-indigo-500 to-cyan-500" />
+            <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-gradient-to-br from-violet-500/10 to-indigo-500/5 blur-2xl" />
 
-        <div className="relative z-10 w-full max-w-md">
-          <div className="mb-8 flex flex-col items-center gap-3 text-center lg:hidden">
-            <img src={mayzaxLogo} alt="Mayzax Solutions" className="h-16 w-16 rounded-2xl bg-white p-2 shadow-md ring-1 ring-slate-200" />
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">Mayzax ATS</h1>
-              <p className="text-sm text-slate-500">Recruiter account setup</p>
+            <div className="relative">
+              <div className="mb-7">
+                <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1 text-[11px] font-semibold tracking-wide">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  RECRUITER ONBOARDING
+                </div>
+                <h2 className="mt-4 text-[22px] font-bold tracking-tight text-slate-900">Create your account</h2>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500">Join Mayzax ATS • Instant access • No spam</p>
+              </div>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700 tracking-wide uppercase">Full Name</Label>
+                  <div className="relative group">
+                    <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors" />
+                    <Input placeholder="Your full name" className="h-[44px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-violet-300 focus:ring-4 focus:ring-violet-100 text-[14px]" {...register('name')} />
+                  </div>
+                  {errors.name && <p className="text-xs text-red-600">{errors.name.message}</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700 tracking-wide uppercase">Work Email</Label>
+                  <div className="relative group">
+                    <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors" />
+                    <Input type="email" placeholder="you@company.com" className="h-[44px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-violet-300 focus:ring-4 focus:ring-violet-100 text-[14px]" {...register('email')} />
+                  </div>
+                  {errors.email && <p className="text-xs text-red-600">{errors.email.message}</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700 tracking-wide uppercase">Password</Label>
+                  <div className="relative group">
+                    <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors" />
+                    <Input type={showPassword ? 'text' : 'password'} placeholder="Create a strong password" className="h-[44px] pl-10 pr-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-violet-300 focus:ring-4 focus:ring-violet-100 text-[14px]" {...register('password')} />
+                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-100 text-slate-400" tabIndex={-1}>
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  {errors.password && <p className="text-xs text-red-600">{errors.password.message}</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-slate-700 tracking-wide uppercase">Confirm Password</Label>
+                  <div className="relative group">
+                    <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors" />
+                    <Input type={showPassword ? 'text' : 'password'} placeholder="Repeat password" className="h-[44px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-violet-300 focus:ring-4 focus:ring-violet-100 text-[14px]" {...register('confirmPassword')} />
+                  </div>
+                  {errors.confirmPassword && <p className="text-xs text-red-600">{errors.confirmPassword.message}</p>}
+                </div>
+
+                <Button type="submit" className="group relative w-full h-[44px] rounded-xl bg-slate-900 hover:bg-black text-white font-semibold text-[14px] shadow-[0_8px_24px_rgba(0,0,0,0.12)] transition-all overflow-hidden" disabled={isSubmitting}>
+                  <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <span className="relative flex items-center justify-center gap-2">
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" /> Creating account...
+                      </>
+                    ) : (
+                      <>
+                        Create account <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                      </>
+                    )}
+                  </span>
+                </Button>
+              </form>
+
+              <p className="mt-6 text-center text-sm text-slate-500">
+                Already have an account?{' '}
+                <Link to="/login" className="font-semibold text-slate-900 hover:text-violet-600 transition-colors inline-flex items-center gap-1">
+                  Sign in <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </p>
+
+              <div className="mt-6 flex items-center justify-center gap-3 text-[11px] text-slate-400">
+                <span className="flex items-center gap-1"><ShieldCheck className="h-3 w-3" /> Secure</span>
+                <span className="h-3 w-px bg-slate-200" />
+                <span className="flex items-center gap-1"><Sparkles className="h-3 w-3" /> Premium ATS</span>
+              </div>
             </div>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 bg-white p-10 shadow-5xl shadow-slate-200/60">
-            <div className="mb-8 text-center">
-              <h2 className="text-2xl font-semibold text-slate-900">Create your recruiter account</h2>
-              <p className="mt-1.5 text-sm text-slate-500">Set up access to the Mayzax ATS dashboard</p>
-            </div>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium text-slate-700">
-                  Full name
-                </Label>
-                <div className="relative">
-                  <User className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    id="name"
-                    type="text"
-                    autoComplete="name"
-                    placeholder="Your full name"
-                    className="h-12 rounded-xl border-slate-200 pl-11 text-[15px] focus-visible:ring-mayzax-blue/30"
-                    {...register('name')}
-                  />
-                </div>
-                {errors.name && <p className="text-xs text-red-600">{errors.name.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-                  Email address
-                </Label>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@company.com"
-                    className="h-12 rounded-xl border-slate-200 pl-11 text-[15px] focus-visible:ring-mayzax-blue/30"
-                    {...register('email')}
-                  />
-                </div>
-                {errors.email && <p className="text-xs text-red-600">{errors.email.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-slate-700">
-                  Password
-                </Label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    placeholder="Create a password"
-                    className="h-12 rounded-xl border-slate-200 pl-11 pr-11 text-[15px] focus-visible:ring-mayzax-blue/30"
-                    {...register('password')}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-600"
-                    tabIndex={-1}
-                  >
-                    {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
-                  </button>
-                </div>
-                {errors.password && <p className="text-xs text-red-600">{errors.password.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700">
-                  Confirm password
-                </Label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
-                  <Input
-                    id="confirmPassword"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    placeholder="Repeat your password"
-                    className="h-12 rounded-xl border-slate-200 pl-11 pr-11 text-[15px] focus-visible:ring-mayzax-blue/30"
-                    {...register('confirmPassword')}
-                  />
-                </div>
-                {errors.confirmPassword && <p className="text-xs text-red-600">{errors.confirmPassword.message}</p>}
-              </div>
-
-              <Button
-                type="submit"
-                variant="brand"
-                className="h-12 w-full rounded-xl text-[15px] font-medium shadow-lg shadow-mayzax-blue/20 transition-transform active:scale-[0.98]"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Creating account...
-                  </>
-                ) : (
-                  'Create account'
-                )}
-              </Button>
-            </form>
-
-            <p className="mt-6 text-center text-sm text-slate-500">
-              Already have an account?{' '}
-              <Link to="/login" className="font-medium text-mayzax-blue hover:underline">
-                Sign in
-              </Link>
-            </p>
           </div>
         </div>
       </div>
