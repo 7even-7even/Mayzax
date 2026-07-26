@@ -8,6 +8,7 @@ import { initials } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { UserStatusSelector } from '@/components/activity/user-status-selector';
 import { useUpdates, useMarkUpdateAsRead } from '@/hooks/use-updates';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, logout } = useAuth();
@@ -49,6 +50,8 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
       <div className="flex items-center gap-2 sm:gap-3">
         <UserStatusSelector />
+
+        <ThemeToggle />
 
         <div className="hidden sm:flex items-center gap-1.5">
           {isAdmin && <Badge className="bg-mayzax-gradient text-white border-0 shadow-sm rounded-full px-3 py-1 text-xs font-semibold">Admin</Badge>}

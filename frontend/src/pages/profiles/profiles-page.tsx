@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Loader2, Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2, FileText, Sparkles } from 'lucide-react';
+import { Loader2, Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2, FileText, Sparkles, Briefcase, Users, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader } from '@/components/shared/page-header';
+import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -107,121 +107,104 @@ export default function ProfilesPage() {
       const isSelected = selectedProfileIds.includes(profile.id);
       return (
         <Card
-          className={`hover-lift group h-full overflow-hidden border-slate-200 cursor-pointer select-none transition duration-200 ${
-            isSelected ? 'ring-2 ring-mayzax-blue bg-mayzax-blue-50/20 shadow-md' : 'hover:shadow-lg hover:border-slate-300'
+          className={`group relative h-full overflow-hidden rounded-2xl border-slate-200/60 bg-white shadow-sm cursor-pointer select-none transition-all duration-300 hover:shadow-xl hover:-translate-y-1 dark:border-slate-700/60 dark:bg-slate-900 ${
+            isSelected ? 'ring-2 ring-mayzax-blue-500 shadow-lg shadow-mayzax-blue-200/30 dark:ring-mayzax-blue-400' : 'hover:border-mayzax-blue-200 dark:hover:border-mayzax-blue-800'
           }`}
           onDoubleClick={() => navigate(`/applications?profileId=${profile.id}`)}
         >
-          <div className="h-1 w-full bg-mayzax-gradient opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-          <CardContent className="p-4">
-            <div className="mb-3 flex items-start justify-between">
-              <div className="flex items-center gap-3 min-w-0">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-mayzax-gradient opacity-80 group-hover:opacity-100 transition-opacity" />
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0 flex-1">
                 <PermissionGate permission="bulk:profile">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-slate-300 text-mayzax-blue focus:ring-mayzax-blue cursor-pointer shrink-0 mt-0.5"
-                    checked={isSelected}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      toggleSelectProfile(profile.id);
-                    }}
-                  />
+                  <input type="checkbox" className="mt-1 h-4 w-4 rounded-lg border-slate-300 text-mayzax-blue-600 focus:ring-mayzax-blue-500 cursor-pointer shrink-0" checked={isSelected} onChange={(e) => { e.stopPropagation(); toggleSelectProfile(profile.id); }} />
                 </PermissionGate>
-                <motion.div
-                  whileHover={{ rotate: 6, scale: 1.05 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 12 }}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mayzax-gradient text-sm font-bold text-white shadow-sm"
-                >
-                  {profile.candidateName.charAt(0)}
-                </motion.div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-slate-900 truncate">{profile.candidateName}</p>
-                  <Badge variant="secondary" className="mt-1 text-[11px]">
-                    {profile.technology}
-                  </Badge>
+                <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-mayzax-gradient text-base font-bold text-white shadow-md shadow-mayzax-blue-200/30">
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent" />
+                  <span className="relative">{profile.candidateName.charAt(0).toUpperCase()}</span>
+                  <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-[15px] text-slate-900 dark:text-white truncate">{profile.candidateName}</p>
+                    <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <Badge className="bg-mayzax-blue-50 text-mayzax-blue-700 border border-mayzax-blue-200 text-[11px] rounded-full px-2 py-0">{profile.technology}</Badge>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Live</span>
+                  </div>
                 </div>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate(`/applications?profileId=${profile.id}`)}>
-                    <FileText className="h-4 w-4 mr-2" /> View Applications
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setEditingProfile(profile);
-                      setFormOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4 mr-2" /> {isManager ? 'Edit / Reassign' : 'Edit'}
-                  </DropdownMenuItem>
-                  {canDeleteProfile && (
-                    <DropdownMenuItem onClick={() => setDeleteTarget(profile)} className="text-red-600 focus:text-red-600">
-                      <Trash2 className="h-4 w-4 mr-2" /> Delete
-                    </DropdownMenuItem>
-                  )}
+                <DropdownMenuContent align="end" className="rounded-xl">
+                  <DropdownMenuItem onClick={() => navigate(`/applications?profileId=${profile.id}`)} className="gap-2"><FileText className="h-4 w-4" /> View Applications</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setEditingProfile(profile); setFormOpen(true); }} className="gap-2"><Pencil className="h-4 w-4" /> {isManager ? 'Edit / Reassign' : 'Edit'}</DropdownMenuItem>
+                  {canDeleteProfile && <DropdownMenuItem onClick={() => setDeleteTarget(profile)} className="text-red-600 focus:text-red-600 gap-2"><Trash2 className="h-4 w-4" /> Delete</DropdownMenuItem>}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
 
-            <div className="space-y-1.5 text-sm text-slate-500">
-              <div className="flex items-center gap-2 truncate">
-                <Mail className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{profile.email}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="h-3.5 w-3.5" /> {profile.phone}
-              </div>
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">Real-time pulse of candidate • Productivity & assignment • Double-click to view applications</p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                <Mail className="h-3 w-3" /> {profile.email.split('@')[0]}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 border border-violet-200 px-2.5 py-1 text-[11px] font-medium text-violet-700 dark:bg-violet-900/20 dark:border-violet-800 dark:text-violet-300">
+                <Phone className="h-3 w-3" /> {profile.phone.slice(-4)}
+              </span>
             </div>
 
-            {profile.notes && <p className="mt-2 line-clamp-2 text-xs text-slate-400">{profile.notes}</p>}
+            {profile.notes && <div className="mt-3 rounded-xl bg-amber-50/50 border border-amber-100 p-2.5 dark:bg-amber-950/20 dark:border-amber-900/30"><p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{profile.notes}</p></div>}
 
-            <div className="mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-2">
-              <User2 className="h-3 w-3 text-slate-300" />
-              <p className="text-xs text-slate-400 truncate">
-                Assigned to{' '}
-                <span className="font-medium text-slate-600">
-                  {profile.assignedRecruiterAssignments?.length
-                    ? profile.assignedRecruiterAssignments.map((a) => a.recruiter.name).join(', ')
-                    : profile.assignedRecruiter?.name ?? 'Unassigned'}
-                </span>
-              </p>
+            <div className="mt-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex -space-x-1.5">
+                  {(profile.assignedRecruiterAssignments?.length ? profile.assignedRecruiterAssignments.slice(0, 3) : profile.assignedRecruiter ? [profile.assignedRecruiter] : []).map((a: any, idx: number) => (
+                    <div key={idx} className="flex h-6 w-6 items-center justify-center rounded-full bg-mayzax-gradient text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900">{(a.recruiter?.name || a.name || '?').charAt(0)}</div>
+                  ))}
+                </div>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{profile.assignedRecruiterAssignments?.length ? `${profile.assignedRecruiterAssignments.length} recruiters` : profile.assignedRecruiter?.name ? profile.assignedRecruiter.name : 'Unassigned'}</span>
+              </div>
+              <span className="text-[11px] text-slate-400 flex items-center gap-1"><Briefcase className="h-3 w-3" /> View apps</span>
             </div>
           </CardContent>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-mayzax-blue-600 via-mayzax-green-500 to-mayzax-blue-600 opacity-60 group-hover:opacity-100 transition-opacity" />
         </Card>
       );
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [selectedProfileIds, isManager, canDeleteProfile]
   );
 
+
   return (
-    <div>
-      <Reveal>
-        <PageHeader
-          title={isManager ? 'Client Profiles' : 'My Assigned Profiles'}
-          description={
-            isManager ? 'Manage candidate profiles and recruiter assignments. Virtualized for 1k+ rows.' : 'Candidate profiles currently assigned to you.'
-          }
-          actions={
-            canCreateProfile ? (
-              <Button
-                variant="brand"
-                onClick={() => {
-                  setEditingProfile(null);
-                  setFormOpen(true);
-                }}
-                className="gap-2 shadow-md"
-              >
-                <Plus className="h-4 w-4" /> New Profile
-              </Button>
-            ) : undefined
-          }
-        />
-      </Reveal>
+    <div className="space-y-5">
+      <PremiumPageHeader
+        icon={isManager ? Briefcase : User2}
+        title={isManager ? 'Clients Vault' : 'My Assigned Profiles'}
+        description={isManager ? 'Premium vault of candidate profiles • Virtualized • Smart assignment up to 5 recruiters • Original palette #2A5DA8 + #3F9C71' : 'Candidate profiles currently assigned to you • Premium vault'}
+        live={true}
+        liveLabel={`${data?.pagination?.total ?? profiles.length} profiles`}
+        pills={[
+          { label: 'Business Date • IST', icon: Activity },
+          { label: 'Premium Vault', icon: Sparkles, variant: 'premium' },
+          ...(isManager ? [{ label: `${recruiters.length} recruiters`, icon: Users } as const] : []),
+        ]}
+        actions={
+          canCreateProfile ? (
+            <Button variant="brand" onClick={() => { setEditingProfile(null); setFormOpen(true); }} className="gap-2 shadow-md shadow-mayzax-blue-200/30 bg-mayzax-gradient border-0 text-white hover:opacity-90 rounded-full px-5">
+              <Plus className="h-4 w-4" /> New Profile
+            </Button>
+          ) : undefined
+        }
+        gradient="from-mayzax-blue-600 to-mayzax-green-600"
+        bottomGradient="from-mayzax-blue-600 via-mayzax-green-500 to-mayzax-blue-600"
+      />
 
       <Reveal delay={0.05}>
         <div className="mb-4 flex flex-wrap items-center gap-3">
