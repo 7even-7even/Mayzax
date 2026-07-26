@@ -229,7 +229,7 @@ export default function ProfilesPage() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               placeholder="Search by name, email, phone, or tech..."
-              className="pl-9 bg-white shadow-sm"
+              className="pl-9 bg-white shadow-sm rounded-full border-slate-200"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -239,10 +239,10 @@ export default function ProfilesPage() {
           </div>
 
           {isManager && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm">
               <span className="text-xs font-semibold text-slate-500">Assigned To:</span>
               <select
-                className="h-9 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 font-medium shadow-sm focus:border-mayzax-blue focus:outline-none focus:ring-1 focus:ring-mayzax-blue cursor-pointer"
+                className="h-7 rounded-full border-0 bg-transparent text-xs text-slate-700 font-medium focus:outline-none cursor-pointer"
                 value={assignedRecruiterFilter}
                 onChange={(e) => {
                   setAssignedRecruiterFilter(e.target.value);
@@ -250,7 +250,7 @@ export default function ProfilesPage() {
                 }}
               >
                 <option value="ALL">All Recruiters</option>
-                <option value="unassigned">Unassigned Profiles</option>
+                <option value="unassigned">Unassigned</option>
                 {recruiters.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name} ({r.role === 'TEAM_LEADER' ? 'TL' : 'Recruiter'})
@@ -260,13 +260,41 @@ export default function ProfilesPage() {
             </div>
           )}
 
-          {useVirtualization && (
-            <div className="ml-auto flex items-center gap-1.5 text-[11px] text-slate-400 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm">
-              <Sparkles className="h-3 w-3 text-mayzax-blue" />
-              Virtualized grid active • GPU accelerated
-            </div>
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm hidden sm:inline">
+              {data?.pagination?.total ?? profiles.length} profiles
+            </span>
+            {useVirtualization && (
+              <div className="flex items-center gap-1.5 text-[11px] text-violet-700 bg-violet-50 border border-violet-200 rounded-full px-3 py-1 shadow-sm">
+                <Sparkles className="h-3 w-3" />
+                Virtualized
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Enhanced filtering chips */}
+        {(search || assignedRecruiterFilter !== 'ALL') && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {search && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-white px-3 py-1 text-xs font-medium">
+                Search: "{search}"
+                <button onClick={() => setSearch('')} className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-white/20 hover:bg-white/30">
+                  <span className="text-[10px]">✕</span>
+                </button>
+              </span>
+            )}
+            {assignedRecruiterFilter !== 'ALL' && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 px-3 py-1 text-xs font-medium">
+                Assigned: {assignedRecruiterFilter === 'unassigned' ? 'Unassigned' : recruiters.find((r) => r.id === assignedRecruiterFilter)?.name || assignedRecruiterFilter}
+                <button onClick={() => setAssignedRecruiterFilter('ALL')} className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-200 hover:bg-indigo-300">
+                  <span className="text-[10px]">✕</span>
+                </button>
+              </span>
+            )}
+            <button onClick={() => { setSearch(''); setAssignedRecruiterFilter('ALL'); }} className="text-xs text-slate-500 hover:text-red-600">Clear all filters</button>
+          </div>
+        )}
       </Reveal>
 
       {isLoading && (

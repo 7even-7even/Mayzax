@@ -36,6 +36,7 @@ enum ApplicationStatus {
 }
 
 enum UserStatus {
+  ONLINE
   ACTIVE
   SHORT_BREAK
   DINNER_BREAK

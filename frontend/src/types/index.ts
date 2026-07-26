@@ -1,6 +1,7 @@
 export type Role = 'ADMIN' | 'TEAM_LEADER' | 'RECRUITER';
 
 export type UserStatus =
+  | 'ONLINE'
   | 'ACTIVE'
   | 'SHORT_BREAK'
   | 'DINNER_BREAK'

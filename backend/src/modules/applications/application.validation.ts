@@ -88,6 +88,9 @@ export const listApplicationsQuerySchema = z.object({
   recruiterId: z.string().uuid().optional(),
   status: applicationStatusEnum.optional(),
   jobPortal: jobPortalEnum.optional(),
+  verified: z.enum(['true', 'false']).optional().transform((v) => (v === undefined ? undefined : v === 'true')),
+  companyName: z.string().optional(),
+  jobTitle: z.string().optional(),
   businessDateFrom: z.string().optional(), // YYYY-MM-DD
   businessDateTo: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),

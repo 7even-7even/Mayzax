@@ -65,6 +65,9 @@ export function buildWhereClause(
   if (query.profileId) conditions.push({ profileId: query.profileId });
   if (query.status) conditions.push({ status: query.status });
   if (query.jobPortal) conditions.push({ jobPortal: query.jobPortal as any });
+  if (query.verified !== undefined) conditions.push({ verified: query.verified });
+  if (query.companyName) conditions.push({ companyName: { contains: query.companyName, mode: 'insensitive' } });
+  if (query.jobTitle) conditions.push({ jobTitle: { contains: query.jobTitle, mode: 'insensitive' } });
 
   if (query.search) {
     conditions.push({

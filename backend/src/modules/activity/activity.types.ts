@@ -29,6 +29,7 @@ export interface DailyActivitySummary {
   logoutTime: Date | null;
   totalLoggedInSeconds: number;
   totalProductiveSeconds: number;
+  totalOnlineSeconds: number;
   totalBreakSeconds: number;
   breakDetails: {
     shortBreakSeconds: number;
@@ -36,6 +37,7 @@ export interface DailyActivitySummary {
     briefingTrainingSeconds: number;
     meetingSeconds: number;
     systemIssueSeconds: number;
+    onlineSeconds: number;
   };
   currentStatus: UserStatus;
   currentDurationSeconds: number;
