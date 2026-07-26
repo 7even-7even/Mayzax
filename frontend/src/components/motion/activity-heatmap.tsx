@@ -108,13 +108,13 @@ export function ActivityHeatmap({ data, weeks = 26, className }: ActivityHeatmap
   return (
     <div className={cn('relative w-full overflow-hidden rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/30 p-4 shadow-sm', className)}>
       {/* Header */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 ">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md ">
             <Flame className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
+            <p className="text-sm font-semibold text-slate-800 flex items-center gap-1.5 dark:text-black">
               Business-Date Activity Map
               <span className="rounded-full bg-amber-100 border border-amber-200 text-amber-700 px-1.5 py-0.5 text-[10px] font-bold">{weeks}w</span>
             </p>
@@ -125,7 +125,7 @@ export function ActivityHeatmap({ data, weeks = 26, className }: ActivityHeatmap
         </div>
         <div className="flex items-center gap-2 text-[11px] text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm">
           <TrendingUp className="h-3 w-3 text-emerald-500" />
-          GitHub-style intensity • Interactive
+          Interactive
         </div>
       </div>
 
@@ -203,7 +203,7 @@ export function ActivityHeatmap({ data, weeks = 26, className }: ActivityHeatmap
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-400 border-t border-slate-100 pt-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-400 border-t border-slate-100 pt-3 dark:text-white">
         <span className="flex items-center gap-1.5">
           <Sparkles className="h-3 w-3 text-violet-500" />
           Click any day to view applications • Business-date (IST shift) grouping

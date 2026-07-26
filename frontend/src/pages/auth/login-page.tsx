@@ -146,31 +146,25 @@ export default function LoginPage() {
         <FloatingCube size={65} bottom="20%" left="10%" variant="green" duration={9} delay={1} />
         <FloatingCube size={40} bottom="30%" right="22%" variant="white" duration={8} delay={1.5} opacity={0.7} />
 
-        <div>
+        <div className="relative z-10">
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
             <div className="relative">
               <img src={mayzaxLogo} alt="Mayzax" className="h-10 w-10 rounded-xl bg-white p-2 shadow-lg shadow-black/10 ring-1 ring-white/20" />
               <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
             </div>
-            <span className="text-sm font-semibold tracking-wider text-white/90 uppercase">Mayzax Solutions</span>
-            <span className="ml-2 rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-white/80 backdrop-blur-sm">ATS v2.1 • Premium</span>
+            <span className="text-3xl font-semibold tracking-wider text-white/90 uppercase">Mayzax Solutions</span>
+            <span className="ml-2 rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-white/80 backdrop-blur-sm">ATS v2.1</span>
           </motion.div>
         </div>
 
         <div className="relative z-10 flex flex-col gap-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 backdrop-blur-xl px-3 py-1 text-xs font-medium text-white/80">
-              <MousePointer2 className="h-3.5 w-3.5 text-white" />
-              Move your mouse • Interactive spotlight
-            </div>
+
             <h1 className="mt-6 text-5xl font-bold tracking-tight text-white leading-[1.05]">
               Where talent
               <br />
               <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">meets opportunity</span>
             </h1>
-            <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-white/70">
-              Premium ATS crafted in Mayzax blue <span className="text-white font-medium">#2A5DA8</span> & green <span className="text-white font-medium">#3F9C71</span> — night-shift optimized, 60fps virtualized, verified via Chrome extension.
-            </p>
           </motion.div>
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="grid grid-cols-3 gap-3 max-w-lg">
@@ -188,13 +182,8 @@ export default function LoginPage() {
           </motion.div>
         </div>
 
-        <div className="flex items-center gap-6 text-xs text-white/50">
-          <span>© 2026 Mayzax • Original palette</span>
-          <span className="h-3 w-px bg-white/20" />
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-mayzax-green-300 animate-pulse" />
-            Built with #2A5DA8 + #3F9C71
-          </span>
+        <div className="relative z-10 flex items-center gap-6 text-xs text-white/50">
+          <span>© 2026 Mayzax Solutions</span>
         </div>
       </div>
 
@@ -208,7 +197,6 @@ export default function LoginPage() {
           </div>
           <div className="text-center">
             <h1 className="text-xl font-bold text-slate-900">Mayzax ATS</h1>
-            <p className="text-xs text-slate-500">Premium • Original Palette</p>
           </div>
         </div>
 
@@ -221,10 +209,9 @@ export default function LoginPage() {
               <div className="mb-7">
                 <div className="inline-flex items-center gap-2 rounded-full bg-mayzax-blue-50 border border-mayzax-blue-100 px-3 py-1 text-[11px] font-bold tracking-wide text-mayzax-blue-700">
                   <span className="h-1.5 w-1.5 rounded-full bg-mayzax-green-500 animate-pulse" />
-                  SECURE LOGIN • ORIGINAL PALETTE
+                  SECURE LOGIN
                 </div>
                 <h2 className="mt-4 text-[22px] font-bold tracking-tight text-slate-900">Welcome back</h2>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500">Enter credentials • Blue #2A5DA8 + Green #3F9C71 • Premium</p>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
@@ -295,10 +282,6 @@ export default function LoginPage() {
               </div>
             </div>
           </div>
-
-          <p className="mt-6 text-center text-[11px] text-slate-400">
-            Protected • <span className="font-semibold text-mayzax-blue-600">#2A5DA8 + #3F9C71</span> • Premium ATS
-          </p>
         </div>
       </div>
     </div>

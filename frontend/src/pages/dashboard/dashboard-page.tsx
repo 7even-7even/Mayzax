@@ -68,12 +68,11 @@ function TlTeamCard() {
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-mayzax-blue-600 to-mayzax-green-600" />
       <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold dark:text-black">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white shadow-md">
               <Users className="h-4 w-4" />
             </div>
             My Team
-            <Badge className="bg-slate-900 text-white text-[10px]">PREMIUM</Badge>
           </CardTitle>
           {!editing && (
             <button onClick={handleEdit} className="flex items-center gap-1 rounded-full bg-white border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 shadow-sm">
@@ -81,7 +80,7 @@ function TlTeamCard() {
             </button>
           )}
         </div>
-        <CardDescription className="text-xs">Team identity • Shift goals • Performance</CardDescription>
+        <CardDescription className="text-xs dark:text-black/80">Team identity • Shift goals • Performance</CardDescription>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4 flex-1 p-5">
@@ -98,11 +97,11 @@ function TlTeamCard() {
           </div>
         ) : (
           <div>
-            <p className="text-base font-bold tracking-tight text-slate-900 flex items-center gap-2">
-              {currentTeamName || <span className="italic text-slate-400">No team name set</span>}
-              {currentTeamName && <Sparkles className="h-3.5 w-3.5 text-violet-500" />}
+            <p className="text-base font-bold tracking-tight text-slate-900 flex items-center gap-2 dark:text-white">
+              {currentTeamName || <span className="italic text-slate-400 dark:text-white">No team name set</span>}
+              {currentTeamName && <Sparkles className="h-3.5 w-3.5 text-violet-500 dark:text-white" />}
             </p>
-            <p className="text-xs text-slate-500 mt-1"><span className="font-semibold text-slate-700">{stats?.membersCount ?? 0}</span> team member{stats?.membersCount !== 1 ? 's' : ''} • Live roster</p>
+            <p className="text-xs text-slate-500 mt-1 dark:text-white/60"><span className="font-semibold text-slate-700 dark:text-white">{stats?.membersCount ?? 0}</span> team member{stats?.membersCount !== 1 ? 's' : ''} • Live roster</p>
           </div>
         )}
 
@@ -115,7 +114,7 @@ function TlTeamCard() {
               Shift Goal
             </div>
             {editingGoal ? (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 dark:text-black">
                 <input autoFocus type="number" min={1} value={goalDraft} onChange={(e) => setGoalDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleGoalSave(); if (e.key === 'Escape') setEditingGoal(false); }} className="w-16 rounded-xl border border-slate-200 bg-white px-2 py-1 text-right text-xs font-bold focus:outline-none focus:ring-2 focus:ring-violet-200" />
                 <button onClick={handleGoalSave} className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white"><Check className="h-3.5 w-3.5" /></button>
                 <button onClick={() => setEditingGoal(false)} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500"><X className="h-3.5 w-3.5" /></button>
@@ -187,10 +186,6 @@ export default function DashboardPage() {
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Real-time
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 border border-violet-200 px-3 py-1.5 font-medium text-violet-700">
-                  <Sparkles className="h-3 w-3" />
-                  Premium
-                </span>
               </div>
             </div>
             <div className="h-1 w-full bg-gradient-to-r from-slate-900 via-violet-600 to-indigo-600" />
@@ -215,24 +210,24 @@ export default function DashboardPage() {
       </div>
 
       <Reveal delay={0.15}>
-        <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-slate-50/80 to-white border-b border-slate-100 px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800">
+          <div className="bg-gradient-to-r from-slate-50/80 to-white dark:from-slate-850 dark:to-slate-900 border-b border-slate-100 dark:border-slate-800 px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
                 <Users className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-slate-900">Recruiter Leaderboard</h3>
-                <p className="text-xs text-slate-500">Search, sort & expand for breakdown</p>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-black">Recruiter Leaderboard</h3>
+                <p className="text-xs text-slate-500 dark:text-black">Search, sort & expand for breakdown</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input placeholder="Search recruiters..." className="pl-9 w-full sm:w-64 bg-white rounded-full shadow-sm border-slate-200" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+                <Input placeholder="Search recruiters..." className="pl-9 w-full sm:w-64 bg-white dark:bg-slate-800 dark:text-white rounded-full shadow-sm border-slate-200 dark:border-slate-700" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
               </div>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full sm:w-52 bg-white rounded-full shadow-sm border-slate-200">
+                <SelectTrigger className="w-full sm:w-52 bg-white dark:bg-slate-800 dark:text-white rounded-full shadow-sm border-slate-200 dark:border-slate-700">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -260,13 +255,13 @@ export default function DashboardPage() {
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-slate-50/60">
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Recruiter</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Status</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Profiles</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Total Apps</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Current Shift</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider">Last Active</TableHead>
+                    <TableRow className="bg-slate-50/60 dark:bg-slate-850/60 dark:border-slate-800">
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Recruiter</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Status</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Profiles</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Total Apps</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Current Shift</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Last Active</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -275,7 +270,7 @@ export default function DashboardPage() {
                     ))}
                   </TableBody>
                 </Table>
-                <div className="p-3 border-t border-slate-100 bg-slate-50/30">
+                <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-850/30">
                   <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
                 </div>
               </>

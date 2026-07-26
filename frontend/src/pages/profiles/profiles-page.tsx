@@ -149,29 +149,35 @@ export default function ProfilesPage() {
               </DropdownMenu>
             </div>
 
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">Real-time pulse of candidate • Productivity & assignment • Double-click to view applications</p>
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">Double-click to view applications</p>
 
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
-                <Mail className="h-3 w-3" /> {profile.email.split('@')[0]}
+                <Mail className="h-3 w-3" /> {profile.email}
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 border border-violet-200 px-2.5 py-1 text-[11px] font-medium text-violet-700 dark:bg-violet-900/20 dark:border-violet-800 dark:text-violet-300">
-                <Phone className="h-3 w-3" /> {profile.phone.slice(-4)}
+                <Phone className="h-3 w-3" /> {profile.phone}
               </span>
             </div>
 
             {profile.notes && <div className="mt-3 rounded-xl bg-amber-50/50 border border-amber-100 p-2.5 dark:bg-amber-950/20 dark:border-amber-900/30"><p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{profile.notes}</p></div>}
 
             <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-1.5">
-                  {(profile.assignedRecruiterAssignments?.length ? profile.assignedRecruiterAssignments.slice(0, 3) : profile.assignedRecruiter ? [profile.assignedRecruiter] : []).map((a: any, idx: number) => (
-                    <div key={idx} className="flex h-6 w-6 items-center justify-center rounded-full bg-mayzax-gradient text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900">{(a.recruiter?.name || a.name || '?').charAt(0)}</div>
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex -space-x-1.5 shrink-0">
+                  {(profile.assignedRecruiterAssignments?.length ? profile.assignedRecruiterAssignments : profile.assignedRecruiter ? [profile.assignedRecruiter] : []).map((a: any, idx: number) => (
+                    <div key={idx} title={a.recruiter?.name || a.name || '?'} className="flex h-6 w-6 items-center justify-center rounded-full bg-mayzax-gradient text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900">{(a.recruiter?.name || a.name || '?').charAt(0)}</div>
                   ))}
                 </div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">{profile.assignedRecruiterAssignments?.length ? `${profile.assignedRecruiterAssignments.length} recruiters` : profile.assignedRecruiter?.name ? profile.assignedRecruiter.name : 'Unassigned'}</span>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate" title={profile.assignedRecruiterAssignments?.length ? profile.assignedRecruiterAssignments.map((a: any) => a.recruiter?.name || a.name || '?').join(', ') : profile.assignedRecruiter?.name || 'Unassigned'}>
+                  {profile.assignedRecruiterAssignments?.length 
+                    ? profile.assignedRecruiterAssignments.map((a: any) => a.recruiter?.name || a.name || '?').join(', ') 
+                    : profile.assignedRecruiter?.name 
+                      ? profile.assignedRecruiter.name 
+                      : 'Unassigned'}
+                </span>
               </div>
-              <span className="text-[11px] text-slate-400 flex items-center gap-1"><Briefcase className="h-3 w-3" /> View apps</span>
+              <span className="text-[11px] text-slate-400 flex items-center gap-1 shrink-0"><Briefcase className="h-3 w-3" /> View apps</span>
             </div>
           </CardContent>
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-mayzax-blue-600 via-mayzax-green-500 to-mayzax-blue-600 opacity-60 group-hover:opacity-100 transition-opacity" />
@@ -187,14 +193,13 @@ export default function ProfilesPage() {
       <PremiumPageHeader
         icon={isManager ? Briefcase : User2}
         title={isManager ? 'Clients Vault' : 'My Assigned Profiles'}
-        description={isManager ? 'Premium vault of candidate profiles • Virtualized • Smart assignment up to 5 recruiters • Original palette #2A5DA8 + #3F9C71' : 'Candidate profiles currently assigned to you • Premium vault'}
+        description={isManager ? 'Vault of candidate profiles • Smart assignment up to 5 recruiters' : 'Candidate profiles currently assigned to you'}
         live={true}
         liveLabel={`${data?.pagination?.total ?? profiles.length} profiles`}
         pills={[
-          { label: 'Business Date • IST', icon: Activity },
-          { label: 'Premium Vault', icon: Sparkles, variant: 'premium' },
+          { label: 'Updated ', icon: Activity },
           ...(isManager ? [{ label: `${recruiters.length} recruiters`, icon: Users } as const] : []),
-        ]}
+        ]}  
         actions={
           canCreateProfile ? (
             <Button variant="brand" onClick={() => { setEditingProfile(null); setFormOpen(true); }} className="gap-2 shadow-md shadow-mayzax-blue-200/30 bg-mayzax-gradient border-0 text-white hover:opacity-90 rounded-full px-5">

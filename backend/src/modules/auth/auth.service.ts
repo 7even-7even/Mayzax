@@ -305,6 +305,7 @@ export async function updateProfile(userId: string, input: UpdateProfileInput) {
 
   const clean = (v: string | null | undefined) => {
     if (v === undefined) return undefined;
+    if (v === null) return null;
     const t = v.trim();
     return t === '' ? null : t;
   };

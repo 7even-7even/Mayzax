@@ -115,9 +115,7 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
                 <User2 className="h-4 w-4" />
               </div>
               {isEdit ? 'Edit Client Profile' : 'New Client Profile'}
-              <Badge className="bg-mayzax-blue-50 text-mayzax-blue-700 border-mayzax-blue-200 text-[10px]">Premium • #2A5DA8</Badge>
             </DialogTitle>
-            <DialogDescription className="text-xs">Candidate details • Technology • Assignment (up to 5 recruiters) • Original palette</DialogDescription>
           </DialogHeader>
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="mt-5 space-y-5">
@@ -126,25 +124,25 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
                 <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <User2 className="h-3 w-3 text-mayzax-blue-500" /> Candidate Name
                 </Label>
-                <Input placeholder="e.g. John Doe" disabled={isEdit && user?.role === 'RECRUITER'} className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50" {...form.register('candidateName')} />
-                {form.formState.errors.candidateName && <p className="text-xs text-red-600">{form.formState.errors.candidateName.message}</p>}
+                <Input placeholder="e.g. John Doe" disabled={isEdit && user?.role === 'RECRUITER'} className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black" {...form.register('candidateName')} />
+                {form.formState.errors.candidateName && <p className="text-xs text-red-600 ">{form.formState.errors.candidateName.message}</p>}
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1"><Mail className="h-3 w-3 text-slate-400" /> Email</Label>
-                <Input type="email" placeholder="john@example.com" className="rounded-xl h-10 bg-white border-slate-200" {...form.register('email')} />
+                <Input type="email" placeholder="john@example.com" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('email')} />
                 {form.formState.errors.email && <p className="text-xs text-red-600">{form.formState.errors.email.message}</p>}
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1"><Phone className="h-3 w-3 text-slate-400" /> Phone</Label>
-                <Input placeholder="+91 98765 43210" className="rounded-xl h-10 bg-white border-slate-200" {...form.register('phone')} />
+                <Input placeholder="+91 98765 43210" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('phone')} />
                 {form.formState.errors.phone && <p className="text-xs text-red-600">{form.formState.errors.phone.message}</p>}
               </div>
 
               <div className="col-span-2 space-y-1.5">
                 <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1"><Code2 className="h-3 w-3 text-slate-400" /> Technology</Label>
-                <Input placeholder="e.g. Java Full Stack, React, DevOps" className="rounded-xl h-10 bg-white border-slate-200" {...form.register('technology')} />
+                <Input placeholder="e.g. Java Full Stack, React, DevOps" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('technology')} />
                 {form.formState.errors.technology && <p className="text-xs text-red-600">{form.formState.errors.technology.message}</p>}
               </div>
 
@@ -191,7 +189,7 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
 
               <div className="col-span-2 space-y-1.5">
                 <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1"><FileText className="h-3 w-3 text-slate-400" /> Notes</Label>
-                <Textarea placeholder="Additional context..." rows={3} className="rounded-xl bg-white border-slate-200 resize-none" {...form.register('notes')} />
+                <Textarea placeholder="Additional context..." rows={3} className="rounded-xl bg-white border-slate-200 resize-none dark:text-black" {...form.register('notes')} />
               </div>
             </div>
 

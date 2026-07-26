@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, ExternalLink, FileText, Loader2, Plus, X, Sparkles, Building2, ShieldCheck, Users } from 'lucide-react';
-import { PageHeader } from '@/components/shared/page-header';
+import { Download, ExternalLink, FileText, Loader2, Plus, X, Sparkles, Building2, ShieldCheck, Users, ClipboardList, Activity } from 'lucide-react';
+import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TableSkeleton } from '@/components/shared/table-skeleton';
@@ -210,13 +210,18 @@ export default function ApplicationsPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
+      <PremiumPageHeader
+        icon={ClipboardList}
         title="Job Applications"
-        description={isAdmin ? 'Premium filtering • Virtualized • Business-date grouped' : 'Log & track applications with advanced filters'}
-        premium
-        badge={`${totalApplications} total`}
+        description="Log & track applications with advanced filters"
+        live={true}
+        liveLabel={`${totalApplications} total`}
+        pills={[
+          { label: 'Business Date', icon: Activity },
+          { label: 'ATS Tracker', icon: Sparkles, variant: 'premium' },
+        ]}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 dark:text-black">
             <Button variant="outline" onClick={exportApplications} disabled={isLoading || isExporting || totalApplications === 0} className="rounded-full shadow-sm bg-white">
               {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Export Excel
@@ -226,10 +231,12 @@ export default function ApplicationsPage() {
             </Button>
           </div>
         }
+        gradient="from-mayzax-blue-600 to-mayzax-green-600"
+        bottomGradient="from-mayzax-blue-600 via-mayzax-green-500 to-mayzax-blue-600"
       />
 
       {profileIdFilter && (
-        <div className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-800">
+        <div className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-800 ">
           <span>
             Filtered by Candidate: <span className="font-semibold">{applications.find((a) => a.profileId === profileIdFilter)?.profile?.candidateName || 'Loading...'}</span>
           </span>
@@ -361,7 +368,7 @@ export default function ApplicationsPage() {
         resultCount={totalApplications}
         resultLabel="applications"
         additionalFilters={
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 ">
             <div>
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Company Filter</label>
               <div className="relative mt-1">
@@ -386,7 +393,7 @@ export default function ApplicationsPage() {
         }
       />
 
-      <div className="rounded-2xl border border-slate-200/60 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-slate-200/60 bg-white shadow-sm overflow-hidden dark:text-black">
         {isLoading && (
           <div className="p-4">
             <div className="space-y-3">
@@ -514,7 +521,7 @@ export default function ApplicationsPage() {
               />
             )}
 
-            <div className="p-3 border-t border-slate-100 bg-slate-50/30">
+            <div className="p-3 border-t border-slate-100 bg-slate-50/30 dark:text-white">
               <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
             </div>
           </>

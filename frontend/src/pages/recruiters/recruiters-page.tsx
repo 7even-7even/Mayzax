@@ -84,12 +84,11 @@ export default function RecruitersPage() {
       <PremiumPageHeader
         icon={Users}
         title={isAdmin ? 'User Management' : isTeamLeader ? 'My Team' : 'Recruiter Management'}
-        description={isAdmin ? 'Premium roster with avatars, live status, team allocation • Original palette #2A5DA8 + #3F9C71' : isTeamLeader ? "Manage your team's recruiters • Track performance & live status" : 'Create & manage recruiter accounts'}
+        description={isAdmin ? 'Roster with avatars, live status, team allocation' : isTeamLeader ? "Manage your team's recruiters • Track performance & live status" : 'Create & manage recruiter accounts'}
         live={true}
         liveLabel={`${totalRecruiters} total users`}
         pills={[
-          { label: 'Business Date • IST', icon: Activity },
-          { label: 'Premium Roster', icon: Sparkles, variant: 'premium' },
+          { label: 'Updated', icon: Activity },
           { label: `${recruiters.filter((r) => r.isActive).length} active`, icon: CheckCircle2 },
         ]}
         actions={
@@ -106,12 +105,12 @@ export default function RecruitersPage() {
       <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
         <div className="bg-gradient-to-r from-slate-50/80 to-white border-b border-slate-100 px-4 py-3 flex flex-wrap items-center gap-3">
           <div className="relative w-full sm:w-80">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input placeholder="Search by name or email..." className="pl-9 bg-white shadow-sm rounded-full border-slate-200" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-black" />
+            <Input placeholder="Search by name or email..." className="pl-9 bg-white shadow-sm rounded-full border-slate-200 dark:text-black" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
           </div>
           {isAdmin && (
             <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value as typeof roleFilter); setPage(1); }}>
-              <SelectTrigger className="w-full sm:w-48 bg-white rounded-full shadow-sm border-slate-200">
+              <SelectTrigger className="w-full sm:w-48 bg-white rounded-full shadow-sm border-slate-200 dark:text-black">
                 <SelectValue placeholder="Filter by role" />
               </SelectTrigger>
               <SelectContent className="rounded-xl">
@@ -126,7 +125,7 @@ export default function RecruitersPage() {
             <span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm hidden sm:inline">{totalRecruiters} roster</span>
             <div className="flex items-center gap-1.5 text-[11px] text-mayzax-blue-700 bg-mayzax-blue-50 border border-mayzax-blue-200 rounded-full px-3 py-1 shadow-sm">
               <Sparkles className="h-3 w-3" />
-              Virtualized • 60fps
+              Virtualized
             </div>
           </div>
         </div>
@@ -191,9 +190,28 @@ export default function RecruitersPage() {
                     )}
                     <div className="text-xs text-slate-500 hidden xl:block">{timeAgo(recruiter.lastActiveAt)}</div>
                     <div className="text-right">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100" onClick={() => setStatsRecruiterId(recruiter.id)}>
-                        <BarChart3 className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-slate-100">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl">
+                          <DropdownMenuItem onClick={() => setStatsRecruiterId(recruiter.id)} className="gap-2">
+                            <BarChart3 className="h-4 w-4" /> View Stats
+                          </DropdownMenuItem>
+                          {isAdmin && (
+                            <>
+                              <DropdownMenuItem onClick={() => { setEditingRecruiter(recruiter); setFormOpen(true); }} className="gap-2">
+                                <Pencil className="h-4 w-4" /> Edit User
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setDeleteTarget(recruiter)} className="text-red-600 focus:text-red-600 gap-2">
+                                <Trash2 className="h-4 w-4" /> Delete User
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 )}
@@ -202,12 +220,12 @@ export default function RecruitersPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50/40">
-                    <TableHead className="font-semibold">Name</TableHead>
-                    <TableHead className="font-semibold">Role</TableHead>
-                    {isAdmin && roleFilter === 'RECRUITER' && <TableHead className="font-semibold">Team Leader</TableHead>}
-                    <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="font-semibold">Last Active</TableHead>
-                    <TableHead className="text-right font-semibold pr-6">Actions</TableHead>
+                    <TableHead className="font-semibold dark:text-black">Name</TableHead>
+                    <TableHead className="font-semibold dark:text-black">Role</TableHead>
+                    {isAdmin && roleFilter === 'RECRUITER' && <TableHead className="font-semibold dark:text-black">Team Leader</TableHead>}
+                    <TableHead className="font-semibold dark:text-black">Status</TableHead>
+                    <TableHead className="font-semibold dark:text-black">Last Active</TableHead>
+                    <TableHead className="text-right font-semibold pr-6 dark:text-black">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -216,7 +234,7 @@ export default function RecruitersPage() {
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="ring-2 ring-white shadow-sm group-hover:ring-mayzax-blue-100"><AvatarFallback className="bg-mayzax-gradient text-white font-bold">{initials(recruiter.name)}</AvatarFallback></Avatar>
-                          <div><p className="text-sm font-semibold text-slate-900">{recruiter.name}</p><p className="text-xs text-slate-500">{recruiter.email}</p></div>
+                          <div><p className="text-sm font-semibold text-slate-900 dark:text-white">{recruiter.name}</p><p className="text-xs text-slate-500">{recruiter.email}</p></div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -230,7 +248,28 @@ export default function RecruitersPage() {
                       </TableCell>
                       <TableCell className="text-sm text-slate-500">{timeAgo(recruiter.lastActiveAt)}</TableCell>
                       <TableCell className="text-right pr-6">
-                        <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setStatsRecruiterId(recruiter.id)}><BarChart3 className="h-4 w-4" /></Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-full">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl">
+                            <DropdownMenuItem onClick={() => setStatsRecruiterId(recruiter.id)} className="gap-2">
+                              <BarChart3 className="h-4 w-4" /> View Stats
+                            </DropdownMenuItem>
+                            {isAdmin && (
+                              <>
+                                <DropdownMenuItem onClick={() => { setEditingRecruiter(recruiter); setFormOpen(true); }} className="gap-2">
+                                  <Pencil className="h-4 w-4" /> Edit User
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDeleteTarget(recruiter)} className="text-red-600 focus:text-red-600 gap-2">
+                                  <Trash2 className="h-4 w-4" /> Delete User
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </motion.tr>
                   ))}

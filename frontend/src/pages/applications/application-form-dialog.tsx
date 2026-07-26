@@ -158,10 +158,10 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
                 <Briefcase className="h-4 w-4" />
               </div>
               Log Job Application
-              <Badge className="bg-mayzax-blue-50 text-mayzax-blue-700 border-mayzax-blue-200 text-[10px]">PREMIUM • Original Palette</Badge>
+              <Badge className="bg-mayzax-blue-50 text-mayzax-blue-700 border-mayzax-blue-200 text-[10px]"></Badge>
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Verified tracking • Business-date grouping • Original blue <span className="font-bold text-mayzax-blue-600">#2A5DA8</span> + green <span className="font-bold text-mayzax-green-600">#3F9C71</span>
+              Verified tracking • Business-date grouping 
             </DialogDescription>
           </DialogHeader>
 
@@ -172,7 +172,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
                 Candidate Profile
               </Label>
               <Select value={form.watch('profileId')} onValueChange={(value) => form.setValue('profileId', value)}>
-                <SelectTrigger className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50">
+                <SelectTrigger className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black">
                   <SelectValue placeholder="Select a profile" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -186,8 +186,8 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="jobLink" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                <Link2 className="h-3.5 w-3.5 text-mayzax-blue-500" />
+              <Label htmlFor="jobLink" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ">
+                <Link2 className="h-3.5 w-3.5 text-mayzax-blue-500 " />
                 Job Posting Link
               </Label>
               <Input id="jobLink" placeholder="https://www.linkedin.com/jobs/view/..." className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50" {...form.register('jobLink')} />
@@ -227,7 +227,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
             <div className="space-y-1.5">
               <Label className="text-xs font-bold uppercase tracking-wider">Job Portal</Label>
               <Select value={form.watch('jobPortal')} onValueChange={(value) => form.setValue('jobPortal', value as any)}>
-                <SelectTrigger className="rounded-xl h-10 bg-white border-slate-200">
+                <SelectTrigger className="rounded-xl h-10 bg-white border-slate-200 dark:text-black">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -245,7 +245,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
                 <ShieldCheck className="h-4 w-4" />
               </div>
               <p className="text-xs leading-relaxed text-slate-600">
-                <span className="font-semibold text-mayzax-blue-700">Premium verification:</span> Extension auto-detects success page • Prevents duplicate for same profile • Business-date IST grouping
+                <span className="font-semibold text-mayzax-blue-700">Updated Verification:</span> Extension auto-detects success page • Prevents duplicate for same profile
               </p>
             </div>
 

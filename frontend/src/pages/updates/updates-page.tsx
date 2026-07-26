@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { TableSkeleton } from '@/components/shared/table-skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { formatDateTime } from '@/lib/utils';
-import { Bell, FileText, Download, Plus, Trash2, Eye, ExternalLink, Sparkles, Loader2, Award, Calendar, Zap, BookOpen } from 'lucide-react';
+import { Bell, FileText, Download, Plus, Trash2, Eye, ExternalLink, Sparkles, Loader2, Award, Calendar, Zap, BookOpen, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
@@ -101,148 +101,96 @@ export default function UpdatesPage() {
   };
 
   const handleRead = (item: SystemUpdateItem) => {
-    if (!item.isRead) {
-      markAsReadMutation.mutate(item.id);
-    }
+    if (item.isRead) return;
+    markAsReadMutation.mutate(item.id);
   };
 
   return (
-    <div className="space-y-6">
-      <Reveal>
-        <div className="relative overflow-hidden rounded-[20px] border border-slate-200/60 bg-gradient-to-br from-white via-indigo-50/10 to-violet-50/20 p-[1px] shadow-sm">
-          <div className="rounded-[19px] bg-white">
-            <div className="p-6 sm:p-7 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/20">
-                  <Bell className="h-6 w-6" />
-                </div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-                    Updates & Release Notes
-                    {unreadCount > 0 && <Badge className="bg-red-500 text-white border-0 animate-pulse">{unreadCount} new</Badge>}
-                  </h1>
-                  <p className="mt-1 text-sm text-slate-500">System announcements, features & documentation • Premium timeline</p>
-                  <div className="mt-3 flex items-center gap-2 text-xs">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-white px-3 py-1 font-semibold">
-                      <BookOpen className="h-3 w-3" />
-                      {updates.length} releases
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 border border-violet-200 px-3 py-1 font-medium text-violet-700">
-                      <Sparkles className="h-3 w-3" />
-                      Premium feed
-                    </span>
-                  </div>
-                </div>
-              </div>
-              {isAdmin && (
-                <Button variant="brand" onClick={() => setDialogOpen(true)} className="gap-2 rounded-full shadow-md shadow-indigo-500/20 px-5">
-                  <Plus className="h-4 w-4" /> Post New Release
-                </Button>
-              )}
-            </div>
-            <div className="h-1 w-full bg-gradient-to-r from-indigo-600 via-violet-500 to-teal-500" />
-          </div>
-        </div>
-      </Reveal>
+    <div className="space-y-5">
+      <PageHeader
+        title="Updates & Releases"
+        description="Stay up to date with new features, improvements & documentation"
+        badge={unreadCount > 0 ? `${unreadCount} new` : undefined}
+        actions={
+          isAdmin ? (
+            <Button variant="brand" onClick={() => setDialogOpen(true)} className="rounded-full shadow-md shadow-indigo-500/20 gap-1.5">
+              <Plus className="h-4 w-4" /> Post Update
+            </Button>
+          ) : undefined
+        }
+      />
 
-      <div className="space-y-4">
-        {isLoading && (
-          <Card className="p-6 rounded-2xl border-slate-200/60">
-            <TableSkeleton rows={4} cols={3} />
-          </Card>
-        )}
-
+      <div className="space-y-4 ">
         {!isLoading && updates.length === 0 && (
           <Card className="p-8 rounded-2xl border-slate-200/60 border-dashed">
-            <EmptyState icon={Bell} title="No Updates Posted Yet" description="System updates, feature releases & docs will appear here in a premium timeline." />
+            <EmptyState icon={Bell} title="No Updates Posted Yet" description="System updates, feature releases & docs will appear here." />
           </Card>
         )}
 
-        <StaggerContainer className="space-y-4">
+        <StaggerContainer className="grid grid-cols-1 gap-6">
           {!isLoading &&
-            updates.map((item, idx) => (
+            updates.map((item) => (
               <StaggerItem key={item.id}>
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.04 }}
-                  onClick={() => handleRead(item)}
-                  className={`group relative overflow-hidden rounded-2xl border p-[1px] shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer ${
-                    item.isRead ? 'border-slate-200/60 bg-white' : 'border-violet-200 bg-gradient-to-br from-violet-50/50 to-indigo-50/30 shadow-md'
-                  }`}
-                >
-                  <div className={`absolute top-0 left-0 right-0 h-[2px] ${item.isRead ? 'bg-slate-200' : 'bg-gradient-to-r from-violet-600 to-indigo-600'}`} />
-                  <div className="rounded-[15px] bg-white">
-                    <CardContent className="p-5 sm:p-6">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="flex items-start gap-3 min-w-0">
-                          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-md ${item.isRead ? 'bg-slate-100 text-slate-500' : 'bg-gradient-to-br from-violet-600 to-indigo-600 text-white'}`}>
-                            <Sparkles className="h-5 w-5" />
+                <motion.div layout onClick={() => handleRead(item)} className="cursor-pointer">
+                  <div className={`group relative overflow-hidden rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-md ${item.isRead ? 'border-slate-200' : 'border-indigo-200 bg-indigo-50/10'}`}>
+                    {!item.isRead && (
+                      <div className="absolute right-0 top-0 h-16 w-16 overflow-hidden">
+                        <div className="absolute right-[-18px] top-[14px] rotate-45 bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-0.5 text-[8px] font-bold text-white shadow-sm uppercase tracking-wider">
+                          New
+                        </div>
+                      </div>
+                    )}
+                    <CardContent className="p-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm ${item.isRead ? 'from-slate-500 to-slate-600' : 'from-indigo-600 to-violet-600'}`}>
+                            {item.version ? <Zap className="h-5 w-5" /> : <BookOpen className="h-5 w-5" />}
                           </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="text-base font-bold text-slate-900 truncate">{item.title}</h3>
-                              {item.version && (
-                                <span className="rounded-full bg-slate-900 text-white px-2.5 py-0.5 text-xs font-semibold shadow-sm">{item.version}</span>
-                              )}
-                              {!item.isRead && (
-                                <span className="rounded-full bg-gradient-to-r from-red-500 to-orange-500 text-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider animate-pulse">New</span>
-                              )}
-                            </div>
-                            <p className="mt-1 text-xs text-slate-500 flex items-center gap-1.5">
+                          <div>
+                            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                              {item.title}
+                            </h3>
+                            <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
                               <Calendar className="h-3 w-3" />
-                              Posted by <span className="font-semibold text-slate-700">{item.createdBy.name}</span> • {formatDateTime(item.createdAt)}
+                              {formatDateTime(item.createdAt)}
                             </p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <div className="flex items-center gap-2 self-start sm:self-auto">
+                          {item.version && (
+                            <Badge variant="secondary" className="rounded-full font-mono text-xs px-2.5 py-0.5 bg-slate-100 border border-slate-200 text-slate-600">
+                              {item.version}
+                            </Badge>
+                          )}
                           {isAdmin && (
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full text-slate-400 hover:text-red-600 hover:bg-red-50" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full" onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           )}
                         </div>
                       </div>
-
-                      <div className="mt-4 rounded-xl bg-slate-50/60 border border-slate-100 p-4 text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
-                        {item.description}
-                      </div>
-
+                      <div className="mt-4 text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{item.description}</div>
                       {item.pdfUrl && (
-                        <div className="mt-4 rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50/50 p-3 flex flex-col sm:flex-row items-start sm:items-center gap-3 shadow-sm">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm shrink-0">
-                            <FileText className="h-5 w-5" />
+                        <div className="mt-4 flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/50 p-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white shadow-sm border border-slate-100">
+                            <FileText className="h-5 w-5 text-indigo-600" />
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-slate-800 truncate">{item.pdfOriginalName || 'Release Notes Documentation'}</p>
-                            <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                              {item.pdfUrl.startsWith('http') ? <><ExternalLink className="h-3 w-3" /> Google Drive / External</> : <><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> PDF Attachment • Premium viewer</>}
-                            </p>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-slate-800 truncate">{item.pdfOriginalName || 'Release Document'}</p>
+                            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">PDF Attachment</p>
                           </div>
-                          <div className="flex items-center gap-2 w-full sm:w-auto">
-                            {item.pdfUrl.startsWith('http') ? (
-                              <Button variant="brand" size="sm" className="h-9 text-xs gap-1.5 rounded-full w-full sm:w-auto shadow-sm" onClick={(e) => { e.stopPropagation(); handleRead(item); window.open(item.pdfUrl!, '_blank', 'noopener,noreferrer'); }}>
-                                <ExternalLink className="h-3.5 w-3.5" /> Open Document
-                              </Button>
-                            ) : (
-                              <>
-                                <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 rounded-full bg-white w-full sm:w-auto" onClick={(e) => { e.stopPropagation(); handleRead(item); setPreviewPdfUrl(getAssetUrl(item.pdfUrl)); }}>
-                                  <Eye className="h-3.5 w-3.5" /> View
-                                </Button>
-                                <Button variant="brand" size="sm" className="h-9 text-xs gap-1.5 rounded-full shadow-sm w-full sm:w-auto" disabled={downloadingId === item.id} onClick={(e) => handleDownloadPdf(e, item)}>
-                                  {downloadingId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />} Download
-                                </Button>
-                              </>
-                            )}
-                          </div>
+                          {item.pdfUrl.startsWith('http') ? (
+                            <Button variant="outline" size="sm" className="rounded-full h-8 text-xs gap-1.5" onClick={(e) => { e.stopPropagation(); window.open(item.pdfUrl!, '_blank'); }}>
+                              <ExternalLink className="h-3 w-3" /> View
+                            </Button>
+                          ) : (
+                            <Button variant="outline" size="sm" className="rounded-full h-8 text-xs gap-1.5" onClick={(e) => handleDownloadPdf(e, item)}>
+                              {downloadingId === item.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />} Download
+                            </Button>
+                          )}
                         </div>
                       )}
-
-                      <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-400">
-                        <Zap className="h-3 w-3 text-violet-500" />
-                        {item.isRead ? 'Read • Marked as seen' : 'Unread • Click to mark as read'} • Premium timeline
-                      </div>
                     </CardContent>
                   </div>
                 </motion.div>
@@ -252,55 +200,82 @@ export default function UpdatesPage() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white">
-                <Award className="h-4 w-4" />
-              </div>
-              Post System Update
-            </DialogTitle>
-            <DialogDescription>Share features, release notes & docs with all users in premium feed.</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-lg rounded-2xl border-slate-200/60 p-0 overflow-hidden shadow-2xl">
+          <div className="h-1 w-full bg-mayzax-gradient" />
+          <div className="p-6">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2.5 text-lg">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mayzax-gradient text-white shadow-md">
+                  <Award className="h-4 w-4" />
+                </div>
+                Post System Update
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Share features, release notes & docs with all users in premium feed.
+              </DialogDescription>
+            </DialogHeader>
 
-          <form onSubmit={handlePostUpdate} className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="updateTitle">Title *</Label>
-              <Input id="updateTitle" placeholder="e.g. Activity Tracking & Hybrid Verification" value={title} onChange={(e) => setTitle(e.target.value)} required className="rounded-xl" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="updateVersion">Version</Label>
-              <Input id="updateVersion" placeholder="v2.1.0" value={version} onChange={(e) => setVersion(e.target.value)} className="rounded-xl" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="updateDesc">Description *</Label>
-              <Textarea id="updateDesc" rows={4} placeholder="Key changes, fixes, features..." value={description} onChange={(e) => setDescription(e.target.value)} required className="rounded-xl resize-none" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="driveUrl">Drive / Doc Link</Label>
-              <Input id="driveUrl" type="url" placeholder="https://drive.google.com/..." value={driveUrl} onChange={(e) => setDriveUrl(e.target.value)} className="rounded-xl" />
-            </div>
-            <div className="relative flex items-center justify-center my-1">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200" />
+            <form onSubmit={handlePostUpdate} className="mt-5 space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="updateTitle" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <BookOpen className="h-3.5 w-3.5 text-mayzax-blue-500" />
+                  Title *
+                </Label>
+                <Input id="updateTitle" placeholder="e.g. Activity Tracking & Hybrid Verification" value={title} onChange={(e) => setTitle(e.target.value)} required className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50" />
               </div>
-              <span className="relative bg-white px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Or Upload PDF</span>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="pdfFile">Attach PDF</Label>
-              <Input id="pdfFile" type="file" accept=".pdf,application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)} className="rounded-xl" />
-              <p className="text-[11px] text-slate-400">Max 25MB • Premium viewer</p>
-            </div>
-            <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="rounded-full">
-                Cancel
-              </Button>
-              <Button type="submit" variant="brand" disabled={createUpdateMutation.isPending} className="rounded-full gap-1.5 shadow-md">
-                {createUpdateMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                Publish Update
-              </Button>
-            </DialogFooter>
-          </form>
+              
+              <div className="space-y-2">
+                <Label htmlFor="updateVersion" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <Zap className="h-3.5 w-3.5 text-mayzax-blue-500" />
+                  Version
+                </Label>
+                <Input id="updateVersion" placeholder="v2.1.0" value={version} onChange={(e) => setVersion(e.target.value)} className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50" />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="updateDesc" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-mayzax-blue-500" />
+                  Description *
+                </Label>
+                <Textarea id="updateDesc" rows={4} placeholder="Key changes, fixes, features..." value={description} onChange={(e) => setDescription(e.target.value)} required className="rounded-xl bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 resize-none" />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="driveUrl" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <Link2 className="h-3.5 w-3.5 text-mayzax-blue-500" />
+                  Drive / Doc Link
+                </Label>
+                <Input id="driveUrl" type="url" placeholder="https://drive.google.com/..." value={driveUrl} onChange={(e) => setDriveUrl(e.target.value)} className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50" />
+              </div>
+
+              <div className="relative flex items-center justify-center my-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-250" />
+                </div>
+                <span className="relative bg-white px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Or Upload PDF</span>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pdfFile" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-mayzax-blue-500" />
+                  Attach PDF
+                </Label>
+                <Input id="pdfFile" type="file" accept=".pdf,application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)} className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-mayzax-blue-50 file:text-mayzax-blue-700 hover:file:bg-mayzax-blue-100 cursor-pointer" />
+                <p className="text-[11px] text-slate-400">Max 25MB • Premium viewer</p>
+              </div>
+
+              <DialogFooter className="gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} className="rounded-full">
+                  Cancel
+                </Button>
+                <Button type="submit" variant="brand" disabled={createUpdateMutation.isPending} className="rounded-full gap-1.5 shadow-md shadow-mayzax-blue-200/30 bg-mayzax-gradient border-0 text-white hover:opacity-90">
+                  {createUpdateMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Publish Update
+                </Button>
+              </DialogFooter>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -120,10 +120,6 @@ export default function AnalyticsPage() {
                   <div>
                     <div className="flex items-center gap-2.5">
                       <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Analytics Hub</h1>
-                      <Badge className="bg-gradient-to-r from-mayzax-blue-600 to-mayzax-green-600 text-white border-0 text-xs shadow-sm">
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        Premium
-                      </Badge>
                     </div>
                     <p className="mt-1 text-sm text-slate-500 max-w-2xl">Business-date trends, recruiter filters, portal breakdowns & heatmaps — all in IST shift logic.</p>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
@@ -139,11 +135,11 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-wrap items-center gap-2 bg-white border border-slate-200 rounded-xl p-2 shadow-sm">
-                    <Filter className="h-4 w-4 text-slate-400 ml-1" />
+                <div className="flex flex-col gap-2 shrink-0">
+                  <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl p-2 shadow-sm">
+                    <Filter className="h-4 w-4 text-slate-400 ml-1 shrink-0 dark:text-black" />
                     <Select value={recruiterId} onValueChange={setRecruiterId}>
-                      <SelectTrigger className="w-full sm:w-52 h-8 text-xs bg-slate-50 border-slate-200">
+                      <SelectTrigger className="w-36 sm:w-40 h-8 text-xs bg-slate-50 border-slate-200 dark:text-black">
                         <SelectValue placeholder="All recruiters" />
                       </SelectTrigger>
                       <SelectContent>
@@ -155,8 +151,8 @@ export default function AnalyticsPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Input type="date" value={range.from} onChange={(e) => setRange((prev) => ({ ...prev, from: e.target.value }))} className="w-full sm:w-36 h-8 text-xs" />
-                    <Input type="date" value={range.to} onChange={(e) => setRange((prev) => ({ ...prev, to: e.target.value }))} className="w-full sm:w-36 h-8 text-xs" />
+                    <Input type="date" value={range.from} onChange={(e) => setRange((prev) => ({ ...prev, from: e.target.value }))} className="w-28 sm:w-32 h-8 text-xs dark:text-black" />
+                    <Input type="date" value={range.to} onChange={(e) => setRange((prev) => ({ ...prev, to: e.target.value }))} className="w-28 sm:w-32 h-8 text-xs dark:text-black" />
                   </div>
                 </div>
               </div>
@@ -190,11 +186,11 @@ export default function AnalyticsPage() {
                 <Activity className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CardTitle className="text-base font-semibold flex items-center gap-2 dark:text-black">
                   Daily Applications Trend
-                  <Badge variant="outline" className="text-[10px] bg-violet-50 border-violet-200 text-violet-700">Business Date • IST</Badge>
+                  <Badge variant="outline" className="text-[10px] bg-violet-50 border-violet-200 text-violet-700">Live</Badge>
                 </CardTitle>
-                <CardDescription className="text-xs mt-1">
+                <CardDescription className="text-xs mt-1 dark:text-black">
                   Shift logic: {summary?.shiftWindowText || '6:00 PM – 9:00 AM IST'} • Current BD: <span className="font-medium text-slate-700">{summary?.currentBusinessDate}</span> • 3-day moving average
                 </CardDescription>
               </div>
@@ -246,11 +242,11 @@ export default function AnalyticsPage() {
 
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 border-t border-slate-100 pt-3">
                     <span className="flex items-center gap-2">
-                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-violet-500" /> Daily</span>
-                      <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" style={{ borderStyle: 'dashed' }} /> Moving Avg (3d)</span>
+                      <span className="flex items-center gap-1 dark:text-black"><span className="h-2 w-2 rounded-full bg-violet-500 " /> Daily</span>
+                      <span className="flex items-center gap-1 dark:text-black"><span className="h-2 w-2 rounded-full bg-amber-500" style={{ borderStyle: 'dashed' }} /> Moving Avg (3d)</span>
                     </span>
-                    <span className="flex items-center gap-1.5">
-                      <Zap className="h-3 w-3 text-violet-500" />
+                    <span className="flex items-center gap-1.5 dark:text-black">
+                      <Zap className="h-3 w-3 text-violet-500 " /> 
                       Business-date grouping • IST shift
                     </span>
                   </div>
@@ -269,11 +265,11 @@ export default function AnalyticsPage() {
                 <Flame className="h-4 w-4" />
               </div>
               <div>
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-black">
                   Activity Heatmap
                   <Badge variant="outline" className="text-[10px]">18 weeks</Badge>
                 </CardTitle>
-                <CardDescription className="text-xs">
+                <CardDescription className="text-xs dark:text-black">
                   {recruiterId === ALL ? 'All recruiters' : recruiters.find((r) => r.id === recruiterId)?.name} • business-date activity
                 </CardDescription>
               </div>
@@ -281,9 +277,9 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent className="p-4 overflow-x-auto">
             {isLoading ? <Skeleton className="h-28 w-full max-w-2xl rounded-xl" /> : <ActivityHeatmap data={dailyCounts ?? []} weeks={18} />}
-            <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-400">
-              <Sparkles className="h-3 w-3 text-amber-500" />
-              GitHub-style intensity • Darker = more applications • Hover cells for details
+            <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-400 dark:text-white">
+              <Sparkles className="h-3 w-3 text-amber-500 " />
+              Hover cells for details
             </div>
           </CardContent>
         </Card>

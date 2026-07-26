@@ -23,7 +23,7 @@ import { TableSkeleton } from '@/components/shared/table-skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
 import { PaginationControls } from '@/components/ui/pagination-controls';
-import { formatDateTime, generateExportFilename } from '@/lib/utils';
+import { formatDateTime, generateExportFilename, cn } from '@/lib/utils';
 import {
   Calendar,
   Clock,
@@ -42,6 +42,8 @@ import {
   Award,
   BarChart3,
   Filter,
+  Star,
+  Lock,
 } from 'lucide-react';
 import {
   PieChart as RechartsPieChart,
@@ -204,23 +206,23 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
     ].filter((d) => d.value > 0);
 
     return (
-      <Card className="border-slate-200/60 shadow-sm overflow-hidden rounded-2xl">
-        <CardHeader className="pb-3 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+      <Card className="border-slate-200/60 shadow-sm overflow-hidden rounded-2xl dark:bg-slate-900 dark:border-slate-800">
+        <CardHeader className="pb-3 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white dark:from-slate-850 dark:to-slate-900 dark:border-slate-800">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
                 <PieChartIcon className="h-4 w-4" />
               </div>
               <div>
-                <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2 dark:text-black">
                   Live Team Status
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 </CardTitle>
-                <CardDescription className="text-xs text-slate-500">Real-time distribution • {totalMembers} tracked</CardDescription>
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-450 dark:text-black">Real-time distribution • {totalMembers} tracked</CardDescription>
               </div>
             </div>
-            <Badge variant="outline" className="w-fit text-xs font-medium bg-white border-slate-200 shadow-sm">
-              <UsersIcon className="h-3 w-3 mr-1" />
+            <Badge variant="outline" className="w-fit text-xs font-medium bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-750 shadow-sm dark:text-black">
+              <UsersIcon className="h-3 w-3 mr-1 " />
               {totalMembers} members
             </Badge>
           </div>
@@ -228,7 +230,7 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
         <CardContent className="pt-5">
           {chartData.length === 0 ? (
             <div className="py-12 text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-3">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 mb-3">
                 <UsersIcon className="h-6 w-6" />
               </div>
               <p className="text-sm text-slate-500">No active team status data</p>
@@ -250,7 +252,7 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
                   </RechartsPieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-3xl font-bold text-slate-900 tracking-tight">
+                  <span className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
                     <CountUp value={activeCount} />
                   </span>
                   <span className="text-[11px] uppercase font-semibold tracking-wider text-emerald-600 mt-0.5">Active Now</span>
@@ -264,20 +266,20 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
                     <motion.div
                       key={item.name}
                       whileHover={{ scale: 1.02, y: -2 }}
-                      className="group relative overflow-hidden rounded-xl border border-slate-200/60 bg-white p-3.5 shadow-sm hover:shadow-md transition-all duration-200"
+                      className="group relative overflow-hidden rounded-xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-850 p-3.5 shadow-sm hover:shadow-md transition-all duration-200"
                     >
                       <div className={`absolute inset-0 opacity-0 group-hover:opacity-[0.04] bg-gradient-to-br ${item.gradient} transition-opacity`} />
                       <div className="relative flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                           <span className="h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
-                          <span className="text-sm font-medium text-slate-700">{item.name}</span>
+                          <span className="text-sm font-medium text-slate-700 dark:text-black">{item.name}</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-lg font-bold text-slate-900">{item.value}</span>
-                          <span className="ml-1.5 text-xs font-medium px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">{pct}%</span>
+                          <span className="text-lg font-bold text-slate-900 dark:text-white">{item.value}</span>
+                          <span className="ml-1.5 text-xs font-medium px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-850 text-slate-500 dark:text-slate-400">{pct}%</span>
                         </div>
                       </div>
-                      <div className="mt-2.5 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                      <div className="mt-2.5 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: item.color }} />
                       </div>
                     </motion.div>
@@ -307,16 +309,16 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
       : 100;
 
     return (
-      <Card className="border-slate-200/60 shadow-sm overflow-hidden rounded-2xl">
-        <CardHeader className="pb-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50/50 to-white">
+      <Card className="border-slate-200/60 shadow-sm overflow-hidden rounded-2xl dark:bg-slate-900 dark:border-slate-800">
+        <CardHeader className="pb-3 border-b border-slate-100 bg-gradient-to-r from-emerald-50/50 to-white dark:from-slate-850 dark:to-slate-900 dark:border-slate-800">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md">
                 <BarChart3 className="h-4 w-4" />
               </div>
               <div>
-                <CardTitle className="text-sm font-semibold text-slate-900">Shift Breakdown</CardTitle>
-                <CardDescription className="text-xs text-slate-500">Today's time allocation • Utilization {utilization}%</CardDescription>
+                <CardTitle className="text-sm font-semibold text-slate-900 dark:text-white">Shift Breakdown</CardTitle>
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Today's time allocation • Utilization {utilization}%</CardDescription>
               </div>
             </div>
             <Badge className="w-fit text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white shadow-sm">
@@ -345,16 +347,16 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
                   </RechartsPieChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-2xl font-bold text-slate-900">{utilization}%</span>
+                  <span className="text-2xl font-bold text-slate-900 dark:text-white">{utilization}%</span>
                   <span className="text-[11px] uppercase font-semibold text-slate-400">Utilization</span>
                 </div>
               </div>
               <div className="space-y-2.5">
                 {items.map((item) => (
-                  <div key={item.name} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/40 p-3 hover:bg-white hover:shadow-sm transition-all">
+                  <div key={item.name} className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-850/40 p-3 hover:bg-white dark:hover:bg-slate-800 hover:shadow-sm transition-all">
                     <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-sm font-medium text-slate-700 min-w-[90px]">{item.name}</span>
-                    <div className="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-350 min-w-[90px]">{item.name}</span>
+                    <div className="flex-1 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${item.pct}%` }}
@@ -363,7 +365,7 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
                         style={{ backgroundColor: item.color }}
                       />
                     </div>
-                    <span className="text-xs font-mono font-semibold text-slate-900 min-w-[72px] text-right">{formatHoursMinutes(item.value)}</span>
+                    <span className="text-xs font-mono font-semibold text-slate-900 dark:text-slate-300 min-w-[72px] text-right">{formatHoursMinutes(item.value)}</span>
                     <span className="text-[11px] text-slate-400 font-medium min-w-[32px] text-right">{item.pct}%</span>
                   </div>
                 ))}
@@ -378,53 +380,186 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
   return null;
 }
 
-// Premium Timeline Component
+// Premium Timeline Component - Game Roadmap Journey Style
 function TodayTimeline({ data }: { data?: TodayActivityData }) {
   if (!data?.logs?.length) return null;
 
+  const [showAll, setShowAll] = useState(false);
+  const logs = showAll ? data.logs : data.logs.slice(-5);
+
+  // Dynamically generate the SVG path to match any count of levels (logs)
+  const stepWidth = 256;
+  const svgWidth = Math.max(1280, logs.length * stepWidth);
+  let pathD = "M 0,24";
+  for (let i = 0; i < logs.length; i++) {
+    const x = 128 + i * stepWidth;
+    const y = i % 2 === 0 ? 24 : 56;
+    if (i === 0) {
+      pathD = `M 0,24 C 64,24 64,${y} ${x},${y}`;
+    } else {
+      const prevX = 128 + (i - 1) * stepWidth;
+      const prevY = (i - 1) % 2 === 0 ? 24 : 56;
+      const cp1X = prevX + 128;
+      const cp2X = x - 128;
+      pathD += ` C ${cp1X},${prevY} ${cp2X},${y} ${x},${y}`;
+    }
+  }
+  pathD += ` T ${svgWidth} ${logs.length % 2 === 0 ? 56 : 24}`;
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (e.deltaY === 0) return;
+    e.currentTarget.scrollLeft += e.deltaY;
+  };
+
   return (
-    <Card className="border-slate-200/60 shadow-sm rounded-2xl overflow-hidden">
-      <CardHeader className="pb-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+    <Card className="border-slate-200/60 shadow-md rounded-2xl overflow-hidden bg-white dark:bg-slate-900 dark:border-slate-800">
+      <CardHeader className="pb-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white dark:from-slate-850 dark:to-slate-900 dark:border-slate-800 flex flex-row items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-sm">
             <Timer className="h-4 w-4" />
           </div>
           <div>
-            <CardTitle className="text-sm font-semibold">Today's Journey</CardTitle>
-            <CardDescription className="text-xs">Chronological status timeline</CardDescription>
+            <CardTitle className="text-sm font-bold flex items-center gap-2 dark:text-black">
+              Today's Journey
+            </CardTitle>
+            <CardDescription className="text-xs dark:text-black">Chronological level timeline • Winding pathway</CardDescription>
           </div>
         </div>
+        
+        {data.logs.length > 5 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAll(!showAll)}
+            className="text-xs font-semibold gap-1.5 h-8 border-slate-200 bg-white shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:hover:bg-slate-750"
+          >
+            {showAll ? 'Show Latest 5' : `See Full Journey (${data.logs.length} states)`}
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="p-0">
-        <div className="relative">
-          <div className="absolute left-6 top-6 bottom-6 w-px bg-gradient-to-b from-slate-200 via-slate-200 to-transparent" />
-          <div className="space-y-0">
-            {data.logs.slice(0, 8).map((log, idx) => {
-              const cfg = STATUS_CONFIG[log.status as UserStatus];
+        <div
+          // onWheel={handleWheel}
+          className="relative overflow-x-auto scrollbar-thick py-10 px-8 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] dark:bg-[radial-gradient(#334155_1px,transparent_1px)] bg-[size:16px_16px]"
+        >
+          {/* Curved Winding Track Line */}
+          <svg className="absolute inset-y-0 top-[52%] -translate-y-1/2 h-20 pointer-events-none opacity-60" style={{ width: `${svgWidth}px` }} viewBox={`0 0 ${svgWidth} 80`} preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="road-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#6366f1" />
+                <stop offset="50%" stopColor="#a855f7" />
+                <stop offset="100%" stopColor="#10b981" />
+              </linearGradient>
+            </defs>
+            <path
+              d={pathD}
+              fill="transparent"
+              stroke="url(#road-grad)"
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray="10 8"
+            />
+          </svg>
+          
+          <div className="flex flex-row-reverse items-center gap-16 min-w-max px-6">
+            {logs.map((log, idx) => {
+              const cfg = STATUS_CONFIG[log.status as UserStatus] || STATUS_CONFIG.OFFLINE;
+              const vIdx = logs.length - 1 - idx;
+              const isOddVisual = vIdx % 2 === 0;
+              const isActive = log.status === 'ACTIVE' || log.status === 'ONLINE';
+              const isBreak = log.status === 'SHORT_BREAK' || log.status === 'DINNER_BREAK';
+              const isCurrent = idx === logs.length - 1;
+              const Icon = cfg.icon || Zap;
+
               return (
-                <motion.div
-                  key={log.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="relative flex gap-4 p-4 hover:bg-slate-50/60 transition-colors group"
-                >
-                  <div className={`relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 bg-white ${cfg.borderColor} shadow-sm`}>
-                    <div className={`h-2 w-2 rounded-full ${cfg.dotColor}`} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${cfg.bgColor} ${cfg.textColor} ${cfg.borderColor}`}>
-                        {cfg.label}
-                      </span>
-                      <span className="text-xs text-slate-400">{formatDateTime(log.startedAt)}</span>
-                      <span className="text-xs font-mono font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
-                        {formatHoursMinutes(log.durationSeconds)}
-                      </span>
+                <div key={log.id} className={cn("flex flex-col items-center justify-center relative w-48 shrink-0 transition-transform duration-350", isOddVisual ? "-translate-y-3" : "translate-y-3")}>
+                  
+                  {/* Details Speech Bubble - Alternating ABOVE the node */}
+                  {isOddVisual ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="mb-8"
+                    >
+                      <div className="rounded-2xl border border-slate-100 bg-white dark:bg-slate-850 dark:border-slate-800 p-3 shadow-[0_10px_25px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] w-48 text-left relative">
+                        <div className="absolute left-1/2 -translate-x-1/2 bottom-[-6px] w-3 h-3 bg-white dark:bg-slate-850 border-r border-b border-slate-100 dark:border-slate-800 rotate-45" />
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div className={`h-2 w-2 rounded-full ${cfg.dotColor}`} />
+                          <span className={cn("text-[11px] font-bold uppercase tracking-wider", cfg.textColor)}>{cfg.label}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{formatDateTime(log.startedAt)}</p>
+                        <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-700 dark:text-slate-350 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-750 font-mono">
+                          <span className="font-semibold text-slate-500 dark:text-slate-400 font-sans">Duration:</span>
+                          <span>{formatHoursMinutes(log.durationSeconds)}</span>
+                        </div>
+                        {log.optionalNote && <p className="mt-1 text-[9px] text-slate-550 dark:text-slate-450 italic truncate" title={log.optionalNote}>“{log.optionalNote}”</p>}
+                      </div>
+                    </motion.div>
+                  ) : (
+                    // Spacer to align stepping stone to center
+                    <div className="h-[96px] mb-8" />
+                  )}
+
+                  {/* Stepping Stone Node */}
+                  <div className="relative flex flex-col items-center justify-center z-10">
+                    <div className="relative">
+                      {isCurrent && (
+                        <>
+                          <span className="absolute -inset-2 rounded-full border-4 border-current opacity-25 animate-ping pointer-events-none" style={{ color: isActive ? '#10b981' : isBreak ? '#f59e0b' : '#64748b' }} />
+                          <span className="absolute -inset-1.5 rounded-full border-2 border-current opacity-40 animate-pulse pointer-events-none" style={{ color: isActive ? '#10b981' : isBreak ? '#f59e0b' : '#64748b' }} />
+                        </>
+                      )}
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.12 }}
+                        whileTap={{ scale: 0.95 }}
+                        className={cn(
+                          "h-14 w-14 rounded-full border-4 flex items-center justify-center text-white shadow-md transition-all duration-300 transform",
+                          isActive
+                            ? "bg-gradient-to-b from-emerald-400 to-emerald-600 border-emerald-300 shadow-[0_4px_0_#047857] hover:shadow-[0_1px_0_#047857] hover:translate-y-[2px]"
+                            : isBreak
+                            ? "bg-gradient-to-b from-amber-400 to-amber-600 border-amber-300 shadow-[0_4px_0_#b45309] hover:shadow-[0_1px_0_#b45309] hover:translate-y-[2px]"
+                            : "bg-gradient-to-b from-slate-400 to-slate-500 border-slate-300 shadow-[0_4px_0_#334155] hover:shadow-[0_1px_0_#334155] hover:translate-y-[2px] dark:from-slate-600 dark:to-slate-700 dark:border-slate-500 dark:shadow-[0_4px_0_#1e293b]"
+                        )}
+                        title={`${cfg.label} - ${formatHoursMinutes(log.durationSeconds)}`}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </motion.button>
                     </div>
-                    {log.optionalNote && <p className="mt-1 text-xs text-slate-500 italic">“{log.optionalNote}”</p>}
+                    
+                    <p className="mt-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 tracking-tight">{cfg.label}</p>
                   </div>
-                </motion.div>
+
+                  {/* Details Speech Bubble - Alternating BELOW the node */}
+                  {!isOddVisual ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="mt-8"
+                    >
+                      <div className="rounded-2xl border border-slate-100 dark:bg-slate-850 dark:border-slate-800 bg-white p-3 shadow-[0_10px_25px_rgba(0,0,0,0.06)] dark:shadow-[0_10px_25px_rgba(0,0,0,0.3)] w-48 text-left relative">
+                        <div className="absolute left-1/2 -translate-x-1/2 top-[-6px] w-3 h-3 bg-white dark:bg-slate-850 border-l border-t border-slate-100 dark:border-slate-800 rotate-45" />
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div className={`h-2 w-2 rounded-full ${cfg.dotColor}`} />
+                          <span className={cn("text-[11px] font-bold uppercase tracking-wider", cfg.textColor)}>{cfg.label}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">{formatDateTime(log.startedAt)}</p>
+                        <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-700 dark:text-slate-350 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-100 dark:border-slate-750 font-mono">
+                          <span className="font-semibold text-slate-500 dark:text-slate-400 font-sans">Duration:</span>
+                          <span>{formatHoursMinutes(log.durationSeconds)}</span>
+                        </div>
+                        {log.optionalNote && <p className="mt-1 text-[9px] text-slate-550 dark:text-slate-450 italic truncate" title={log.optionalNote}>“{log.optionalNote}”</p>}
+                      </div>
+                    </motion.div>
+                  ) : (
+                    // Spacer to align stepping stone to center
+                    <div className="h-[96px] mt-8" />
+                  )}
+
+                </div>
               );
             })}
           </div>
@@ -684,19 +819,15 @@ export default function ActivityTrackingPage() {
                         : 'Your personal shift cockpit • Track productive time, breaks & utilization'}
                     </p>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-600">
-                        <Clock className="h-3 w-3" />
-                        Business Date • IST
-                      </span>
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 border border-violet-100 px-2.5 py-1 font-medium text-violet-700">
                         <Sparkles className="h-3 w-3" />
-                        Premium Analytics
+                        Visual Analytics
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 text-black">
                   <PermissionGate permission="export:activity">
                     <Button variant="outline" onClick={handleExportExcel} disabled={isExporting || logs.length === 0} className="gap-2 bg-white shadow-sm">
                       <Download className="h-4 w-4" /> Export Logs
@@ -875,12 +1006,12 @@ export default function ActivityTrackingPage() {
         <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
           <div className="bg-gradient-to-r from-slate-50/80 to-white border-b border-slate-100 px-4 py-3 flex items-center gap-2">
             <Filter className="h-4 w-4 text-slate-500" />
-            <span className="text-sm font-semibold text-slate-700">Filters & View Controls</span>
-            <span className="ml-auto text-xs text-slate-400">{filteredMembers.length} members • {logs.length} logs</span>
+            <span className="text-sm font-semibold text-slate-700 dark:text-black">Filters & View Controls</span>
+            <span className="ml-auto text-xs text-slate-400 dark:text-black">{filteredMembers.length} members • {logs.length} logs</span>
           </div>
           <CardContent className="p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 dark:text-black">
                 <PermissionGate permission="view:activity:all">
                   <Select value={selectedTeamId} onValueChange={(v) => { setSelectedTeamId(v as any); setPage(1); }}>
                     <SelectTrigger className="w-full sm:w-48 bg-white">
@@ -926,21 +1057,23 @@ export default function ActivityTrackingPage() {
                 </Select>
               </div>
 
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600 shadow-sm">
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs text-slate-600 dark:text-slate-300 shadow-sm">
                 <Calendar className="h-4 w-4 text-violet-500 shrink-0" />
-                <span className="font-medium text-slate-500">From</span>
+                <span className="font-medium text-slate-500 dark:text-slate-400">From</span>
                 <Input
                   type="date"
-                  className="h-7 w-32 border-0 bg-transparent p-0 text-xs focus:ring-0 cursor-pointer"
+                  className="h-7 w-32 border-0 bg-transparent p-0 text-xs focus:ring-0 cursor-pointer dark:text-white"
                   value={fromDate}
                   onChange={(e) => { setFromDate(e.target.value); setPage(1); }}
+                  onClick={(e) => e.currentTarget.showPicker?.()}
                 />
-                <span className="font-medium text-slate-500">To</span>
+                <span className="font-medium text-slate-500 dark:text-slate-400">To</span>
                 <Input
                   type="date"
-                  className="h-7 w-32 border-0 bg-transparent p-0 text-xs focus:ring-0 cursor-pointer"
+                  className="h-7 w-32 border-0 bg-transparent p-0 text-xs focus:ring-0 cursor-pointer dark:text-white"
                   value={toDate}
                   onChange={(e) => { setToDate(e.target.value); setPage(1); }}
+                  onClick={(e) => e.currentTarget.showPicker?.()}
                 />
               </div>
             </div>
@@ -951,22 +1084,22 @@ export default function ActivityTrackingPage() {
       {/* Live Status + Logs */}
       {(isAdmin || isTeamLeader) && selectedUserId === ALL && !fromDate && !toDate ? (
         <Reveal delay={0.25}>
-          <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-            <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white py-4">
+          <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-850 dark:to-slate-900 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white">
                     <UsersIcon className="h-4 w-4" />
                   </div>
                   <div>
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-black">
                       {statusFilter !== ALL ? `In ${STATUS_CONFIG[statusFilter as UserStatus]?.label}` : 'Live User Pulse'}
                       <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                     </CardTitle>
-                    <CardDescription className="text-xs">{filteredMembers.length} members • Real-time</CardDescription>
+                    <CardDescription className="text-xs dark:text-black">{filteredMembers.length} members • Real-time</CardDescription>
                   </div>
                 </div>
-                <Badge variant="outline" className="bg-white shadow-sm">
+                <Badge variant="outline" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm dark:text-white">
                   <Activity className="h-3 w-3 mr-1" />
                   Auto-refresh 15s
                 </Badge>
@@ -985,7 +1118,7 @@ export default function ActivityTrackingPage() {
                   estimateRowHeight={72}
                   maxHeight="520px"
                   header={
-                    <div className="grid grid-cols-[1.8fr_0.7fr_1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_0.9fr] gap-2 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-50/80">
+                    <div className="grid grid-cols-[1.8fr_0.7fr_1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_0.9fr] gap-2 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-black bg-slate-50/80 dark:bg-slate-850/80">
                       <span>User</span>
                       <span>Role</span>
                       <span>Status</span>
@@ -999,27 +1132,27 @@ export default function ActivityTrackingPage() {
                   renderRow={(m: any) => {
                     const cfg = STATUS_CONFIG[m.status as UserStatus];
                     return (
-                      <div className="grid grid-cols-[1.8fr_0.7fr_1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_0.9fr] gap-2 px-4 py-3 border-b border-slate-100 hover:bg-slate-50/60 transition-colors items-center">
+                      <div className="grid grid-cols-[1.8fr_0.7fr_1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_0.9fr] gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60 transition-colors items-center">
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-900 truncate">{m.name}</p>
-                          <p className="text-[11px] text-slate-400 truncate">{m.email}</p>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-black truncate">{m.name}</p>
+                          <p className="text-[11px] text-slate-400 dark:text-black/80 truncate">{m.email}</p>
                         </div>
-                        <div className="text-xs font-medium text-slate-600">{m.role === 'TEAM_LEADER' ? 'TL' : 'Recruiter'}</div>
+                        <div className="text-xs font-medium text-slate-600 dark:text-black">{m.role === 'TEAM_LEADER' ? 'TL' : 'Recruiter'}</div>
                         <div>
                           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border ${cfg.bgColor} ${cfg.textColor} ${cfg.borderColor}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotColor}`} />
                             {cfg.label}
                           </span>
                         </div>
-                        <div className="text-xs font-mono text-slate-700 font-medium">{formatHoursMinutes(m.currentDurationSeconds)}</div>
-                        <div className="text-xs font-mono text-slate-600">{formatHoursMinutes(m.todayLoggedInSeconds)}</div>
-                        <div className="text-xs font-mono text-emerald-700 font-medium">{formatHoursMinutes(m.todayProductiveSeconds)}</div>
-                        <div className="text-xs font-mono text-amber-700">{formatHoursMinutes(m.todayBreakSeconds)}</div>
+                        <div className="text-xs font-mono text-slate-700 dark:text-black font-medium">{formatHoursMinutes(m.currentDurationSeconds)}</div>
+                        <div className="text-xs font-mono text-slate-600 dark:text-black/90">{formatHoursMinutes(m.todayLoggedInSeconds)}</div>
+                        <div className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-medium">{formatHoursMinutes(m.todayProductiveSeconds)}</div>
+                        <div className="text-xs font-mono text-amber-700 dark:text-amber-400">{formatHoursMinutes(m.todayBreakSeconds)}</div>
                         <div className="text-right">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 text-xs font-semibold text-violet-600 hover:text-violet-700 hover:bg-violet-50"
+                            className="h-7 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 hover:bg-violet-50 dark:hover:bg-slate-800"
                             onClick={() => { setSelectedUserId(m.userId); setPage(1); }}
                           >
                             View Logs →
@@ -1035,15 +1168,15 @@ export default function ActivityTrackingPage() {
         </Reveal>
       ) : (
         <Reveal delay={0.25}>
-          <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-            <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white py-4">
+          <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-850 dark:to-slate-900 py-4">
               {selectedUserId !== ALL && (isAdmin || isTeamLeader) ? (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <CardTitle className="text-sm font-bold">Event Logs — {activityUsers?.find((u) => u.id === selectedUserId)?.name || 'Selected User'}</CardTitle>
-                    <CardDescription className="text-xs">Detailed transition history</CardDescription>
+                    <CardTitle className="text-sm font-bold dark:text-white">Event Logs — {activityUsers?.find((u) => u.id === selectedUserId)?.name || 'Selected User'}</CardTitle>
+                    <CardDescription className="text-xs dark:text-slate-400">Detailed transition history</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1 border-slate-200" onClick={() => { setSelectedUserId(ALL); setPage(1); }}>
+                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white" onClick={() => { setSelectedUserId(ALL); setPage(1); }}>
                     ← Back to Summary
                   </Button>
                 </div>
@@ -1053,8 +1186,8 @@ export default function ActivityTrackingPage() {
                     <Timer className="h-4 w-4" />
                   </div>
                   <div>
-                    <CardTitle className="text-sm font-semibold">Activity Event Logs</CardTitle>
-                    <CardDescription className="text-xs">Status transitions • Virtualized for performance</CardDescription>
+                    <CardTitle className="text-sm font-semibold dark:text-black">Activity Event Logs</CardTitle>
+                    <CardDescription className="text-xs dark:text-black">Status transitions • Virtualized for performance</CardDescription>
                   </div>
                 </div>
               )}
@@ -1072,7 +1205,7 @@ export default function ActivityTrackingPage() {
                     estimateRowHeight={64}
                     maxHeight="560px"
                     header={
-                      <div className="grid grid-cols-[1.3fr_0.9fr_1fr_1fr_0.6fr_1fr] gap-2 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 bg-slate-50/80">
+                      <div className="grid grid-cols-[1.3fr_0.9fr_1fr_1fr_0.6fr_1fr] gap-2 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-black bg-slate-50/80 dark:bg-slate-850/80">
                         <span>User</span>
                         <span>Status</span>
                         <span>Started</span>
@@ -1084,10 +1217,10 @@ export default function ActivityTrackingPage() {
                     renderRow={(log: any) => {
                       const cfg = STATUS_CONFIG[log.status as UserStatus];
                       return (
-                        <div className="grid grid-cols-[1.3fr_0.9fr_1fr_1fr_0.6fr_1fr] gap-2 px-4 py-3 border-b border-slate-100 hover:bg-slate-50/60 items-center">
+                        <div className="grid grid-cols-[1.3fr_0.9fr_1fr_1fr_0.6fr_1fr] gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60 items-center">
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-slate-900 truncate">{log.user.name}</p>
-                            <p className="text-[11px] text-slate-400 truncate">{log.user.email}</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-black truncate">{log.user.name}</p>
+                            <p className="text-[11px] text-slate-400 dark:text-black/80 truncate">{log.user.email}</p>
                           </div>
                           <div>
                             <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border ${cfg.bgColor} ${cfg.textColor} ${cfg.borderColor}`}>
@@ -1095,15 +1228,15 @@ export default function ActivityTrackingPage() {
                               {cfg.label}
                             </span>
                           </div>
-                          <div className="text-xs text-slate-600">{formatDateTime(log.startedAt)}</div>
-                          <div className="text-xs text-slate-600">{log.endedAt ? formatDateTime(log.endedAt) : <span className="font-semibold text-emerald-600">Active</span>}</div>
-                          <div className="text-xs font-mono font-medium text-slate-700">{formatHoursMinutes(log.durationSeconds)}</div>
-                          <div className="text-xs text-slate-500 truncate max-w-[180px]">{log.optionalNote || '-'}</div>
+                          <div className="text-xs text-slate-600 dark:text-black/90">{formatDateTime(log.startedAt)}</div>
+                          <div className="text-xs text-slate-600 dark:text-black/90">{log.endedAt ? formatDateTime(log.endedAt) : <span className="font-semibold text-emerald-600 dark:text-emerald-400">Active</span>}</div>
+                          <div className="text-xs font-mono font-medium text-slate-700 dark:text-black">{formatHoursMinutes(log.durationSeconds)}</div>
+                          <div className="text-xs text-slate-500 dark:text-black/85 truncate max-w-[180px]">{log.optionalNote || '-'}</div>
                         </div>
                       );
                     }}
                   />
-                  <div className="p-3 border-t border-slate-100">
+                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-850/30">
                     <PaginationControls pagination={historyData?.pagination} onPageChange={setPage} />
                   </div>
                 </>

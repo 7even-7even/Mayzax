@@ -22,11 +22,12 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
   return (
     <header className="flex h-[68px] shrink-0 items-center justify-between border-b border-slate-200/60 bg-white/90 backdrop-blur-xl px-4 sm:px-6 sticky top-0 z-20 shadow-sm shadow-slate-200/20">
+      
       <div className="flex items-center gap-3">
         <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-mayzax-gradient text-white shadow-md lg:hidden hover:opacity-90 transition-opacity" onClick={onMenuClick}>
           <Menu className="h-5 w-5" />
         </button>
-        <div className="hidden lg:flex items-center gap-3">
+        {/* <div className="hidden lg:flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-mayzax-blue-50 border border-mayzax-blue-100 text-mayzax-blue-600">
             <Zap className="h-4 w-4" />
           </div>
@@ -34,16 +35,15 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
           <div className="flex items-center gap-2 text-xs">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-mayzax-blue-50 border border-mayzax-blue-200 text-mayzax-blue-700 px-2.5 py-1 font-semibold">
               <span className="h-1.5 w-1.5 rounded-full bg-mayzax-green-500 animate-pulse" />
-              Live • IST
+              Live
             </span>
-            <span className="text-slate-400 hidden sm:inline">Business date • Premium</span>
           </div>
-        </div>
+        </div> */}
 
         <div className="lg:hidden">
           <p className="text-sm font-bold tracking-tight text-slate-900 flex items-center gap-2">
             MAYZAX
-            <Badge className="bg-mayzax-gradient text-white text-[9px] h-4 px-1.5 border-0">PREMIUM</Badge>
+            <Badge className="bg-mayzax-gradient text-white text-[9px] h-4 px-1.5 border-0">CRM</Badge>
           </p>
         </div>
       </div>
@@ -78,7 +78,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
                   </div>
                   <div>
                     <p className="font-semibold text-sm">System Updates</p>
-                    <p className="text-xs text-white/70">{unreadCount} unread • #2A5DA8 palette</p>
+                    <p className="text-xs text-white/70">{unreadCount}</p>
                   </div>
                 </div>
                 {unreadCount > 0 && <span className="h-2 w-2 rounded-full bg-white animate-pulse" />}
@@ -155,7 +155,7 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
               </div>
               <div>
                 <p className="text-sm font-medium">Profile Settings</p>
-                <p className="text-[11px] text-slate-500">Manage premium profile</p>
+                <p className="text-[11px] text-slate-500">Manage Profile</p>
               </div>
             </DropdownMenuItem>
             <DropdownMenuSeparator />

@@ -22,7 +22,6 @@ export function RecruiterStatsDialog({ recruiterId, onOpenChange }: { recruiterI
                 <BarChart3 className="h-4 w-4" />
               </div>
               Recruiter Performance
-              <Badge className="bg-mayzax-blue-50 text-mayzax-blue-700 border-mayzax-blue-200 text-[10px]">Premium • #2A5DA8</Badge>
             </DialogTitle>
             <DialogDescription className="text-xs">{data ? `${data.recruiter.name} • ${data.recruiter.email}` : 'Loading stats...'}</DialogDescription>
           </DialogHeader>
@@ -84,7 +83,7 @@ export function RecruiterStatsDialog({ recruiterId, onOpenChange }: { recruiterI
                   <Award className="h-4 w-4" />
                 </div>
                 <p className="text-xs leading-relaxed text-slate-600">
-                  <span className="font-semibold text-mayzax-blue-700">Premium insights:</span> Total apps include verification status • Current shift uses business-date IST • Original palette #2A5DA8 + #3F9C71
+                  <span className="font-semibold text-mayzax-blue-700">Insights:</span> Total apps include verification status • Current shift uses business-date IST
                 </p>
               </div>
             </div>

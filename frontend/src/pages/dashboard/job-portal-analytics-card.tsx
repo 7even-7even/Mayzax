@@ -100,15 +100,15 @@ export function JobPortalAnalyticsCard({
 
   return (
     <Reveal delay={0.1}>
-      <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-        <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+      <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden ">
+        <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white ">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 text-white shadow-md">
                 <BarChart3 className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CardTitle className="text-base font-semibold flex items-center gap-2 dark:text-black">
                   {title}
                   {topPortal && (
                     <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0 text-[10px] shadow-sm">
@@ -117,7 +117,7 @@ export function JobPortalAnalyticsCard({
                     </Badge>
                   )}
                 </CardTitle>
-                <CardDescription className="text-xs mt-0.5">{description} • {rangeLabel}</CardDescription>
+                <CardDescription className="text-xs mt-0.5 dark:text-black">{description} • {rangeLabel}</CardDescription>
                 <div className="mt-2 flex items-center gap-2 text-xs">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-white px-2.5 py-1 font-semibold shadow-sm">
                     <Zap className="h-3 w-3" />
@@ -248,12 +248,12 @@ export function JobPortalAnalyticsCard({
                   </ResponsiveContainer>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400">
+                <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 dark:text-white">
                   <span className="flex items-center gap-1.5">
-                    <Sparkles className="h-3 w-3 text-violet-500" />
-                    Click bars to highlight • Hover for details
+                    <Sparkles className="h-3 w-3 text-violet-500 " />
+                    Hover for details
                   </span>
-                  <span className="hidden sm:inline">Interactive • Animated • GPU accelerated</span>
+                  <span className="hidden sm:inline dark:text-white">Interactive • Animated • GPU accelerated</span>
                 </div>
               </div>
 

@@ -74,7 +74,7 @@ export function AdvancedFilterBar({
           <div className="flex flex-1 items-center gap-2 flex-wrap">
             {/* Search */}
             <div className="relative flex-1 min-w-[200px] max-w-sm">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 " />
               <Input placeholder={searchPlaceholder} className="pl-9 h-9 rounded-full bg-slate-50/80 border-slate-200 focus:bg-white text-sm" value={searchValue} onChange={(e) => onSearchChange(e.target.value)} />
               {searchValue && (
                 <button onClick={() => onSearchChange('')} className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500">
@@ -84,10 +84,10 @@ export function AdvancedFilterBar({
             </div>
 
             {/* Quick filters */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap dark:text-black">
               {filters.slice(0, 3).map((filter) => (
                 <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
-                  <SelectTrigger className="h-9 rounded-full bg-white border-slate-200 shadow-sm text-xs font-medium min-w-[140px]">
+                  <SelectTrigger className="h-9 rounded-full bg-white border-slate-200 shadow-sm text-xs font-medium w-36">
                     <div className="flex items-center gap-1.5">
                       {filter.icon && <filter.icon className="h-3.5 w-3.5 text-slate-400" />}
                       <SelectValue placeholder={filter.placeholder || filter.label} />
@@ -107,7 +107,7 @@ export function AdvancedFilterBar({
               ))}
 
               {(filters.length > 3 || dateRange || additionalFilters) && (
-                <Button variant={showAdvanced ? 'brand' : 'outline'} size="sm" className="h-9 rounded-full gap-1.5 text-xs" onClick={() => setShowAdvanced(!showAdvanced)}>
+                <Button variant={showAdvanced ? 'brand' : 'outline'} size="sm" className="h-9 rounded-full gap-1.5 text-xs dark:text-white" onClick={() => setShowAdvanced(!showAdvanced)}>
                   <SlidersHorizontal className="h-3.5 w-3.5" />
                   {showAdvanced ? 'Less' : 'More'}
                   <motion.span animate={{ rotate: showAdvanced ? 180 : 0 }} transition={{ duration: 0.2 }}>

@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { apiClient, extractErrorMessage } from '@/lib/api-client';
 import { useAuth } from '@/context/auth-context';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -201,7 +202,7 @@ export default function ProfilePage() {
                   {user?.bio && <p className="mt-3 text-sm text-slate-600 leading-relaxed max-w-2xl">{user.bio}</p>}
                 </div>
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setIsEditingPremium(!isEditingPremium)}>
-                  <Edit3 className="h-3.5 w-3.5" /> {isEditingPremium ? 'Cancel' : 'Edit Premium Profile'}
+                  <Edit3 className="h-3.5 w-3.5" /> {isEditingPremium ? 'Cancel' : 'Edit Profile'}
                 </Button>
               </div>
             </div>
@@ -214,19 +215,22 @@ export default function ProfilePage() {
         <Reveal delay={0.05}>
           <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
-              <CardTitle className="flex items-center gap-2 text-base">
+              <CardTitle className="flex items-center gap-2 text-base  dark:text-black">
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
                   <UserCircle className="h-4 w-4" />
                 </div>
-                Premium Profile Details
+                Profile Details
                 <Badge variant="outline" className="ml-auto text-[10px] font-semibold border-violet-200 text-violet-700 bg-violet-50">
                   <Sparkles className="h-3 w-3 mr-1" /> Extended
                 </Badge>
               </CardTitle>
               <CardDescription>Enhanced fields for better team visibility • Role aware</CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={profileForm.handleSubmit(updateProfile)} className="space-y-5">
+            <CardContent className="pt-6 dark:text-black">
+              <form onSubmit={profileForm.handleSubmit(updateProfile, (errors) => {
+                console.error('Profile form errors:', errors);
+                toast.error(`Please fix validation errors: ${Object.entries(errors).map(([key, err]: any) => `${key}: ${err.message}`).join(', ')}`);
+              })} className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label htmlFor="name">Full Name</Label>
@@ -309,9 +313,20 @@ export default function ProfilePage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="displayColor">Avatar Color</Label>
-                    <div className="relative">
-                      <Palette className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      <Input id="displayColor" placeholder="#6366f1 or gradient" className="pl-9 bg-white" {...profileForm.register('displayColor')} />
+                    <div className="relative flex items-center">
+                      <Palette className="absolute left-3 h-4 w-4 text-slate-400 z-10 pointer-events-none" />
+                      <Input id="displayColor" placeholder="#6366f1 (Hex Color)" className="pl-9 pr-12 bg-white" {...profileForm.register('displayColor')} />
+                      
+                      <div className="absolute right-2.5 flex items-center">
+                        <div className="relative h-6 w-6 rounded-full border border-slate-200 shadow-sm overflow-hidden cursor-pointer hover:scale-105 transition-transform">
+                          <input
+                            type="color"
+                            value={profileForm.watch('displayColor') || '#2a5da8'}
+                            onChange={(e) => profileForm.setValue('displayColor', e.target.value, { shouldDirty: true, shouldValidate: true })}
+                            className="absolute inset-0 h-[200%] w-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer p-0 border-0 bg-transparent"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -322,7 +337,7 @@ export default function ProfilePage() {
                     <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input id="skills" placeholder="Sourcing, Screening, ATS, Boolean Search" className="pl-9 bg-white" {...profileForm.register('skills')} />
                   </div>
-                  <p className="text-[11px] text-slate-400">Used for team skill matrix & premium profile badge</p>
+                  <p className="text-[11px] text-slate-400">Used for team skill matrix & profile badge</p>
                 </div>
 
                 <div className="rounded-xl bg-gradient-to-r from-violet-50 to-indigo-50 border border-violet-100 px-3 py-2.5 flex items-center gap-2 text-xs text-violet-800">
@@ -333,7 +348,7 @@ export default function ProfilePage() {
                 <div className="flex gap-2 pt-2">
                   <Button type="submit" variant="brand" disabled={profileForm.formState.isSubmitting} className="gap-2 shadow-md">
                     {profileForm.formState.isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                    Save Premium Profile
+                    Save Profile
                   </Button>
                   <Button type="button" variant="ghost" onClick={() => profileForm.reset()}>
                     Reset
@@ -348,20 +363,20 @@ export default function ProfilePage() {
           <Reveal delay={0.1}>
             <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-emerald-50/50 to-white border-b border-slate-100">
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2 text-base dark:text-black">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
                     <ShieldCheck className="h-4 w-4" />
                   </div>
                   Security & Recovery
                 </CardTitle>
-                <CardDescription>Security question used for forgot password flow</CardDescription>
+                <CardDescription className='dark:text-black'>Security question used for forgot password flow</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <form onSubmit={securityForm.handleSubmit(saveSecurityQuestion)} className="space-y-4">
                   <div className="space-y-1.5">
                     <Label>Question</Label>
                     <Select value={securityForm.watch('securityQuestion')} onValueChange={(value) => securityForm.setValue('securityQuestion', value, { shouldValidate: true })}>
-                      <SelectTrigger className="bg-white">
+                      <SelectTrigger className="bg-white dark:text-black">
                         <SelectValue placeholder="Select a security question" />
                       </SelectTrigger>
                       <SelectContent>
@@ -391,7 +406,7 @@ export default function ProfilePage() {
           <Reveal delay={0.15}>
             <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
-                <CardTitle className="flex items-center gap-2 text-base">
+                <CardTitle className="flex items-center gap-2 text-base  dark:text-black">
                   <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white">
                     <ShieldCheck className="h-4 w-4" />
                   </div>

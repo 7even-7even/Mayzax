@@ -20,8 +20,6 @@ export function PageHeader({ title, description, actions, className, premium = f
             <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text">{title}</h1>
             {premium && (
               <span className="inline-flex items-center gap-1 rounded-full bg-slate-900 text-white px-2.5 py-0.5 text-[10px] font-bold tracking-wider">
-                <Sparkles className="h-3 w-3" />
-                PREMIUM
               </span>
             )}
             {badge && (

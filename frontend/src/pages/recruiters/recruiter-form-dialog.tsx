@@ -66,10 +66,10 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
     try {
       if (isEdit && recruiter) {
         await updateMutation.mutateAsync({ id: recruiter.id, ...values });
-        toast.success('Recruiter updated • Premium');
+        toast.success('Recruiter updated');
       } else {
         await createMutation.mutateAsync(values as CreateForm);
-        toast.success('Recruiter created • Premium roster');
+        toast.success('Recruiter created');
       }
       onOpenChange(false);
     } catch (err) {
@@ -91,10 +91,9 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
                 <User2 className="h-4 w-4" />
               </div>
               {user?.role === 'ADMIN' ? (isEdit ? 'Edit User' : 'Create New User') : isEdit ? 'Edit Recruiter' : 'Create New Recruiter'}
-              <Badge className="bg-mayzax-blue-50 text-mayzax-blue-700 border-mayzax-blue-200 text-[10px]">Premium • Original</Badge>
             </DialogTitle>
             <DialogDescription className="text-xs">
-              {user?.role === 'ADMIN' ? (isEdit ? 'Update user details • Premium' : 'Add admin, TL, or recruiter • Original palette') : isEdit ? 'Update recruiter • Premium' : 'Add recruiter • Premium'}
+              {user?.role === 'ADMIN' ? (isEdit ? 'Update user details' : 'Add admin, TL, or recruiter') : isEdit ? 'Update recruiter' : 'Add recruiter'}
             </DialogDescription>
           </DialogHeader>
 
@@ -103,7 +102,7 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
               <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <User2 className="h-3 w-3 text-mayzax-blue-500" /> Full Name
               </Label>
-              <Input placeholder="e.g. Riya Sharma" className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50" {...form.register('name')} />
+              <Input placeholder="e.g. Riya Sharma" className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black" {...form.register('name')} />
               {form.formState.errors.name && <p className="text-xs text-red-600">{form.formState.errors.name.message}</p>}
             </div>
 
@@ -111,7 +110,7 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
               <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1">
                 <Mail className="h-3 w-3 text-slate-400" /> Email Address
               </Label>
-              <Input type="email" placeholder="riya@mayzaxsolutions.com" className="rounded-xl h-11 bg-white border-slate-200" {...form.register('email')} />
+              <Input type="email" placeholder="riya@mayzaxsolutions.com" className="rounded-xl h-11 bg-white border-slate-200 dark:text-black" {...form.register('email')} />
               {form.formState.errors.email && <p className="text-xs text-red-600">{form.formState.errors.email.message}</p>}
             </div>
 
@@ -134,7 +133,7 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
                   <Shield className="h-3 w-3 text-slate-400" /> Role
                 </Label>
                 <Select value={form.watch('role')} onValueChange={(value) => { form.setValue('role', value as any); if (value !== 'RECRUITER') form.setValue('createdById', null); }}>
-                  <SelectTrigger className="rounded-xl h-11 bg-white border-slate-200">
+                  <SelectTrigger className="rounded-xl h-11 bg-white border-slate-200 dark:text-black">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -152,7 +151,7 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
                   <Users className="h-3 w-3 text-slate-400" /> Assign Team Leader (Optional)
                 </Label>
                 <Select value={form.watch('createdById') || '__none__'} onValueChange={(value) => form.setValue('createdById', value === '__none__' ? null : value)}>
-                  <SelectTrigger className="rounded-xl h-11 bg-white border-slate-200">
+                  <SelectTrigger className="rounded-xl h-11 bg-white border-slate-200 dark:text-black">
                     <SelectValue placeholder="Select Team Leader" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
