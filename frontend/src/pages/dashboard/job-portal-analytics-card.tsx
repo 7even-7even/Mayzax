@@ -104,7 +104,7 @@ export function JobPortalAnalyticsCard({
         <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 text-white shadow-md">
                 <BarChart3 className="h-5 w-5" />
               </div>
               <div>

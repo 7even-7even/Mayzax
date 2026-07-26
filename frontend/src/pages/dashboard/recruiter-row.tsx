@@ -36,7 +36,7 @@ export function RecruiterRow({ row, expanded, onToggle, index = 0 }: Props) {
               <ChevronRight className="h-3.5 w-3.5" />
             </motion.span>
             <Avatar className="h-8 w-8 ring-2 ring-white shadow-sm group-hover:ring-violet-100 transition-all">
-              <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold text-[11px]">{initials(row.name)}</AvatarFallback>
+              <AvatarFallback className="bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 text-white font-bold text-[11px]">{initials(row.name)}</AvatarFallback>
             </Avatar>
             <div>
               <p className="text-sm font-semibold text-slate-900">{row.name}</p>
@@ -55,7 +55,7 @@ export function RecruiterRow({ row, expanded, onToggle, index = 0 }: Props) {
         </TableCell>
         <TableCell className="text-sm font-bold text-slate-900">{row.totalApplications}</TableCell>
         <TableCell>
-          <span className="inline-flex items-center rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white px-2.5 py-1 text-xs font-bold shadow-sm">{row.currentShiftApplications}</span>
+          <span className="inline-flex items-center rounded-full bg-gradient-to-r from-mayzax-blue-600 to-mayzax-green-600 text-white px-2.5 py-1 text-xs font-bold shadow-sm">{row.currentShiftApplications}</span>
         </TableCell>
         <TableCell className="text-xs text-slate-500 flex items-center gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
@@ -70,7 +70,7 @@ export function RecruiterRow({ row, expanded, onToggle, index = 0 }: Props) {
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: [0.21, 0.47, 0.32, 0.98] }} className="overflow-hidden">
                 <div className="px-6 py-5">
                   <div className="flex items-center gap-2 mb-4">
-                    <div className="h-1 w-8 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600" />
+                    <div className="h-1 w-8 rounded-full bg-gradient-to-r from-mayzax-blue-600 to-mayzax-green-600" />
                     <p className="text-xs font-bold tracking-wider uppercase text-slate-500">Assigned profile breakdown • Total vs today</p>
                   </div>
                   {isLoading && (
@@ -99,7 +99,7 @@ export function RecruiterRow({ row, expanded, onToggle, index = 0 }: Props) {
                             </div>
                             <div className="flex flex-col items-end gap-1">
                               <Badge className="bg-slate-900 text-white border-0 text-[11px] rounded-full">Total {p.applicationCount}</Badge>
-                              <Badge className={`${p.currentShiftApplicationCount > 0 ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-0' : 'bg-slate-100 text-slate-500 border-slate-200'} rounded-full text-[11px]`}>
+                              <Badge className={`${p.currentShiftApplicationCount > 0 ? 'bg-gradient-to-r from-mayzax-blue-600 to-mayzax-green-600 text-white border-0' : 'bg-slate-100 text-slate-500 border-slate-200'} rounded-full text-[11px]`}>
                                 Today {p.currentShiftApplicationCount}
                               </Badge>
                             </div>

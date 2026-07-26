@@ -68,7 +68,7 @@ export default function RecruiterDashboardPage() {
           <div className="rounded-[19px] bg-white">
             <div className="p-6 sm:p-7 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white shadow-lg">
                   <Briefcase className="h-6 w-6" />
                 </div>
                 <div>
@@ -111,7 +111,7 @@ export default function RecruiterDashboardPage() {
             label="Top Portal"
             value={`${topPortal.count} • ${formatEnumLabel(topPortal.portal)}`}
             sub="Your strongest channel"
-            gradient="from-violet-500 to-indigo-600"
+            gradient="from-mayzax-blue-500 to-mayzax-green-600"
             loading={isLoading}
             index={1}
           />
@@ -121,10 +121,10 @@ export default function RecruiterDashboardPage() {
         </StaggerItem>
         <StaggerItem>
           <div className="group relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-[1px] shadow-sm hover:shadow-lg transition-all h-full">
-            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-br from-violet-500 to-indigo-600 transition-opacity" />
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-600 transition-opacity" />
             <div className="relative rounded-[15px] bg-white p-5 h-full">
               <div className="flex items-start justify-between mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-md">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-600 text-white shadow-md">
                   <Shield className="h-5 w-5" />
                 </div>
                 <Badge variant="outline" className="text-[10px] bg-violet-50 border-violet-200 text-violet-700">Team</Badge>
@@ -243,7 +243,7 @@ export default function RecruiterDashboardPage() {
                     className="flex items-center justify-between p-4 hover:bg-slate-50/60 transition-colors group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold text-sm">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 text-white font-bold text-sm">
                         {app.profile?.candidateName?.charAt(0) || '?'}
                       </div>
                       <div className="min-w-0">

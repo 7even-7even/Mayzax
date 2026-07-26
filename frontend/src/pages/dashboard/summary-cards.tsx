@@ -8,19 +8,19 @@ import { CountUp } from '@/components/motion/count-up';
 import { Badge } from '@/components/ui/badge';
 
 const adminCardConfig = [
-  { key: 'totalRecruiters', label: 'Total Recruiters', icon: Users, gradient: 'from-indigo-500 to-violet-600', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
+  { key: 'totalRecruiters', label: 'Total Recruiters', icon: Users, gradient: 'from-mayzax-blue-500 to-mayzax-green-500', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
   { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, gradient: 'from-emerald-500 to-teal-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
   { key: 'totalProfiles', label: 'Total Profiles', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
   { key: 'totalApplications', label: 'Total Applications', icon: Briefcase, gradient: 'from-blue-500 to-cyan-600', accent: 'text-blue-600', bg: 'bg-blue-50' },
-  { key: 'currentShiftApplications', label: "Today's Apps", icon: Clock, gradient: 'from-violet-500 to-indigo-600', accent: 'text-violet-600', bg: 'bg-violet-50' },
+  { key: 'currentShiftApplications', label: "Today's Apps", icon: Clock, gradient: 'from-mayzax-blue-500 to-mayzax-green-600', accent: 'text-violet-600', bg: 'bg-violet-50' },
 ] as const;
 
 const tlCardConfig = [
-  { key: 'totalRecruiters', label: 'Team Recruiters', icon: Users, gradient: 'from-indigo-500 to-violet-600', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
+  { key: 'totalRecruiters', label: 'Team Recruiters', icon: Users, gradient: 'from-mayzax-blue-500 to-mayzax-green-500', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
   { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, gradient: 'from-emerald-500 to-teal-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
   { key: 'totalProfiles', label: 'Team Profiles', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
   { key: 'totalApplications', label: 'Team Apps', icon: Briefcase, gradient: 'from-blue-500 to-cyan-600', accent: 'text-blue-600', bg: 'bg-blue-50' },
-  { key: 'currentShiftApplications', label: "Today's Team", icon: Clock, gradient: 'from-violet-500 to-indigo-600', accent: 'text-violet-600', bg: 'bg-violet-50' },
+  { key: 'currentShiftApplications', label: "Today's Team", icon: Clock, gradient: 'from-mayzax-blue-500 to-mayzax-green-600', accent: 'text-violet-600', bg: 'bg-violet-50' },
   { key: 'myTotalApplications', label: 'My Total', icon: Briefcase, gradient: 'from-slate-700 to-slate-900', accent: 'text-slate-700', bg: 'bg-slate-100' },
   { key: 'myCurrentShiftApplications', label: 'My Today', icon: Clock, gradient: 'from-pink-500 to-rose-600', accent: 'text-pink-600', bg: 'bg-pink-50' },
   { key: 'activeMemberCount', label: 'Logged In', icon: Zap, gradient: 'from-emerald-500 to-green-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
@@ -123,7 +123,7 @@ export function SummaryCards() {
               className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50/60 transition-colors"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 text-white shadow-md">
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
@@ -175,7 +175,7 @@ export function SummaryCards() {
                                 </p>
                                 <p className="truncate text-xs text-slate-500 mt-0.5">TL: <span className="font-medium text-slate-700">{team.tlName}</span></p>
                               </div>
-                              <span className="ml-2 shrink-0 rounded-full bg-gradient-to-r from-indigo-500 to-violet-600 text-white px-2.5 py-1 text-[11px] font-bold shadow-sm">
+                              <span className="ml-2 shrink-0 rounded-full bg-gradient-to-r from-mayzax-blue-500 to-mayzax-green-500 text-white px-2.5 py-1 text-[11px] font-bold shadow-sm">
                                 {team.memberCount} members
                               </span>
                             </div>

@@ -45,7 +45,7 @@ export function LiveStatusCard() {
         <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white shadow-lg shadow-violet-500/20">
                 <Activity className="h-5 w-5" />
               </div>
               <div>

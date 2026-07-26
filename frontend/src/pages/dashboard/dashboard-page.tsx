@@ -65,11 +65,11 @@ function TlTeamCard() {
 
   return (
     <Card className="h-full flex flex-col border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-violet-600 to-indigo-600" />
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-mayzax-blue-600 to-mayzax-green-600" />
       <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-md">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white shadow-md">
               <Users className="h-4 w-4" />
             </div>
             My Team
@@ -109,7 +109,7 @@ function TlTeamCard() {
         <div className="mt-auto rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-white p-4 space-y-3 shadow-inner">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold tracking-wide uppercase text-slate-600">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 text-white">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white">
                 <Target className="h-3.5 w-3.5" />
               </div>
               Shift Goal
@@ -129,7 +129,7 @@ function TlTeamCard() {
 
           {isLoading ? <Skeleton className="h-2.5 w-full rounded-full" /> : (
             <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-200">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1, ease: 'easeOut' }} className={`h-full rounded-full ${goalMet ? 'bg-gradient-to-r from-emerald-500 to-teal-600' : 'bg-gradient-to-r from-violet-600 to-indigo-600'}`} />
+              <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1, ease: 'easeOut' }} className={`h-full rounded-full ${goalMet ? 'bg-gradient-to-r from-emerald-500 to-teal-600' : 'bg-gradient-to-r from-mayzax-blue-600 to-mayzax-green-600'}`} />
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent" />
             </div>
           )}

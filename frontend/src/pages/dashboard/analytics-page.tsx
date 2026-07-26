@@ -114,13 +114,13 @@ export default function AnalyticsPage() {
             <div className="p-6 sm:p-7">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/20">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white shadow-lg shadow-violet-500/20">
                     <BarChart3 className="h-6 w-6" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2.5">
                       <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Analytics Hub</h1>
-                      <Badge className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white border-0 text-xs shadow-sm">
+                      <Badge className="bg-gradient-to-r from-mayzax-blue-600 to-mayzax-green-600 text-white border-0 text-xs shadow-sm">
                         <Sparkles className="h-3 w-3 mr-1" />
                         Premium
                       </Badge>
@@ -186,7 +186,7 @@ export default function AnalyticsPage() {
         <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
           <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
             <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-md">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white shadow-md">
                 <Activity className="h-5 w-5" />
               </div>
               <div>
