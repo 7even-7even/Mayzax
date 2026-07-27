@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite build --watch",
+    "start": "vite build",
     "build": "vite build",
     "typecheck": "tsc --noEmit"
   },
