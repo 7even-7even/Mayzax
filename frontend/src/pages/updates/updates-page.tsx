@@ -211,7 +211,7 @@ export default function UpdatesPage() {
                 Post System Update
               </DialogTitle>
               <DialogDescription className="text-xs">
-                Share features, release notes & docs with all users in premium feed.
+                Share features, release notes & docs with all users in feed.
               </DialogDescription>
             </DialogHeader>
 
@@ -261,7 +261,7 @@ export default function UpdatesPage() {
                   Attach PDF
                 </Label>
                 <Input id="pdfFile" type="file" accept=".pdf,application/pdf" onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)} className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-mayzax-blue-50 file:text-mayzax-blue-700 hover:file:bg-mayzax-blue-100 cursor-pointer" />
-                <p className="text-[11px] text-slate-400">Max 25MB • Premium viewer</p>
+                <p className="text-[11px] text-slate-400">Max 25MB</p>
               </div>
 
               <DialogFooter className="gap-2 pt-2">

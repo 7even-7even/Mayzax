@@ -125,11 +125,11 @@ export async function handleLoginEvent(userId: string, role: Role) {
   // Close any stale log first (e.g. a dangling OFFLINE record)
   await closeOpenActivityLog(userId, now);
 
-  // Premium flow: login starts as ONLINE (user present), then they can switch to ACTIVE when actually working
+  // flow: login starts as ACTIVE (user productive and working)
   await prisma.activityLog.create({
     data: {
       userId,
-      status: UserStatus.ONLINE,
+      status: UserStatus.ACTIVE,
       startedAt: now,
       endedAt: null,
     },

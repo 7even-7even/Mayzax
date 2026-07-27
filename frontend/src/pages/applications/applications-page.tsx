@@ -386,7 +386,7 @@ export default function ApplicationsPage() {
             </div>
             <div className="flex items-end">
               <div className="text-xs text-slate-500 bg-white border border-slate-200 rounded-xl px-3 py-2 w-full">
-                <span className="font-semibold text-slate-700">Smart filters:</span> Search is fuzzy across company, title, candidate, link. Use advanced for precise company filter.
+                <span className="font-semibold text-slate-700">Filters:</span> Search is fuzzy across company, title, candidate, link. Use advanced for precise company filter.
               </div>
             </div>
           </div>
@@ -422,7 +422,7 @@ export default function ApplicationsPage() {
                 <Sparkles className="h-3.5 w-3.5 text-violet-500" />
                 <span className="font-medium">{totalApplications} applications</span>
                 <span className="h-3 w-px bg-slate-200" />
-                <span>Virtualized • Smart filters active: {activeFilters.length}</span>
+                <span>Virtualized • Filters active: {activeFilters.length}</span>
               </div>
               <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-slate-400">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />

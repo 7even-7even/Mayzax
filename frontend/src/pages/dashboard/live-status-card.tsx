@@ -194,7 +194,7 @@ export function LiveStatusCard() {
         <div className="border-t border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50/50 to-white dark:from-slate-850 dark:to-slate-900 px-4 py-2 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500">
           <span className="flex items-center gap-1.5 dark:text-white">
             <Sparkles className="h-3 w-3 text-violet-500 dark:text-white" />
-            Auto-refreshes every 15s • Virtualized for 60fps
+            Auto-refreshes every 15s
           </span>
           <span className="hidden sm:inline dark:text-white">Presence • Heartbeat tracked</span>
         </div>

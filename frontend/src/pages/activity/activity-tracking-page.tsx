@@ -375,9 +375,53 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
         </CardContent>
       </Card>
     );
+    return null;
   }
 
   return null;
+}
+
+// Helper to get dynamic roadmap styling for each user status
+function getStatusNodeStyles(status: UserStatus) {
+  switch (status) {
+    case 'ACTIVE':
+    case 'ONLINE':
+      return {
+        btnClass: "bg-gradient-to-b from-emerald-400 to-emerald-600 border-emerald-300 shadow-[0_4px_0_#047857] hover:shadow-[0_1px_0_#047857] hover:translate-y-[2px]",
+        pingColor: '#10b981'
+      };
+    case 'SHORT_BREAK':
+      return {
+        btnClass: "bg-gradient-to-b from-amber-400 to-amber-600 border-amber-300 shadow-[0_4px_0_#b45309] hover:shadow-[0_1px_0_#b45309] hover:translate-y-[2px]",
+        pingColor: '#f59e0b'
+      };
+    case 'DINNER_BREAK':
+      return {
+        btnClass: "bg-gradient-to-b from-orange-400 to-orange-600 border-orange-300 shadow-[0_4px_0_#c2410c] hover:shadow-[0_1px_0_#c2410c] hover:translate-y-[2px]",
+        pingColor: '#ea580c'
+      };
+    case 'BRIEFING_TRAINING':
+      return {
+        btnClass: "bg-gradient-to-b from-indigo-400 to-indigo-600 border-indigo-300 shadow-[0_4px_0_#4338ca] hover:shadow-[0_1px_0_#4338ca] hover:translate-y-[2px]",
+        pingColor: '#6366f1'
+      };
+    case 'MEETING':
+      return {
+        btnClass: "bg-gradient-to-b from-sky-400 to-sky-600 border-sky-300 shadow-[0_4px_0_#0369a1] hover:shadow-[0_1px_0_#0369a1] hover:translate-y-[2px]",
+        pingColor: '#0ea5e9'
+      };
+    case 'SYSTEM_ISSUE':
+      return {
+        btnClass: "bg-gradient-to-b from-rose-400 to-rose-600 border-rose-300 shadow-[0_4px_0_#be123c] hover:shadow-[0_1px_0_#be123c] hover:translate-y-[2px]",
+        pingColor: '#f43f5e'
+      };
+    case 'OFFLINE':
+    default:
+      return {
+        btnClass: "bg-gradient-to-b from-slate-400 to-slate-500 border-slate-300 shadow-[0_4px_0_#334155] hover:shadow-[0_1px_0_#334155] hover:translate-y-[2px] dark:from-slate-600 dark:to-slate-700 dark:border-slate-500 dark:shadow-[0_4px_0_#1e293b]",
+        pingColor: '#64748b'
+      };
+  }
 }
 
 // Premium Timeline Component - Game Roadmap Journey Style
@@ -386,6 +430,7 @@ function TodayTimeline({ data }: { data?: TodayActivityData }) {
 
   const [showAll, setShowAll] = useState(false);
   const logs = showAll ? data.logs : data.logs.slice(-5);
+  const displayLogs = [...logs].reverse();
 
   // Dynamically generate the SVG path to match any count of levels (logs)
   const stepWidth = 256;
@@ -462,18 +507,16 @@ function TodayTimeline({ data }: { data?: TodayActivityData }) {
             />
           </svg>
           
-          <div className="flex flex-row-reverse items-center gap-16 min-w-max px-6">
-            {logs.map((log, idx) => {
+          <div className="flex flex-row items-center relative" style={{ width: `${svgWidth}px` }}>
+            {displayLogs.map((log, idx) => {
               const cfg = STATUS_CONFIG[log.status as UserStatus] || STATUS_CONFIG.OFFLINE;
-              const vIdx = logs.length - 1 - idx;
-              const isOddVisual = vIdx % 2 === 0;
-              const isActive = log.status === 'ACTIVE' || log.status === 'ONLINE';
-              const isBreak = log.status === 'SHORT_BREAK' || log.status === 'DINNER_BREAK';
-              const isCurrent = idx === logs.length - 1;
+              const nodeStyles = getStatusNodeStyles(log.status as UserStatus);
+              const isOddVisual = idx % 2 === 0;
+              const isCurrent = idx === 0;
               const Icon = cfg.icon || Zap;
 
               return (
-                <div key={log.id} className={cn("flex flex-col items-center justify-center relative w-48 shrink-0 transition-transform duration-350", isOddVisual ? "-translate-y-3" : "translate-y-3")}>
+                <div key={log.id} className={cn("flex flex-col items-center justify-center relative w-[256px] shrink-0 transition-transform duration-350", isOddVisual ? "-translate-y-3" : "translate-y-3")}>
                   
                   {/* Details Speech Bubble - Alternating ABOVE the node */}
                   {isOddVisual ? (
@@ -507,8 +550,8 @@ function TodayTimeline({ data }: { data?: TodayActivityData }) {
                     <div className="relative">
                       {isCurrent && (
                         <>
-                          <span className="absolute -inset-2 rounded-full border-4 border-current opacity-25 animate-ping pointer-events-none" style={{ color: isActive ? '#10b981' : isBreak ? '#f59e0b' : '#64748b' }} />
-                          <span className="absolute -inset-1.5 rounded-full border-2 border-current opacity-40 animate-pulse pointer-events-none" style={{ color: isActive ? '#10b981' : isBreak ? '#f59e0b' : '#64748b' }} />
+                          <span className="absolute -inset-2 rounded-full border-4 border-current opacity-25 animate-ping pointer-events-none" style={{ color: nodeStyles.pingColor }} />
+                          <span className="absolute -inset-1.5 rounded-full border-2 border-current opacity-40 animate-pulse pointer-events-none" style={{ color: nodeStyles.pingColor }} />
                         </>
                       )}
                       <motion.button
@@ -517,11 +560,7 @@ function TodayTimeline({ data }: { data?: TodayActivityData }) {
                         whileTap={{ scale: 0.95 }}
                         className={cn(
                           "h-14 w-14 rounded-full border-4 flex items-center justify-center text-white shadow-md transition-all duration-300 transform",
-                          isActive
-                            ? "bg-gradient-to-b from-emerald-400 to-emerald-600 border-emerald-300 shadow-[0_4px_0_#047857] hover:shadow-[0_1px_0_#047857] hover:translate-y-[2px]"
-                            : isBreak
-                            ? "bg-gradient-to-b from-amber-400 to-amber-600 border-amber-300 shadow-[0_4px_0_#b45309] hover:shadow-[0_1px_0_#b45309] hover:translate-y-[2px]"
-                            : "bg-gradient-to-b from-slate-400 to-slate-500 border-slate-300 shadow-[0_4px_0_#334155] hover:shadow-[0_1px_0_#334155] hover:translate-y-[2px] dark:from-slate-600 dark:to-slate-700 dark:border-slate-500 dark:shadow-[0_4px_0_#1e293b]"
+                          nodeStyles.btnClass
                         )}
                         title={`${cfg.label} - ${formatHoursMinutes(log.durationSeconds)}`}
                       >
@@ -1173,8 +1212,8 @@ export default function ActivityTrackingPage() {
               {selectedUserId !== ALL && (isAdmin || isTeamLeader) ? (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <CardTitle className="text-sm font-bold dark:text-white">Event Logs — {activityUsers?.find((u) => u.id === selectedUserId)?.name || 'Selected User'}</CardTitle>
-                    <CardDescription className="text-xs dark:text-slate-400">Detailed transition history</CardDescription>
+                    <CardTitle className="text-sm font-bold dark:text-black">Event Logs — {activityUsers?.find((u) => u.id === selectedUserId)?.name || 'Selected User'}</CardTitle>
+                    <CardDescription className="text-xs dark:text-black">Detailed transition history</CardDescription>
                   </div>
                   <Button variant="outline" size="sm" className="h-8 text-xs gap-1 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white" onClick={() => { setSelectedUserId(ALL); setPage(1); }}>
                     ← Back to Summary

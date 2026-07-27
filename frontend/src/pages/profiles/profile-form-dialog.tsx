@@ -87,10 +87,10 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
       if (isEdit && profile) {
         const { assignedRecruiterId, assignedRecruiterIds, ...rest } = payload;
         await updateMutation.mutateAsync({ id: profile.id, ...(isManager ? payload : rest) });
-        toast.success('Profile updated successfully • Premium');
+        toast.success('Profile updated successfully • Success');
       } else {
         await createMutation.mutateAsync(payload);
-        toast.success('Client profile created • Premium vault');
+        toast.success('Client profile created • Client vault');
       }
       onOpenChange(false);
     } catch (err) {

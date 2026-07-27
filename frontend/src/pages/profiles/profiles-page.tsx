@@ -193,7 +193,7 @@ export default function ProfilesPage() {
       <PremiumPageHeader
         icon={isManager ? Briefcase : User2}
         title={isManager ? 'Clients Vault' : 'My Assigned Profiles'}
-        description={isManager ? 'Vault of candidate profiles • Smart assignment up to 5 recruiters' : 'Candidate profiles currently assigned to you'}
+        description={isManager ? 'Vault of candidate profiles • Assignment up to 5 recruiters' : 'Candidate profiles currently assigned to you'}
         live={true}
         liveLabel={`${data?.pagination?.total ?? profiles.length} profiles`}
         pills={[

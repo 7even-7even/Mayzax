@@ -196,7 +196,7 @@ export function UserStatusSelector() {
   return (
     <>
       <div className="flex items-center gap-2">
-        {/* Live Timer - Premium */}
+        {/* Live Timer*/}
         <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-mono font-semibold text-slate-700 shadow-sm">
           <div className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-white">
             <Clock className="h-3 w-3" />
@@ -205,7 +205,7 @@ export function UserStatusSelector() {
           <div className="ml-1 h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
         </div>
 
-        {/* Current Status - Premium Dropdown */}
+        {/* Current Status */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -225,14 +225,13 @@ export function UserStatusSelector() {
             <DropdownMenuLabel className="text-xs font-bold tracking-wider uppercase text-slate-500 px-2 py-1.5 flex items-center gap-2">
               <Zap className="h-3 w-3" />
               Switch Status
-              <span className="ml-auto text-[10px] bg-slate-900 text-white px-1.5 py-0.5 rounded-full">Premium</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
 
-            {/* Online & Active - Primary */}
+            {/* Active - Primary */}
             <div className="space-y-1 p-1">
               <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-2 pt-1">Primary Presence</p>
-              {(['ONLINE', 'ACTIVE'] as UserStatus[]).map((statusKey) => {
+              {(['ACTIVE'] as UserStatus[]).map((statusKey) => {
                 const itemConfig = STATUS_CONFIG[statusKey];
                 const isSelected = currentStatus === statusKey;
                 const ItemIcon = itemConfig.icon;
@@ -308,7 +307,7 @@ export function UserStatusSelector() {
         </DropdownMenu>
       </div>
 
-      {/* Optional Note Modal - Premium */}
+      {/* Optional Note Modal*/}
       <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>
@@ -348,7 +347,7 @@ export function UserStatusSelector() {
         </DialogContent>
       </Dialog>
 
-      {/* Offline Confirmation - Premium */}
+      {/* Offline Confirmation */}
       <Dialog open={offlineConfirmOpen} onOpenChange={setOfflineConfirmOpen}>
         <DialogContent className="max-w-sm rounded-2xl">
           <DialogHeader>

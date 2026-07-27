@@ -53,7 +53,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
                 <div>
                   <p className="text-sm font-bold tracking-tight">MAYZAX</p>
                   <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                    Premium OS
+                    ATS/CRM
                     <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
                   </p>
                 </div>
@@ -97,8 +97,8 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
               <div className="rounded-xl bg-slate-900 text-white p-3 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-violet-300" />
                 <div>
-                  <p className="text-xs font-semibold">Premium ATS v2.1</p>
-                  <p className="text-[11px] text-white/60">Dazzling eyes mode • Active</p>
+                  <p className="text-xs font-semibold">ATS/CRM v2.1</p>
+                  <p className="text-[11px] text-white/60">Active</p>
                 </div>
               </div>
             </div>

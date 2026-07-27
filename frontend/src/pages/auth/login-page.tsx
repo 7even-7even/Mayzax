@@ -170,7 +170,7 @@ export default function LoginPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="grid grid-cols-3 gap-3 max-w-lg">
             {[
               { icon: ShieldCheck, label: 'Enterprise', sub: 'JWT rotation' },
-              { icon: Zap, label: '60fps', sub: 'Virtualized' },
+              { icon: Zap, label: 'Enhanced UI', sub: 'Virtualized' },
               { icon: Sparkles, label: 'Verified', sub: 'Extension' },
             ].map((f, i) => (
               <div key={i} className="group rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xl p-3 hover:bg-white/15 transition-colors cursor-default">

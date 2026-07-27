@@ -11,7 +11,7 @@ interface CountUpProps {
 }
 
 /**
- * Premium-optimized CountUp
+ * - Optimized CountUp
  * - Respects prefers-reduced-motion
  * - Memoized to avoid re-renders
  * - Uses RAF-friendly spring with unsubscription

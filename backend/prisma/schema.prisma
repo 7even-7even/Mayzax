@@ -101,7 +101,7 @@ model User {
   // Team name — only used by TEAM_LEADER role
   teamName String?
 
-  // --- Premium profile enrichments (nullable, safe for existing data) ---
+  // --- profile enrichments (nullable, safe for existing data) ---
   avatarUrl   String?  // CDN URL for avatar image
   bio         String?  @db.Text // short bio / about
   department  String?  // e.g. Engineering, Sales, HR

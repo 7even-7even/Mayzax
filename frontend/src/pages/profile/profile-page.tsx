@@ -220,9 +220,9 @@ export default function ProfilePage() {
                   <UserCircle className="h-4 w-4" />
                 </div>
                 Profile Details
-                <Badge variant="outline" className="ml-auto text-[10px] font-semibold border-violet-200 text-violet-700 bg-violet-50">
+                {/* <Badge variant="outline" className="ml-auto text-[10px] font-semibold border-violet-200 text-violet-700 bg-violet-50">
                   <Sparkles className="h-3 w-3 mr-1" /> Extended
-                </Badge>
+                </Badge> */}
               </CardTitle>
               <CardDescription>Enhanced fields for better team visibility • Role aware</CardDescription>
             </CardHeader>

@@ -75,7 +75,7 @@ export function AdvancedFilterBar({
             {/* Search */}
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 " />
-              <Input placeholder={searchPlaceholder} className="pl-9 h-9 rounded-full bg-slate-50/80 border-slate-200 focus:bg-white text-sm" value={searchValue} onChange={(e) => onSearchChange(e.target.value)} />
+              <Input placeholder={searchPlaceholder} className="pl-9 h-9 rounded-full bg-slate-50/80 border-slate-200 focus:bg-white text-sm dark:text-black" value={searchValue} onChange={(e) => onSearchChange(e.target.value)} />
               {searchValue && (
                 <button onClick={() => onSearchChange('')} className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 hover:bg-slate-300 text-slate-500">
                   <X className="h-3 w-3" />
@@ -87,7 +87,7 @@ export function AdvancedFilterBar({
             <div className="flex items-center gap-2 flex-wrap dark:text-black">
               {filters.slice(0, 3).map((filter) => (
                 <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
-                  <SelectTrigger className="h-9 rounded-full bg-white border-slate-200 shadow-sm text-xs font-medium w-36">
+                  <SelectTrigger className="h-9 rounded-full bg-white border-slate-200 shadow-sm text-xs font-medium w-36 dark:text-black">
                     <div className="flex items-center gap-1.5">
                       {filter.icon && <filter.icon className="h-3.5 w-3.5 text-slate-400" />}
                       <SelectValue placeholder={filter.placeholder || filter.label} />
@@ -129,12 +129,6 @@ export function AdvancedFilterBar({
                 <Trash2 className="h-3 w-3" /> Clear all
               </Button>
             )}
-            {premium && (
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-violet-50 border border-violet-200 px-2.5 py-1 text-[11px] font-semibold text-violet-700">
-                <Sparkles className="h-3 w-3" />
-                Smart filters
-              </span>
-            )}
           </div>
         </div>
 
@@ -147,7 +141,7 @@ export function AdvancedFilterBar({
                   <div key={filter.key} className="space-y-1.5">
                     <label className="text-[11px] font-bold tracking-wider uppercase text-slate-500">{filter.label}</label>
                     <Select value={filter.value} onValueChange={filter.onChange}>
-                      <SelectTrigger className="h-9 rounded-xl bg-white border-slate-200 text-xs">
+                      <SelectTrigger className="h-9 rounded-xl bg-white border-slate-200 text-xs dark:text-black">
                         <SelectValue placeholder={filter.placeholder || filter.label} />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -165,11 +159,11 @@ export function AdvancedFilterBar({
                   <>
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-bold tracking-wider uppercase text-slate-500">{dateRange.label || 'From'} Date</label>
-                      <Input type="date" value={dateRange.from} onChange={(e) => dateRange.onFromChange(e.target.value)} className="h-9 rounded-xl bg-white border-slate-200 text-xs" />
+                      <Input type="date" value={dateRange.from} onChange={(e) => dateRange.onFromChange(e.target.value)} className="h-9 rounded-xl bg-white border-slate-200 text-xs dark:text-black [&::-webkit-calendar-picker-indicator]:dark:invert" />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-[11px] font-bold tracking-wider uppercase text-slate-500">To Date</label>
-                      <Input type="date" value={dateRange.to} onChange={(e) => dateRange.onToChange(e.target.value)} className="h-9 rounded-xl bg-white border-slate-200 text-xs" />
+                      <Input type="date" value={dateRange.to} onChange={(e) => dateRange.onToChange(e.target.value)} className="h-9 rounded-xl bg-white border-slate-200 text-xs dark:text-black [&::-webkit-calendar-picker-indicator]:dark:invert" />
                     </div>
                   </>
                 )}

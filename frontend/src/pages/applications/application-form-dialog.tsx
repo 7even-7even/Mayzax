@@ -76,7 +76,19 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
   const jobLink = form.watch('jobLink');
   const profileId = form.watch('profileId');
   const debouncedLink = useDebounce(jobLink, 500);
-  const { isVerified, isChecking, verificationResult, state: verificationState, isExtensionInstalled, installUrl, extensionId, retry: retryVerification } = useExtensionVerification(debouncedLink);
+
+  // Extension verification hook (commented out until deployed)
+  // const { isVerified, isChecking, verificationResult, state: verificationState, isExtensionInstalled, installUrl, extensionId, retry: retryVerification } = useExtensionVerification(debouncedLink);
+  
+  // Extension placeholder states
+  const isVerified = false;
+  const isChecking = false;
+  const verificationResult = null;
+  const verificationState = 'idle';
+  const isExtensionInstalled = false;
+  const installUrl = null;
+  const extensionId = '';
+  const retryVerification = () => {};
 
   const [duplicateResult, setDuplicateResult] = useState<{ isDuplicate: boolean; appliedByRecruiter?: { name: string } | null } | null>(null);
 
@@ -104,6 +116,8 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
     checkDuplicate.mutate({ profileId, jobLink: debouncedLink }, { onSuccess: (result) => setDuplicateResult(result) });
   }, [profileId, debouncedLink]);
 
+  // Extension verification handler (commented out until deployed)
+  /*
   useEffect(() => {
     if (isVerified && verificationResult) {
       form.setValue('verified', true);
@@ -117,6 +131,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
       form.setValue('verificationMethod', null);
     }
   }, [isVerified, verificationResult, form]);
+  */
 
   const onSubmit = async (values: ApplicationForm) => {
     try {
@@ -149,9 +164,9 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg rounded-2xl border-slate-200/60 p-0 overflow-hidden shadow-2xl">
-        <div className="h-1 w-full bg-mayzax-gradient" />
-        <div className="p-6">
+      <DialogContent className="max-w-lg rounded-2xl border-slate-200/60 p-0 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="h-1 w-full bg-mayzax-gradient shrink-0" />
+        <div className="p-6 pb-2 shrink-0">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2.5 text-lg">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mayzax-gradient text-white shadow-md">
@@ -164,8 +179,10 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
               Verified tracking • Business-date grouping 
             </DialogDescription>
           </DialogHeader>
+        </div>
 
-          <form onSubmit={form.handleSubmit(onSubmit)} className="mt-5 space-y-5">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-6 py-2 space-y-5">
             <div className="space-y-2">
               <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                 <User2 className="h-3.5 w-3.5 text-mayzax-blue-500" />
@@ -178,7 +195,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
                 <SelectContent className="rounded-xl">
                   {profiles.map((p) => (
                     <SelectItem key={p.id} value={p.id} className="text-sm">
-                      <span className="font-medium">{p.candidateName}</span> <span className="text-slate-400">· {p.technology}</span>
+                      <span className="font-medium dark:text-white">{p.candidateName}</span> <span className="text-slate-400 dark:text-white">· {p.technology}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -190,10 +207,11 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
                 <Link2 className="h-3.5 w-3.5 text-mayzax-blue-500 " />
                 Job Posting Link
               </Label>
-              <Input id="jobLink" placeholder="https://www.linkedin.com/jobs/view/..." className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50" {...form.register('jobLink')} />
+              <Input id="jobLink" placeholder="https://www.linkedin.com/jobs/view/..." className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black" {...form.register('jobLink')} />
               {debouncedLink && (
                 <div className="mt-3 space-y-2">
-                  <ExtensionVerificationBadge isVerified={isVerified} isChecking={isChecking} result={verificationResult} state={verificationState} isExtensionInstalled={isExtensionInstalled} installUrl={installUrl} extensionId={extensionId} onRetry={retryVerification} />
+                  {/* ExtensionVerificationBadge commented out until extension is deployed */}
+                  {/* <ExtensionVerificationBadge isVerified={isVerified} isChecking={isChecking} result={verificationResult} state={verificationState} isExtensionInstalled={isExtensionInstalled} installUrl={installUrl} extensionId={extensionId} onRetry={retryVerification} /> */}
                   <div className="flex flex-wrap gap-2">
                     {duplicateResult?.isDuplicate ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">
@@ -240,6 +258,8 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
               </Select>
             </div>
 
+            {/* Verification Info Box commented out until extension is deployed */}
+            {/* 
             <div className="rounded-xl bg-gradient-to-br from-mayzax-blue-50 to-mayzax-green-50/30 border border-mayzax-blue-100 p-3 flex gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-mayzax-gradient text-white shrink-0">
                 <ShieldCheck className="h-4 w-4" />
@@ -248,8 +268,11 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
                 <span className="font-semibold text-mayzax-blue-700">Updated Verification:</span> Extension auto-detects success page • Prevents duplicate for same profile
               </p>
             </div>
+            */}
+          </div>
 
-            <DialogFooter className="gap-2 pt-2">
+          <div className="p-6 pt-4 border-t border-slate-100 shrink-0 bg-slate-50/30">
+            <DialogFooter className="gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-full">
                 Cancel
               </Button>
@@ -259,8 +282,8 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
                 Submit Application
               </Button>
             </DialogFooter>
-          </form>
-        </div>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
