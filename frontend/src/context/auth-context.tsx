@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiClient, setAccessToken, getAccessToken } from '@/lib/api-client';
+import { apiClient, setAccessToken as setApiToken, getAccessToken } from '@/lib/api-client';
 import { User } from '@/types';
 
 interface LoginInput {
@@ -18,10 +18,12 @@ interface AuthContextValue {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  accessToken: string | null;
   login: (input: LoginInput) => Promise<User>;
   signup: (input: SignupInput) => Promise<User>;
   logout: () => Promise<void>;
   setCurrentUser: (user: User) => void;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -29,28 +31,50 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [accessToken, setAccessTokenState] = useState<string | null>(() => getAccessToken());
+  const hasBootstrappedRef = useRef(false);
   const navigate = useNavigate();
 
+  const setAuthToken = useCallback((token: string | null) => {
+    setApiToken(token);
+    setAccessTokenState(token);
+  }, []);
+
   const bootstrap = useCallback(async () => {
+    if (hasBootstrappedRef.current) return;
+    hasBootstrappedRef.current = true;
     setIsLoading(true);
     try {
-      // Attempt silent refresh first (in case access token isn't in memory but cookie is valid)
+      // Attempt silent refresh first (cookie based)
       const { data } = await apiClient.post('/auth/refresh');
-      setAccessToken(data.data.accessToken);
+      setAuthToken(data.data.accessToken);
       setUser(data.data.user);
     } catch {
-      setAccessToken(null);
+      setAuthToken(null);
       setUser(null);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setAuthToken]);
+
+  const refreshSession = useCallback(async () => {
+    try {
+      const { data } = await apiClient.post('/auth/refresh');
+      setAuthToken(data.data.accessToken);
+      setUser(data.data.user);
+    } catch {
+      setAuthToken(null);
+      setUser(null);
+      throw new Error('Session expired');
+    }
+  }, [setAuthToken]);
 
   useEffect(() => {
     bootstrap();
 
     const handleExpired = () => {
       setUser(null);
+      setAuthToken(null);
       navigate('/login', { replace: true });
     };
     window.addEventListener('auth:session-expired', handleExpired);
@@ -60,31 +84,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (input: LoginInput) => {
     const { data } = await apiClient.post('/auth/login', input);
-    setAccessToken(data.data.accessToken);
+    setAuthToken(data.data.accessToken);
     setUser(data.data.user);
     return data.data.user as User;
-  }, []);
+  }, [setAuthToken]);
 
   const signup = useCallback(async (input: SignupInput) => {
     const { data } = await apiClient.post('/auth/signup', input);
-    setAccessToken(data.data.accessToken);
+    setAuthToken(data.data.accessToken);
     setUser(data.data.user);
     return data.data.user as User;
-  }, []);
+  }, [setAuthToken]);
 
   const logout = useCallback(async () => {
     try {
       await apiClient.post('/auth/logout');
     } finally {
-      setAccessToken(null);
+      setAuthToken(null);
       setUser(null);
       navigate('/login', { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, setAuthToken]);
+
+  // isAuthenticated now depends solely on user presence, avoiding token/memory race.
+  // Token state is tracked separately for axios interceptor but UI gate uses user.
+  const isAuthenticated = !!user && !isLoading;
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated: !!user && !!getAccessToken(), login, signup, logout, setCurrentUser: setUser }}
+      value={{
+        user,
+        isLoading,
+        isAuthenticated,
+        accessToken,
+        login,
+        signup,
+        logout,
+        setCurrentUser: setUser,
+        refreshSession,
+      }}
     >
       {children}
     </AuthContext.Provider>
@@ -96,3 +134,4 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
+

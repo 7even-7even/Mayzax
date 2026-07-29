@@ -21,6 +21,7 @@ export interface TodayActivityData {
   logoutTime: string | null;
   totalLoggedInSeconds: number;
   totalProductiveSeconds: number;
+  totalOnlineSeconds?: number;
   totalBreakSeconds: number;
   breakDetails: {
     shortBreakSeconds: number;
@@ -28,6 +29,7 @@ export interface TodayActivityData {
     briefingTrainingSeconds: number;
     meetingSeconds: number;
     systemIssueSeconds: number;
+    onlineSeconds?: number;
   };
   currentStatus: UserStatus;
   currentDurationSeconds: number;

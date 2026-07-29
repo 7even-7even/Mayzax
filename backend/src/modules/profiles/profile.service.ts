@@ -144,14 +144,18 @@ export async function updateProfile(id: string, input: UpdateProfileInput, actor
   }
 
   // Check if active profile with same email or phone number already exists (excluding current profile)
-  if (input.email || input.phone) {
+  // Only validate if email or phone has actually changed
+  const emailChanged = input.email && input.email.toLowerCase() !== existing.email.toLowerCase();
+  const phoneChanged = input.phone && input.phone !== existing.phone;
+
+  if (emailChanged || phoneChanged) {
     const duplicate = await prisma.clientProfile.findFirst({
       where: {
         deletedAt: null,
         id: { not: id },
         OR: [
-          ...(input.email ? [{ email: { equals: input.email, mode: 'insensitive' as const } }] : []),
-          ...(input.phone ? [{ phone: input.phone }] : []),
+          ...(emailChanged ? [{ email: { equals: input.email, mode: 'insensitive' as const } }] : []),
+          ...(phoneChanged ? [{ phone: input.phone }] : []),
         ],
       },
     });

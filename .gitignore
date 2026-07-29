@@ -14,3 +14,10 @@ CHANGELOG.md
 # Vite config timestamp files
 vite.config.ts.timestamp-*
 *.timestamp-*.mjs
+.vscode/
+
+# Chrome Extension private keys and packaged binaries
+*.pem
+*.crx
+VISION.MD
+GAP.MD

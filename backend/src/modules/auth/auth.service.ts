@@ -34,6 +34,18 @@ function sanitizeUser(user: {
   lastActiveAt?: Date | null;
   createdAt?: Date;
   securityQuestion?: string | null;
+  avatarUrl?: string | null;
+  bio?: string | null;
+  department?: string | null;
+  location?: string | null;
+  designation?: string | null;
+  employeeId?: string | null;
+  joinDate?: Date | null;
+  shiftPreference?: string | null;
+  skills?: string[];
+  linkedInUrl?: string | null;
+  displayColor?: string | null;
+  teamName?: string | null;
 }) {
   return {
     id: user.id,
@@ -46,6 +58,18 @@ function sanitizeUser(user: {
     ...(user.createdAt !== undefined ? { createdAt: user.createdAt } : {}),
     securityQuestion: user.securityQuestion ?? null,
     hasSecurityQuestion: !!user.securityQuestion,
+    avatarUrl: user.avatarUrl ?? null,
+    bio: user.bio ?? null,
+    department: user.department ?? null,
+    location: user.location ?? null,
+    designation: user.designation ?? null,
+    employeeId: user.employeeId ?? null,
+    joinDate: user.joinDate ?? null,
+    shiftPreference: user.shiftPreference ?? null,
+    skills: user.skills ?? [],
+    linkedInUrl: user.linkedInUrl ?? null,
+    displayColor: user.displayColor ?? null,
+    teamName: (user as any).teamName ?? null,
   };
 }
 
@@ -233,10 +257,22 @@ export async function getMe(userId: string) {
       lastActiveAt: true,
       createdAt: true,
       securityQuestion: true,
+      avatarUrl: true,
+      bio: true,
+      department: true,
+      location: true,
+      designation: true,
+      employeeId: true,
+      joinDate: true,
+      shiftPreference: true,
+      skills: true,
+      linkedInUrl: true,
+      displayColor: true,
+      teamName: true,
     },
   });
   if (!user || !user.isActive) throw ApiError.notFound('User not found');
-  return sanitizeUser(user);
+  return sanitizeUser(user as any);
 }
 
 export async function changePassword(userId: string, input: ChangePasswordInput) {
@@ -262,16 +298,38 @@ export async function updateProfile(userId: string, input: UpdateProfileInput) {
     if (existing) throw ApiError.conflict('A user with this email already exists');
   }
 
+  if (input.employeeId && input.employeeId.trim() !== '' && input.employeeId.trim() !== user.employeeId) {
+    const existingEmp = await prisma.user.findUnique({ where: { employeeId: input.employeeId.trim() } });
+    if (existingEmp) throw ApiError.conflict('Employee ID already exists');
+  }
+
+  const clean = (v: string | null | undefined) => {
+    if (v === undefined) return undefined;
+    if (v === null) return null;
+    const t = v.trim();
+    return t === '' ? null : t;
+  };
+
   const updated = await prisma.user.update({
     where: { id: userId },
     data: {
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.email !== undefined ? { email: input.email.toLowerCase() } : {}),
-      ...(input.phone !== undefined ? { phone: input.phone.trim() || null } : {}),
+      ...(input.phone !== undefined ? { phone: clean(input.phone) } : {}),
+      ...(input.avatarUrl !== undefined ? { avatarUrl: clean(input.avatarUrl) } : {}),
+      ...(input.bio !== undefined ? { bio: clean(input.bio) } : {}),
+      ...(input.department !== undefined ? { department: clean(input.department) } : {}),
+      ...(input.location !== undefined ? { location: clean(input.location) } : {}),
+      ...(input.designation !== undefined ? { designation: clean(input.designation) } : {}),
+      ...(input.employeeId !== undefined ? { employeeId: clean(input.employeeId) } : {}),
+      ...(input.shiftPreference !== undefined ? { shiftPreference: clean(input.shiftPreference) } : {}),
+      ...(input.linkedInUrl !== undefined ? { linkedInUrl: clean(input.linkedInUrl) } : {}),
+      ...(input.displayColor !== undefined ? { displayColor: clean(input.displayColor) } : {}),
+      ...(input.skills !== undefined ? { skills: input.skills } : {}),
     },
   });
 
-  return sanitizeUser(updated);
+  return sanitizeUser(updated as any);
 }
 
 export async function setSecurityQuestion(userId: string, input: SecurityQuestionInput) {

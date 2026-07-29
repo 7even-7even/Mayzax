@@ -67,5 +67,7 @@ export const URL_PATTERNS = [
   'status',
   'finished',
   'done',
-  'confirmed'
+  'confirmed',
+  'applied',
+  'success'
 ];

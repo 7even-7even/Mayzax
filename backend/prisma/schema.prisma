@@ -36,6 +36,7 @@ enum ApplicationStatus {
 }
 
 enum UserStatus {
+  ONLINE
   ACTIVE
   SHORT_BREAK
   DINNER_BREAK
@@ -100,6 +101,19 @@ model User {
   // Team name — only used by TEAM_LEADER role
   teamName String?
 
+  // --- profile enrichments (nullable, safe for existing data) ---
+  avatarUrl   String?  // CDN URL for avatar image
+  bio         String?  @db.Text // short bio / about
+  department  String?  // e.g. Engineering, Sales, HR
+  location    String?  // e.g. Pune, Remote
+  designation String?  // e.g. Senior Recruiter, TL - Talent Acquisition
+  employeeId  String?  @unique // optional company employee code
+  joinDate    DateTime? // date of joining
+  shiftPreference String? // e.g. NIGHT, FLEXI
+  skills      String[] @default([]) // array of skill tags
+  linkedInUrl String?
+  displayColor String? // hex for avatar fallback background
+
   // Recruiter relations
   assignedProfiles ClientProfile[]  @relation("AssignedRecruiter")
   profileAssignments ClientProfileAssignment[] @relation("RecruiterProfileAssignments")
@@ -112,6 +126,7 @@ model User {
 
   @@index([role])
   @@index([isActive])
+  @@index([department])
   @@map("users")
 }
 

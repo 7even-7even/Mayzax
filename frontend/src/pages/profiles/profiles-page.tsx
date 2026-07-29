@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Loader2, Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2, FileText, CheckSquare, Square } from 'lucide-react';
+import { Loader2, Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2, FileText, Sparkles, Briefcase, Users, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader } from '@/components/shared/page-header';
+import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,14 +33,16 @@ import { useDeleteProfile, useProfiles, useBulkDeleteProfiles } from '@/hooks/us
 import { useRecruiters } from '@/hooks/use-recruiters';
 import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage } from '@/lib/api-client';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useAuth } from '@/context/auth-context';
+import { PermissionGate } from '@/components/shared/permission-gate';
 import { ClientProfile } from '@/types';
+import { VirtualizedGrid } from '@/components/shared/virtualized-table';
 
 export default function ProfilesPage() {
   const { user } = useAuth();
+  const { isAdmin, isManager, isTeamLeader, canCreateProfile, canDeleteProfile, canBulkProfile } = usePermissions();
   const navigate = useNavigate();
-  const isAdmin = user?.role === 'ADMIN';
-  const isManager = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER';
 
   const [search, setSearch] = useState('');
   const [assignedRecruiterFilter, setAssignedRecruiterFilter] = useState<string>('ALL');
@@ -58,13 +60,32 @@ export default function ProfilesPage() {
     isActive: true,
     pageSize: 100,
   });
-  const recruiters = recruitersData?.data ?? [];
+  const rawRecruiters = recruitersData?.data ?? [];
+  const recruiters = useMemo(() => {
+    if (isTeamLeader && user) {
+      const exists = rawRecruiters.some((r) => r.id === user.id);
+      if (!exists) {
+        return [
+          {
+            id: user.id,
+            name: `${user.name} (Me)`,
+            email: user.email,
+            role: 'TEAM_LEADER',
+            isActive: true,
+            createdAt: user.createdAt,
+          } as any,
+          ...rawRecruiters,
+        ];
+      }
+    }
+    return rawRecruiters;
+  }, [rawRecruiters, isTeamLeader, user]);
 
   const { data, isLoading, isError, refetch } = useProfiles({
     search: debouncedSearch || undefined,
     assignedRecruiterId: assignedRecruiterFilter === 'ALL' ? undefined : assignedRecruiterFilter,
     page,
-    pageSize: 12,
+    pageSize: 24, // increased for virtualization demo, still paginated server-side
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
@@ -86,9 +107,7 @@ export default function ProfilesPage() {
   };
 
   const toggleSelectProfile = (id: string) => {
-    setSelectedProfileIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+    setSelectedProfileIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
   };
 
   const handleDelete = async () => {
@@ -102,31 +121,116 @@ export default function ProfilesPage() {
     }
   };
 
+  const useVirtualization = profiles.length > 12;
+
+  const profileCard = useMemo(
+    () => (profile: ClientProfile) => {
+      const isSelected = selectedProfileIds.includes(profile.id);
+      return (
+        <Card
+          className={`group relative h-full overflow-hidden rounded-2xl border-slate-200/60 bg-white shadow-sm cursor-pointer select-none transition-all duration-300 hover:shadow-xl hover:-translate-y-1 dark:border-slate-700/60 dark:bg-slate-900 ${
+            isSelected ? 'ring-2 ring-mayzax-blue-500 shadow-lg shadow-mayzax-blue-200/30 dark:ring-mayzax-blue-400' : 'hover:border-mayzax-blue-200 dark:hover:border-mayzax-blue-800'
+          }`}
+          onDoubleClick={() => navigate(`/applications?profileId=${profile.id}`)}
+        >
+          <div className="absolute top-0 left-0 right-0 h-1 bg-mayzax-gradient opacity-80 group-hover:opacity-100 transition-opacity" />
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0 flex-1">
+                <PermissionGate permission="bulk:profile">
+                  <input type="checkbox" className="mt-1 h-4 w-4 rounded-lg border-slate-300 text-mayzax-blue-600 focus:ring-mayzax-blue-500 cursor-pointer shrink-0" checked={isSelected} onChange={(e) => { e.stopPropagation(); toggleSelectProfile(profile.id); }} />
+                </PermissionGate>
+                <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-mayzax-gradient text-base font-bold text-white shadow-md shadow-mayzax-blue-200/30">
+                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent" />
+                  <span className="relative">{profile.candidateName.charAt(0).toUpperCase()}</span>
+                  <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-[15px] text-slate-900 dark:text-white truncate">{profile.candidateName}</p>
+                    <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <Badge className="bg-mayzax-blue-50 text-mayzax-blue-700 border border-mayzax-blue-200 text-[11px] rounded-full px-2 py-0">{profile.technology}</Badge>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Live</span>
+                  </div>
+                </div>
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="rounded-xl">
+                  <DropdownMenuItem onClick={() => navigate(`/applications?profileId=${profile.id}`)} className="gap-2"><FileText className="h-4 w-4" /> View Applications</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setEditingProfile(profile); setFormOpen(true); }} className="gap-2"><Pencil className="h-4 w-4" /> {isManager ? 'Edit / Reassign' : 'Edit'}</DropdownMenuItem>
+                  {canDeleteProfile && <DropdownMenuItem onClick={() => setDeleteTarget(profile)} className="text-red-600 focus:text-red-600 gap-2"><Trash2 className="h-4 w-4" /> Delete</DropdownMenuItem>}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2">Double-click to view applications</p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300">
+                <Mail className="h-3 w-3" /> {profile.email}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 border border-violet-200 px-2.5 py-1 text-[11px] font-medium text-violet-700 dark:bg-violet-900/20 dark:border-violet-800 dark:text-violet-300">
+                <Phone className="h-3 w-3" /> {profile.phone}
+              </span>
+            </div>
+
+            {profile.notes && <div className="mt-3 rounded-xl bg-amber-50/50 border border-amber-100 p-2.5 dark:bg-amber-950/20 dark:border-amber-900/30"><p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{profile.notes}</p></div>}
+
+            <div className="mt-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex -space-x-1.5 shrink-0">
+                  {(profile.assignedRecruiterAssignments?.length ? profile.assignedRecruiterAssignments : profile.assignedRecruiter ? [profile.assignedRecruiter] : []).map((a: any, idx: number) => (
+                    <div key={idx} title={a.recruiter?.name || a.name || '?'} className="flex h-6 w-6 items-center justify-center rounded-full bg-mayzax-gradient text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900">{(a.recruiter?.name || a.name || '?').charAt(0)}</div>
+                  ))}
+                </div>
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate" title={profile.assignedRecruiterAssignments?.length ? profile.assignedRecruiterAssignments.map((a: any) => a.recruiter?.name || a.name || '?').join(', ') : profile.assignedRecruiter?.name || 'Unassigned'}>
+                  {profile.assignedRecruiterAssignments?.length 
+                    ? profile.assignedRecruiterAssignments.map((a: any) => a.recruiter?.name || a.name || '?').join(', ') 
+                    : profile.assignedRecruiter?.name 
+                      ? profile.assignedRecruiter.name 
+                      : 'Unassigned'}
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-400 flex items-center gap-1 shrink-0"><Briefcase className="h-3 w-3" /> View apps</span>
+            </div>
+          </CardContent>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-mayzax-blue-600 via-mayzax-green-500 to-mayzax-blue-600 opacity-60 group-hover:opacity-100 transition-opacity" />
+        </Card>
+      );
+    },
+    [selectedProfileIds, isManager, canDeleteProfile]
+  );
+
+
   return (
-    <div>
-      <Reveal>
-        <PageHeader
-          title={isManager ? 'Client Profiles' : 'My Assigned Profiles'}
-          description={
-            isManager
-              ? 'Manage candidate profiles and recruiter assignments.'
-              : 'Candidate profiles currently assigned to you.'
-          }
-          actions={
-            isManager ? (
-              <Button
-                variant="brand"
-                onClick={() => {
-                  setEditingProfile(null);
-                  setFormOpen(true);
-                }}
-              >
-                <Plus className="h-4 w-4" /> New Profile
-              </Button>
-            ) : undefined
-          }
-        />
-      </Reveal>
+    <div className="space-y-5">
+      <PremiumPageHeader
+        icon={isManager ? Briefcase : User2}
+        title={isManager ? 'Clients Vault' : 'My Assigned Profiles'}
+        description={isManager ? 'Vault of candidate profiles • Assignment up to 5 recruiters' : 'Candidate profiles currently assigned to you'}
+        live={true}
+        liveLabel={`${data?.pagination?.total ?? profiles.length} profiles`}
+        pills={[
+          { label: 'Updated ', icon: Activity },
+          ...(isManager ? [{ label: `${recruiters.length} recruiters`, icon: Users } as const] : []),
+        ]}  
+        actions={
+          canCreateProfile ? (
+            <Button variant="brand" onClick={() => { setEditingProfile(null); setFormOpen(true); }} className="gap-2 shadow-md shadow-mayzax-blue-200/30 bg-mayzax-gradient border-0 text-white hover:opacity-90 rounded-full px-5">
+              <Plus className="h-4 w-4" /> New Profile
+            </Button>
+          ) : undefined
+        }
+        gradient="from-mayzax-blue-600 to-mayzax-green-600"
+        bottomGradient="from-mayzax-blue-600 via-mayzax-green-500 to-mayzax-blue-600"
+      />
 
       <Reveal delay={0.05}>
         <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -134,7 +238,7 @@ export default function ProfilesPage() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               placeholder="Search by name, email, phone, or tech..."
-              className="pl-9"
+              className="pl-9 bg-white shadow-sm rounded-full border-slate-200"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -144,10 +248,10 @@ export default function ProfilesPage() {
           </div>
 
           {isManager && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm">
               <span className="text-xs font-semibold text-slate-500">Assigned To:</span>
               <select
-                className="h-9 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 font-medium shadow-sm focus:border-mayzax-blue focus:outline-none focus:ring-1 focus:ring-mayzax-blue cursor-pointer"
+                className="h-7 rounded-full border-0 bg-transparent text-xs text-slate-700 font-medium focus:outline-none cursor-pointer"
                 value={assignedRecruiterFilter}
                 onChange={(e) => {
                   setAssignedRecruiterFilter(e.target.value);
@@ -155,7 +259,7 @@ export default function ProfilesPage() {
                 }}
               >
                 <option value="ALL">All Recruiters</option>
-                <option value="unassigned">Unassigned Profiles</option>
+                <option value="unassigned">Unassigned</option>
                 {recruiters.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name} ({r.role === 'TEAM_LEADER' ? 'TL' : 'Recruiter'})
@@ -164,7 +268,42 @@ export default function ProfilesPage() {
               </select>
             </div>
           )}
+
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm hidden sm:inline">
+              {data?.pagination?.total ?? profiles.length} profiles
+            </span>
+            {useVirtualization && (
+              <div className="flex items-center gap-1.5 text-[11px] text-violet-700 bg-violet-50 border border-violet-200 rounded-full px-3 py-1 shadow-sm">
+                <Sparkles className="h-3 w-3" />
+                Virtualized
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Enhanced filtering chips */}
+        {(search || assignedRecruiterFilter !== 'ALL') && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {search && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-white px-3 py-1 text-xs font-medium">
+                Search: "{search}"
+                <button onClick={() => setSearch('')} className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-white/20 hover:bg-white/30">
+                  <span className="text-[10px]">✕</span>
+                </button>
+              </span>
+            )}
+            {assignedRecruiterFilter !== 'ALL' && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 px-3 py-1 text-xs font-medium">
+                Assigned: {assignedRecruiterFilter === 'unassigned' ? 'Unassigned' : recruiters.find((r) => r.id === assignedRecruiterFilter)?.name || assignedRecruiterFilter}
+                <button onClick={() => setAssignedRecruiterFilter('ALL')} className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-200 hover:bg-indigo-300">
+                  <span className="text-[10px]">✕</span>
+                </button>
+              </span>
+            )}
+            <button onClick={() => { setSearch(''); setAssignedRecruiterFilter('ALL'); }} className="text-xs text-slate-500 hover:text-red-600">Clear all filters</button>
+          </div>
+        )}
       </Reveal>
 
       {isLoading && (
@@ -184,14 +323,10 @@ export default function ProfilesPage() {
           icon={UserSquare2}
           title="No client profiles found"
           description={
-            search
-              ? 'Try adjusting your search terms.'
-              : isManager
-                ? 'Create your first candidate profile to get started.'
-                : 'No profiles have been assigned to you yet.'
+            search ? 'Try adjusting your search terms.' : isManager ? 'Create your first candidate profile to get started.' : 'No profiles have been assigned to you yet.'
           }
           action={
-            !search && isManager && (
+            !search && canCreateProfile && (
               <Button variant="brand" size="sm" onClick={() => setFormOpen(true)}>
                 <Plus className="h-4 w-4" /> New Profile
               </Button>
@@ -202,7 +337,7 @@ export default function ProfilesPage() {
 
       {!isLoading && !isError && profiles.length > 0 && (
         <>
-          {isManager && (
+          {canBulkProfile && (
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
               <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-700">
                 <input
@@ -220,12 +355,7 @@ export default function ProfilesPage() {
                     {selectedProfileIds.length} Selected
                   </span>
 
-                  <Button
-                    variant="brand"
-                    size="sm"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => setBulkAssignOpen(true)}
-                  >
+                  <Button variant="brand" size="sm" className="h-7 text-xs gap-1" onClick={() => setBulkAssignOpen(true)}>
                     <User2 className="h-3.5 w-3.5" /> Reassign ({selectedProfileIds.length})
                   </Button>
 
@@ -240,12 +370,7 @@ export default function ProfilesPage() {
                     </Button>
                   )}
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs text-slate-400 hover:text-slate-700"
-                    onClick={() => setSelectedProfileIds([])}
-                  >
+                  <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-400 hover:text-slate-700" onClick={() => setSelectedProfileIds([])}>
                     Clear
                   </Button>
                 </div>
@@ -253,123 +378,28 @@ export default function ProfilesPage() {
             </div>
           )}
 
-          <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {profiles.map((profile) => {
-              const isSelected = selectedProfileIds.includes(profile.id);
-              return (
-                <StaggerItem key={profile.id}>
-                  <Card
-                    className={`hover-lift group h-full overflow-hidden border-slate-200 cursor-pointer select-none transition ${
-                      isSelected ? 'ring-2 ring-mayzax-blue bg-mayzax-blue-50/10' : ''
-                    }`}
-                    onDoubleClick={() => navigate(`/applications?profileId=${profile.id}`)}
-                  >
-                    <div className="h-1 w-full bg-mayzax-gradient opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                    <CardContent className="p-4">
-                      <div className="mb-3 flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          {isManager && (
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 rounded border-slate-300 text-mayzax-blue focus:ring-mayzax-blue cursor-pointer shrink-0 mt-0.5"
-                              checked={isSelected}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                toggleSelectProfile(profile.id);
-                              }}
-                            />
-                          )}
-                          <motion.div
-                            whileHover={{ rotate: 6, scale: 1.05 }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 12 }}
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-mayzax-gradient text-sm font-bold text-white shadow-sm"
-                          >
-                            {profile.candidateName.charAt(0)}
-                          </motion.div>
-                          <div>
-                            <p className="font-semibold text-slate-900">{profile.candidateName}</p>
-                            <Badge variant="secondary" className="mt-1">
-                              {profile.technology}
-                            </Badge>
-                          </div>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => navigate(`/applications?profileId=${profile.id}`)}
-                            >
-                              <FileText className="h-4 w-4 mr-2" /> View Applications
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setEditingProfile(profile);
-                                setFormOpen(true);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4 mr-2" /> {isManager ? 'Edit / Reassign' : 'Edit'}
-                            </DropdownMenuItem>
-                            {isAdmin && (
-                              <DropdownMenuItem
-                                onClick={() => setDeleteTarget(profile)}
-                                className="text-red-600 focus:text-red-600"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+          {useVirtualization ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+              <VirtualizedGrid data={profiles} columns={3} estimateRowHeight={200} gap={16} renderItem={(p) => profileCard(p as ClientProfile)} />
+            </div>
+          ) : (
+            <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {profiles.map((profile) => (
+                <StaggerItem key={profile.id}>{profileCard(profile)}</StaggerItem>
+              ))}
+            </StaggerContainer>
+          )}
 
-                      <div className="space-y-1.5 text-sm text-slate-500">
-                        <div className="flex items-center gap-2">
-                          <Mail className="h-3.5 w-3.5" /> {profile.email}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-3.5 w-3.5" /> {profile.phone}
-                        </div>
-                      </div>
-
-                      {profile.notes && <p className="mt-2 line-clamp-2 text-xs text-slate-400">{profile.notes}</p>}
-
-                      <div className="mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-2">
-                        <User2 className="h-3 w-3 text-slate-300" />
-                        <p className="text-xs text-slate-400">
-                          Assigned to{' '}
-                          <span className="font-medium text-slate-600">
-                            {profile.assignedRecruiterAssignments?.length
-                              ? profile.assignedRecruiterAssignments.map((assignment) => assignment.recruiter.name).join(', ')
-                              : profile.assignedRecruiter?.name ?? 'Unassigned'}
-                          </span>
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </StaggerItem>
-              );
-            })}
-          </StaggerContainer>
-
-          <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
+          <div className="mt-4">
+            <PaginationControls pagination={data?.pagination} onPageChange={setPage} />
+          </div>
         </>
       )}
 
-      {/* Profile Create / Edit Dialog */}
       <ProfileFormDialog open={formOpen} onOpenChange={setFormOpen} profile={editingProfile} />
 
-      {/* Bulk Assign / Reassign Dialog */}
-      <BulkAssignDialog
-        open={bulkAssignOpen}
-        onOpenChange={setBulkAssignOpen}
-        selectedProfileIds={selectedProfileIds}
-        onSuccess={() => setSelectedProfileIds([])}
-      />
+      <BulkAssignDialog open={bulkAssignOpen} onOpenChange={setBulkAssignOpen} selectedProfileIds={selectedProfileIds} onSuccess={() => setSelectedProfileIds([])} />
 
-      {/* Bulk Delete Confirm Dialog (Admin only) */}
       <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -403,15 +433,12 @@ export default function ProfilesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Single Profile Delete Modal */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Client Profile</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete <span className="font-semibold">{deleteTarget?.candidateName}</span>'s
-              profile? This will not delete their past applications, but the profile will no longer be visible or
-              assignable.
+              Are you sure you want to delete <span className="font-semibold">{deleteTarget?.candidateName}</span>'s profile? This will not delete their past applications, but the profile will no longer be visible or assignable.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

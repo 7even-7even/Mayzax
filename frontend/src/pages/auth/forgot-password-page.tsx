@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Loader2, Mail, ShieldQuestion } from 'lucide-react';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { Loader2, Mail, ShieldQuestion, Lock, ArrowLeft, Sparkles, ShieldCheck, KeyRound, ArrowRight, MousePointer2, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiClient, extractErrorMessage } from '@/lib/api-client';
 import { ApiSuccess } from '@/types';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
+import { FloatingCube } from '@/components/shared/floating-cube';
 
 const emailSchema = z.object({ email: z.string().email('Enter a valid email address') });
 const resetSchema = z
@@ -32,10 +34,77 @@ const resetSchema = z
 type EmailForm = z.infer<typeof emailSchema>;
 type ResetForm = z.infer<typeof resetSchema>;
 
+function InteractiveSpotlight() {
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springX = useSpring(mouseX, { damping: 25, stiffness: 200 });
+  const springY = useSpring(mouseY, { damping: 25, stiffness: 200 });
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!ref.current) return;
+      const rect = ref.current.getBoundingClientRect();
+      mouseX.set(e.clientX - rect.left);
+      mouseY.set(e.clientY - rect.top);
+    };
+    const el = ref.current;
+    if (el) {
+      el.addEventListener('mousemove', handleMouseMove);
+      return () => el.removeEventListener('mousemove', handleMouseMove);
+    }
+  }, [mouseX, mouseY]);
+
+  return (
+    <div ref={ref} className="absolute inset-0 overflow-hidden pointer-events-none">
+      <motion.div
+        className="absolute h-[500px] w-[500px] rounded-full opacity-20 blur-[60px] pointer-events-none"
+        style={{
+          x: springX,
+          y: springY,
+          background: 'radial-gradient(circle, rgba(42,93,168,0.25) 0%, rgba(63,156,113,0.15) 40%, transparent 70%)',
+          translateX: '-50%',
+          translateY: '-50%',
+        }}
+      />
+    </div>
+  );
+}
+
+function ParticleField() {
+  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; size: number; delay: number }>>([]);
+
+  useEffect(() => {
+    const newParticles = Array.from({ length: 12 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: 2 + Math.random() * 4,
+      delay: Math.random() * 4,
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full bg-white/20"
+          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size }}
+          animate={{ y: [0, -20, 0], opacity: [0.2, 0.5, 0.2] }}
+          transition={{ duration: 4 + p.delay, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [securityQuestion, setSecurityQuestion] = useState('');
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const emailForm = useForm<EmailForm>({ resolver: zodResolver(emailSchema) });
   const resetForm = useForm<ResetForm>({ resolver: zodResolver(resetSchema) });
@@ -45,7 +114,7 @@ export default function ForgotPasswordPage() {
       const { data } = await apiClient.post<ApiSuccess<{ email: string; securityQuestion: string }>>('/auth/forgot-password/question', values);
       setEmail(data.data.email);
       setSecurityQuestion(data.data.securityQuestion);
-      toast.success('Security question loaded');
+      toast.success('Security question loaded • Recovery panel ready');
     } catch (err) {
       toast.error(extractErrorMessage(err, 'Could not load security question'));
     }
@@ -61,69 +130,205 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60">
-        <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <img src={mayzaxLogo} alt="Mayzax" className="h-14 w-14 rounded-2xl bg-white p-2 shadow ring-1 ring-slate-200" />
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Forgot Password</h1>
-            <p className="mt-1 text-sm text-slate-500">Answer your security question to reset your password.</p>
+    <div className="relative flex min-h-screen overflow-hidden bg-slate-50">
+      {/* LEFT BRAND PANEL - Original palette Mayzax gradient */}
+      <div className="relative hidden w-[58%] flex-col justify-between overflow-hidden bg-mayzax-gradient px-16 py-12 lg:flex" onMouseMove={handleMouseMove}>
+        {/* Interactive spotlight following mouse */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div
+            className="absolute h-[600px] w-[600px] rounded-full blur-[80px] transition-all duration-700 ease-out pointer-events-none"
+            style={{
+              left: mousePos.x - 300,
+              top: mousePos.y - 300,
+              background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 30%, transparent 70%)',
+            }}
+          />
+        </div>
+
+        {/* Subtle overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/20 via-transparent to-black/10" />
+        <ParticleField />
+
+        {/* Ambient glow with original colors */}
+        <div className="absolute -top-20 -left-20 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-mayzax-green-300/20 blur-3xl" />
+
+        {/* Floating cubes - original blue/green/white */}
+        <FloatingCube size={90} top="12%" left="15%" variant="blue" duration={10} />
+        <FloatingCube size={50} top="25%" right="18%" variant="white" duration={7} delay={0.5} />
+        <FloatingCube size={65} bottom="20%" left="10%" variant="green" duration={9} delay={1} />
+        <FloatingCube size={40} bottom="30%" right="22%" variant="white" duration={8} delay={1.5} opacity={0.7} />
+
+        <div className="relative z-10">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
+            <div className="relative">
+              <img src={mayzaxLogo} alt="Mayzax" className="h-10 w-10 rounded-xl bg-white p-2 shadow-lg shadow-black/10 ring-1 ring-white/20" />
+              <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
+            </div>
+            <span className="text-3xl font-semibold tracking-wider text-white/90 uppercase">Mayzax Solutions</span>
+            <span className="ml-2 rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-white/80 backdrop-blur-sm">ATS v2.1</span>
+          </motion.div>
+        </div>
+
+        <div className="relative z-10 flex flex-col gap-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}>
+            <h1 className="mt-6 text-5xl font-bold tracking-tight text-white leading-[1.05]">
+              Secure password
+              <br />
+              <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">recovery system</span>
+            </h1>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="grid grid-cols-3 gap-3 max-w-lg">
+            {[
+              { icon: KeyRound, label: 'Instant Reset', sub: 'Security QA' },
+              { icon: ShieldCheck, label: 'Bcrypt Hash', sub: 'High security' },
+              { icon: Zap, label: 'No spam', sub: 'Zero latency' },
+            ].map((f, i) => (
+              <div key={i} className="group rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xl p-3 hover:bg-white/15 transition-colors cursor-default">
+                <f.icon className="h-4 w-4 text-white mb-2 group-hover:scale-110 transition-transform" />
+                <p className="text-xs font-semibold text-white">{f.label}</p>
+                <p className="text-[11px] text-white/60 mt-0.5">{f.sub}</p>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
+        <div className="relative z-10 flex items-center gap-6 text-xs text-white/50">
+          <span>© 2026 Mayzax Solutions</span>
+        </div>
+      </div>
+
+      {/* RIGHT FORM PANEL - Premium white with interactive spotlight */}
+      <div className="relative flex w-full flex-col items-center justify-center px-4 py-8 lg:w-[42%] bg-white lg:shadow-[-20px_0_80px_rgba(42,93,168,0.08)] overflow-hidden" onMouseMove={handleMouseMove}>
+        <InteractiveSpotlight />
+
+        <div className="mb-8 flex flex-col items-center gap-3 lg:hidden">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-mayzax-gradient shadow-xl shadow-mayzax-blue/20 ring-1 ring-white">
+            <img src={mayzaxLogo} alt="Mayzax" className="h-9 w-9 rounded-lg bg-white p-1" />
+          </div>
+          <div className="text-center">
+            <h1 className="text-xl font-bold text-slate-900">Mayzax ATS</h1>
           </div>
         </div>
 
-        {!securityQuestion ? (
-          <form onSubmit={emailForm.handleSubmit(fetchQuestion)} className="space-y-5" noValidate>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
-              <div className="relative">
-                <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input id="email" type="email" className="h-12 pl-10" placeholder="you@mayzaxsolutions.com" {...emailForm.register('email')} />
-              </div>
-              {emailForm.formState.errors.email && <p className="text-xs text-red-600">{emailForm.formState.errors.email.message}</p>}
-            </div>
-            <Button type="submit" variant="brand" className="h-12 w-full" disabled={emailForm.formState.isSubmitting}>
-              {emailForm.formState.isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Continue
-            </Button>
-          </form>
-        ) : (
-          <form onSubmit={resetForm.handleSubmit(resetPassword)} className="space-y-5" noValidate>
-            <div className="rounded-xl border border-mayzax-blue/20 bg-mayzax-blue/5 p-3">
-              <p className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-mayzax-blue">
-                <ShieldQuestion className="h-4 w-4" /> Security Question
-              </p>
-              <p className="text-sm font-medium text-slate-800">{securityQuestion}</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="securityAnswer">Answer</Label>
-              <Input id="securityAnswer" type="password" {...resetForm.register('securityAnswer')} />
-              {resetForm.formState.errors.securityAnswer && <p className="text-xs text-red-600">{resetForm.formState.errors.securityAnswer.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input id="newPassword" type="password" {...resetForm.register('newPassword')} />
-              {resetForm.formState.errors.newPassword && <p className="text-xs text-red-600">{resetForm.formState.errors.newPassword.message}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input id="confirmPassword" type="password" {...resetForm.register('confirmPassword')} />
-              {resetForm.formState.errors.confirmPassword && <p className="text-xs text-red-600">{resetForm.formState.errors.confirmPassword.message}</p>}
-            </div>
-            <Button type="submit" variant="brand" className="h-12 w-full" disabled={resetForm.formState.isSubmitting}>
-              {resetForm.formState.isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Reset Password
-            </Button>
-            <Button type="button" variant="outline" className="w-full" onClick={() => setSecurityQuestion('')}>
-              Use another email
-            </Button>
-          </form>
-        )}
+        <div className="relative z-10 w-full max-w-[380px]">
+          <div className="relative overflow-hidden rounded-[24px] border border-slate-200/60 bg-white p-8 shadow-[0_20px_80px_rgba(42,93,168,0.08),0_0_0_1px_rgba(0,0,0,0.03)]">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-mayzax-gradient" />
+            <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-gradient-to-br from-mayzax-blue-100 to-mayzax-green-50 blur-2xl" />
 
-        <p className="mt-6 text-center text-sm text-slate-500">
-          Remembered your password?{' '}
-          <Link to="/login" className="font-medium text-mayzax-blue hover:underline">Back to login</Link>
-        </p>
+            <div className="relative">
+              <div className="mb-7 flex flex-col items-center text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-mayzax-blue-50 border border-mayzax-blue-100 text-mayzax-blue-700 shadow-sm mb-4">
+                  <KeyRound className="h-7 w-7" />
+                </div>
+                <h1 className="text-[22px] font-bold tracking-tight text-slate-900 flex items-center justify-center gap-2">
+                  Forgot Password
+                  <span className="rounded-full bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 text-[10px] font-bold">SECURE</span>
+                </h1>
+                <p className="mt-1.5 text-[13px] text-slate-500 leading-relaxed max-w-[300px]">Answer your security question to reset password • Recovery flow</p>
+              </div>
+
+              {!securityQuestion ? (
+                <form onSubmit={emailForm.handleSubmit(fetchQuestion)} className="space-y-5" noValidate>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">Email Address</Label>
+                    <div className="relative group">
+                      <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-mayzax-blue-500 transition-colors" />
+                      <Input type="email" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" placeholder="you@mayzaxsolutions.com" {...emailForm.register('email')} />
+                    </div>
+                    {emailForm.formState.errors.email && <p className="text-xs text-red-600">{emailForm.formState.errors.email.message}</p>}
+                  </div>
+
+                  <Button type="submit" className="group relative w-full h-[46px] rounded-xl bg-mayzax-gradient hover:opacity-90 text-white font-semibold text-[14px] shadow-[0_8px_24px_rgba(42,93,168,0.25)] hover:shadow-[0_12px_32px_rgba(42,93,168,0.3)] transition-all duration-300 overflow-hidden" disabled={emailForm.formState.isSubmitting}>
+                    <span className="relative flex items-center justify-center gap-2">
+                      {emailForm.formState.isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" /> Loading question...
+                        </>
+                      ) : (
+                        <>
+                          Continue <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                        </>
+                      )}
+                    </span>
+                  </Button>
+
+                  <div className="rounded-xl bg-gradient-to-br from-mayzax-blue-50 to-mayzax-green-50/30 border border-mayzax-blue-100 p-3 flex gap-2.5">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-mayzax-gradient text-white shrink-0">
+                      <ShieldCheck className="h-4 w-4" />
+                    </div>
+                    <p className="text-xs leading-relaxed text-slate-600">
+                      <span className="font-semibold text-mayzax-blue-700">Security safeguard:</span> We’ll show your security question only if account exists. No email enumeration.
+                    </p>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={resetForm.handleSubmit(resetPassword)} className="space-y-5" noValidate>
+                  <div className="rounded-xl border border-mayzax-blue-200 bg-gradient-to-br from-mayzax-blue-50 to-mayzax-green-50/50 p-4">
+                    <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-mayzax-blue-750">
+                      <ShieldQuestion className="h-3.5 w-3.5" /> Security Question
+                    </p>
+                    <p className="text-sm font-semibold text-slate-900 leading-relaxed">{securityQuestion}</p>
+                    <p className="mt-1 text-[11px] text-slate-500">Answer is case-insensitive • Stored securely</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">Answer</Label>
+                    <Input type="password" placeholder="Your secret answer" className="h-[46px] rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...resetForm.register('securityAnswer')} />
+                    {resetForm.formState.errors.securityAnswer && <p className="text-xs text-red-600">{resetForm.formState.errors.securityAnswer.message}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">New Password</Label>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                      <Input type="password" placeholder="Minimum 8 chars, uppercase, number" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...resetForm.register('newPassword')} />
+                    </div>
+                    {resetForm.formState.errors.newPassword && <p className="text-xs text-red-600">{resetForm.formState.errors.newPassword.message}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">Confirm New Password</Label>
+                    <Input type="password" placeholder="Repeat new password" className="h-[46px] rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...resetForm.register('confirmPassword')} />
+                    {resetForm.formState.errors.confirmPassword && <p className="text-xs text-red-600">{resetForm.formState.errors.confirmPassword.message}</p>}
+                  </div>
+
+                  <Button type="submit" className="group relative w-full h-[46px] rounded-xl bg-mayzax-gradient hover:opacity-90 text-white font-semibold text-[14px] shadow-[0_8px_24px_rgba(42,93,168,0.25)] hover:shadow-[0_12px_32px_rgba(42,93,168,0.3)] transition-all duration-300 overflow-hidden" disabled={resetForm.formState.isSubmitting}>
+                    <span className="relative flex items-center justify-center gap-2">
+                      {resetForm.formState.isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Resetting...</> : <>Reset Password</>}
+                    </span>
+                  </Button>
+
+                  <Button type="button" variant="outline" className="w-full rounded-xl h-[46px] border-slate-200 bg-white" onClick={() => setSecurityQuestion('')}>
+                    <ArrowLeft className="h-4 w-4 mr-1" /> Use another email
+                  </Button>
+                </form>
+              )}
+
+              <p className="mt-6 flex items-center justify-center gap-2 text-sm text-slate-500">
+                <span>Remembered password?</span>
+                <Link to="/login" className="font-bold text-mayzax-blue-700 hover:text-mayzax-blue-800 transition-colors inline-flex items-center gap-1">
+                  Back to login <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </p>
+
+              <div className="mt-6 flex items-center justify-center gap-4 text-[11px] text-slate-400">
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3 text-mayzax-green-600" /> Secure recovery
+                </span>
+                <span className="h-3 w-px bg-slate-200" />
+                <span className="flex items-center gap-1">
+                  <Zap className="h-3 w-3 text-mayzax-blue-600" /> Uptime 99.9%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

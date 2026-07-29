@@ -76,6 +76,10 @@ const config: Config = {
             900: '#09100C',
           },
         },
+        slate: {
+          750: '#202b3f',
+          850: '#151f32',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',

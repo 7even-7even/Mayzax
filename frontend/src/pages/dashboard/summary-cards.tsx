@@ -1,154 +1,203 @@
 import { useState } from 'react';
-import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp, Zap, Coffee, Trophy } from 'lucide-react';
+import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp, Zap, Coffee, Trophy, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { StatCard } from '@/components/motion/stat-card';
 import { useGlobalSummary } from '@/hooks/use-analytics';
-import { useAuth } from '@/context/auth-context';
+import { usePermissions } from '@/hooks/use-permissions';
+import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
+import { CountUp } from '@/components/motion/count-up';
+import { Badge } from '@/components/ui/badge';
 
 const adminCardConfig = [
-  { key: 'totalRecruiters', label: 'Total Recruiters', icon: Users, color: 'text-mayzax-blue bg-mayzax-blue-50' },
-  { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, color: 'text-emerald-600 bg-emerald-50' },
-  { key: 'totalProfiles', label: 'Total Client Profiles', icon: UserSquare2, color: 'text-mayzax-green bg-mayzax-green-50' },
-  { key: 'totalApplications', label: 'Total Applications', icon: Briefcase, color: 'text-amber-600 bg-amber-50' },
-  { key: 'currentShiftApplications', label: "Today's Applications", icon: Clock, color: 'text-purple-600 bg-purple-50' },
+  { key: 'totalRecruiters', label: 'Total Recruiters', icon: Users, gradient: 'from-mayzax-blue-500 to-mayzax-green-500', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
+  { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, gradient: 'from-emerald-500 to-teal-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
+  { key: 'totalProfiles', label: 'Total Profiles', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
+  { key: 'totalApplications', label: 'Total Applications', icon: Briefcase, gradient: 'from-blue-500 to-cyan-600', accent: 'text-blue-600', bg: 'bg-blue-50' },
+  { key: 'currentShiftApplications', label: "Today's Apps", icon: Clock, gradient: 'from-mayzax-blue-500 to-mayzax-green-600', accent: 'text-violet-600', bg: 'bg-violet-50' },
 ] as const;
 
 const tlCardConfig = [
-  { key: 'totalRecruiters', label: 'Team Recruiters', icon: Users, color: 'text-mayzax-blue bg-mayzax-blue-50' },
-  { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, color: 'text-emerald-600 bg-emerald-50' },
-  { key: 'totalProfiles', label: 'Team Clients Profiles', icon: UserSquare2, color: 'text-mayzax-green bg-mayzax-green-50' },
-  { key: 'totalApplications', label: 'Total Team Applications', icon: Briefcase, color: 'text-amber-600 bg-amber-50' },
-  { key: 'currentShiftApplications', label: "Today's Team Applications", icon: Clock, color: 'text-purple-600 bg-purple-50' },
-  { key: 'myTotalApplications', label: 'My Total Applications', icon: Briefcase, color: 'text-amber-600 bg-amber-50' },
-  { key: 'myCurrentShiftApplications', label: "My Current Applications", icon: Clock, color: 'text-purple-600 bg-purple-50' },
-  { key: 'activeMemberCount', label: 'Active Team Members', icon: Zap, color: 'text-emerald-600 bg-emerald-50' },
-  { key: 'onBreakMemberCount', label: 'Members on Break', icon: Coffee, color: 'text-blue-600 bg-blue-50' },
-  { key: 'topPerformer', label: 'Top Performer Today', icon: Trophy, color: 'text-indigo-600 bg-indigo-50' },
+  { key: 'totalRecruiters', label: 'Team Recruiters', icon: Users, gradient: 'from-mayzax-blue-500 to-mayzax-green-500', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
+  { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, gradient: 'from-emerald-500 to-teal-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
+  { key: 'totalProfiles', label: 'Team Profiles', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
+  { key: 'totalApplications', label: 'Team Apps', icon: Briefcase, gradient: 'from-blue-500 to-cyan-600', accent: 'text-blue-600', bg: 'bg-blue-50' },
+  { key: 'currentShiftApplications', label: "Today's Team", icon: Clock, gradient: 'from-mayzax-blue-500 to-mayzax-green-600', accent: 'text-violet-600', bg: 'bg-violet-50' },
+  { key: 'myTotalApplications', label: 'My Total', icon: Briefcase, gradient: 'from-slate-700 to-slate-900', accent: 'text-slate-700', bg: 'bg-slate-100' },
+  { key: 'myCurrentShiftApplications', label: 'My Today', icon: Clock, gradient: 'from-pink-500 to-rose-600', accent: 'text-pink-600', bg: 'bg-pink-50' },
+  { key: 'activeMemberCount', label: 'Logged In', icon: Zap, gradient: 'from-emerald-500 to-green-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
+  { key: 'onBreakMemberCount', label: 'On Break', icon: Coffee, gradient: 'from-amber-500 to-yellow-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
+  { key: 'topPerformer', label: 'Top Performer', icon: Trophy, gradient: 'from-yellow-500 to-amber-600', accent: 'text-amber-600', bg: 'bg-yellow-50' },
 ] as const;
 
+function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoading, index, featured }: any) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.4 }}
+      whileHover={{ y: -4, scale: 1.01 }}
+      className={`group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] shadow-sm hover:shadow-xl transition-all duration-300 ${featured ? 'ring-1 ring-violet-100' : ''}`}
+    >
+      <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${gradient} blur-[0.5px]`} />
+      <div className="relative rounded-[15px] bg-white dark:bg-slate-900 p-4 h-full flex flex-col justify-between">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-md group-hover:scale-110 transition-transform duration-300`}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <div className={`flex h-6 w-6 items-center justify-center rounded-full ${bg} ${accent}`}>
+            <Sparkles className="h-3 w-3" />
+          </div>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 leading-tight">{label}</p>
+          <div className="mt-1.5">
+            {isLoading ? (
+              <div className="h-7 w-16 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
+            ) : typeof value === 'number' ? (
+              <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <CountUp value={value} />
+              </p>
+            ) : (
+              <p className="text-base font-semibold text-slate-800 dark:text-slate-200 truncate" title={String(value)}>
+                {value}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="mt-3 h-1 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: '100%' }}
+            transition={{ delay: 0.4 + index * 0.05, duration: 0.8 }}
+            className={`h-full bg-gradient-to-r ${gradient}`}
+          />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export function SummaryCards() {
-  const { user } = useAuth();
+  const { isTeamLeader, isAdmin } = usePermissions();
   const { data, isLoading } = useGlobalSummary();
-  const isAdmin = user?.role === 'ADMIN';
-  const isTeamLeader = user?.role === 'TEAM_LEADER';
   const [teamsExpanded, setTeamsExpanded] = useState(false);
 
   const visibleCards = isTeamLeader ? tlCardConfig : adminCardConfig;
 
-  /** Formats "Sneha Reddy" → "Sneha R." (ignores non-letter tokens like parentheses) */
   const abbreviateName = (fullName: unknown): string => {
     if (typeof fullName !== 'string' || !fullName.trim()) return '—';
-    const parts = fullName.trim().split(/\s+/).filter(p => /^[A-Za-z]/.test(p));
+    const parts = fullName.trim().split(/\s+/).filter((p) => /^[A-Za-z]/.test(p));
     if (parts.length === 0) return '—';
     if (parts.length === 1) return parts[0];
     return `${parts[0]} ${parts[1][0].toUpperCase()}.`;
   };
 
   return (
-    <div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {visibleCards.map((card, i) => (
-          <StatCard
-            key={card.key}
-            icon={card.icon}
-            label={card.label}
-            value={
-              card.key === 'topPerformer'
-                ? abbreviateName(data?.[card.key])
-                : data
-                  ? (data[card.key] ?? 0)
-                  : 0
-            }
-            isLoading={isLoading}
-            colorClass={card.color}
-            index={i}
-          />
+    <div className="space-y-5">
+      <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {visibleCards.map((card: any, i: number) => (
+          <StaggerItem key={card.key}>
+            <PremiumStatCard
+              icon={card.icon}
+              label={card.label}
+              value={card.key === 'topPerformer' ? abbreviateName(data?.[card.key as keyof typeof data]) : data ? (data[card.key as keyof typeof data] as any) ?? 0 : 0}
+              gradient={card.gradient}
+              bg={card.bg}
+              accent={card.accent}
+              isLoading={isLoading}
+              index={i}
+            />
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerContainer>
 
-      {/* Team Count Card — Admin only */}
       {isAdmin && (
-        <motion.div
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-4 rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
-        >
-          <button
-            onClick={() => setTeamsExpanded((prev) => !prev)}
-            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50/60 transition-colors"
+        <Reveal delay={0.3}>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm"
           >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                <Users className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-700">Teams</p>
-                <p className="text-xl font-bold text-slate-900">
-                  {isLoading ? '...' : (data?.totalTeams ?? 0)}
-                  <span className="ml-1.5 text-xs font-normal text-slate-400">active teams</span>
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-slate-400">
-              <span className="text-xs">{teamsExpanded ? 'Collapse' : 'View Teams'}</span>
-              {teamsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </div>
-          </button>
-
-          <AnimatePresence>
-            {teamsExpanded && (
-              <motion.div
-                key="team-list"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="border-t border-slate-100 px-4 pb-3 pt-2">
-                  {isLoading && (
-                    <p className="py-4 text-center text-xs text-slate-400">Loading teams...</p>
-                  )}
-                  {!isLoading && (!data?.teams || data.teams.length === 0) && (
-                    <p className="py-4 text-center text-xs text-slate-400">No teams found. Assign Team Leaders to create teams.</p>
-                  )}
-                  {!isLoading && data?.teams && data.teams.length > 0 && (
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 pt-1">
-                      {data.teams.map((team) => (
-                        <div key={team.tlId} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2">
-                          <div className="min-w-0">
-                            <p className="truncate text-xs font-semibold text-slate-800">
-                              {team.teamName || <span className="italic text-slate-400">No team name</span>}
-                            </p>
-                            <p className="truncate text-[11px] text-slate-500">
-                              TL: <span className="font-medium text-slate-700">{team.tlName}</span>
-                            </p>
-                          </div>
-                          <span className="ml-2 shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
-                            {team.memberCount} member{team.memberCount !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-violet-500 via-indigo-500 to-teal-500" />
+            <button
+              onClick={() => setTeamsExpanded((prev) => !prev)}
+              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 text-white shadow-md">
+                  <Users className="h-5 w-5" />
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-2">
+                    Organization Teams
+                    <Badge variant="outline" className="text-[10px] bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300">
+                      {isLoading ? '...' : data?.totalTeams ?? 0} active
+                    </Badge>
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Team Leaders & member distribution</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-slate-400">
+                <span className="hidden sm:inline text-xs font-medium">{teamsExpanded ? 'Collapse' : 'Expand teams'}</span>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                  {teamsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
+              </div>
+            </button>
+
+            <AnimatePresence>
+              {teamsExpanded && (
+                <motion.div
+                  key="team-list"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden border-t border-slate-100 dark:border-slate-800"
+                >
+                  <div className="p-4">
+                    {isLoading && <p className="py-6 text-center text-xs text-slate-400 dark:text-slate-550">Loading teams...</p>}
+                    {!isLoading && (!data?.teams || data.teams.length === 0) && (
+                      <p className="py-6 text-center text-xs text-slate-400 dark:text-slate-550">No teams found. Assign Team Leaders to create teams.</p>
+                    )}
+                    {!isLoading && data?.teams && data.teams.length > 0 && (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {data.teams.map((team: any) => (
+                          <motion.div
+                            key={team.tlId}
+                            whileHover={{ y: -2, scale: 1.01 }}
+                            className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] hover:shadow-md transition-all"
+                          >
+                            <div className="rounded-[11px] bg-gradient-to-br from-slate-50 to-white dark:from-slate-850 dark:to-slate-900 p-3 flex items-center justify-between">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-1.5">
+                                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                  {team.teamName || <span className="italic text-slate-450">No team name</span>}
+                                </p>
+                                <p className="truncate text-xs text-slate-500 dark:text-slate-400 mt-0.5">TL: <span className="font-medium text-slate-700 dark:text-slate-350">{team.tlName}</span></p>
+                              </div>
+                              <span className="ml-2 shrink-0 rounded-full bg-gradient-to-r from-mayzax-blue-500 to-mayzax-green-500 text-white px-2.5 py-1 text-[11px] font-bold shadow-sm">
+                                {team.memberCount} members
+                              </span>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </Reveal>
       )}
 
       {data && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-3 text-xs text-slate-400"
-        >
-          Business date: <span className="font-medium text-slate-600">{data.currentBusinessDate}</span> · Shift window{' '}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-455 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full px-3 py-1.5 w-fit shadow-sm">
+          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          Business Date: <span className="font-semibold text-slate-700 dark:text-slate-300">{data.currentBusinessDate}</span>
+          <span className="h-3 w-px bg-slate-200 dark:bg-slate-800" />
           {data.shiftWindowText || '6:00 PM – 9:00 AM IST'}
-        </motion.p>
+        </motion.div>
       )}
     </div>
   );

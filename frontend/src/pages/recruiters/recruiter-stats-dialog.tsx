@@ -5,91 +5,105 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
 import { useRecruiterStats } from '@/hooks/use-recruiters';
 import { formatDateTime, timeAgo } from '@/lib/utils';
-import { BarChart3, Briefcase, Clock, Users } from 'lucide-react';
+import { BarChart3, Briefcase, Clock, Users, Sparkles, Award, TrendingUp, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-export function RecruiterStatsDialog({
-  recruiterId,
-  onOpenChange,
-}: {
-  recruiterId: string | null;
-  onOpenChange: (open: boolean) => void;
-}) {
+export function RecruiterStatsDialog({ recruiterId, onOpenChange }: { recruiterId: string | null; onOpenChange: (open: boolean) => void }) {
   const { data, isLoading, isError, refetch } = useRecruiterStats(recruiterId);
 
   return (
     <Dialog open={!!recruiterId} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle>Recruiter Performance</DialogTitle>
-          <DialogDescription>
-            {data ? `${data.recruiter.name} · ${data.recruiter.email}` : 'Loading recruiter stats...'}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-xl rounded-2xl border-slate-200/60 p-0 overflow-hidden shadow-2xl max-h-[85vh] flex flex-col">
+        <div className="h-1 w-full bg-mayzax-gradient" />
+        <div className="p-6 overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mayzax-gradient text-white shadow-md">
+                <BarChart3 className="h-4 w-4" />
+              </div>
+              Recruiter Performance
+            </DialogTitle>
+            <DialogDescription className="text-xs">{data ? `${data.recruiter.name} • ${data.recruiter.email}` : 'Loading stats...'}</DialogDescription>
+          </DialogHeader>
 
-        {isLoading && (
-          <div className="space-y-3">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-40 w-full" />
-          </div>
-        )}
-
-        {isError && <ErrorState onRetry={() => refetch()} />}
-
-        {data && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-3 gap-3">
-              <StatBox icon={Users} label="Assigned Profiles" value={data.assignedProfilesCount} />
-              <StatBox icon={Briefcase} label="Total Applications" value={data.totalApplications} />
-              <StatBox icon={BarChart3} label="Current Shift" value={data.currentShiftApplications} />
+          {isLoading && (
+            <div className="mt-6 space-y-3">
+              <Skeleton className="h-20 w-full rounded-xl" />
+              <Skeleton className="h-40 w-full rounded-xl" />
             </div>
+          )}
 
-            <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-              <Clock className="h-3.5 w-3.5" />
-              Last active: <span className="font-medium text-slate-800">{timeAgo(data.lastActiveAt)}</span>
-              {data.lastActiveAt && <span className="text-slate-400">({formatDateTime(data.lastActiveAt)})</span>}
-              <Badge variant="muted" className="ml-auto">
-                Business date: {data.currentBusinessDate}
-              </Badge>
-            </div>
+          {isError && <div className="mt-6"><ErrorState onRetry={() => refetch()} /></div>}
 
-            <div>
-              <p className="mb-2 text-sm font-semibold text-slate-800">Profile-wise Application Counts</p>
-              {data.profileWiseCounts.length === 0 ? (
-                <EmptyState
-                  title="No applications yet"
-                  description="This recruiter hasn't submitted any applications for their assigned profiles."
-                  className="py-8"
-                />
-              ) : (
-                <div className="max-h-64 space-y-2 overflow-y-auto scrollbar-thin pr-1">
-                  {data.profileWiseCounts.map((row) => (
-                    <div
-                      key={row.profileId}
-                      className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">{row.candidateName}</p>
-                        {row.technology && <p className="text-xs text-slate-400">{row.technology}</p>}
-                      </div>
-                      <Badge variant="default">{row.applicationCount} applications</Badge>
-                    </div>
-                  ))}
+          {data && (
+            <div className="mt-6 space-y-5">
+              <div className="grid grid-cols-3 gap-3">
+                <StatBox icon={Users} label="Profiles" value={data.assignedProfilesCount} gradient="from-mayzax-blue-500 to-mayzax-blue-700" />
+                <StatBox icon={Briefcase} label="Total Apps" value={data.totalApplications} gradient="from-mayzax-green-500 to-emerald-600" />
+                <StatBox icon={TrendingUp} label="Today" value={data.currentShiftApplications} gradient="from-amber-500 to-orange-600" />
+              </div>
+
+              <div className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-mayzax-blue-50 to-mayzax-green-50/50 border border-mayzax-blue-100 px-3 py-2.5 text-xs">
+                <Clock className="h-4 w-4 text-mayzax-blue-600" />
+                <span className="text-slate-600">Last active: <span className="font-semibold text-slate-800">{timeAgo(data.lastActiveAt)}</span></span>
+                <span className="ml-auto flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-mayzax-green-500 animate-pulse" />
+                  <Badge variant="outline" className="bg-white text-[11px]">BD: {data.currentBusinessDate}</Badge>
+                </span>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="h-1 w-6 rounded-full bg-mayzax-gradient" />
+                  <p className="text-xs font-bold tracking-wider uppercase text-slate-500">Profile-wise Counts • Total vs Today</p>
+                  <Sparkles className="h-3 w-3 text-mayzax-blue-400" />
                 </div>
-              )}
+                {data.profileWiseCounts.length === 0 ? (
+                  <EmptyState title="No applications yet" description="This recruiter hasn't submitted applications." className="py-10 rounded-xl border-dashed" />
+                ) : (
+                  <div className="max-h-64 space-y-2 overflow-y-auto scrollbar-thin pr-1">
+                    {data.profileWiseCounts.map((row, idx) => (
+                      <motion.div key={row.profileId} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }} className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 hover:border-mayzax-blue-200 hover:shadow-sm transition-all">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{row.candidateName}</p>
+                          {row.technology && <p className="text-[11px] text-slate-400">{row.technology}</p>}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Badge className="bg-slate-900 text-white border-0 text-[11px] rounded-full">Total {row.applicationCount}</Badge>
+                          <Badge className={`${row.currentShiftApplicationCount > 0 ? 'bg-mayzax-gradient text-white border-0' : 'bg-slate-100 text-slate-500'} text-[11px] rounded-full`}>Today {row.currentShiftApplicationCount}</Badge>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-xl bg-gradient-to-br from-mayzax-blue-50 to-mayzax-green-50/30 border border-mayzax-blue-100 p-3 flex gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-mayzax-gradient text-white shrink-0">
+                  <Award className="h-4 w-4" />
+                </div>
+                <p className="text-xs leading-relaxed text-slate-600">
+                  <span className="font-semibold text-mayzax-blue-700">Insights:</span> Total apps include verification status • Current shift uses business-date IST
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-function StatBox({ icon: Icon, label, value }: { icon: any; label: string; value: number }) {
+function StatBox({ icon: Icon, label, value, gradient }: { icon: any; label: string; value: number; gradient: string }) {
   return (
-    <div className="rounded-lg border border-slate-100 bg-white p-3 text-center shadow-sm">
-      <Icon className="mx-auto mb-1 h-4 w-4 text-mayzax-blue" />
-      <p className="text-lg font-bold text-slate-900">{value}</p>
-      <p className="text-[11px] text-slate-500">{label}</p>
+    <div className="relative overflow-hidden rounded-xl border border-slate-200/60 bg-white p-[1px] shadow-sm hover:shadow-md transition-shadow">
+      <div className="rounded-[11px] bg-white p-3 text-center">
+        <div className={`mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-sm`}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <p className="text-lg font-bold text-slate-900">{value}</p>
+        <p className="text-[11px] font-medium text-slate-500">{label}</p>
+      </div>
     </div>
   );
 }

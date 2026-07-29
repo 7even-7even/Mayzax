@@ -1,5 +1,5 @@
-import { BarChart3, Briefcase, ExternalLink, Shield, Users } from 'lucide-react';
-import { PageHeader } from '@/components/shared/page-header';
+import { BarChart3, Briefcase, ExternalLink, Shield, Users, Sparkles, Zap, TrendingUp, Award, Clock } from 'lucide-react';
+import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -7,11 +7,42 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useJobPortalAnalytics } from '@/hooks/use-analytics';
 import { useApplications } from '@/hooks/use-applications';
-import { useAuth } from '@/context/auth-context';
+import { usePermissions } from '@/hooks/use-permissions';
 import { formatEnumLabel } from '@/components/shared/status-badge';
 import { formatDateTime } from '@/lib/utils';
 import { JobPortalAnalyticsCard } from './job-portal-analytics-card';
 import { useMyRecruiterStats } from '@/hooks/use-recruiters';
+import { useAuth } from '@/context/auth-context';
+import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
+import { CountUp } from '@/components/motion/count-up';
+import { motion } from 'framer-motion';
+
+function PremiumMiniStat({ icon: Icon, label, value, sub, gradient, loading, index }: any) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.06 }}
+      whileHover={{ y: -3 }}
+      className="group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] shadow-sm hover:shadow-lg transition-all"
+    >
+      <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-br ${gradient} transition-opacity`} />
+      <div className="relative rounded-[15px] bg-white dark:bg-slate-900 p-5">
+        <div className="flex items-start justify-between">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-md`}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <Sparkles className="h-4 w-4 text-slate-300 group-hover:text-violet-400 transition-colors" />
+        </div>
+        <p className="mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</p>
+        <div className="mt-1">
+          {loading ? <Skeleton className="h-8 w-20" /> : typeof value === 'number' ? <p className="text-2xl font-bold text-slate-900 dark:text-white"><CountUp value={value} /></p> : <p className="text-lg font-semibold text-slate-900 dark:text-white">{value}</p>}
+          {sub && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{sub}</p>}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function RecruiterDashboardPage() {
   const { user } = useAuth();
@@ -29,195 +60,192 @@ export default function RecruiterDashboardPage() {
   const topPortal = portals.reduce((best, row) => (row.count > best.count ? row : best), portals[0] ?? { portal: 'LINKEDIN' as const, count: 0 });
   const recentApplications = recentApplicationsData?.data ?? [];
   const profileWiseCounts = recruiterStats?.profileWiseCounts ?? [];
-  const totalApplications = recruiterStats?.totalApplications ?? 0;
 
   return (
-    <div>
-      <PageHeader
-        title="Recruiter Dashboard"
-        description={`Welcome${user?.name ? `, ${user.name}` : ''}. Track your job portal performance and latest application activity.`}
+    <div className="space-y-6">
+      <PremiumPageHeader
+        icon={Briefcase}
+        title={`Welcome back, ${user?.name?.split(' ')[0] || 'Recruiter'}!`}
+        description="Your personal cockpit • Portal performance, profiles & recent activity"
+        pills={[
+          { label: `${recruiterStats?.totalApplications ?? 0} total apps`, icon: Zap },
+          { label: `${recruiterStats?.currentShiftApplications ?? 0} today`, icon: Clock }
+        ]}
+        stats={
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1.5 shadow-sm">
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+            <span>Top portal: <span className="font-semibold text-slate-700 dark:text-slate-300">{formatEnumLabel(topPortal.portal)}</span> ({topPortal.count})</span>
+          </div>
+        }
+        gradient="from-mayzax-blue-600 to-mayzax-green-600"
+        bottomGradient="from-indigo-600 via-violet-500 to-teal-500"
       />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Briefcase className="h-4 w-4 text-mayzax-blue" /> Total Applications
-            </CardTitle>
-            <CardDescription>Your applications across the tracked job portals.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? <Skeleton className="h-9 w-24" /> : <p className="text-3xl font-bold text-slate-900">{data?.totalApplications ?? 0}</p>}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BarChart3 className="h-4 w-4 text-mayzax-green" /> Top Portal
-            </CardTitle>
-            <CardDescription>Portal with your highest application count.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-9 w-32" />
-            ) : (
-              <div className="flex items-end gap-2">
-                <p className="text-3xl font-bold text-slate-900">{topPortal.count}</p>
-                <p className="pb-1 text-sm font-medium text-slate-500">{formatEnumLabel(topPortal.portal)}</p>
+      <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StaggerItem>
+          <PremiumMiniStat icon={Briefcase} label="Total Applications" value={data?.totalApplications ?? 0} sub="Across all portals" gradient="from-blue-500 to-cyan-600" loading={isLoading} index={0} />
+        </StaggerItem>
+        <StaggerItem>
+          <PremiumMiniStat
+            icon={BarChart3}
+            label="Top Portal"
+            value={`${topPortal.count} • ${formatEnumLabel(topPortal.portal)}`}
+            sub="Your strongest channel"
+            gradient="from-mayzax-blue-500 to-mayzax-green-600"
+            loading={isLoading}
+            index={1}
+          />
+        </StaggerItem>
+        <StaggerItem>
+          <PremiumMiniStat icon={Users} label="Assigned Profiles" value={recruiterStats?.assignedProfilesCount ?? profileWiseCounts.length} sub="Candidates assigned" gradient="from-amber-500 to-orange-600" loading={isRecruiterStatsLoading} index={2} />
+        </StaggerItem>
+        <StaggerItem>
+          <div className="group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] shadow-sm hover:shadow-lg transition-all h-full">
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-600 transition-opacity" />
+            <div className="relative rounded-[15px] bg-white dark:bg-slate-900 p-5 h-full">
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-600 text-white shadow-md">
+                  <Shield className="h-5 w-5" />
+                </div>
+                <Badge variant="outline" className="text-[10px] bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300">Team</Badge>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">My Team</p>
+              {isRecruiterStatsLoading ? (
+                <div className="mt-2 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-40" />
+                </div>
+              ) : recruiterStats?.teamLeader ? (
+                <div className="mt-2">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                    {recruiterStats.teamLeader.teamName || <span className="italic text-slate-400">No team name</span>}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    TL: <span className="font-medium text-slate-700 dark:text-slate-300">{recruiterStats.teamLeader.name}</span>
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-slate-400 dark:text-slate-500 italic">No team assigned yet</p>
+              )}
+            </div>
+          </div>
+        </StaggerItem>
+      </StaggerContainer>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Users className="h-4 w-4 text-mayzax-blue" /> Assigned Profiles
-            </CardTitle>
-            <CardDescription>Profiles assigned to your recruiter account.</CardDescription>
+      <Reveal delay={0.15}>
+        <JobPortalAnalyticsCard />
+      </Reveal>
+
+      <Reveal delay={0.2}>
+        <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md">
+                <Users className="h-4 w-4" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold">Profile-wise Applications</CardTitle>
+                <CardDescription className="text-xs">Grouped by your assigned client profiles</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isRecruiterStatsLoading ? (
-              <Skeleton className="h-9 w-24" />
-            ) : (
-              <p className="text-3xl font-bold text-slate-900">{recruiterStats?.assignedProfilesCount ?? profileWiseCounts.length}</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Shield className="h-4 w-4 text-purple-500" /> My Team
-            </CardTitle>
-            <CardDescription>Your assigned team and team leader.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isRecruiterStatsLoading ? (
-              <div className="space-y-1.5">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-40" />
-              </div>
-            ) : recruiterStats?.teamLeader ? (
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-slate-800">
-                  {recruiterStats.teamLeader.teamName ?? <span className="italic text-slate-400">No team name set</span>}
-                </p>
-                <p className="text-xs text-slate-500">
-                  <span className="font-medium text-slate-600">Team Leader:</span> {recruiterStats.teamLeader.name}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                <p className="text-sm italic text-slate-400">No team assigned yet</p>
-                <p className="text-xs text-slate-400">Contact your admin to be placed in a team.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-
-      <div className="mb-6">
-        <JobPortalAnalyticsCard
-          title="Job Portal Analytics"
-          description="Toggle between all-time, current-shift, and custom date-range portal counts for your applications."
-        />
-      </div>
-      <div className="mb-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile wise Applications</CardTitle>
-            <CardDescription>Applications grouped by the client profiles assigned to you.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isRecruiterStatsLoading ? (
-              <div className="space-y-2">
+              <div className="p-4 space-y-3">
                 <Skeleton className="h-14 w-full" />
                 <Skeleton className="h-14 w-full" />
                 <Skeleton className="h-14 w-full" />
               </div>
             ) : profileWiseCounts.length === 0 ? (
-              <EmptyState title="No assigned profiles" description="Profiles assigned to you will appear here with their application counts." />
+              <div className="p-6">
+                <EmptyState title="No assigned profiles" description="Profiles assigned to you will appear here." />
+              </div>
             ) : (
-              <div className="space-y-2">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Candidate</TableHead>
-                      <TableHead className="text-right">Current Shift Applications</TableHead>
-                      <TableHead className="text-right">Total Applications</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {profileWiseCounts.map((row) => (
-                      <TableRow key={row.profileId}>
-                        <TableCell>
-                          <p className="text-sm font-medium text-slate-900">{row.candidateName}</p>
-                        </TableCell>
-                        <TableCell className="text-right pr-[50px]">
-                          <Badge variant={row.currentShiftApplications > 0 ? 'default' : 'muted'}>
-                            {row.currentShiftApplications} applications
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant="secondary">{row.totalApplications} applications</Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="divide-y divide-slate-100">
+                {profileWiseCounts.map((row, idx) => (
+                  <motion.div
+                    key={row.profileId}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.03 }}
+                    className="flex items-center justify-between p-4 hover:bg-slate-50/60 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 text-white font-bold text-sm">
+                        {row.candidateName.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{row.candidateName}</p>
+                        <p className="text-xs text-slate-500">{row.profileId.slice(0, 8)} • Profile</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-slate-900 text-white hover:bg-slate-900 border-0 shadow-sm">{row.currentShiftApplications} today</Badge>
+                      <Badge variant="secondary" className="bg-indigo-50 border-indigo-100 text-indigo-700">
+                        {row.totalApplications} total
+                      </Badge>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             )}
           </CardContent>
         </Card>
-      </div>
+      </Reveal>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Applications</CardTitle>
-          <CardDescription>Your latest submitted applications.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {recentApplications.length === 0 ? (
-            <EmptyState title="No recent applications" description="Applications you submit will appear here." />
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Candidate</TableHead>
-                  <TableHead>Portal</TableHead>
-                  <TableHead>Company / Title</TableHead>
-                  <TableHead>Applied</TableHead>
-                  <TableHead className="text-right">Link</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentApplications.map((app) => (
-                  <TableRow key={app.id}>
-                    <TableCell>
-                      <p className="text-sm font-medium text-slate-900">{app.profile?.candidateName}</p>
-                      <p className="text-xs text-slate-400">{app.profile?.technology}</p>
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-500">{formatEnumLabel(app.jobPortal)}</TableCell>
-                    <TableCell>
-                      <p className="text-sm font-medium text-slate-900">{app.companyName || 'Company not provided'}</p>
-                      <p className="text-xs text-slate-500">{app.jobTitle || 'Job title not provided'}</p>
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-500">{formatDateTime(app.appliedAt)}</TableCell>
-                    <TableCell className="text-right">
-                      <a href={app.jobLink} target="_blank" rel="noreferrer" className="text-mayzax-blue hover:underline">
-                        <ExternalLink className="ml-auto h-4 w-4" />
+      <Reveal delay={0.25}>
+        <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
+                <Clock className="h-4 w-4" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-semibold">Recent Applications</CardTitle>
+                <CardDescription className="text-xs">Latest 5 submissions • Auto-refreshes</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {recentApplications.length === 0 ? (
+              <div className="p-6">
+                <EmptyState title="No recent applications" description="Your recent activity will appear here." />
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {recentApplications.map((app, idx) => (
+                  <motion.div
+                    key={app.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.04 }}
+                    className="flex items-center justify-between p-4 hover:bg-slate-50/60 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 text-white font-bold text-sm">
+                        {app.profile?.candidateName?.charAt(0) || '?'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 truncate">{app.profile?.candidateName}</p>
+                        <p className="text-xs text-slate-500 truncate">
+                          {app.companyName || 'Company'} • {app.jobTitle || 'Role'} • {formatEnumLabel(app.jobPortal)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 ml-4">
+                      <span className="hidden sm:inline text-xs text-slate-400">{formatDateTime(app.appliedAt)}</span>
+                      <a href={app.jobLink} target="_blank" rel="noreferrer" className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 group-hover:bg-slate-900 text-slate-500 group-hover:text-white transition-colors">
+                        <ExternalLink className="h-4 w-4" />
                       </a>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </motion.div>
                 ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </Reveal>
     </div>
   );
 }

@@ -8,6 +8,9 @@ export interface ApplicationListParams {
   recruiterId?: string;
   status?: ApplicationStatus;
   jobPortal?: JobPortal;
+  verified?: boolean;
+  companyName?: string;
+  jobTitle?: string;
   businessDateFrom?: string;
   businessDateTo?: string;
   page?: number;
