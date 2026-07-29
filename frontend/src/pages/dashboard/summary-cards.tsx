@@ -35,10 +35,10 @@ function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoa
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.4 }}
       whileHover={{ y: -4, scale: 1.01 }}
-      className={`group relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-[1px] shadow-sm hover:shadow-xl transition-all duration-300 ${featured ? 'ring-1 ring-violet-100' : ''}`}
+      className={`group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] shadow-sm hover:shadow-xl transition-all duration-300 ${featured ? 'ring-1 ring-violet-100' : ''}`}
     >
       <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${gradient} blur-[0.5px]`} />
-      <div className="relative rounded-[15px] bg-white p-4 h-full flex flex-col justify-between">
+      <div className="relative rounded-[15px] bg-white dark:bg-slate-900 p-4 h-full flex flex-col justify-between">
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-md group-hover:scale-110 transition-transform duration-300`}>
             <Icon className="h-5 w-5" />
@@ -48,22 +48,22 @@ function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoa
           </div>
         </div>
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 leading-tight">{label}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 leading-tight">{label}</p>
           <div className="mt-1.5">
             {isLoading ? (
-              <div className="h-7 w-16 animate-pulse rounded bg-slate-100" />
+              <div className="h-7 w-16 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
             ) : typeof value === 'number' ? (
-              <p className="text-2xl font-bold tracking-tight text-slate-900">
+              <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                 <CountUp value={value} />
               </p>
             ) : (
-              <p className="text-base font-semibold text-slate-800 truncate" title={String(value)}>
+              <p className="text-base font-semibold text-slate-800 dark:text-slate-200 truncate" title={String(value)}>
                 {value}
               </p>
             )}
           </div>
         </div>
-        <div className="mt-3 h-1 w-full rounded-full bg-slate-100 overflow-hidden">
+        <div className="mt-3 h-1 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: '100%' }}
@@ -115,30 +115,30 @@ export function SummaryCards() {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-sm"
+            className="relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm"
           >
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-violet-500 via-indigo-500 to-teal-500" />
             <button
               onClick={() => setTeamsExpanded((prev) => !prev)}
-              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50/60 transition-colors"
+              className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 text-white shadow-md">
                   <Users className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-2">
                     Organization Teams
-                    <Badge variant="outline" className="text-[10px] bg-indigo-50 border-indigo-200 text-indigo-700">
+                    <Badge variant="outline" className="text-[10px] bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300">
                       {isLoading ? '...' : data?.totalTeams ?? 0} active
                     </Badge>
                   </p>
-                  <p className="text-xs text-slate-500">Team Leaders & member distribution</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Team Leaders & member distribution</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-slate-400">
                 <span className="hidden sm:inline text-xs font-medium">{teamsExpanded ? 'Collapse' : 'Expand teams'}</span>
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
                   {teamsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </div>
               </div>
@@ -152,12 +152,12 @@ export function SummaryCards() {
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25 }}
-                  className="overflow-hidden border-t border-slate-100"
+                  className="overflow-hidden border-t border-slate-100 dark:border-slate-800"
                 >
                   <div className="p-4">
-                    {isLoading && <p className="py-6 text-center text-xs text-slate-400">Loading teams...</p>}
+                    {isLoading && <p className="py-6 text-center text-xs text-slate-400 dark:text-slate-550">Loading teams...</p>}
                     {!isLoading && (!data?.teams || data.teams.length === 0) && (
-                      <p className="py-6 text-center text-xs text-slate-400">No teams found. Assign Team Leaders to create teams.</p>
+                      <p className="py-6 text-center text-xs text-slate-400 dark:text-slate-550">No teams found. Assign Team Leaders to create teams.</p>
                     )}
                     {!isLoading && data?.teams && data.teams.length > 0 && (
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -165,15 +165,15 @@ export function SummaryCards() {
                           <motion.div
                             key={team.tlId}
                             whileHover={{ y: -2, scale: 1.01 }}
-                            className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-[1px] hover:shadow-md transition-all"
+                            className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] hover:shadow-md transition-all"
                           >
-                            <div className="rounded-[11px] bg-gradient-to-br from-slate-50 to-white p-3 flex items-center justify-between">
+                            <div className="rounded-[11px] bg-gradient-to-br from-slate-50 to-white dark:from-slate-850 dark:to-slate-900 p-3 flex items-center justify-between">
                               <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-slate-800 flex items-center gap-1.5">
+                                <p className="truncate text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-1.5">
                                   <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                  {team.teamName || <span className="italic text-slate-400">No team name</span>}
+                                  {team.teamName || <span className="italic text-slate-450">No team name</span>}
                                 </p>
-                                <p className="truncate text-xs text-slate-500 mt-0.5">TL: <span className="font-medium text-slate-700">{team.tlName}</span></p>
+                                <p className="truncate text-xs text-slate-500 dark:text-slate-400 mt-0.5">TL: <span className="font-medium text-slate-700 dark:text-slate-350">{team.tlName}</span></p>
                               </div>
                               <span className="ml-2 shrink-0 rounded-full bg-gradient-to-r from-mayzax-blue-500 to-mayzax-green-500 text-white px-2.5 py-1 text-[11px] font-bold shadow-sm">
                                 {team.memberCount} members
@@ -192,10 +192,10 @@ export function SummaryCards() {
       )}
 
       {data && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="flex items-center gap-2 text-xs text-slate-400 bg-white border border-slate-200 rounded-full px-3 py-1.5 w-fit shadow-sm">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-455 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full px-3 py-1.5 w-fit shadow-sm">
           <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          Business Date: <span className="font-semibold text-slate-700">{data.currentBusinessDate}</span>
-          <span className="h-3 w-px bg-slate-200" />
+          Business Date: <span className="font-semibold text-slate-700 dark:text-slate-300">{data.currentBusinessDate}</span>
+          <span className="h-3 w-px bg-slate-200 dark:bg-slate-800" />
           {data.shiftWindowText || '6:00 PM – 9:00 AM IST'}
         </motion.div>
       )}

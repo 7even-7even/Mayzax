@@ -57,33 +57,33 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   });
 
   return (
-    <aside className={cn("hidden shrink-0 flex-col lg:flex relative transition-all duration-300 ease-in-out border-r border-slate-200/60 bg-white", isCollapsed ? "w-[76px]" : "w-[280px]")}>
-      <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50/80 to-white" />
+    <aside className={cn("hidden shrink-0 flex-col lg:flex relative transition-all duration-300 ease-in-out border-r border-slate-200/60 dark:border-slate-850 bg-white dark:bg-slate-900", isCollapsed ? "w-[76px]" : "w-[280px]")}>
+      <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50/80 to-white dark:from-slate-900 dark:via-slate-850/50 dark:to-slate-900" />
       <div className="absolute inset-0 bg-[linear-gradient(rgba(42,93,168,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(42,93,168,0.02)_1px,transparent_1px)] bg-[size:22px_22px]" />
 
       {/* Floating Toggle Button */}
       <button
         onClick={onToggle}
-        className="absolute right-[-12px] top-6 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 transition-all hover:text-mayzax-blue hover:scale-105"
+        className="absolute right-[-12px] top-6 z-50 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-750 transition-all hover:text-mayzax-blue hover:scale-105"
       >
         <ChevronLeft className={cn("h-4 w-4 transition-transform duration-300", isCollapsed && "rotate-180")} />
       </button>
 
       <div className="relative flex h-full flex-col">
         {/* Header/Branding */}
-        <div className={cn("flex h-[72px] items-center border-b border-slate-200/60 bg-gradient-to-r from-white to-mayzax-blue-50/30 transition-all", isCollapsed ? "px-4.5 justify-center" : "px-6 gap-3")}>
+        <div className={cn("flex h-[72px] items-center border-b border-slate-200/60 dark:border-slate-850 bg-gradient-to-r from-white dark:from-slate-900 to-mayzax-blue-50/30 dark:to-mayzax-blue-950/20 transition-all", isCollapsed ? "px-4.5 justify-center" : "px-6 gap-3")}>
           <div className="relative shrink-0">
             <div className="absolute inset-0 bg-mayzax-gradient rounded-xl blur-[4px] opacity-20" />
-            <img src={mayzaxLogo} alt="Mayzax" className="relative h-10 w-10 rounded-xl bg-white p-1.5 shadow-md ring-1 ring-slate-200" />
-            <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-mayzax-green-500 border-2 border-white animate-pulse" />
+            <img src={mayzaxLogo} alt="Mayzax" className="relative h-10 w-10 rounded-xl bg-white p-1.5 shadow-md ring-1 ring-slate-200 dark:ring-slate-800" />
+            <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-mayzax-green-500 border-2 border-white dark:border-slate-900 animate-pulse" />
           </div>
           {!isCollapsed && (
             <div className="leading-tight flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <p className="text-[15px] font-bold tracking-tight text-slate-900">MAYZAX</p>
+                <p className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-white">MAYZAX</p>
                 <Badge className="bg-mayzax-gradient text-white text-[9px] px-1.5 py-0 h-4 border-0 shadow-sm">CRM</Badge>
               </div>
-              <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
                 Recruitment ATS/CRM
                 <span className="h-1 w-1 rounded-full bg-mayzax-green-500" />
                 Live
@@ -103,21 +103,21 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   cn(
                     'group relative flex items-center rounded-xl transition-all duration-300 overflow-hidden border',
                     isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2.5 text-sm font-medium',
-                    isActive ? 'bg-mayzax-blue-50 text-mayzax-blue-700 border-mayzax-blue-200 shadow-sm shadow-mayzax-blue-100/50' : 'text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-sm hover:border-slate-200 border-transparent'
+                    isActive ? 'bg-mayzax-blue-50 dark:bg-mayzax-blue-900/30 text-mayzax-blue-700 dark:text-mayzax-blue-300 border-mayzax-blue-200 dark:border-mayzax-blue-800 shadow-sm shadow-mayzax-blue-100/50 dark:shadow-none' : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white hover:shadow-sm hover:border-slate-200 dark:hover:border-slate-700 border-transparent'
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
                     {isActive && !isCollapsed && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-mayzax-gradient" />}
-                    <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-300 shadow-sm', isActive ? `bg-gradient-to-br ${item.gradient} text-white` : 'bg-slate-100 text-slate-500 group-hover:bg-mayzax-blue-600 group-hover:text-white')}>
+                    <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-300 shadow-sm', isActive ? `bg-gradient-to-br ${item.gradient} text-white` : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-mayzax-blue-600 group-hover:text-white')}>
                       <item.icon className="h-4 w-4" />
                     </div>
                     {!isCollapsed && (
                       <>
                         <div className="flex-1 min-w-0">
-                          <p className="truncate font-semibold text-[13px] leading-tight">{item.label}</p>
-                          <p className={cn('truncate text-[11px] leading-tight', isActive ? 'text-mayzax-blue-700/70' : 'text-slate-400')}>{item.desc}</p>
+                          <p className={cn('truncate font-semibold text-[13px] leading-tight transition-colors duration-200', isActive ? 'text-mayzax-blue-700 dark:text-mayzax-blue-300' : 'text-slate-800 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white')}>{item.label}</p>
+                          <p className={cn('truncate text-[11px] leading-tight transition-colors duration-200', isActive ? 'text-mayzax-blue-700/70 dark:text-mayzax-blue-300/70' : 'text-slate-400 dark:text-slate-550 group-hover:text-slate-500 dark:group-hover:text-slate-400')}>{item.desc}</p>
                         </div>
                         {isActive && <div className="h-2 w-2 rounded-full bg-mayzax-gradient animate-pulse" />}
                       </>
@@ -130,7 +130,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
           {/* System section */}
           <div className={cn("mt-6", !isCollapsed && "px-3")}>
-            {!isCollapsed && <p className="text-[11px] font-bold tracking-widest uppercase text-slate-400 mb-2">System</p>}
+            {!isCollapsed && <p className="text-[11px] font-bold tracking-widest uppercase text-slate-400 dark:text-slate-500 mb-2">System</p>}
             <NavLink
               to="/updates"
               title={isCollapsed ? "Updates & Releases" : undefined}
@@ -138,7 +138,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 cn(
                   'group relative flex items-center justify-between rounded-xl transition-all border',
                   isCollapsed ? 'justify-center p-2' : 'px-3 py-2.5 text-sm font-medium',
-                  isActive ? 'bg-mayzax-gradient text-white border-mayzax-blue-600 shadow-md shadow-mayzax-blue-200/50' : 'bg-white border-slate-200 text-slate-700 hover:border-mayzax-blue-200 hover:bg-mayzax-blue-50/50'
+                  isActive ? 'bg-mayzax-gradient text-white border-mayzax-blue-600 shadow-md shadow-mayzax-blue-200/50' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-mayzax-blue-200 dark:hover:border-mayzax-blue-800 hover:bg-mayzax-blue-50/50 dark:hover:bg-mayzax-blue-950/20'
                 )
               }
             >
@@ -166,7 +166,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         </nav>
 
         {/* Footer/Business Date */}
-        <div className={cn("border-t border-slate-200/60 bg-gradient-to-b from-white to-mayzax-blue-50/20 transition-all", isCollapsed ? "p-3 space-y-2.5 text-center" : "p-4 space-y-3")}>
+        <div className={cn("border-t border-slate-200/60 dark:border-slate-800 bg-gradient-to-b from-white dark:from-slate-900 to-mayzax-blue-50/20 dark:to-mayzax-blue-950/10 transition-all", isCollapsed ? "p-3 space-y-2.5 text-center" : "p-4 space-y-3")}>
           {isCollapsed ? (
             <div
               className="flex h-10 w-10 items-center justify-center rounded-xl bg-mayzax-gradient text-white shadow-md mx-auto cursor-help hover:scale-105 transition-transform"
@@ -192,7 +192,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             </div>
           )}
 
-          <div className={cn("flex items-center justify-between text-[11px] text-slate-400 px-1", isCollapsed && "justify-center")}>
+          <div className={cn("flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 px-1", isCollapsed && "justify-center")}>
             {!isCollapsed ? (
               <>
                 <span className="flex items-center gap-1">

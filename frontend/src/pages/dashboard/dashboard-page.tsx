@@ -22,6 +22,8 @@ import { useMyRecruiterStats, useUpdateMyTeamName } from '@/hooks/use-recruiters
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 
+import { PremiumPageHeader } from '@/components/shared/premium-page-header';
+
 const sortOptions = [
   { value: 'totalApplications', label: 'Total Applications' },
   { value: 'assignedProfiles', label: 'Assigned Profiles' },
@@ -163,35 +165,15 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <Reveal>
-        <div className="relative overflow-hidden rounded-[20px] border border-slate-200/60 bg-gradient-to-br from-white via-indigo-50/10 to-violet-50/20 p-[1px] shadow-sm">
-          <div className="rounded-[19px] bg-white">
-            <div className="p-6 sm:p-7 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-900 to-slate-700 text-white shadow-lg">
-                  <Activity className="h-6 w-6" />
-                </div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-                    {isTeamLeader ? 'Team Command Center' : 'Admin Command Center'}
-                    <Badge className="bg-slate-900 text-white border-0 text-[10px]">LIVE</Badge>
-                  </h1>
-                  <p className="mt-1 text-sm text-slate-500 max-w-2xl">
-                    {isTeamLeader ? "Real-time pulse of your team's performance • Shift goals • Live availability" : 'Organization-wide recruiter performance • Premium analytics • Live team monitoring'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1.5 font-medium text-emerald-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Real-time
-                </span>
-              </div>
-            </div>
-            <div className="h-1 w-full bg-gradient-to-r from-slate-900 via-violet-600 to-indigo-600" />
-          </div>
-        </div>
-      </Reveal>
+      <PremiumPageHeader
+        icon={Activity}
+        title={isTeamLeader ? 'Team Command Center' : 'Admin Command Center'}
+        description={isTeamLeader ? "Real-time pulse of your team's performance • Shift goals • Live availability" : 'Organization-wide recruiter performance • Premium analytics • Live team monitoring'}
+        live={true}
+        liveLabel="Live"
+        gradient="from-slate-900 to-slate-700"
+        bottomGradient="from-slate-900 via-violet-600 to-indigo-600"
+      />
 
       <div className="space-y-6">
         {user?.role === 'TEAM_LEADER' ? (

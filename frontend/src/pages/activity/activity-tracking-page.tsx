@@ -12,7 +12,7 @@ import {
 import { STATUS_CONFIG } from '@/components/activity/user-status-selector';
 import { UserStatus, ApiSuccess } from '@/types';
 import { apiClient } from '@/lib/api-client';
-import { PageHeader } from '@/components/shared/page-header';
+import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -133,15 +133,25 @@ function PremiumMetricCard({
   index?: number;
   trend?: string;
 }) {
+  const darkColor = color.includes('slate-800')
+    ? 'dark:text-white'
+    : color.includes('violet-700')
+    ? 'dark:text-violet-300'
+    : color.includes('emerald-700')
+    ? 'dark:text-emerald-300'
+    : color.includes('amber-700')
+    ? 'dark:text-amber-300'
+    : 'dark:text-slate-200';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06, duration: 0.4, ease: [0.21, 0.47, 0.32, 0.98] }}
-      className="group relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-[1px] shadow-sm hover:shadow-xl transition-all duration-300"
+      className="group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] shadow-sm hover:shadow-xl transition-all duration-300"
     >
       <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${gradient} blur-[1px]`} />
-      <div className="relative h-full rounded-[15px] bg-white p-4 flex flex-col justify-between">
+      <div className="relative h-full rounded-[15px] bg-white dark:bg-slate-900 p-4 flex flex-col justify-between">
         <div className="flex items-start justify-between mb-3">
           <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-md`}>
             <Icon className="h-5 w-5" />
@@ -154,15 +164,15 @@ function PremiumMetricCard({
           )}
         </div>
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</p>
           <div className="mt-1 flex items-baseline gap-2">
-            <p className={`text-xl font-bold tracking-tight ${color}`}>
+            <p className={cn("text-xl font-bold tracking-tight", color, darkColor)}>
               {typeof value === 'number' ? <CountUp value={value} /> : value}
             </p>
-            {subValue && <span className="text-xs text-slate-400 font-medium">{subValue}</span>}
+            {subValue && <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">{subValue}</span>}
           </div>
         </div>
-        <div className="mt-3 h-1 w-full rounded-full bg-slate-100 overflow-hidden">
+        <div className="mt-3 h-1 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: '100%' }}
@@ -214,14 +224,14 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
                 <PieChartIcon className="h-4 w-4" />
               </div>
               <div>
-                <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2 dark:text-black">
+                <CardTitle className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                   Live Team Status
                   <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 </CardTitle>
-                <CardDescription className="text-xs text-slate-500 dark:text-slate-450 dark:text-black">Real-time distribution • {totalMembers} tracked</CardDescription>
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Real-time distribution • {totalMembers} tracked</CardDescription>
               </div>
             </div>
-            <Badge variant="outline" className="w-fit text-xs font-medium bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-750 shadow-sm dark:text-black">
+            <Badge variant="outline" className="w-fit text-xs font-medium bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm dark:text-white">
               <UsersIcon className="h-3 w-3 mr-1 " />
               {totalMembers} members
             </Badge>
@@ -272,7 +282,7 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
                       <div className="relative flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                           <span className="h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }} />
-                          <span className="text-sm font-medium text-slate-700 dark:text-black">{item.name}</span>
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{item.name}</span>
                         </div>
                         <div className="text-right">
                           <span className="text-lg font-bold text-slate-900 dark:text-white">{item.value}</span>
@@ -464,10 +474,10 @@ function TodayTimeline({ data }: { data?: TodayActivityData }) {
             <Timer className="h-4 w-4" />
           </div>
           <div>
-            <CardTitle className="text-sm font-bold flex items-center gap-2 dark:text-black">
+            <CardTitle className="text-sm font-bold flex items-center gap-2 dark:text-white">
               Today's Journey
             </CardTitle>
-            <CardDescription className="text-xs dark:text-black">Chronological level timeline • Winding pathway</CardDescription>
+            <CardDescription className="text-xs dark:text-slate-400">Chronological level timeline • Winding pathway</CardDescription>
           </div>
         </div>
         
@@ -831,59 +841,38 @@ export default function ActivityTrackingPage() {
   return (
     <div className="space-y-6">
       {/* Premium Header */}
-      <Reveal>
-        <div className="relative overflow-hidden rounded-[20px] border border-slate-200/60 bg-gradient-to-br from-white via-slate-50/50 to-indigo-50/20 p-[1px] shadow-sm">
-          <div className="rounded-[19px] bg-white">
-            <div className="p-6 sm:p-7">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/20">
-                    <Activity className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2.5">
-                      <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
-                        {isAdmin ? 'Employee Monitoring' : 'Shift & Activity'}
-                      </h1>
-                      <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Live
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm text-slate-500 max-w-2xl">
-                      {isAdmin
-                        ? 'Real-time pulse of your workforce • Productivity, breaks & shift utilization'
-                        : isTeamLeader
-                        ? 'Monitor your team’s shift, breaks & productivity in real time'
-                        : 'Your personal shift cockpit • Track productive time, breaks & utilization'}
-                    </p>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-50 border border-violet-100 px-2.5 py-1 font-medium text-violet-700">
-                        <Sparkles className="h-3 w-3" />
-                        Visual Analytics
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2 text-black">
-                  <PermissionGate permission="export:activity">
-                    <Button variant="outline" onClick={handleExportExcel} disabled={isExporting || logs.length === 0} className="gap-2 bg-white shadow-sm">
-                      <Download className="h-4 w-4" /> Export Logs
-                    </Button>
-                  </PermissionGate>
-                  {(isAdmin || isTeamLeader) && (
-                    <Button variant="brand" onClick={handleExportAttendanceSheet} disabled={isExporting} className="gap-2 shadow-md shadow-violet-500/20">
-                      <Award className="h-4 w-4" /> Attendance Sheet
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="h-1 w-full bg-gradient-to-r from-violet-600 via-indigo-500 to-teal-500" />
+      <PremiumPageHeader
+        icon={Activity}
+        title={isAdmin ? 'Employee Monitoring' : 'Shift & Activity'}
+        description={
+          isAdmin
+            ? 'Real-time pulse of your workforce • Productivity, breaks & shift utilization'
+            : isTeamLeader
+            ? 'Monitor your team’s shift, breaks & productivity in real time'
+            : 'Your personal shift cockpit • Track productive time, breaks & utilization'
+        }
+        live={true}
+        liveLabel="Live"
+        pills={[
+          { label: 'Visual Analytics', icon: Sparkles, variant: 'premium' }
+        ]}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <PermissionGate permission="export:activity">
+              <Button variant="outline" onClick={handleExportExcel} disabled={isExporting || logs.length === 0} className="gap-2 bg-white dark:bg-slate-800 dark:border-slate-700 shadow-sm dark:text-white">
+                <Download className="h-4 w-4" /> Export Logs
+              </Button>
+            </PermissionGate>
+            {(isAdmin || isTeamLeader) && (
+              <Button variant="brand" onClick={handleExportAttendanceSheet} disabled={isExporting} className="gap-2 shadow-md shadow-violet-500/20">
+                <Award className="h-4 w-4" /> Attendance Sheet
+              </Button>
+            )}
           </div>
-        </div>
-      </Reveal>
+        }
+        gradient="from-violet-600 to-indigo-600"
+        bottomGradient="from-violet-600 via-indigo-500 to-teal-500"
+      />
 
       {/* Premium Summary Cards */}
       {!isAdmin && (
@@ -1042,18 +1031,18 @@ export default function ActivityTrackingPage() {
 
       {/* Premium Filters */}
       <Reveal delay={0.2}>
-        <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-          <div className="bg-gradient-to-r from-slate-50/80 to-white border-b border-slate-100 px-4 py-3 flex items-center gap-2">
+        <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800">
+          <div className="bg-gradient-to-r from-slate-50/80 to-white dark:from-slate-850 dark:to-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 py-3 flex items-center gap-2">
             <Filter className="h-4 w-4 text-slate-500" />
-            <span className="text-sm font-semibold text-slate-700 dark:text-black">Filters & View Controls</span>
-            <span className="ml-auto text-xs text-slate-400 dark:text-black">{filteredMembers.length} members • {logs.length} logs</span>
+            <span className="text-sm font-semibold text-slate-700 dark:text-white">Filters & View Controls</span>
+            <span className="ml-auto text-xs text-slate-400 dark:text-slate-400">{filteredMembers.length} members • {logs.length} logs</span>
           </div>
           <CardContent className="p-4">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex flex-wrap items-center gap-2 dark:text-black">
+              <div className="flex flex-wrap items-center gap-2 dark:text-white">
                 <PermissionGate permission="view:activity:all">
                   <Select value={selectedTeamId} onValueChange={(v) => { setSelectedTeamId(v as any); setPage(1); }}>
-                    <SelectTrigger className="w-full sm:w-48 bg-white">
+                    <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                       <SelectValue placeholder="Filter by Team" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1067,7 +1056,7 @@ export default function ActivityTrackingPage() {
                   </Select>
 
                   <Select value={selectedUserId} onValueChange={(v) => { setSelectedUserId(v as any); setPage(1); }}>
-                    <SelectTrigger className="w-full sm:w-48 bg-white">
+                    <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                       <SelectValue placeholder="Filter by User" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1082,7 +1071,7 @@ export default function ActivityTrackingPage() {
                 </PermissionGate>
 
                 <Select value={statusFilter as any} onValueChange={(v) => { setStatusFilter(v as any); setPage(1); }}>
-                  <SelectTrigger className="w-full sm:w-48 bg-white">
+                  <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1131,11 +1120,11 @@ export default function ActivityTrackingPage() {
                     <UsersIcon className="h-4 w-4" />
                   </div>
                   <div>
-                    <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-black">
+                    <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-white">
                       {statusFilter !== ALL ? `In ${STATUS_CONFIG[statusFilter as UserStatus]?.label}` : 'Live User Pulse'}
                       <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                     </CardTitle>
-                    <CardDescription className="text-xs dark:text-black">{filteredMembers.length} members • Real-time</CardDescription>
+                    <CardDescription className="text-xs dark:text-slate-400">{filteredMembers.length} members • Real-time</CardDescription>
                   </div>
                 </div>
                 <Badge variant="outline" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm dark:text-white">
@@ -1157,7 +1146,7 @@ export default function ActivityTrackingPage() {
                   estimateRowHeight={72}
                   maxHeight="520px"
                   header={
-                    <div className="grid grid-cols-[1.8fr_0.7fr_1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_0.9fr] gap-2 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-black bg-slate-50/80 dark:bg-slate-850/80">
+                    <div className="grid grid-cols-[1.8fr_0.7fr_1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_0.9fr] gap-2 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-300 bg-slate-50/80 dark:bg-slate-850/80">
                       <span>User</span>
                       <span>Role</span>
                       <span>Status</span>
@@ -1173,18 +1162,18 @@ export default function ActivityTrackingPage() {
                     return (
                       <div className="grid grid-cols-[1.8fr_0.7fr_1.2fr_0.8fr_0.8fr_0.8fr_0.8fr_0.9fr] gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60 transition-colors items-center">
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-900 dark:text-black truncate">{m.name}</p>
-                          <p className="text-[11px] text-slate-400 dark:text-black/80 truncate">{m.email}</p>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{m.name}</p>
+                          <p className="text-[11px] text-slate-400 dark:text-slate-400 truncate">{m.email}</p>
                         </div>
-                        <div className="text-xs font-medium text-slate-600 dark:text-black">{m.role === 'TEAM_LEADER' ? 'TL' : 'Recruiter'}</div>
+                        <div className="text-xs font-medium text-slate-600 dark:text-slate-300">{m.role === 'TEAM_LEADER' ? 'TL' : 'Recruiter'}</div>
                         <div>
                           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border ${cfg.bgColor} ${cfg.textColor} ${cfg.borderColor}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotColor}`} />
                             {cfg.label}
                           </span>
                         </div>
-                        <div className="text-xs font-mono text-slate-700 dark:text-black font-medium">{formatHoursMinutes(m.currentDurationSeconds)}</div>
-                        <div className="text-xs font-mono text-slate-600 dark:text-black/90">{formatHoursMinutes(m.todayLoggedInSeconds)}</div>
+                        <div className="text-xs font-mono text-slate-700 dark:text-slate-300 font-medium">{formatHoursMinutes(m.currentDurationSeconds)}</div>
+                        <div className="text-xs font-mono text-slate-600 dark:text-slate-400">{formatHoursMinutes(m.todayLoggedInSeconds)}</div>
                         <div className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-medium">{formatHoursMinutes(m.todayProductiveSeconds)}</div>
                         <div className="text-xs font-mono text-amber-700 dark:text-amber-400">{formatHoursMinutes(m.todayBreakSeconds)}</div>
                         <div className="text-right">
@@ -1225,8 +1214,8 @@ export default function ActivityTrackingPage() {
                     <Timer className="h-4 w-4" />
                   </div>
                   <div>
-                    <CardTitle className="text-sm font-semibold dark:text-black">Activity Event Logs</CardTitle>
-                    <CardDescription className="text-xs dark:text-black">Status transitions • Virtualized for performance</CardDescription>
+                    <CardTitle className="text-sm font-semibold dark:text-white">Activity Event Logs</CardTitle>
+                    <CardDescription className="text-xs dark:text-slate-400">Status transitions • Virtualized for performance</CardDescription>
                   </div>
                 </div>
               )}
@@ -1244,7 +1233,7 @@ export default function ActivityTrackingPage() {
                     estimateRowHeight={64}
                     maxHeight="560px"
                     header={
-                      <div className="grid grid-cols-[1.3fr_0.9fr_1fr_1fr_0.6fr_1fr] gap-2 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-black bg-slate-50/80 dark:bg-slate-850/80">
+                      <div className="grid grid-cols-[1.3fr_0.9fr_1fr_1fr_0.6fr_1fr] gap-2 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-300 bg-slate-50/80 dark:bg-slate-850/80">
                         <span>User</span>
                         <span>Status</span>
                         <span>Started</span>
@@ -1258,8 +1247,8 @@ export default function ActivityTrackingPage() {
                       return (
                         <div className="grid grid-cols-[1.3fr_0.9fr_1fr_1fr_0.6fr_1fr] gap-2 px-4 py-3 border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/60 dark:hover:bg-slate-800/60 items-center">
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-slate-900 dark:text-black truncate">{log.user.name}</p>
-                            <p className="text-[11px] text-slate-400 dark:text-black/80 truncate">{log.user.email}</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{log.user.name}</p>
+                            <p className="text-[11px] text-slate-400 dark:text-slate-400 truncate">{log.user.email}</p>
                           </div>
                           <div>
                             <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border ${cfg.bgColor} ${cfg.textColor} ${cfg.borderColor}`}>
@@ -1267,10 +1256,10 @@ export default function ActivityTrackingPage() {
                               {cfg.label}
                             </span>
                           </div>
-                          <div className="text-xs text-slate-600 dark:text-black/90">{formatDateTime(log.startedAt)}</div>
-                          <div className="text-xs text-slate-600 dark:text-black/90">{log.endedAt ? formatDateTime(log.endedAt) : <span className="font-semibold text-emerald-600 dark:text-emerald-400">Active</span>}</div>
-                          <div className="text-xs font-mono font-medium text-slate-700 dark:text-black">{formatHoursMinutes(log.durationSeconds)}</div>
-                          <div className="text-xs text-slate-500 dark:text-black/85 truncate max-w-[180px]">{log.optionalNote || '-'}</div>
+                          <div className="text-xs text-slate-600 dark:text-slate-400">{formatDateTime(log.startedAt)}</div>
+                          <div className="text-xs text-slate-600 dark:text-slate-400">{log.endedAt ? formatDateTime(log.endedAt) : <span className="font-semibold text-emerald-600 dark:text-emerald-400">Active</span>}</div>
+                          <div className="text-xs font-mono font-medium text-slate-700 dark:text-slate-300">{formatHoursMinutes(log.durationSeconds)}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[180px]">{log.optionalNote || '-'}</div>
                         </div>
                       );
                     }}

@@ -1,5 +1,5 @@
 import { BarChart3, Briefcase, ExternalLink, Shield, Users, Sparkles, Zap, TrendingUp, Award, Clock } from 'lucide-react';
-import { PageHeader } from '@/components/shared/page-header';
+import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,20 +24,20 @@ function PremiumMiniStat({ icon: Icon, label, value, sub, gradient, loading, ind
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06 }}
       whileHover={{ y: -3 }}
-      className="group relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-[1px] shadow-sm hover:shadow-lg transition-all"
+      className="group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] shadow-sm hover:shadow-lg transition-all"
     >
       <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-br ${gradient} transition-opacity`} />
-      <div className="relative rounded-[15px] bg-white p-5">
+      <div className="relative rounded-[15px] bg-white dark:bg-slate-900 p-5">
         <div className="flex items-start justify-between">
           <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} text-white shadow-md`}>
             <Icon className="h-5 w-5" />
           </div>
           <Sparkles className="h-4 w-4 text-slate-300 group-hover:text-violet-400 transition-colors" />
         </div>
-        <p className="mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
+        <p className="mt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</p>
         <div className="mt-1">
-          {loading ? <Skeleton className="h-8 w-20" /> : typeof value === 'number' ? <p className="text-2xl font-bold text-slate-900"><CountUp value={value} /></p> : <p className="text-lg font-semibold text-slate-900">{value}</p>}
-          {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
+          {loading ? <Skeleton className="h-8 w-20" /> : typeof value === 'number' ? <p className="text-2xl font-bold text-slate-900 dark:text-white"><CountUp value={value} /></p> : <p className="text-lg font-semibold text-slate-900 dark:text-white">{value}</p>}
+          {sub && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{sub}</p>}
         </div>
       </div>
     </motion.div>
@@ -63,43 +63,23 @@ export default function RecruiterDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <Reveal>
-        <div className="relative overflow-hidden rounded-[20px] border border-slate-200/60 bg-gradient-to-br from-white via-indigo-50/20 to-violet-50/20 p-[1px] shadow-sm">
-          <div className="rounded-[19px] bg-white">
-            <div className="p-6 sm:p-7 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white shadow-lg">
-                  <Briefcase className="h-6 w-6" />
-                </div>
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-                    Welcome back, {user?.name?.split(' ')[0] || 'Recruiter'}!
-                    <span className="hidden sm:inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-                      <Award className="h-3.5 w-3.5" />
-                    </span>
-                  </h1>
-                  <p className="mt-1 text-sm text-slate-500">Your personal cockpit • Portal performance, profiles & recent activity</p>
-                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-white px-3 py-1 font-semibold">
-                      <Zap className="h-3 w-3" />
-                      {recruiterStats?.totalApplications ?? 0} total apps
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 font-medium text-emerald-700">
-                      <Clock className="h-3 w-3" />
-                      {recruiterStats?.currentShiftApplications ?? 0} today
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-slate-400 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5">
-                <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-                Top portal: <span className="font-semibold text-slate-700">{formatEnumLabel(topPortal.portal)}</span> ({topPortal.count})
-              </div>
-            </div>
-            <div className="h-1 w-full bg-gradient-to-r from-indigo-600 via-violet-500 to-teal-500" />
+      <PremiumPageHeader
+        icon={Briefcase}
+        title={`Welcome back, ${user?.name?.split(' ')[0] || 'Recruiter'}!`}
+        description="Your personal cockpit • Portal performance, profiles & recent activity"
+        pills={[
+          { label: `${recruiterStats?.totalApplications ?? 0} total apps`, icon: Zap },
+          { label: `${recruiterStats?.currentShiftApplications ?? 0} today`, icon: Clock }
+        ]}
+        stats={
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1.5 shadow-sm">
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+            <span>Top portal: <span className="font-semibold text-slate-700 dark:text-slate-300">{formatEnumLabel(topPortal.portal)}</span> ({topPortal.count})</span>
           </div>
-        </div>
-      </Reveal>
+        }
+        gradient="from-mayzax-blue-600 to-mayzax-green-600"
+        bottomGradient="from-indigo-600 via-violet-500 to-teal-500"
+      />
 
       <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StaggerItem>
@@ -120,16 +100,16 @@ export default function RecruiterDashboardPage() {
           <PremiumMiniStat icon={Users} label="Assigned Profiles" value={recruiterStats?.assignedProfilesCount ?? profileWiseCounts.length} sub="Candidates assigned" gradient="from-amber-500 to-orange-600" loading={isRecruiterStatsLoading} index={2} />
         </StaggerItem>
         <StaggerItem>
-          <div className="group relative overflow-hidden rounded-2xl border border-slate-200/60 bg-white p-[1px] shadow-sm hover:shadow-lg transition-all h-full">
+          <div className="group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] shadow-sm hover:shadow-lg transition-all h-full">
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-600 transition-opacity" />
-            <div className="relative rounded-[15px] bg-white p-5 h-full">
+            <div className="relative rounded-[15px] bg-white dark:bg-slate-900 p-5 h-full">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-600 text-white shadow-md">
                   <Shield className="h-5 w-5" />
                 </div>
-                <Badge variant="outline" className="text-[10px] bg-violet-50 border-violet-200 text-violet-700">Team</Badge>
+                <Badge variant="outline" className="text-[10px] bg-violet-50 dark:bg-violet-950/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300">Team</Badge>
               </div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">My Team</p>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">My Team</p>
               {isRecruiterStatsLoading ? (
                 <div className="mt-2 space-y-2">
                   <Skeleton className="h-4 w-32" />
@@ -137,16 +117,16 @@ export default function RecruiterDashboardPage() {
                 </div>
               ) : recruiterStats?.teamLeader ? (
                 <div className="mt-2">
-                  <p className="text-sm font-semibold text-slate-800 flex items-center gap-1.5">
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-full bg-emerald-500" />
                     {recruiterStats.teamLeader.teamName || <span className="italic text-slate-400">No team name</span>}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    TL: <span className="font-medium text-slate-700">{recruiterStats.teamLeader.name}</span>
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    TL: <span className="font-medium text-slate-700 dark:text-slate-300">{recruiterStats.teamLeader.name}</span>
                   </p>
                 </div>
               ) : (
-                <p className="mt-2 text-sm text-slate-400 italic">No team assigned yet</p>
+                <p className="mt-2 text-sm text-slate-400 dark:text-slate-500 italic">No team assigned yet</p>
               )}
             </div>
           </div>
