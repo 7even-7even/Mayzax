@@ -19,3 +19,5 @@ vite.config.ts.timestamp-*
 # Chrome Extension private keys and packaged binaries
 *.pem
 *.crx
+VISION.MD
+GAP.MD

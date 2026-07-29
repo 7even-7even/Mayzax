@@ -78,17 +78,17 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
   const debouncedLink = useDebounce(jobLink, 500);
 
   // Extension verification hook (commented out until deployed)
-  // const { isVerified, isChecking, verificationResult, state: verificationState, isExtensionInstalled, installUrl, extensionId, retry: retryVerification } = useExtensionVerification(debouncedLink);
-  
+  const { isVerified, isChecking, verificationResult, state: verificationState, isExtensionInstalled, installUrl, extensionId, retry: retryVerification } = useExtensionVerification(debouncedLink);
+
   // Extension placeholder states
-  const isVerified = false;
-  const isChecking = false;
-  const verificationResult = null;
-  const verificationState = 'idle';
-  const isExtensionInstalled = false;
-  const installUrl = null;
-  const extensionId = '';
-  const retryVerification = () => {};
+  // const isVerified = false;
+  // const isChecking = false;
+  // const verificationResult = null;
+  // const verificationState = 'idle';
+  // const isExtensionInstalled = false;
+  // const installUrl = null;
+  // const extensionId = '';
+  // const retryVerification = () => {};
 
   const [duplicateResult, setDuplicateResult] = useState<{ isDuplicate: boolean; appliedByRecruiter?: { name: string } | null } | null>(null);
 
@@ -117,7 +117,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
   }, [profileId, debouncedLink]);
 
   // Extension verification handler (commented out until deployed)
-  /*
+
   useEffect(() => {
     if (isVerified && verificationResult) {
       form.setValue('verified', true);
@@ -131,7 +131,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
       form.setValue('verificationMethod', null);
     }
   }, [isVerified, verificationResult, form]);
-  */
+
 
   const onSubmit = async (values: ApplicationForm) => {
     try {
@@ -173,10 +173,9 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
                 <Briefcase className="h-4 w-4" />
               </div>
               Log Job Application
-              <Badge className="bg-mayzax-blue-50 text-mayzax-blue-700 border-mayzax-blue-200 text-[10px]"></Badge>
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Verified tracking • Business-date grouping 
+              Verified tracking 
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -211,7 +210,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
               {debouncedLink && (
                 <div className="mt-3 space-y-2">
                   {/* ExtensionVerificationBadge commented out until extension is deployed */}
-                  {/* <ExtensionVerificationBadge isVerified={isVerified} isChecking={isChecking} result={verificationResult} state={verificationState} isExtensionInstalled={isExtensionInstalled} installUrl={installUrl} extensionId={extensionId} onRetry={retryVerification} /> */}
+                  <ExtensionVerificationBadge isVerified={isVerified} isChecking={isChecking} result={verificationResult} state={verificationState} isExtensionInstalled={isExtensionInstalled} installUrl={installUrl} extensionId={extensionId} onRetry={retryVerification} />
                   <div className="flex flex-wrap gap-2">
                     {duplicateResult?.isDuplicate ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">
@@ -259,7 +258,6 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
             </div>
 
             {/* Verification Info Box commented out until extension is deployed */}
-            {/* 
             <div className="rounded-xl bg-gradient-to-br from-mayzax-blue-50 to-mayzax-green-50/30 border border-mayzax-blue-100 p-3 flex gap-2.5">
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-mayzax-gradient text-white shrink-0">
                 <ShieldCheck className="h-4 w-4" />
@@ -268,7 +266,6 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
                 <span className="font-semibold text-mayzax-blue-700">Updated Verification:</span> Extension auto-detects success page • Prevents duplicate for same profile
               </p>
             </div>
-            */}
           </div>
 
           <div className="p-6 pt-4 border-t border-slate-100 shrink-0 bg-slate-50/30">
