@@ -49,14 +49,14 @@ export function LiveStatusCard() {
                 <Activity className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-black">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-white">
                   Live Team Availability
                   <span className="flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
                 </CardTitle>
-                <CardDescription className="text-xs dark:text-black">Real-time pulse • Shift utilization • {members.length} tracked</CardDescription>
+                <CardDescription className="text-xs dark:text-slate-400">Real-time pulse • Shift utilization • {members.length} tracked</CardDescription>
               </div>
             </div>
 

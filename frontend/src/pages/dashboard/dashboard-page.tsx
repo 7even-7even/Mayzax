@@ -217,8 +217,8 @@ export default function DashboardPage() {
                 <Users className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-black">Recruiter Leaderboard</h3>
-                <p className="text-xs text-slate-500 dark:text-black">Search, sort & expand for breakdown</p>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recruiter Leaderboard</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Search, sort & expand for breakdown</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -256,12 +256,12 @@ export default function DashboardPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50/60 dark:bg-slate-850/60 dark:border-slate-800">
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Recruiter</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Status</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Profiles</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Total Apps</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Current Shift</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-black">Last Active</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Recruiter</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Status</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Profiles</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Total Apps</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Current Shift</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Last Active</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
