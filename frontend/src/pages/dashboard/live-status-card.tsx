@@ -133,11 +133,11 @@ export function LiveStatusCard() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50/40 dark:bg-slate-850/40 text-xs dark:border-slate-800">
-                  <TableHead className="font-semibold dark:text-grey">Recruiter</TableHead>
-                  <TableHead className="font-semibold dark:text-grey">Role</TableHead>
-                  <TableHead className="font-semibold dark:text-grey">Status</TableHead>
-                  <TableHead className="font-semibold dark:text-grey">Session</TableHead>
-                  <TableHead className="text-right font-semibold dark:text-grey">Today Productive</TableHead>
+                  <TableHead className="font-semibold text-slate-500 dark:text-slate-300">Recruiter</TableHead>
+                  <TableHead className="font-semibold text-slate-500 dark:text-slate-300">Role</TableHead>
+                  <TableHead className="font-semibold text-slate-500 dark:text-slate-300">Status</TableHead>
+                  <TableHead className="font-semibold text-slate-500 dark:text-slate-300">Session</TableHead>
+                  <TableHead className="text-right font-semibold text-slate-500 dark:text-slate-300">Today Productive</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -152,11 +152,11 @@ export function LiveStatusCard() {
                       className="text-xs hover:bg-slate-50/70 dark:hover:bg-slate-800/70 dark:border-slate-800 transition-colors"
                     >
                       <TableCell>
-                        <p className="font-semibold text-slate-400 dark:text-grey">{member.name}</p>
-                        <p className="text-[11px] text-slate-400 dark:text-grey">{member.email}</p>
+                        <p className="font-semibold text-slate-900 dark:text-white">{member.name}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">{member.email}</p>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-[10px] dark:bg-slate-850 dark:text-grey/90 dark:border-slate-200">
+                        <Badge variant="outline" className="text-[10px] dark:bg-slate-850 dark:text-slate-350 dark:border-slate-700">
                           {member.role === 'TEAM_LEADER' ? 'Team Leader' : 'Recruiter'}
                         </Badge>
                       </TableCell>
@@ -166,12 +166,12 @@ export function LiveStatusCard() {
                           {config.label}
                         </span>
                         {member.optionalNote && (
-                          <p className="mt-1 max-w-xs truncate text-[11px] text-slate-400 dark:grey" title={member.optionalNote}>
+                          <p className="mt-1 max-w-xs truncate text-[11px] text-slate-500 dark:text-slate-400" title={member.optionalNote}>
                             {member.optionalNote}
                           </p>
                         )}
                       </TableCell>
-                      <TableCell className="font-mono text-slate-200 dark:text-grey">
+                      <TableCell className="font-mono text-slate-650 dark:text-slate-300">
                         <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-1">
                           <Clock className="h-3 w-3" />
                           {formatDuration(member.currentDurationSeconds)}
