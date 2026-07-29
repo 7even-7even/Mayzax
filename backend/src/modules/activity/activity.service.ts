@@ -11,7 +11,7 @@ import {
   ProductivityMetrics,
 } from './activity.types';
 
-const STALE_HEARTBEAT_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+const STALE_HEARTBEAT_THRESHOLD_MS = 40 * 60 * 1000; // 40 minutes
 
 /**
  * Helper to check if a role should be tracked
@@ -181,7 +181,11 @@ export async function processHeartbeat(userId: string, role: Role) {
     orderBy: { startedAt: 'desc' },
   });
 
-  if (openLog && lastHeartbeat && openLog.status !== UserStatus.OFFLINE) {
+  if (
+    openLog &&
+    lastHeartbeat &&
+    (openLog.status === UserStatus.ACTIVE || openLog.status === UserStatus.ONLINE)
+  ) {
     const timeSinceLastHeartbeat = now.getTime() - lastHeartbeat.getTime();
     if (timeSinceLastHeartbeat > STALE_HEARTBEAT_THRESHOLD_MS) {
       // Auto-close stale log at last known heartbeat time
@@ -480,14 +484,20 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
     const isOnline =
       !!u.lastHeartbeatAt && now.getTime() - u.lastHeartbeatAt.getTime() <= STALE_HEARTBEAT_THRESHOLD_MS;
 
-    if (status === UserStatus.ACTIVE) {
+    const statusToShow = (isOnline || (status !== UserStatus.ACTIVE && status !== UserStatus.ONLINE)) ? status : UserStatus.OFFLINE;
+
+    if (statusToShow === UserStatus.ACTIVE) {
       totalActiveCount++;
-    } else if (status === UserStatus.ONLINE) {
+    } else if (statusToShow === UserStatus.ONLINE) {
       totalActiveCount++;
       totalOnlineCount++;
-    } else if (status === UserStatus.SYSTEM_ISSUE) totalIssueCount++;
-    else if (status === UserStatus.OFFLINE || !isOnline) totalOfflineCount++;
-    else totalBreakCount++;
+    } else if (statusToShow === UserStatus.SYSTEM_ISSUE) {
+      totalIssueCount++;
+    } else if (statusToShow === UserStatus.OFFLINE) {
+      totalOfflineCount++;
+    } else {
+      totalBreakCount++;
+    }
 
     const todayProductiveSeconds = productiveTimeMap.get(u.id) ?? 0;
     const todayBreakSeconds = breakTimeMap.get(u.id) ?? 0;
@@ -499,7 +509,7 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
       role: u.role,
       createdById: u.createdById,
       teamName: u.teamName ?? null,
-      status: isOnline ? status : UserStatus.OFFLINE,
+      status: statusToShow,
       startedAt,
       currentDurationSeconds,
       optionalNote: log?.optionalNote ?? null,
