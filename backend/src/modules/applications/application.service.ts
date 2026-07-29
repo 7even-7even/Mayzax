@@ -175,7 +175,7 @@ export async function getApplication(id: string, actor: Requester) {
 }
 
 export async function listApplications(query: ListApplicationsQuery, actor: Requester) {
-  if (actor.role === Role.TEAM_LEADER && query.recruiterId) {
+  if (actor.role === Role.TEAM_LEADER && query.recruiterId && query.recruiterId !== actor.id) {
     const recruiter = await prisma.user.findFirst({
       where: { id: query.recruiterId, createdById: actor.id, deletedAt: null }
     });

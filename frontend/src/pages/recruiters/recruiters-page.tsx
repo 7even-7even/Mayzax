@@ -247,11 +247,11 @@ export default function RecruitersPage() {
                         <div className="flex items-center gap-2"><Switch checked={recruiter.isActive} onCheckedChange={(checked) => handleToggle(recruiter, checked)} disabled={toggleStatus.isPending || isTeamLeader} /><span className="text-xs">{recruiter.isActive ? 'Active' : 'Inactive'}</span></div>
                       </TableCell>
                       <TableCell className="text-sm text-slate-500">{timeAgo(recruiter.lastActiveAt)}</TableCell>
-                      <TableCell className="text-right pr-6">
+                      <TableCell className="text-right pr-6 dark: text-grey">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-full">
-                              <MoreVertical className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="rounded-full dark: text-grey">
+                              <MoreVertical className="h-4 w-4 dark: text-grey" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="rounded-xl">

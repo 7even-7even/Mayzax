@@ -68,6 +68,7 @@ export function buildWhereClause(
   if (query.verified !== undefined) conditions.push({ verified: query.verified });
   if (query.companyName) conditions.push({ companyName: { contains: query.companyName, mode: 'insensitive' } });
   if (query.jobTitle) conditions.push({ jobTitle: { contains: query.jobTitle, mode: 'insensitive' } });
+  if (query.recruiterId) conditions.push({ recruiterId: query.recruiterId });
 
   if (query.search) {
     conditions.push({
@@ -125,8 +126,6 @@ export function buildWhereClause(
         ],
       });
     }
-  } else if (query.recruiterId) {
-    conditions.push({ recruiterId: query.recruiterId });
   }
 
   if (query.businessDateFrom || query.businessDateTo) {

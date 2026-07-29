@@ -320,12 +320,26 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
       },
     }),
     prisma.jobApplication.count({
-      where: isTeamLeader ? { recruiter: { createdById: actor.id } } : {},
+      where: isTeamLeader
+        ? {
+            OR: [
+              { recruiterId: actor.id },
+              { recruiter: { createdById: actor.id } },
+            ],
+          }
+        : {},
     }),
     prisma.jobApplication.count({
       where: {
         businessDate: businessDateFilter,
-        ...(isTeamLeader ? { recruiter: { createdById: actor.id } } : {}),
+        ...(isTeamLeader
+          ? {
+              OR: [
+                { recruiterId: actor.id },
+                { recruiter: { createdById: actor.id } },
+              ],
+            }
+          : {}),
       },
     }),
     // Fetch TLs with their member count (Admin only; TL sees just themselves)

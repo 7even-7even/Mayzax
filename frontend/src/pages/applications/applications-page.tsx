@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Download, ExternalLink, FileText, Loader2, Plus, X, Sparkles, Building2, ShieldCheck, Users, ClipboardList, Activity } from 'lucide-react';
 import { PremiumPageHeader } from '@/components/shared/premium-page-header';
@@ -15,6 +15,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { apiClient } from '@/lib/api-client';
 import { formatDateTime, generateExportFilename } from '@/lib/utils';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useAuth } from '@/context/auth-context';
 import { ApiSuccess, ApplicationStatus, JobApplication, JobPortal } from '@/types';
 import { toast } from 'sonner';
 import { VirtualizedTable } from '@/components/shared/virtualized-table';
@@ -67,7 +68,8 @@ async function downloadApplicationsExcel(applications: JobApplication[], isAdmin
 }
 
 export default function ApplicationsPage() {
-  const { isAdmin, isManager } = usePermissions();
+  const { user } = useAuth();
+  const { isAdmin, isManager, isTeamLeader } = usePermissions();
   const [searchParams, setSearchParams] = useSearchParams();
   const dateFilter = searchParams.get('date');
   const fromFilter = searchParams.get('from');
@@ -90,7 +92,26 @@ export default function ApplicationsPage() {
   const debouncedCompany = useDebounce(companyName);
 
   const { data: recruitersData } = useRecruiters({ pageSize: 100, isActive: true });
-  const recruiters = recruitersData?.data ?? [];
+  const rawRecruiters = recruitersData?.data ?? [];
+  const recruiters = useMemo(() => {
+    if (isTeamLeader && user) {
+      const exists = rawRecruiters.some((r) => r.id === user.id);
+      if (!exists) {
+        return [
+          {
+            id: user.id,
+            name: `${user.name} (Me)`,
+            email: user.email,
+            role: 'TEAM_LEADER',
+            isActive: true,
+            createdAt: user.createdAt,
+          } as any,
+          ...rawRecruiters,
+        ];
+      }
+    }
+    return rawRecruiters;
+  }, [rawRecruiters, isTeamLeader, user]);
 
   useEffect(() => {
     if (fromFilter || toFilter) {
