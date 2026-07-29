@@ -241,7 +241,7 @@ export default function ForgotPasswordPage() {
                     <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">Email Address</Label>
                     <div className="relative group">
                       <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-mayzax-blue-500 transition-colors" />
-                      <Input type="email" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all" placeholder="you@mayzaxsolutions.com" {...emailForm.register('email')} />
+                      <Input type="email" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" placeholder="you@mayzaxsolutions.com" {...emailForm.register('email')} />
                     </div>
                     {emailForm.formState.errors.email && <p className="text-xs text-red-600">{emailForm.formState.errors.email.message}</p>}
                   </div>
@@ -281,20 +281,20 @@ export default function ForgotPasswordPage() {
 
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">Answer</Label>
-                    <Input type="password" placeholder="Your secret answer" className="h-[46px] rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all" {...resetForm.register('securityAnswer')} />
+                    <Input type="password" placeholder="Your secret answer" className="h-[46px] rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...resetForm.register('securityAnswer')} />
                     {resetForm.formState.errors.securityAnswer && <p className="text-xs text-red-600">{resetForm.formState.errors.securityAnswer.message}</p>}
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">New Password</Label>
                     <div className="relative">
                       <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                      <Input type="password" placeholder="Minimum 8 chars, uppercase, number" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all" {...resetForm.register('newPassword')} />
+                      <Input type="password" placeholder="Minimum 8 chars, uppercase, number" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...resetForm.register('newPassword')} />
                     </div>
                     {resetForm.formState.errors.newPassword && <p className="text-xs text-red-600">{resetForm.formState.errors.newPassword.message}</p>}
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">Confirm New Password</Label>
-                    <Input type="password" placeholder="Repeat new password" className="h-[46px] rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all" {...resetForm.register('confirmPassword')} />
+                    <Input type="password" placeholder="Repeat new password" className="h-[46px] rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...resetForm.register('confirmPassword')} />
                     {resetForm.formState.errors.confirmPassword && <p className="text-xs text-red-600">{resetForm.formState.errors.confirmPassword.message}</p>}
                   </div>
 

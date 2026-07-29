@@ -219,7 +219,7 @@ export default function LoginPage() {
                   <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">Work Email</Label>
                   <div className="relative group">
                     <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-mayzax-blue-500 transition-colors" />
-                    <Input type="email" placeholder="you@mayzaxsolutions.com" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all" {...register('email')} />
+                    <Input type="email" placeholder="you@mayzaxsolutions.com" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...register('email')} />
                   </div>
                   {errors.email && <p className="text-xs text-red-600">{errors.email.message}</p>}
                 </div>
@@ -233,7 +233,7 @@ export default function LoginPage() {
                   </div>
                   <div className="relative group">
                     <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-mayzax-blue-500 transition-colors" />
-                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="h-[46px] pl-10 pr-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all" {...register('password')} />
+                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="h-[46px] pl-10 pr-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...register('password')} />
                     <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-100 text-slate-400">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
