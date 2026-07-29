@@ -34,12 +34,14 @@ import { useRecruiters } from '@/hooks/use-recruiters';
 import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage } from '@/lib/api-client';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useAuth } from '@/context/auth-context';
 import { PermissionGate } from '@/components/shared/permission-gate';
 import { ClientProfile } from '@/types';
 import { VirtualizedGrid } from '@/components/shared/virtualized-table';
 
 export default function ProfilesPage() {
-  const { isAdmin, isManager, canCreateProfile, canDeleteProfile, canBulkProfile } = usePermissions();
+  const { user } = useAuth();
+  const { isAdmin, isManager, isTeamLeader, canCreateProfile, canDeleteProfile, canBulkProfile } = usePermissions();
   const navigate = useNavigate();
 
   const [search, setSearch] = useState('');
@@ -58,7 +60,26 @@ export default function ProfilesPage() {
     isActive: true,
     pageSize: 100,
   });
-  const recruiters = recruitersData?.data ?? [];
+  const rawRecruiters = recruitersData?.data ?? [];
+  const recruiters = useMemo(() => {
+    if (isTeamLeader && user) {
+      const exists = rawRecruiters.some((r) => r.id === user.id);
+      if (!exists) {
+        return [
+          {
+            id: user.id,
+            name: `${user.name} (Me)`,
+            email: user.email,
+            role: 'TEAM_LEADER',
+            isActive: true,
+            createdAt: user.createdAt,
+          } as any,
+          ...rawRecruiters,
+        ];
+      }
+    }
+    return rawRecruiters;
+  }, [rawRecruiters, isTeamLeader, user]);
 
   const { data, isLoading, isError, refetch } = useProfiles({
     search: debouncedSearch || undefined,
