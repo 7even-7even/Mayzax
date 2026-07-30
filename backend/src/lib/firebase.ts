@@ -46,9 +46,9 @@ export function getFirebaseApp(): any | null {
   }
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const admin = require('firebase-admin');
-    fb = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+    const { initializeApp, cert } = require('firebase-admin');
+    fb = initializeApp({
+      credential: cert(serviceAccount),
       ...(env.FIREBASE_DATABASE_URL ? { databaseURL: env.FIREBASE_DATABASE_URL } : {}),
     });
     logger.info('Firebase Admin initialized successfully');
@@ -82,8 +82,8 @@ export async function sendPush(payload: PushPayload): Promise<PushResult> {
   if (!app) return { success: false, error: 'firebase-not-configured' };
 
   try {
-    const admin = require('firebase-admin');
-    await admin.messaging().send({
+    const { getMessaging } = require('firebase-admin/messaging');
+    await getMessaging().send({
       token: payload.token,
       notification: {
         title: payload.title,

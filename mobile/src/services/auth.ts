@@ -15,6 +15,10 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
     email: input.email.trim().toLowerCase(),
     password: input.password,
   });
+
+  console.log("LOGIN RESPONSE");
+  console.log(JSON.stringify(response, null, 2));
+
   const data = (response ?? {}) as AuthResponse;
   if (!data?.tokens?.accessToken) {
     throw new Error('Invalid login response');
@@ -72,7 +76,7 @@ export async function logout(notifyServer = true): Promise<void> {
       const refresh = await secureStorage.getRefreshToken();
       if (refresh) {
         const api = await getApi();
-        await api.post('/auth/logout', { refreshToken: refresh }).catch(() => {});
+        await api.post('/auth/logout', { refreshToken: refresh }).catch(() => { });
       }
     }
   } finally {

@@ -224,14 +224,14 @@ export async function getDailyCounts(query: DailyCountsQuery & { teamId?: string
     return [];
   }
 
-  const rows = await prisma.$queryRaw<Array<{ businessDate: Date; count: bigint }>>(Prisma.sql`
+  const rows = (await (prisma as any).$queryRaw(Prisma.sql`
     SELECT "businessDate", COUNT(*)::bigint as count
     FROM "job_applications"
     WHERE "businessDate" >= ${from} AND "businessDate" <= ${to}
     ${recruiterFilter}
     GROUP BY "businessDate"
     ORDER BY "businessDate" ASC
-  `);
+  `)) as Array<{ businessDate: Date; count: bigint }>;
 
   return rows.map((r) => ({
     businessDate: r.businessDate.toISOString().slice(0, 10),

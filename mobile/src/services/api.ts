@@ -85,11 +85,9 @@ export async function buildApiClient(): Promise<AxiosInstance> {
           const msg = res.data?.error?.message ?? res.data?.message ?? 'Request failed';
           return Promise.reject(new ApiError(msg, res.status, false, res.data?.error?.code, res.data));
         }
-        // Replace res.data with the unwrapped data for convenience
-        res.data = res.data.data ?? null;
-        return res;
+        return res.data.data ?? null;
       }
-      return res;
+      return res.data;
     },
     async (error: AxiosError<any>) => {
       const originalRequest: any = error.config;

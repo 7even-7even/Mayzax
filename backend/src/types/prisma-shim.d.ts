@@ -21,6 +21,8 @@ declare module '@prisma/client' {
     ADMIN = 'ADMIN',
     TEAM_LEADER = 'TEAM_LEADER',
     RECRUITER = 'RECRUITER',
+    RESUME_ASSIST = 'RESUME_ASSIST',
+    SALES_EXEC = 'SALES_EXEC',
   }
   export enum ClientType {
     WEB = 'WEB',

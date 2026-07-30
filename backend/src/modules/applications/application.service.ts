@@ -102,8 +102,8 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
     });
 
     return application;
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+  } catch (err: any) {
+    if (err?.code === 'P2002') {
       throw ApiError.conflict(
         'This profile has already applied to this job. Duplicate submissions for the same profile are not allowed.',
       );
