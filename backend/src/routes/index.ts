@@ -6,6 +6,7 @@ import applicationRoutes from '@/modules/applications/application.routes';
 import analyticsRoutes from '@/modules/analytics/analytics.routes';
 import activityRoutes from '@/modules/activity/activity.routes';
 import updatesRoutes from '@/modules/updates/updates.routes';
+import onboardingRoutes from '@/modules/onboarding/onboarding.routes';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/applications', applicationRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/activity', activityRoutes);
 router.use('/updates', updatesRoutes);
+router.use('/onboarding', onboardingRoutes);
 
 export default router;

@@ -10,6 +10,7 @@ export interface RecruiterListParams {
   pageSize?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  createdById?: string;
 }
 
 export function useRecruiters(params: RecruiterListParams) {
@@ -97,5 +98,14 @@ export function useDeleteRecruiter() {
       return data.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['recruiters'] }),
+  });
+}
+
+export function useResetRecruiterPassword() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await apiClient.post(`/recruiters/${id}/reset-password`);
+      return data;
+    },
   });
 }

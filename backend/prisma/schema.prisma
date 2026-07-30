@@ -123,6 +123,7 @@ model User {
   activityLogs     ActivityLog[]
   createdUpdates   SystemUpdate[] @relation("UserCreatedUpdates")
   updateReadLogs   UserUpdateRead[]
+  approvedOnboardings ClientOnboarding[] @relation("ApprovedOnboardings")
 
   @@index([role])
   @@index([isActive])
@@ -186,6 +187,24 @@ model ClientProfile {
   phone          String
   technology     String
   notes          String?
+
+  // Systematic onboarding fields
+  dateOfBirth       String?
+  gender            String?
+  visaStatus        String?
+  entryToUS         String?
+  currentLocation   String?
+  education         Json?
+  addressHistory    Json?
+  hasExperience     Boolean?          @default(false)
+  experienceDetails String?           @db.Text
+  certifications    String?           @db.Text
+  resumeUrl         String?
+  resumeFileName    String?
+  planSelected      String?
+  amountPaid        Float?
+  paymentRef        String?
+  skills            String?
 
   assignedRecruiterId String?
   assignedRecruiter   User?   @relation("AssignedRecruiter", fields: [assignedRecruiterId], references: [id], onDelete: SetNull)
@@ -319,4 +338,71 @@ model UserUpdateRead {
 
   @@unique([updateId, userId])
   @@map("user_update_reads")
+}
+
+enum OnboardingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model ClientOnboarding {
+  id             String           @id @default(uuid())
+  
+  // 1. Personal / Contact Info
+  fullName       String
+  email          String
+  phone          String
+  dateOfBirth    String           // DD/MM/YYYY
+  gender         String           @default("")
+  
+  // 2. Educational Detail
+  education      Json             // Array of qualification, fieldOfStudy, specialization, instituteName, honors, startDate, endDate, currentlyOngoing
+  
+  // 3. Technical Detail
+  technology     String           // Technology track
+  skills         String           // Skills list / tag string
+  
+  // 4. Visa Status Details
+  visaStatus     String           // OPT, Stem OPT, H1B, CPT, etc.
+  entryToUS      String?          // Month / Year (optional)
+  currentLocation String
+  
+  // 5. Address Details/History (Up to 5)
+  addressHistory Json             // Array of { state, country, fromDate, toDate }
+  
+  // 6. Experience Details
+  hasExperience  Boolean          @default(false)
+  experienceDetails String?       @db.Text
+  
+  // 7. Certifications Details
+  certifications String?          @db.Text
+  
+  // 8. Resume File
+  resumeUrl      String?          // Path to uploaded file
+  resumeFileName String?          // Original filename
+  
+  // 9. Self Declaration / Approval
+  declared       Boolean          @default(false)
+  declaredAt     DateTime         @default(now())
+  
+  // 10. Payment & Plan Details (Mock)
+  planSelected   String           // Basic, Premium, Gold, etc.
+  amountPaid     Float
+  paymentRef     String           // Mock reference code
+  paidAt         DateTime         @default(now())
+  
+  // 11. Approval Workflow
+  status         OnboardingStatus @default(PENDING)
+  approvedAt     DateTime?
+  approvedById   String?
+  approvedBy     User?            @relation("ApprovedOnboardings", fields: [approvedById], references: [id], onDelete: SetNull)
+  
+  // Link to generated profile if approved
+  generatedProfileId String?      @unique
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@map("client_onboardings")
 }

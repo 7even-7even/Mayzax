@@ -44,6 +44,8 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
         : actor.role === Role.TEAM_LEADER
         ? {
             OR: [
+              { assignedRecruiterId: actor.id },
+              { assignedRecruiterAssignments: { some: { recruiterId: actor.id } } },
               { assignedRecruiter: { createdById: actor.id } },
               { assignedRecruiterAssignments: { some: { recruiter: { createdById: actor.id } } } },
             ],
@@ -212,6 +214,8 @@ export async function checkDuplicate(profileId: string, jobLink: string, actor: 
         : actor.role === Role.TEAM_LEADER
         ? {
             OR: [
+              { assignedRecruiterId: actor.id },
+              { assignedRecruiterAssignments: { some: { recruiterId: actor.id } } },
               { assignedRecruiter: { createdById: actor.id } },
               { assignedRecruiterAssignments: { some: { recruiter: { createdById: actor.id } } } },
             ],

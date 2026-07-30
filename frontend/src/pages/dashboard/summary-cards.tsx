@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp, Zap, Coffee, Trophy, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp, Zap, Coffee, Trophy, Sparkles, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGlobalSummary } from '@/hooks/use-analytics';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -77,6 +78,7 @@ function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoa
 }
 
 export function SummaryCards() {
+  const navigate = useNavigate();
   const { isTeamLeader, isAdmin } = usePermissions();
   const { data, isLoading } = useGlobalSummary();
   const [teamsExpanded, setTeamsExpanded] = useState(false);
@@ -108,9 +110,7 @@ export function SummaryCards() {
             />
           </StaggerItem>
         ))}
-      </StaggerContainer>
-
-      {isAdmin && (
+      </StaggerContainer>      {isAdmin && (
         <Reveal delay={0.3}>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -129,7 +129,7 @@ export function SummaryCards() {
                 <div>
                   <p className="text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-2">
                     Organization Teams
-                    <Badge variant="outline" className="text-[10px] bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300">
+                    <Badge variant="outline" className="text-[10px] bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-semibold">
                       {isLoading ? '...' : data?.totalTeams ?? 0} active
                     </Badge>
                   </p>
@@ -137,8 +137,8 @@ export function SummaryCards() {
                 </div>
               </div>
               <div className="flex items-center gap-2 text-slate-400">
-                <span className="hidden sm:inline text-xs font-medium">{teamsExpanded ? 'Collapse' : 'Expand teams'}</span>
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                <span className="hidden sm:inline text-xs font-semibold text-slate-600 dark:text-slate-300">{teamsExpanded ? 'Collapse' : 'Expand teams'}</span>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-white">
                   {teamsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </div>
               </div>
@@ -152,32 +152,47 @@ export function SummaryCards() {
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.25 }}
-                  className="overflow-hidden border-t border-slate-100 dark:border-slate-800"
+                  className="overflow-hidden border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30"
                 >
                   <div className="p-4">
-                    {isLoading && <p className="py-6 text-center text-xs text-slate-400 dark:text-slate-550">Loading teams...</p>}
+                    {isLoading && <p className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">Loading teams...</p>}
                     {!isLoading && (!data?.teams || data.teams.length === 0) && (
-                      <p className="py-6 text-center text-xs text-slate-400 dark:text-slate-550">No teams found. Assign Team Leaders to create teams.</p>
+                      <p className="py-6 text-center text-xs text-slate-400 dark:text-slate-500">No teams found. Assign Team Leaders to create teams.</p>
                     )}
                     {!isLoading && data?.teams && data.teams.length > 0 && (
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {data.teams.map((team: any) => (
                           <motion.div
                             key={team.tlId}
-                            whileHover={{ y: -2, scale: 1.01 }}
-                            className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] hover:shadow-md transition-all"
+                            whileHover={{ y: -4, scale: 1.01 }}
+                            onClick={() => navigate(`/analytics?teamId=${team.tlId}`)}
+                            className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] hover:shadow-lg transition-all cursor-pointer"
                           >
-                            <div className="rounded-[11px] bg-gradient-to-br from-slate-50 to-white dark:from-slate-850 dark:to-slate-900 p-3 flex items-center justify-between">
-                              <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-1.5">
-                                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                  {team.teamName || <span className="italic text-slate-450">No team name</span>}
-                                </p>
-                                <p className="truncate text-xs text-slate-500 dark:text-slate-400 mt-0.5">TL: <span className="font-medium text-slate-700 dark:text-slate-350">{team.tlName}</span></p>
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 blur-[0.5px]" />
+                            <div className="relative rounded-[11px] bg-gradient-to-br from-slate-50/50 to-white dark:from-slate-850 dark:to-slate-900 p-3.5 flex flex-col justify-between h-full gap-3.5">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                    {team.teamName || <span className="italic text-slate-400">No team name</span>}
+                                  </p>
+                                  <p className="truncate text-xs text-slate-500 dark:text-slate-400 mt-1">TL: <span className="font-semibold text-slate-700 dark:text-slate-300">{team.tlName}</span></p>
+                                </div>
+                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100/80 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-mayzax-blue shadow-sm group-hover:text-white transition-all transform group-hover:translate-x-0.5">
+                                  <ArrowRight className="h-4 w-4" />
+                                </div>
                               </div>
-                              <span className="ml-2 shrink-0 rounded-full bg-gradient-to-r from-mayzax-blue-500 to-mayzax-green-500 text-white px-2.5 py-1 text-[11px] font-bold shadow-sm">
-                                {team.memberCount} members
-                              </span>
+                              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                <span className="rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-350 px-2 py-0.5 text-[10px] font-semibold border border-slate-200 dark:border-slate-700/60 dark:text-white">
+                                  {team.memberCount} members
+                                </span>
+                                <span className="rounded-full bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-350 px-2 py-0.5 text-[10px] font-semibold border border-blue-200/50 dark:border-blue-900/30 dark:text-white">
+                                  {team.totalApplications} total
+                                </span>
+                                <span className="rounded-full bg-violet-50 dark:bg-violet-950/20 text-violet-700 dark:text-violet-350 px-2 py-0.5 text-[10px] font-semibold border border-violet-200/50 dark:border-violet-900/30 dark:text-white">
+                                  {team.currentApplications} today
+                                </span>
+                              </div>
                             </div>
                           </motion.div>
                         ))}
@@ -192,7 +207,7 @@ export function SummaryCards() {
       )}
 
       {data && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-455 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full px-3 py-1.5 w-fit shadow-sm">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full px-3 py-1.5 w-fit shadow-sm">
           <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
           Business Date: <span className="font-semibold text-slate-700 dark:text-slate-300">{data.currentBusinessDate}</span>
           <span className="h-3 w-px bg-slate-200 dark:bg-slate-800" />

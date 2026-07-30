@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, X, UserCircle, Activity, Bell, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, X, UserCircle, Activity, Bell, Sparkles, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
@@ -26,7 +26,16 @@ const recruiterNav = [
 
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
-  const rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? adminNav : recruiterNav;
+  const rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? [...adminNav] : [...recruiterNav];
+//Admin Page: Onboarding Tab Uncommented.
+  // if (user?.role === 'ADMIN') {
+  //   rawNav.splice(3, 0, {
+  //     to: '/admin/onboarding',
+  //     label: 'Onboarding',
+  //     icon: ShieldCheck,
+  //     desc: 'Verify registrations'
+  //   });
+  // }
 
   const nav = rawNav.map((item) => {
     if (user?.role === 'TEAM_LEADER') {
@@ -51,7 +60,10 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
               <div className="flex items-center gap-3">
                 <img src={mayzaxLogo} alt="Mayzax" className="h-9 w-9 rounded-xl bg-white p-1 shadow-md ring-1 ring-slate-200" />
                 <div>
-                  <p className="text-sm font-bold tracking-tight">MAYZAX</p>
+                  <p className="text-sm font-bold tracking-tight">
+                    <span className="text-mayzax-blue-500">MAY</span>
+                    <span className="text-mayzax-green-500">ZAX</span>
+                  </p>
                   <p className="text-[11px] text-slate-500 flex items-center gap-1">
                     ATS/CRM
                     <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
@@ -97,7 +109,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
               <div className="rounded-xl bg-slate-900 text-white p-3 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-violet-300" />
                 <div>
-                  <p className="text-xs font-semibold">ATS/CRM v2.1</p>
+                  <p className="text-xs font-semibold">ATS/CRM</p>
                   <p className="text-[11px] text-white/60">Active</p>
                 </div>
               </div>

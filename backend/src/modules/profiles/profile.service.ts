@@ -25,7 +25,14 @@ async function assertRecruitersExist(recruiterIds: string[], actor?: Requester) 
       id: { in: uniqueIds },
       deletedAt: null,
       role: { in: [Role.RECRUITER, Role.TEAM_LEADER] },
-      ...(actor?.role === Role.TEAM_LEADER ? { createdById: actor.id } : {}),
+      ...(actor?.role === Role.TEAM_LEADER
+        ? {
+            OR: [
+              { createdById: actor.id },
+              { id: actor.id },
+            ],
+          }
+        : {}),
     },
     select: { id: true, isActive: true },
   });

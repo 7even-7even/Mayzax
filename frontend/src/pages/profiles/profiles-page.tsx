@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Loader2, Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2, FileText, Sparkles, Briefcase, Users, Activity } from 'lucide-react';
+import { Loader2, Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2, FileText, Sparkles, Briefcase, Users, Activity, Eye, Calendar, UserCheck, MapPin, Award, CheckCircle, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
@@ -51,6 +51,7 @@ export default function ProfilesPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<ClientProfile | null>(null);
+  const [viewingProfile, setViewingProfile] = useState<ClientProfile | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ClientProfile | null>(null);
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
@@ -163,6 +164,7 @@ export default function ProfilesPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="rounded-xl">
+                  <DropdownMenuItem onClick={() => setViewingProfile(profile)} className="gap-2"><Eye className="h-4 w-4" /> View Details</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate(`/applications?profileId=${profile.id}`)} className="gap-2"><FileText className="h-4 w-4" /> View Applications</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => { setEditingProfile(profile); setFormOpen(true); }} className="gap-2"><Pencil className="h-4 w-4" /> {isManager ? 'Edit / Reassign' : 'Edit'}</DropdownMenuItem>
                   {canDeleteProfile && <DropdownMenuItem onClick={() => setDeleteTarget(profile)} className="text-red-600 focus:text-red-600 gap-2"><Trash2 className="h-4 w-4" /> Delete</DropdownMenuItem>}
@@ -449,6 +451,190 @@ export default function ProfilesPage() {
               Delete Profile
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewingProfile} onOpenChange={(open) => !open && setViewingProfile(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto rounded-2xl">
+          <DialogHeader className="border-b pb-4 mb-4">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+              <User2 className="h-5 w-5 text-mayzax-blue-600" />
+              {viewingProfile?.candidateName}'s Full Details
+            </DialogTitle>
+            <DialogDescription>
+              Structured profile information collected during candidate onboarding.
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingProfile && (
+            <div className="space-y-6">
+              {/* Profile Overview (Row 1) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50">
+                  <h3 className="text-sm font-semibold text-slate-950 dark:text-white mb-3 flex items-center gap-1.5 border-b pb-1.5">
+                    <UserSquare2 className="h-4 w-4 text-violet-600" /> Personal Info
+                  </h3>
+                  <div className="space-y-2.5 text-sm">
+                    <div className="flex justify-between"><span className="text-slate-500">Email:</span> <span className="font-medium text-slate-800 dark:text-slate-200">{viewingProfile.email}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Phone:</span> <span className="font-medium text-slate-800 dark:text-slate-200">{viewingProfile.phone}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Date of Birth:</span> <span className="font-medium text-slate-800 dark:text-slate-200">{viewingProfile.dateOfBirth || 'N/A'}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Gender:</span> <span className="font-medium text-slate-800 dark:text-slate-200 capitalize">{viewingProfile.gender || 'N/A'}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Current Location:</span> <span className="font-medium text-slate-800 dark:text-slate-200">{viewingProfile.currentLocation || 'N/A'}</span></div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50">
+                  <h3 className="text-sm font-semibold text-slate-950 dark:text-white mb-3 flex items-center gap-1.5 border-b pb-1.5">
+                    <Award className="h-4 w-4 text-emerald-600" /> Professional Track
+                  </h3>
+                  <div className="space-y-2.5 text-sm">
+                    <div className="flex justify-between"><span className="text-slate-500">Technology:</span> <span className="font-semibold text-mayzax-blue-700 dark:text-mayzax-blue-400">{viewingProfile.technology}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Visa Status:</span> <span className="font-medium text-slate-800 dark:text-slate-200">{viewingProfile.visaStatus || 'N/A'}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">US Entry Date:</span> <span className="font-medium text-slate-800 dark:text-slate-200">{viewingProfile.entryToUS || 'N/A'}</span></div>
+                    <div className="flex flex-col gap-1 mt-1">
+                      <span className="text-slate-500">Skills:</span>
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        {viewingProfile.skills ? (
+                          viewingProfile.skills.split(',').map((skill, idx) => (
+                            <Badge key={idx} variant="outline" className="text-[10px] bg-white dark:bg-slate-800 px-2 py-0">{skill.trim()}</Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-400">None listed</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Education (Timeline/List) */}
+              <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50">
+                <h3 className="text-sm font-semibold text-slate-950 dark:text-white mb-3 flex items-center gap-1.5 border-b pb-1.5">
+                  <Calendar className="h-4 w-4 text-mayzax-blue-600" /> Education History
+                </h3>
+                {Array.isArray(viewingProfile.education) && viewingProfile.education.length > 0 ? (
+                  <div className="space-y-3.5 mt-2">
+                    {viewingProfile.education.map((edu: any, idx: number) => (
+                      <div key={idx} className="relative pl-4 border-l-2 border-mayzax-blue-500 text-sm">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200">{edu.qualification} in {edu.fieldOfStudy}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">{edu.instituteName} {edu.specialization ? `(${edu.specialization})` : ''}</div>
+                        <div className="text-xs text-slate-400 mt-0.5">
+                          {edu.startDate} to {edu.currentlyOngoing ? 'Present' : (edu.endDate || 'N/A')}
+                          {edu.honors ? <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-medium">[Honors: {edu.honors}]</span> : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">No systematic education details available.</p>
+                )}
+              </div>
+
+              {/* Experience & Certifications */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50">
+                  <h3 className="text-sm font-semibold text-slate-950 dark:text-white mb-3 flex items-center gap-1.5 border-b pb-1.5">
+                    <CheckCircle className="h-4 w-4 text-indigo-600" /> Experience Info
+                  </h3>
+                  {viewingProfile.hasExperience ? (
+                    <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                      {viewingProfile.experienceDetails || 'Yes (Details not specified)'}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">No prior experience declared.</p>
+                  )}
+                </div>
+
+                <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50">
+                  <h3 className="text-sm font-semibold text-slate-950 dark:text-white mb-3 flex items-center gap-1.5 border-b pb-1.5">
+                    <ShieldCheck className="h-4 w-4 text-orange-600" /> Certifications
+                  </h3>
+                  {viewingProfile.certifications ? (
+                    <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                      {viewingProfile.certifications}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">No certifications declared.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Address History */}
+              <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50">
+                <h3 className="text-sm font-semibold text-slate-950 dark:text-white mb-3 flex items-center gap-1.5 border-b pb-1.5">
+                  <MapPin className="h-4 w-4 text-rose-600" /> Address History
+                </h3>
+                {Array.isArray(viewingProfile.addressHistory) && viewingProfile.addressHistory.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                    {viewingProfile.addressHistory.map((addr: any, idx: number) => (
+                      <div key={idx} className="p-2 border rounded-lg bg-white dark:bg-slate-800">
+                        <div className="font-medium text-slate-800 dark:text-slate-200">State: {addr.state}, Country: {addr.country}</div>
+                        <div className="text-xs text-slate-400">{addr.fromDate} - {addr.toDate}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">No systematic address history available.</p>
+                )}
+              </div>
+
+              {/* Payment Details & Resume Attachment */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50">
+                  <h3 className="text-sm font-semibold text-slate-950 dark:text-white mb-3 flex items-center gap-1.5 border-b pb-1.5">
+                    <UserCheck className="h-4 w-4 text-blue-600" /> Enrollment / Payment Details
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between"><span className="text-slate-500">Plan Selected:</span> <span className="font-semibold text-slate-800 dark:text-slate-200 capitalize">{viewingProfile.planSelected || 'N/A'}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Amount Paid:</span> <span className="font-medium text-slate-800 dark:text-slate-200">{viewingProfile.amountPaid ? `$${viewingProfile.amountPaid}` : 'N/A'}</span></div>
+                    <div className="flex justify-between"><span className="text-slate-500">Transaction Reference:</span> <span className="font-medium text-slate-800 dark:text-slate-200">{viewingProfile.paymentRef || 'N/A'}</span></div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-950 dark:text-white mb-3 flex items-center gap-1.5 border-b pb-1.5">
+                      <FileText className="h-4 w-4 text-amber-600" /> Resume Attachment
+                    </h3>
+                    <div className="text-sm text-slate-700 dark:text-slate-300">
+                      {viewingProfile.resumeFileName ? (
+                        <div>
+                          <p className="font-medium">{viewingProfile.resumeFileName}</p>
+                          <p className="text-xs text-slate-400 mt-1">Uploaded Resume File</p>
+                        </div>
+                      ) : (
+                        <p className="text-slate-500">No resume attached.</p>
+                      )}
+                    </div>
+                  </div>
+                  {viewingProfile.resumeUrl && (
+                    <a
+                      href={viewingProfile.resumeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center justify-center rounded-xl bg-mayzax-blue-50 border border-mayzax-blue-200 hover:bg-mayzax-blue-100 text-mayzax-blue-700 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 px-4 py-2 text-xs font-semibold transition"
+                    >
+                      Download Resume
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Legacy Notes (Fallback) */}
+              {viewingProfile.notes && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/20 p-4 dark:border-amber-900/30 dark:bg-amber-950/10">
+                  <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-400 mb-2">Legacy Profile Notes</h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap">{viewingProfile.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="border-t pt-4 flex justify-end">
+            <Button onClick={() => setViewingProfile(null)} className="rounded-xl px-5">
+              Close Details
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

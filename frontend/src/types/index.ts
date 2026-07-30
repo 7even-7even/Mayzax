@@ -76,6 +76,25 @@ export interface ClientProfile {
   phone: string;
   technology: string;
   notes: string | null;
+  
+  // Systematic onboarding fields
+  dateOfBirth?: string;
+  gender?: string;
+  visaStatus?: string;
+  entryToUS?: string | null;
+  currentLocation?: string;
+  education?: any;
+  addressHistory?: any;
+  hasExperience?: boolean;
+  experienceDetails?: string | null;
+  certifications?: string | null;
+  resumeUrl?: string | null;
+  resumeFileName?: string | null;
+  planSelected?: string;
+  amountPaid?: number;
+  paymentRef?: string;
+  skills?: string;
+
   assignedRecruiterId: string | null;
   assignedRecruiter?: { id: string; name: string; email: string } | null;
   assignedRecruiterAssignments?: Array<{
@@ -208,7 +227,14 @@ export interface GlobalSummary {
   currentBusinessDate: string;
   shiftWindowText: string;
   totalTeams?: number;
-  teams?: Array<{ tlId: string; tlName: string; teamName: string | null; memberCount: number }>;
+  teams?: Array<{
+    tlId: string;
+    tlName: string;
+    teamName: string | null;
+    memberCount: number;
+    totalApplications: number;
+    currentApplications: number;
+  }>;
   myTotalApplications?: number;
   myCurrentShiftApplications?: number;
   activeMemberCount?: number;

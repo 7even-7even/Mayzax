@@ -163,7 +163,7 @@ export default function SignupPage() {
               <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
             </div>
             <span className="text-3xl font-semibold tracking-wider text-white/90 uppercase">Mayzax Solutions</span>
-            <span className="ml-2 rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-white/80 backdrop-blur-sm">ATS v2.1</span>
+            <span className="ml-2 rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-white/80 backdrop-blur-sm">ATS v1.1</span>
           </motion.div>
         </div>
 

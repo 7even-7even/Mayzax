@@ -54,7 +54,7 @@ export async function updateRecruiter(
   const user = await repo.findActiveById(id);
   if (!user) throw ApiError.notFound('Recruiter not found');
 
-  const updatePayload = { ...input };
+  const updatePayload = { ...input } as any;
   if (actor.role !== Role.ADMIN) {
     throw ApiError.forbidden('Only admins can update users');
   }
@@ -62,6 +62,18 @@ export async function updateRecruiter(
   if (input.email && input.email.toLowerCase() !== user.email) {
     const existing = await repo.findByEmail(input.email);
     if (existing) throw ApiError.conflict('A user with this email already exists');
+  }
+
+  // Handle TL demotion to Recruiter
+  const isDemotion = user.role === Role.TEAM_LEADER && input.role === Role.RECRUITER;
+  if (isDemotion) {
+    // 1. All managed team recruiters will go unassigned (createdById = null)
+    await prisma.user.updateMany({
+      where: { createdById: id },
+      data: { createdById: null },
+    });
+    // 2. Set teamName to null
+    updatePayload.teamName = null;
   }
 
   const updated = await repo.updateUser(id, updatePayload);
@@ -255,6 +267,28 @@ export async function updateMyTeamName(userId: string, input: TeamNameInput) {
   if (user.role !== Role.TEAM_LEADER) throw ApiError.forbidden('Only Team Leaders can set a team name');
 
   const updated = await repo.updateUser(userId, { teamName: input.teamName ?? null });
+  return sanitizeUser(updated);
+}
+
+export async function resetRecruiterPassword(id: string, actor: Requester) {
+  if (actor.role !== Role.ADMIN) {
+    throw ApiError.forbidden('Only admins can reset passwords');
+  }
+
+  const user = await repo.findActiveById(id);
+  if (!user) throw ApiError.notFound('Recruiter not found');
+
+  const defaultPasswordHash = await hashPassword('Pass@123');
+
+  const updated = await prisma.user.update({
+    where: { id },
+    data: {
+      passwordHash: defaultPasswordHash,
+      securityQuestion: null,
+      securityAnswerHash: null,
+    },
+  });
+
   return sanitizeUser(updated);
 }
 

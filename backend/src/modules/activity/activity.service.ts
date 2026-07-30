@@ -201,7 +201,7 @@ export async function processHeartbeat(userId: string, role: Role) {
           status: UserStatus.OFFLINE,
           startedAt: lastHeartbeat,
           endedAt: now,
-          optionalNote: 'Auto-disconnected due to missed heartbeats',
+          optionalNote: 'Disconnected due to inactivity',
         },
       });
     }
@@ -650,8 +650,9 @@ export async function getProductivityMetrics(
 
   logs.forEach((log) => {
     uniqueUsers.add(log.userId);
-    const end = log.endedAt ? log.endedAt : now;
-    const dur = Math.max(0, Math.floor((end.getTime() - log.startedAt.getTime()) / 1000));
+    const logStart = log.startedAt < startBounds.start ? startBounds.start : log.startedAt;
+    const logEnd = (log.endedAt && log.endedAt < endBounds.end) ? log.endedAt : (now < endBounds.end ? now : endBounds.end);
+    const dur = Math.max(0, Math.floor((logEnd.getTime() - logStart.getTime()) / 1000));
 
     if (log.status === UserStatus.ACTIVE || log.status === UserStatus.ONLINE) {
       totalProductiveSecs += dur;
@@ -749,8 +750,9 @@ export async function getAttendanceReport(
     let systemIssueSeconds = 0;
 
     uLogs.forEach((log) => {
-      const end = log.endedAt ? log.endedAt : now;
-      const dur = Math.max(0, Math.floor((end.getTime() - log.startedAt.getTime()) / 1000));
+      const logStart = log.startedAt < startBounds.start ? startBounds.start : log.startedAt;
+      const logEnd = (log.endedAt && log.endedAt < endBounds.end) ? log.endedAt : (now < endBounds.end ? now : endBounds.end);
+      const dur = Math.max(0, Math.floor((logEnd.getTime() - logStart.getTime()) / 1000));
 
       if (!firstLogin && log.status !== UserStatus.OFFLINE) {
         firstLogin = log.startedAt;
@@ -813,7 +815,7 @@ export async function getAttendanceReport(
       briefingHours: Number((briefingTrainingSeconds / 3600).toFixed(2)),
       downtimeHours: Number((systemIssueSeconds / 3600).toFixed(2)),
       shiftUtilization,
-      attendanceStatus: firstLogin ? 'Present' : 'Absent',
+      attendanceStatus: (firstLogin && totalLoggedInSeconds >= 900) ? 'Present' : 'Absent',
     };
   });
 

@@ -202,11 +202,11 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="jobLink" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ">
+              <Label htmlFor="jobLink" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 dark:text-white ">
                 <Link2 className="h-3.5 w-3.5 text-mayzax-blue-500 " />
                 Job Posting Link
               </Label>
-              <Input id="jobLink" placeholder="https://www.linkedin.com/jobs/view/..." className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black" {...form.register('jobLink')} />
+              <Input id="jobLink" placeholder="https://www.linkedin.com/jobs/view/..." className="rounded-xl h-11 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black" {...form.register('jobLink')} />
               {debouncedLink && (
                 <div className="mt-3 space-y-2">
                   {/* ExtensionVerificationBadge commented out until extension is deployed */}

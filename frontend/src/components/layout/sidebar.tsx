@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, UserCircle, Activity, Bell, Sparkles, Zap, ChevronLeft } from 'lucide-react';
+import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, UserCircle, Activity, Bell, Sparkles, Zap, ChevronLeft, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useGlobalSummary } from '@/hooks/use-analytics';
@@ -24,7 +24,7 @@ const recruiterNav = [
   { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'from-mayzax-blue to-mayzax-blue-700', desc: 'Your stats' },
   { to: '/profiles', label: 'My Clients', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', desc: 'Assigned profiles' },
   { to: '/applications', label: 'Applications', icon: FileText, gradient: 'from-mayzax-green-500 to-mayzax-green-700', desc: 'Submissions' },
-  { to: '/activity', label: 'Shift Tracking', icon: Activity, gradient: 'from-mayzax-green-600 to-emerald-700', desc: 'Time tracking' },
+  { to: '/activity', label: 'Shift Tracking', icon: Activity, gradient: 'from-mayzax-green-600 to-emerald-750', desc: 'Time tracking' },
   { to: '/profile', label: 'Profile', icon: UserCircle, gradient: 'from-slate-600 to-slate-800', desc: 'Settings' },
 ];
 
@@ -40,7 +40,18 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const { data: updatesData } = useUpdates();
   const unreadCount = updatesData?.unreadCount ?? 0;
 
-  const rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? adminNav : recruiterNav;
+  const rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? [...adminNav] : [...recruiterNav];
+//Onboarding Page Tab: Uncomment when needed
+  // if (user?.role === 'ADMIN') {
+  //   // Insert Onboarding Requests right after Team Management (index 3)
+  //   rawNav.splice(3, 0, {
+  //     to: '/admin/onboarding',
+  //     label: 'Onboarding',
+  //     icon: ShieldCheck,
+  //     gradient: 'from-indigo-500 to-indigo-700',
+  //     desc: 'Verify registrations',
+  //   });
+  // }
 
   const nav = rawNav.map((item) => {
     if (isTeamLeader) {
@@ -71,29 +82,27 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
 
       <div className="relative flex h-full flex-col">
         {/* Header/Branding */}
-        <div className={cn("flex h-[72px] items-center border-b border-slate-200/60 dark:border-slate-850 bg-gradient-to-r from-white dark:from-slate-900 to-mayzax-blue-50/30 dark:to-mayzax-blue-950/20 transition-all", isCollapsed ? "px-4.5 justify-center" : "px-6 gap-3")}>
+        <div className={cn("flex h-14 items-center border-b border-slate-200/60 dark:border-slate-850 bg-gradient-to-r from-white dark:from-slate-900 to-mayzax-blue-50/30 dark:to-mayzax-blue-950/20 transition-all", isCollapsed ? "px-4.5 justify-center" : "px-6 gap-3")}>
           <div className="relative shrink-0">
             <div className="absolute inset-0 bg-mayzax-gradient rounded-xl blur-[4px] opacity-20" />
-            <img src={mayzaxLogo} alt="Mayzax" className="relative h-10 w-10 rounded-xl bg-white p-1.5 shadow-md ring-1 ring-slate-200 dark:ring-slate-800" />
-            <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-mayzax-green-500 border-2 border-white dark:border-slate-900 animate-pulse" />
+            <img src={mayzaxLogo} alt="Mayzax" className="relative h-8 w-8 rounded-lg bg-white p-1 shadow-md ring-1 ring-slate-200 dark:ring-slate-800" />
+            <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-mayzax-green-500 border border-white dark:border-slate-900 animate-pulse" />
           </div>
           {!isCollapsed && (
             <div className="leading-tight flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-white">MAYZAX</p>
-                <Badge className="bg-mayzax-gradient text-white text-[9px] px-1.5 py-0 h-4 border-0 shadow-sm">CRM</Badge>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-extrabold tracking-tight">
+                  <span className="text-mayzax-blue-500">MAY</span>
+                  <span className="text-mayzax-green-500">ZAX</span>
+                </p>
+                <Badge className="bg-mayzax-gradient text-white text-[8px] px-1 py-0 h-3.5 border-0 shadow-sm">CRM</Badge>
               </div>
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                Recruitment ATS/CRM
-                <span className="h-1 w-1 rounded-full bg-mayzax-green-500" />
-                Live
-              </p>
             </div>
           )}
         </div>
 
         {/* Navigation */}
-        <nav className={cn("flex-1 px-3 py-3 overflow-y-auto scrollbar-thin transition-all", isCollapsed ? "space-y-3" : "space-y-1")}>
+        <nav className={cn("flex-1 px-3 py-2 overflow-y-auto scrollbar-thin transition-all", isCollapsed ? "space-y-2.5" : "space-y-0.5")}>
           {nav.map((item, idx) => (
             <motion.div key={item.to} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.04 }}>
               <NavLink
@@ -102,24 +111,23 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                 className={({ isActive }) =>
                   cn(
                     'group relative flex items-center rounded-xl transition-all duration-300 overflow-hidden border',
-                    isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2.5 text-sm font-medium',
+                    isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-1.5 text-sm font-medium',
                     isActive ? 'bg-mayzax-blue-50 dark:bg-mayzax-blue-900/30 text-mayzax-blue-700 dark:text-mayzax-blue-300 border-mayzax-blue-200 dark:border-mayzax-blue-800 shadow-sm shadow-mayzax-blue-100/50 dark:shadow-none' : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white hover:shadow-sm hover:border-slate-200 dark:hover:border-slate-700 border-transparent'
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
-                    {isActive && !isCollapsed && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-full bg-mayzax-gradient" />}
-                    <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all duration-300 shadow-sm', isActive ? `bg-gradient-to-br ${item.gradient} text-white` : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-mayzax-blue-600 group-hover:text-white')}>
-                      <item.icon className="h-4 w-4" />
+                    {isActive && !isCollapsed && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-full bg-mayzax-gradient" />}
+                    <div className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all duration-300 shadow-sm', isActive ? `bg-gradient-to-br ${item.gradient} text-white` : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-mayzax-blue-600 group-hover:text-white')}>
+                      <item.icon className="h-3.5 w-3.5" />
                     </div>
                     {!isCollapsed && (
                       <>
                         <div className="flex-1 min-w-0">
-                          <p className={cn('truncate font-semibold text-[13px] leading-tight transition-colors duration-200', isActive ? 'text-mayzax-blue-700 dark:text-mayzax-blue-300' : 'text-slate-800 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white')}>{item.label}</p>
-                          <p className={cn('truncate text-[11px] leading-tight transition-colors duration-200', isActive ? 'text-mayzax-blue-700/70 dark:text-mayzax-blue-300/70' : 'text-slate-400 dark:text-slate-550 group-hover:text-slate-500 dark:group-hover:text-slate-400')}>{item.desc}</p>
+                          <p className={cn('truncate font-bold text-xs leading-none transition-colors duration-200', isActive ? 'text-mayzax-blue-700 dark:text-mayzax-blue-300' : 'text-slate-850 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white')}>{item.label}</p>
                         </div>
-                        {isActive && <div className="h-2 w-2 rounded-full bg-mayzax-gradient animate-pulse" />}
+                        {isActive && <div className="h-1.5 w-1.5 rounded-full bg-mayzax-gradient animate-pulse" />}
                       </>
                     )}
                   </>
@@ -129,37 +137,36 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
           ))}
 
           {/* System section */}
-          <div className={cn("mt-6", !isCollapsed && "px-3")}>
-            {!isCollapsed && <p className="text-[11px] font-bold tracking-widest uppercase text-slate-400 dark:text-slate-500 mb-2">System</p>}
+          <div className={cn("mt-4", !isCollapsed && "px-3")}>
+            {!isCollapsed && <p className="text-[10px] font-bold tracking-widest uppercase text-slate-400 dark:text-slate-500 mb-1.5">System</p>}
             <NavLink
               to="/updates"
               title={isCollapsed ? "Updates & Releases" : undefined}
               className={({ isActive }) =>
                 cn(
                   'group relative flex items-center justify-between rounded-xl transition-all border',
-                  isCollapsed ? 'justify-center p-2' : 'px-3 py-2.5 text-sm font-medium',
+                  isCollapsed ? 'justify-center p-2' : 'px-3 py-1.5 text-sm font-medium',
                   isActive ? 'bg-mayzax-gradient text-white border-mayzax-blue-600 shadow-md shadow-mayzax-blue-200/50' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-mayzax-blue-200 dark:hover:border-mayzax-blue-800 hover:bg-mayzax-blue-50/50 dark:hover:bg-mayzax-blue-950/20'
                 )
               }
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-mayzax-blue to-mayzax-green text-white shadow-sm shrink-0">
-                  <Bell className="h-4 w-4" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-mayzax-blue to-mayzax-green text-white shadow-sm shrink-0">
+                  <Bell className="h-3.5 w-3.5" />
                 </div>
                 {!isCollapsed && (
                   <div>
-                    <p className="text-[13px] font-semibold leading-tight">Updates</p>
-                    <p className="text-[11px] opacity-80 leading-tight">Release notes</p>
+                    <p className="text-xs font-bold leading-none">Updates</p>
                   </div>
                 )}
               </div>
               {!isCollapsed && unreadCount > 0 && (
-                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white text-mayzax-blue px-1.5 text-[11px] font-bold shadow-sm animate-pulse">
+                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-white text-mayzax-blue px-1 text-[10px] font-bold shadow-sm animate-pulse">
                   {unreadCount}
                 </span>
               )}
               {isCollapsed && unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="absolute top-1.5 right-1.5 flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
               )}
             </NavLink>
           </div>
@@ -199,10 +206,10 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
                   <span className="h-1.5 w-1.5 rounded-full bg-mayzax-green-500" />
                   System operational
                 </span>
-                <span className="font-medium text-mayzax-blue-600">v2.1</span>
+                <span className="font-medium text-mayzax-blue-600">v1.1</span>
               </>
             ) : (
-              <span className="font-bold text-mayzax-blue-600">v2.1</span>
+              <span className="font-bold text-mayzax-blue-600">v1.1</span>
             )}
           </div>
         </div>

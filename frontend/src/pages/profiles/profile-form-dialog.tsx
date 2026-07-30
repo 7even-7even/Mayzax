@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -99,7 +99,23 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
   };
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
-  const recruiters = recruitersData?.data ?? [];
+  const recruiters = useMemo(() => {
+    const list = [...(recruitersData?.data ?? [])];
+    if (user && user.role === 'TEAM_LEADER') {
+      const exists = list.some((r) => r.id === user.id);
+      if (!exists) {
+        list.unshift({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: true,
+        } as any);
+      }
+    }
+    return list;
+  }, [recruitersData, user]);
+
   const [recruiterSearch, setRecruiterSearch] = useState('');
 
   const filteredRecruiters = recruiters.filter((r) => r.name.toLowerCase().includes(recruiterSearch.toLowerCase()) || r.email.toLowerCase().includes(recruiterSearch.toLowerCase()));

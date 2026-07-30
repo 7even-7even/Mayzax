@@ -19,7 +19,7 @@ import { ErrorState } from '@/components/shared/error-state';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { RecruiterFormDialog } from './recruiter-form-dialog';
 import { RecruiterStatsDialog } from './recruiter-stats-dialog';
-import { useDeleteRecruiter, useRecruiters, useToggleRecruiterStatus } from '@/hooks/use-recruiters';
+import { useDeleteRecruiter, useRecruiters, useToggleRecruiterStatus, useResetRecruiterPassword } from '@/hooks/use-recruiters';
 import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage } from '@/lib/api-client';
 import { initials, timeAgo } from '@/lib/utils';
@@ -41,6 +41,7 @@ export default function RecruitersPage() {
   const [editingRecruiter, setEditingRecruiter] = useState<Recruiter | null>(null);
   const [statsRecruiterId, setStatsRecruiterId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Recruiter | null>(null);
+  const [resetTarget, setResetTarget] = useState<Recruiter | null>(null);
 
   const { data, isLoading, isError, refetch } = useRecruiters({
     search: debouncedSearch || undefined,
@@ -53,6 +54,7 @@ export default function RecruitersPage() {
 
   const toggleStatus = useToggleRecruiterStatus();
   const deleteRecruiter = useDeleteRecruiter();
+  const resetPasswordMutation = useResetRecruiterPassword();
 
   const recruiters = data?.data ?? [];
   const totalRecruiters = data?.pagination?.total ?? 0;
@@ -72,6 +74,17 @@ export default function RecruitersPage() {
       await deleteRecruiter.mutateAsync(deleteTarget.id);
       toast.success(`${deleteTarget.name} removed`);
       setDeleteTarget(null);
+    } catch (err) {
+      toast.error(extractErrorMessage(err));
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetTarget) return;
+    try {
+      await resetPasswordMutation.mutateAsync(resetTarget.id);
+      toast.success(`Password for ${resetTarget.name} has been reset to default Pass@123`);
+      setResetTarget(null);
     } catch (err) {
       toast.error(extractErrorMessage(err));
     }
@@ -205,6 +218,9 @@ export default function RecruitersPage() {
                               <DropdownMenuItem onClick={() => { setEditingRecruiter(recruiter); setFormOpen(true); }} className="gap-2">
                                 <Pencil className="h-4 w-4" /> Edit User
                               </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setResetTarget(recruiter)} className="gap-2">
+                                <Shield className="h-4 w-4 text-amber-500" /> Reset Password
+                              </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => setDeleteTarget(recruiter)} className="text-red-600 focus:text-red-600 gap-2">
                                 <Trash2 className="h-4 w-4" /> Delete User
                               </DropdownMenuItem>
@@ -254,7 +270,7 @@ export default function RecruitersPage() {
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-xl">
+                           <DropdownMenuContent align="end" className="rounded-xl">
                             <DropdownMenuItem onClick={() => setStatsRecruiterId(recruiter.id)} className="gap-2">
                               <BarChart3 className="h-4 w-4" /> View Stats
                             </DropdownMenuItem>
@@ -262,6 +278,9 @@ export default function RecruitersPage() {
                               <>
                                 <DropdownMenuItem onClick={() => { setEditingRecruiter(recruiter); setFormOpen(true); }} className="gap-2">
                                   <Pencil className="h-4 w-4" /> Edit User
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setResetTarget(recruiter)} className="gap-2">
+                                  <Shield className="h-4 w-4 text-amber-500" /> Reset Password
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => setDeleteTarget(recruiter)} className="text-red-600 focus:text-red-600 gap-2">
                                   <Trash2 className="h-4 w-4" /> Delete User
@@ -300,6 +319,26 @@ export default function RecruitersPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} className="rounded-full">Cancel</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleteRecruiter.isPending} className="rounded-full">Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!resetTarget} onOpenChange={(open) => !open && setResetTarget(null)}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+                <Shield className="h-4 w-4" />
+              </div>
+              Reset Password
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to reset <span className="font-semibold">{resetTarget?.name}</span>'s password to default <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-amber-700 dark:text-amber-400">Pass@123</span>? This will also clear their security question data.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetTarget(null)} className="rounded-full">Cancel</Button>
+            <Button variant="brand" onClick={handleResetPassword} disabled={resetPasswordMutation.isPending} className="rounded-full bg-amber-600 hover:bg-amber-700 text-white border-0">Reset</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
