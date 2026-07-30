@@ -1,98 +1,75 @@
 import { Request, Response } from 'express';
 import { asyncHandler } from '@/utils/asyncHandler';
-import { env } from '@/config/env';
-import { parseExpiryToMs } from './token.service';
+import { resolveClientType } from './token.service';
 import * as authService from './auth.service';
-import { ApiError } from '@/utils/apiError';
+import {
+  loginSchema,
+  signupSchema,
+  changePasswordSchema,
+  updateProfileSchema,
+  securityQuestionSchema,
+  forgotPasswordQuestionSchema,
+  forgotPasswordResetSchema,
+} from './auth.validation';
 
-const REFRESH_COOKIE = 'refresh_token';
-const ACCESS_COOKIE = 'access_token';
-
-function cookieOptions(maxAgeMs: number) {
-  // Cross-site cookies (frontend + backend on different domains, e.g. Vercel +
-  // Render) are only ever sent by browsers when SameSite=None AND Secure=true.
-  // Same-site deployments (single domain, or local dev) use the safer Lax mode.
-  const crossSite = env.CROSS_SITE_COOKIES;
-
+function extractSessionMeta(req: Request) {
   return {
-    httpOnly: true,
-    secure: crossSite ? true : env.COOKIE_SECURE,
-    sameSite: (crossSite ? 'none' : 'lax') as 'none' | 'lax',
-    domain: env.COOKIE_DOMAIN || undefined,
-    maxAge: maxAgeMs,
-    path: '/',
+    ip: req.ip,
+    userAgent: req.headers['user-agent'] ?? null,
   };
 }
 
-function setSessionCookies(res: Response, tokens: { accessToken: string; refreshToken: string }) {
-  res.cookie(ACCESS_COOKIE, tokens.accessToken, cookieOptions(parseExpiryToMs(env.JWT_ACCESS_EXPIRES_IN)));
-  res.cookie(REFRESH_COOKIE, tokens.refreshToken, cookieOptions(parseExpiryToMs(env.JWT_REFRESH_EXPIRES_IN)));
+function extractClientMeta(req: Request) {
+  const clientType = resolveClientType(req.headers['x-client-type']);
+  return {
+    clientType,
+    deviceName: typeof req.headers['x-device-name'] === 'string' ? req.headers['x-device-name'] : null,
+    sessionMeta: extractSessionMeta(req),
+  };
 }
-
-function clearSessionCookies(res: Response) {
-  res.clearCookie(ACCESS_COOKIE, { path: '/' });
-  res.clearCookie(REFRESH_COOKIE, { path: '/' });
-}
-
-export const login = asyncHandler(async (req: Request, res: Response) => {
-  const result = await authService.login(req.body, {
-    ip: req.ip,
-    userAgent: req.headers['user-agent'],
-  });
-
-  setSessionCookies(res, result.tokens);
-
-  res.status(200).json({
-    success: true,
-    data: {
-      user: result.user,
-      accessToken: result.tokens.accessToken,
-    },
-  });
-});
 
 export const signup = asyncHandler(async (req: Request, res: Response) => {
-  const result = await authService.signupRecruiter(req.body, {
-    ip: req.ip,
-    userAgent: req.headers['user-agent'],
-  });
+  const input = signupSchema.parse(req.body);
+  const { clientType, deviceName, sessionMeta } = extractClientMeta(req);
+  const result = await authService.signupRecruiter(input, { ...sessionMeta, clientType, deviceName });
+  res.status(201).json({ success: true, data: result });
+});
 
-  setSessionCookies(res, result.tokens);
-
-  res.status(201).json({
-    success: true,
-    data: {
-      user: result.user,
-      accessToken: result.tokens.accessToken,
-    },
-  });
+export const login = asyncHandler(async (req: Request, res: Response) => {
+  const input = loginSchema.parse(req.body);
+  const { clientType, deviceName, sessionMeta } = extractClientMeta(req);
+  const result = await authService.login(input, { ...sessionMeta, clientType, deviceName });
+  res.status(200).json({ success: true, data: result });
 });
 
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
-  const refreshToken = req.cookies?.[REFRESH_COOKIE] ?? req.body?.refreshToken;
-  if (!refreshToken) throw ApiError.unauthorized('No refresh token provided');
+  // Refresh token can come from body (mobile-friendly) or cookie (web)
+  const refreshTokenRaw =
+    (typeof req.body?.refreshToken === 'string' && req.body.refreshToken) ||
+    req.cookies?.refresh_token;
 
-  const result = await authService.refreshSession(refreshToken, {
-    ip: req.ip,
-    userAgent: req.headers['user-agent'],
+  if (!refreshTokenRaw) {
+    return res.status(401).json({ success: false, error: { message: 'Refresh token missing' } });
+  }
+
+  const { clientType, deviceName, sessionMeta } = extractClientMeta(req);
+  const result = await authService.refreshSession(refreshTokenRaw, {
+    ...sessionMeta,
+    clientType,
+    deviceName,
   });
-
-  setSessionCookies(res, result.tokens);
-
-  res.status(200).json({
-    success: true,
-    data: {
-      user: result.user,
-      accessToken: result.tokens.accessToken,
-    },
-  });
+  res.status(200).json({ success: true, data: result });
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
-  const refreshToken = req.cookies?.[REFRESH_COOKIE];
-  await authService.logout(refreshToken);
-  clearSessionCookies(res);
-  res.status(200).json({ success: true, data: { message: 'Logged out successfully' } });
+  const refreshTokenRaw =
+    (typeof req.body?.refreshToken === 'string' && req.body.refreshToken) ||
+    req.cookies?.refresh_token;
+  const clientType = req.user?.clientType ?? resolveClientType(req.headers['x-client-type']);
+  await authService.logout(refreshTokenRaw, clientType);
+  res.clearCookie?.('access_token');
+  res.clearCookie?.('refresh_token');
+  res.status(200).json({ success: true, data: { message: 'Logged out' } });
 });
 
 export const me = asyncHandler(async (req: Request, res: Response) => {
@@ -100,28 +77,34 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
   res.status(200).json({ success: true, data: user });
 });
 
-export const changePassword = asyncHandler(async (req: Request, res: Response) => {
-  await authService.changePassword(req.user!.sub, req.body);
-  clearSessionCookies(res);
-  res.status(200).json({ success: true, data: { message: 'Password changed. Please log in again.' } });
-});
-
 export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
-  const user = await authService.updateProfile(req.user!.sub, req.body);
+  const input = updateProfileSchema.parse(req.body);
+  const user = await authService.updateProfile(req.user!.sub, input);
   res.status(200).json({ success: true, data: user });
 });
 
 export const setSecurityQuestion = asyncHandler(async (req: Request, res: Response) => {
-  const user = await authService.setSecurityQuestion(req.user!.sub, req.body);
+  const input = securityQuestionSchema.parse(req.body);
+  const user = await authService.setSecurityQuestion(req.user!.sub, input);
   res.status(200).json({ success: true, data: user });
 });
 
+export const changePassword = asyncHandler(async (req: Request, res: Response) => {
+  const input = changePasswordSchema.parse(req.body);
+  await authService.changePassword(req.user!.sub, input);
+  res.status(200).json({ success: true, data: { message: 'Password changed successfully' } });
+});
+
 export const forgotPasswordQuestion = asyncHandler(async (req: Request, res: Response) => {
-  const result = await authService.getForgotPasswordQuestion(req.body);
+  const input = forgotPasswordQuestionSchema.parse(req.body);
+  const result = await authService.getForgotPasswordQuestion(input);
   res.status(200).json({ success: true, data: result });
 });
 
 export const forgotPasswordReset = asyncHandler(async (req: Request, res: Response) => {
-  await authService.resetPasswordWithSecurityAnswer(req.body);
-  res.status(200).json({ success: true, data: { message: 'Password reset successfully. Please log in.' } });
+  const input = forgotPasswordResetSchema.parse(req.body);
+  await authService.resetPasswordWithSecurityAnswer(input);
+  res.status(200).json({ success: true, data: { message: 'Password reset successfully' } });
 });
+
+

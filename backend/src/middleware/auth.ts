@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { Role } from '@prisma/client';
+import { ClientType, Role } from '@prisma/client';
 import { ApiError } from '@/utils/apiError';
 import { verifyAccessToken } from '@/modules/auth/token.service';
 
@@ -7,6 +7,7 @@ export interface AuthPayload {
   sub: string; // user id
   role: Role;
   email: string;
+  clientType: ClientType;
 }
 
 declare global {
@@ -50,4 +51,20 @@ export function requireRole(...roles: Role[]) {
     }
     next();
   };
+}
+
+/**
+ * Blocks mutating attendance/activity actions for mobile clients.
+ * This is defense-in-depth: the mobile app should never call these routes,
+ * but if a compromised/bad build does, the server rejects them.
+ */
+export function disallowMobile(req: Request, _res: Response, next: NextFunction) {
+  if (req.user?.clientType === ClientType.MOBILE) {
+    return next(
+      ApiError.forbidden(
+        'This action is not available on the mobile companion app. Please use the desktop CMS.',
+      ),
+    );
+  }
+  next();
 }

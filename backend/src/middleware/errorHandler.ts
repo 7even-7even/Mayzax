@@ -37,17 +37,24 @@ export function errorHandler(err: unknown, req: Request, res: Response, _next: N
     const firstFormError = flattened.formErrors.find(Boolean);
     message = firstFieldError ?? firstFormError ?? 'Validation failed';
     details = flattened;
-  } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === 'P2002') {
+  } else if (
+    err &&
+    typeof err === 'object' &&
+    'code' in (err as any) &&
+    typeof (err as any).code === 'string' &&
+    (err as any).code.startsWith('P')
+  ) {
+    const e = err as any;
+    if (e.code === 'P2002') {
       statusCode = 409;
       code = 'DUPLICATE_ENTRY';
       message = 'A record with these values already exists.';
-      details = { target: err.meta?.target };
-    } else if (err.code === 'P2025') {
+      details = { target: e.meta?.target };
+    } else if (e.code === 'P2025') {
       statusCode = 404;
       code = 'NOT_FOUND';
       message = 'Requested record was not found.';
-    } else if (err.code === 'P2003') {
+    } else if (e.code === 'P2003') {
       statusCode = 400;
       code = 'FOREIGN_KEY_CONSTRAINT';
       message = 'Related record does not exist.';

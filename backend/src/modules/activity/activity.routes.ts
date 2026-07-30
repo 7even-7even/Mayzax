@@ -1,16 +1,18 @@
 import { Router } from 'express';
 import { Role } from '@prisma/client';
-import { requireAuth, requireRole } from '@/middleware/auth';
+import { requireAuth, requireRole, disallowMobile } from '@/middleware/auth';
 import * as activityController from './activity.controller';
 
 const router = Router();
 
 router.use(requireAuth);
 
-// Recruiter & TL actions
-router.post('/status', activityController.changeStatus);
+// Mutating endpoints — desktop/web only. Mobile companion cannot change status or send heartbeats.
+router.post('/status', disallowMobile, activityController.changeStatus);
+router.post('/heartbeat', disallowMobile, activityController.heartbeat);
+
+// Read endpoints available to both web and mobile
 router.get('/current', activityController.getCurrentStatus);
-router.post('/heartbeat', activityController.heartbeat);
 router.get('/today', activityController.getTodayActivity);
 router.get('/history', activityController.getActivityHistory);
 router.get('/users', activityController.getActivityUsers);

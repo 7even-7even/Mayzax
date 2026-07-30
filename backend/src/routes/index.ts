@@ -7,6 +7,10 @@ import analyticsRoutes from '@/modules/analytics/analytics.routes';
 import activityRoutes from '@/modules/activity/activity.routes';
 import updatesRoutes from '@/modules/updates/updates.routes';
 import onboardingRoutes from '@/modules/onboarding/onboarding.routes';
+import shiftRoutes from '@/modules/shifts/shift.routes';
+import devicesRoutes from '@/modules/devices/devices.routes';
+import notificationsRoutes from '@/modules/notifications/notifications.routes';
+import attendanceRoutes from '@/modules/attendance/attendance.routes';
 
 const router = Router();
 
@@ -22,5 +26,11 @@ router.use('/analytics', analyticsRoutes);
 router.use('/activity', activityRoutes);
 router.use('/updates', updatesRoutes);
 router.use('/onboarding', onboardingRoutes);
+
+// Companion mobile + shared read-only APIs
+router.use('/shifts', shiftRoutes);
+router.use('/devices', devicesRoutes);
+router.use('/notifications', notificationsRoutes);
+router.use('/attendance', attendanceRoutes);
 
 export default router;

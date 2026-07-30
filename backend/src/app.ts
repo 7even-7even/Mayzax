@@ -19,7 +19,11 @@ function isAllowedOrigin(origin: string) {
   if (allowedOrigins.includes(origin)) return true;
 
   if (env.NODE_ENV === 'development') {
-    return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    // Allow any localhost origin including Expo dev server (19000-19006),
+    // Expo Go, and Android emulators.
+    return /^https?:\/\/(localhost|127\.0\.0\.1|10\.0\.2\.2)(:\d+)?$/.test(origin)
+      || /^exp:\/\/[a-z0-9-]+$/.test(origin)
+      || /^https?:\/\/[a-z0-9-]+\.exp\.host(:\d+)?$/.test(origin);
   }
 
   return false;

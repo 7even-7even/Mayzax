@@ -11,6 +11,18 @@ import {
   ProductivityMetrics,
 } from './activity.types';
 
+const BREAK_STATUSES = new Set<UserStatus>([
+  UserStatus.SHORT_BREAK,
+  UserStatus.DINNER_BREAK,
+  UserStatus.BRIEFING_TRAINING,
+  UserStatus.MEETING,
+  UserStatus.SYSTEM_ISSUE,
+]);
+
+function isBreakStatus(s: UserStatus) {
+  return BREAK_STATUSES.has(s);
+}
+
 const STALE_HEARTBEAT_THRESHOLD_MS = 40 * 60 * 1000; // 40 minutes
 
 /**
@@ -93,6 +105,24 @@ export async function changeStatus(
     where: { id: userId },
     data: { lastHeartbeatAt: now, lastActiveAt: now },
   });
+
+  // Schedule mobile reminders when a break starts / shift is active.
+  // We import lazily to avoid a circular dependency between modules.
+  if (actorRole && isTrackedRole(actorRole)) {
+    import('../../jobs/processors.js').then(({ scheduleBreakReminders, scheduleShiftRemindersIfNeeded }) => {
+      if (isBreakStatus(newStatus)) {
+        scheduleBreakReminders(userId, newStatus, newLog.startedAt).catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error('Failed to schedule break reminders', err);
+        });
+      } else if (newStatus === UserStatus.ACTIVE || newStatus === UserStatus.ONLINE) {
+        scheduleShiftRemindersIfNeeded(userId).catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error('Failed to schedule shift reminders', err);
+        });
+      }
+    }).catch(() => { /* reminders unavailable */ });
+  }
 
   return {
     status: newLog.status,
