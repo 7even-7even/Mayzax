@@ -8,6 +8,7 @@ import { AppShell } from '@/components/layout/app-shell';
 import { ProtectedRoute } from '@/routes/protected-route';
 import DashboardPage from '@/pages/dashboard/dashboard-page';
 import RecruiterDashboardPage from '@/pages/dashboard/recruiter-dashboard-page';
+import CompanionDashboardPage from '@/pages/dashboard/companion-dashboard-page';
 import AnalyticsPage from '@/pages/dashboard/analytics-page';
 import RecruitersPage from '@/pages/recruiters/recruiters-page';
 import ProfilesPage from '@/pages/profiles/profiles-page';
@@ -76,6 +77,10 @@ export default function App() {
 
             <Route element={<ProtectedRoute allowedRoles={['RECRUITER']} />}>
               <Route path="/recruiter-dashboard" element={<RecruiterDashboardPage />} />
+            </Route>
+
+            <Route element={<ProtectedRoute allowedRoles={['RESUME_ASSIST', 'SALES_EXEC']} />}>
+              <Route path="/companion-dashboard" element={<CompanionDashboardPage />} />
             </Route>
 
             <Route path="/profile" element={<ProfilePage />} />

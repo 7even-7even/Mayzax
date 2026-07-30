@@ -372,9 +372,8 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
   ] = await Promise.all([
     prisma.user.count({
       where: {
-        role: Role.RECRUITER,
         deletedAt: null,
-        ...(isTeamLeader ? { createdById: actor.id } : {}),
+        ...(isTeamLeader ? { role: Role.RECRUITER, createdById: actor.id } : {}),
       },
     }),
     prisma.user.count({

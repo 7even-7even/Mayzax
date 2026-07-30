@@ -29,7 +29,7 @@ const STALE_HEARTBEAT_THRESHOLD_MS = 40 * 60 * 1000; // 40 minutes
  * Helper to check if a role should be tracked
  */
 export function isTrackedRole(role: Role): boolean {
-  return role === Role.RECRUITER || role === Role.TEAM_LEADER;
+  return role === Role.RECRUITER || role === Role.TEAM_LEADER || role === Role.RESUME_ASSIST || role === Role.SALES_EXEC;
 }
 
 /**
@@ -214,7 +214,7 @@ export async function processHeartbeat(userId: string, role: Role) {
   if (
     openLog &&
     lastHeartbeat &&
-    (openLog.status === UserStatus.ACTIVE || openLog.status === UserStatus.ONLINE)
+    openLog.status === UserStatus.ACTIVE
   ) {
     const timeSinceLastHeartbeat = now.getTime() - lastHeartbeat.getTime();
     if (timeSinceLastHeartbeat > STALE_HEARTBEAT_THRESHOLD_MS) {
@@ -339,10 +339,7 @@ export async function getTodayActivity(userId: string): Promise<DailyActivitySum
       case UserStatus.ACTIVE:
         totalProductiveSeconds += durationSeconds;
         break;
-      case UserStatus.ONLINE:
-        totalOnlineSeconds += durationSeconds;
-        totalProductiveSeconds += durationSeconds; // ONLINE counts as productive for utilization (user present & available)
-        break;
+
       case UserStatus.SHORT_BREAK:
         shortBreakSeconds += durationSeconds;
         break;
@@ -415,7 +412,7 @@ export async function getActivityUsers(requester: ActivityRequester) {
   };
 
   if (requester.role === Role.ADMIN) {
-    where.role = { in: [Role.RECRUITER, Role.TEAM_LEADER] };
+    where.role = { in: [Role.RECRUITER, Role.TEAM_LEADER, Role.RESUME_ASSIST, Role.SALES_EXEC] };
   } else if (requester.role === Role.TEAM_LEADER) {
     where.OR = [{ id: requester.id }, { createdById: requester.id }];
   } else {
@@ -441,7 +438,7 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
   const userWhere: any = {
     deletedAt: null,
     isActive: true,
-    role: { in: [Role.RECRUITER, Role.TEAM_LEADER] },
+    role: { in: [Role.RECRUITER, Role.TEAM_LEADER, Role.RESUME_ASSIST, Role.SALES_EXEC] },
   };
 
   if (requester.role === Role.TEAM_LEADER) {
@@ -493,7 +490,7 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
   todayLogs.forEach((log) => {
     const end = log.endedAt ? log.endedAt : now;
     const dur = Math.max(0, Math.floor((end.getTime() - log.startedAt.getTime()) / 1000));
-    if (log.status === UserStatus.ACTIVE || log.status === UserStatus.ONLINE) {
+    if (log.status === UserStatus.ACTIVE) {
       productiveTimeMap.set(log.userId, (productiveTimeMap.get(log.userId) ?? 0) + dur);
     } else if (log.status !== UserStatus.OFFLINE) {
       breakTimeMap.set(log.userId, (breakTimeMap.get(log.userId) ?? 0) + dur);
@@ -514,13 +511,10 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
     const isOnline =
       !!u.lastHeartbeatAt && now.getTime() - u.lastHeartbeatAt.getTime() <= STALE_HEARTBEAT_THRESHOLD_MS;
 
-    const statusToShow = (isOnline || (status !== UserStatus.ACTIVE && status !== UserStatus.ONLINE)) ? status : UserStatus.OFFLINE;
+    const statusToShow = (isOnline || status !== UserStatus.ACTIVE) ? status : UserStatus.OFFLINE;
 
     if (statusToShow === UserStatus.ACTIVE) {
       totalActiveCount++;
-    } else if (statusToShow === UserStatus.ONLINE) {
-      totalActiveCount++;
-      totalOnlineCount++;
     } else if (statusToShow === UserStatus.SYSTEM_ISSUE) {
       totalIssueCount++;
     } else if (statusToShow === UserStatus.OFFLINE) {
@@ -581,7 +575,7 @@ export async function getActivityHistory(
       if (!allowedUser) {
         throw ApiError.forbidden('You can only view activity for members in your team.');
       }
-    } else if (requester.role === Role.RECRUITER && query.userId !== requester.id) {
+    } else if ((requester.role === Role.RECRUITER || requester.role === Role.RESUME_ASSIST || requester.role === Role.SALES_EXEC) && query.userId !== requester.id) {
       throw ApiError.forbidden('You can only view your own activity.');
     }
     where.userId = query.userId;
@@ -591,7 +585,7 @@ export async function getActivityHistory(
       select: { id: true },
     });
     where.userId = { in: [requester.id, ...teamUsers.map((u) => u.id)] };
-  } else if (requester.role === Role.RECRUITER) {
+  } else if (requester.role === Role.RECRUITER || requester.role === Role.RESUME_ASSIST || requester.role === Role.SALES_EXEC) {
     where.userId = requester.id;
   }
 
@@ -684,7 +678,7 @@ export async function getProductivityMetrics(
     const logEnd = (log.endedAt && log.endedAt < endBounds.end) ? log.endedAt : (now < endBounds.end ? now : endBounds.end);
     const dur = Math.max(0, Math.floor((logEnd.getTime() - logStart.getTime()) / 1000));
 
-    if (log.status === UserStatus.ACTIVE || log.status === UserStatus.ONLINE) {
+    if (log.status === UserStatus.ACTIVE) {
       totalProductiveSecs += dur;
     } else if (log.status !== UserStatus.OFFLINE) {
       totalBreakSecs += dur;
@@ -726,7 +720,7 @@ export async function getAttendanceReport(
   const userWhere: any = {
     deletedAt: null,
     isActive: true,
-    role: { in: [Role.RECRUITER, Role.TEAM_LEADER] },
+    role: { in: [Role.RECRUITER, Role.TEAM_LEADER, Role.RESUME_ASSIST, Role.SALES_EXEC] },
   };
 
   if (query.recruiterId) {
@@ -799,9 +793,7 @@ export async function getAttendanceReport(
         case UserStatus.ACTIVE:
           totalProductiveSeconds += dur;
           break;
-        case UserStatus.ONLINE:
-          totalProductiveSeconds += dur; // ONLINE counts as productive (user present)
-          break;
+
         case UserStatus.SHORT_BREAK:
           shortBreakSeconds += dur;
           break;
