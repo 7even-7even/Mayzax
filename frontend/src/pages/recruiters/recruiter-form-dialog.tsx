@@ -19,14 +19,14 @@ const createSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Enter a valid email'),
   password: z.string().min(8, 'Min 8 characters').regex(/[A-Z]/, 'Needs uppercase').regex(/[a-z]/, 'Needs lowercase').regex(/[0-9]/, 'Needs number'),
-  role: z.enum(['ADMIN', 'TEAM_LEADER', 'RECRUITER']),
+  role: z.enum(['ADMIN', 'TEAM_LEADER', 'RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC']),
   createdById: z.string().uuid().nullable().optional(),
 });
 
 const updateSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Enter a valid email'),
-  role: z.enum(['ADMIN', 'TEAM_LEADER', 'RECRUITER']),
+  role: z.enum(['ADMIN', 'TEAM_LEADER', 'RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC']),
   createdById: z.string().uuid().nullable().optional(),
 });
 
@@ -140,6 +140,8 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
                     <SelectItem value="RECRUITER">Recruiter</SelectItem>
                     <SelectItem value="TEAM_LEADER">Team Leader</SelectItem>
                     <SelectItem value="ADMIN">Admin</SelectItem>
+                    <SelectItem value="RESUME_ASSIST">Resume Assist</SelectItem>
+                    <SelectItem value="SALES_EXEC">Sales Executive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -28,6 +28,11 @@ const recruiterNav = [
   { to: '/profile', label: 'Profile', icon: UserCircle, gradient: 'from-slate-600 to-slate-800', desc: 'Settings' },
 ];
 
+const companionNav = [
+  { to: '/companion-dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'from-mayzax-blue to-mayzax-blue-700', desc: 'Your status & timeline' },
+  { to: '/profile', label: 'Profile', icon: UserCircle, gradient: 'from-slate-600 to-slate-800', desc: 'Settings' },
+];
+
 interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
@@ -40,7 +45,12 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const { data: updatesData } = useUpdates();
   const unreadCount = updatesData?.unreadCount ?? 0;
 
-  const rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? [...adminNav] : [...recruiterNav];
+  const rawNav =
+    user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER'
+      ? [...adminNav]
+      : user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC'
+      ? [...companionNav]
+      : [...recruiterNav];
 //Onboarding Page Tab: Uncomment when needed
   // if (user?.role === 'ADMIN') {
   //   // Insert Onboarding Requests right after Team Management (index 3)

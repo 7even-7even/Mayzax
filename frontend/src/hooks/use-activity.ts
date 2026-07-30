@@ -96,7 +96,7 @@ export interface ActivityHistoryItem {
 
 export function useCurrentStatus() {
   const { user } = useAuth();
-  const isTracked = user?.role === 'RECRUITER' || user?.role === 'TEAM_LEADER';
+  const isTracked = user?.role === 'RECRUITER' || user?.role === 'TEAM_LEADER' || user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC';
 
   return useQuery({
     queryKey: ['activity-current-status'],
@@ -128,7 +128,7 @@ export function useChangeStatus() {
 
 export function useTodayActivity() {
   const { user } = useAuth();
-  const isTracked = user?.role === 'RECRUITER' || user?.role === 'TEAM_LEADER';
+  const isTracked = user?.role === 'RECRUITER' || user?.role === 'TEAM_LEADER' || user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC';
 
   return useQuery({
     queryKey: ['activity-today'],
@@ -208,7 +208,7 @@ export function useProductivityMetrics(params: { fromDate?: string; toDate?: str
  */
 export function useActivityHeartbeat() {
   const { user, logout } = useAuth();
-  const isTracked = user?.role === 'RECRUITER' || user?.role === 'TEAM_LEADER';
+  const isTracked = user?.role === 'RECRUITER' || user?.role === 'TEAM_LEADER' || user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC';
   const changeStatus = useChangeStatus();
   const { data: currentStatusData } = useCurrentStatus();
 

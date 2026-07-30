@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'TEAM_LEADER' | 'RECRUITER';
+export type Role = 'ADMIN' | 'TEAM_LEADER' | 'RECRUITER' | 'RESUME_ASSIST' | 'SALES_EXEC';
 
 export type UserStatus =
   | 'ONLINE'

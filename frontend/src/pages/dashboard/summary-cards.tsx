@@ -9,7 +9,7 @@ import { CountUp } from '@/components/motion/count-up';
 import { Badge } from '@/components/ui/badge';
 
 const adminCardConfig = [
-  { key: 'totalRecruiters', label: 'Total Recruiters', icon: Users, gradient: 'from-mayzax-blue-500 to-mayzax-green-500', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
+  { key: 'totalRecruiters', label: 'Total System Users', icon: Users, gradient: 'from-mayzax-blue-500 to-mayzax-green-500', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
   { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, gradient: 'from-emerald-500 to-teal-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
   { key: 'totalProfiles', label: 'Total Profiles', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
   { key: 'totalApplications', label: 'Total Applications', icon: Briefcase, gradient: 'from-blue-500 to-cyan-600', accent: 'text-blue-600', bg: 'bg-blue-50' },

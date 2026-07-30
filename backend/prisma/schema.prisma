@@ -21,6 +21,8 @@ enum Role {
   ADMIN
   TEAM_LEADER
   RECRUITER
+  RESUME_ASSIST
+  SALES_EXEC
 }
 
 enum ApplicationStatus {
@@ -36,7 +38,6 @@ enum ApplicationStatus {
 }
 
 enum UserStatus {
-  ONLINE
   ACTIVE
   SHORT_BREAK
   DINNER_BREAK

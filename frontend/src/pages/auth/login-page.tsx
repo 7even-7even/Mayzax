@@ -104,7 +104,9 @@ export default function LoginPage() {
     try {
       const user = await login(values);
       toast.success(`Welcome back, ${user.name.split(' ')[0]}!`);
-      const from = (location.state as any)?.from?.pathname ?? (user.role === 'ADMIN' || user.role === 'TEAM_LEADER' ? '/dashboard' : '/recruiter-dashboard');
+      const from = (location.state as any)?.from?.pathname ?? 
+        (user.role === 'ADMIN' || user.role === 'TEAM_LEADER' ? '/dashboard' : 
+         user.role === 'RESUME_ASSIST' || user.role === 'SALES_EXEC' ? '/companion-dashboard' : '/recruiter-dashboard');
       navigate(from, { replace: true });
     } catch (err) {
       toast.error(extractErrorMessage(err, 'Invalid email or password'));

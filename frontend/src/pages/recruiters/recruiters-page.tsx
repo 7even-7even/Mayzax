@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { Plus, Search, MoreVertical, BarChart3, Pencil, Trash2, Users, Sparkles, Shield, Award, Building2, CheckCircle2, XCircle, Activity } from 'lucide-react';
@@ -33,7 +33,7 @@ const ALL_ROLES = '__all__';
 export default function RecruitersPage() {
   const { isAdmin, isTeamLeader } = usePermissions();
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'RECRUITER' | 'TEAM_LEADER' | 'ADMIN' | typeof ALL_ROLES>('RECRUITER');
+  const [roleFilter, setRoleFilter] = useState<'RECRUITER' | 'TEAM_LEADER' | 'ADMIN' | 'RESUME_ASSIST' | 'SALES_EXEC' | typeof ALL_ROLES>(isAdmin ? ALL_ROLES : 'RECRUITER');
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search);
 
@@ -42,6 +42,12 @@ export default function RecruitersPage() {
   const [statsRecruiterId, setStatsRecruiterId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Recruiter | null>(null);
   const [resetTarget, setResetTarget] = useState<Recruiter | null>(null);
+
+  useEffect(() => {
+    if (isAdmin) {
+      setRoleFilter(ALL_ROLES);
+    }
+  }, [isAdmin]);
 
   const { data, isLoading, isError, refetch } = useRecruiters({
     search: debouncedSearch || undefined,
@@ -130,6 +136,8 @@ export default function RecruitersPage() {
                 <SelectItem value="RECRUITER">Recruiters</SelectItem>
                 <SelectItem value="TEAM_LEADER">Team Leaders</SelectItem>
                 <SelectItem value="ADMIN">Admins</SelectItem>
+                <SelectItem value="RESUME_ASSIST">Resume Assists</SelectItem>
+                <SelectItem value="SALES_EXEC">Sales Executives</SelectItem>
                 <SelectItem value={ALL_ROLES}>All Roles</SelectItem>
               </SelectContent>
             </Select>

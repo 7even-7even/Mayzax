@@ -24,6 +24,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { formatDateTime, generateExportFilename, cn } from '@/lib/utils';
+import { getRoleLabel } from '@/lib/permissions';
 import {
   Calendar,
   Clock,
@@ -900,7 +901,7 @@ export default function ActivityTrackingPage() {
         const row = worksheet.addRow([
           item.name,
           item.email,
-          item.role === 'TEAM_LEADER' ? 'Team Leader' : 'Recruiter',
+          getRoleLabel(item.role),
           item.managerName,
           item.attendanceStatus,
           item.firstLogin ? formatDateTime(item.firstLogin) : 'N/A',
@@ -1276,7 +1277,7 @@ export default function ActivityTrackingPage() {
                           <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{m.name}</p>
                           <p className="text-[11px] text-slate-400 dark:text-slate-400 truncate">{m.email}</p>
                         </div>
-                        <div className="text-xs font-medium text-slate-600 dark:text-slate-300">{m.role === 'TEAM_LEADER' ? 'TL' : 'Recruiter'}</div>
+                        <div className="text-xs font-medium text-slate-600 dark:text-slate-300">{getRoleLabel(m.role)}</div>
                         <div>
                           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border ${cfg.bgColor} ${cfg.textColor} ${cfg.borderColor}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotColor}`} />

@@ -133,7 +133,7 @@ export function UserStatusSelector() {
   const { user } = useAuth();
   useActivityHeartbeat();
 
-  const isTracked = user?.role === 'RECRUITER' || user?.role === 'TEAM_LEADER';
+  const isTracked = user?.role === 'RECRUITER' || user?.role === 'TEAM_LEADER' || user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC';
   const { data: currentData, isLoading } = useCurrentStatus();
   const { data: todayData } = useTodayActivity();
   const changeStatusMutation = useChangeStatus();

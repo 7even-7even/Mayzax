@@ -24,9 +24,20 @@ const recruiterNav = [
   { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account' },
 ];
 
+const companionNav = [
+  { to: '/companion-dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Your status & timeline' },
+  { to: '/updates', label: 'Updates', icon: Bell, desc: 'Announcements' },
+  { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account' },
+];
+
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
-  const rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? [...adminNav] : [...recruiterNav];
+  const rawNav =
+    user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER'
+      ? [...adminNav]
+      : user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC'
+      ? [...companionNav]
+      : [...recruiterNav];
 //Admin Page: Onboarding Tab Uncommented.
   // if (user?.role === 'ADMIN') {
   //   rawNav.splice(3, 0, {
