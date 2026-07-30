@@ -216,11 +216,11 @@ export function useActivityHeartbeat() {
     if (!user || !isTracked) return;
 
     // Send immediate heartbeat on mount
-    apiClient.post('/activity/heartbeat').catch(() => {});
+    apiClient.post('/activity/heartbeat').catch(() => { });
 
     // Periodic 2-minute heartbeat interval
     const heartbeatInterval = setInterval(() => {
-      apiClient.post('/activity/heartbeat').catch(() => {});
+      apiClient.post('/activity/heartbeat').catch(() => { });
     }, 2 * 60 * 1000);
 
     // Track user activity
@@ -242,7 +242,7 @@ export function useActivityHeartbeat() {
       const elapsedMs = Date.now() - lastActivityTime;
 
       // 15 minutes of inactivity -> Transition status to OFFLINE
-      if (elapsedMs >= 15 * 60 * 1000) {
+      if (elapsedMs >= 25 * 60 * 1000) {
         const currentStatus = currentStatusData?.status;
         if (currentStatus && (currentStatus === 'ACTIVE' || currentStatus === 'ONLINE') && !statusTransitionedToOffline) {
           statusTransitionedToOffline = true;
@@ -258,7 +258,7 @@ export function useActivityHeartbeat() {
       }
 
       // 20 minutes of inactivity (5 mins after OFFLINE transition) -> Logout automatically
-      if (elapsedMs >= 20 * 60 * 1000) {
+      if (elapsedMs >= 30 * 60 * 1000) {
         clearInterval(heartbeatInterval);
         clearInterval(inactivityCheckInterval);
         try {
