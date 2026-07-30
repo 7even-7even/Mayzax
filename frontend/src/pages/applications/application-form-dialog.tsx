@@ -78,17 +78,17 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
   const debouncedLink = useDebounce(jobLink, 500);
 
   // Extension verification hook (commented out until deployed)
-  const { isVerified, isChecking, verificationResult, state: verificationState, isExtensionInstalled, installUrl, extensionId, retry: retryVerification } = useExtensionVerification(debouncedLink);
+  // const { isVerified, isChecking, verificationResult, state: verificationState, isExtensionInstalled, installUrl, extensionId, retry: retryVerification } = useExtensionVerification(debouncedLink);
 
   // Extension placeholder states
-  // const isVerified = false;
-  // const isChecking = false;
-  // const verificationResult = null;
-  // const verificationState = 'idle';
-  // const isExtensionInstalled = false;
-  // const installUrl = null;
-  // const extensionId = '';
-  // const retryVerification = () => {};
+  const isVerified = false;
+  const isChecking = false;
+  const verificationResult = null;
+  const verificationState = 'idle';
+  const isExtensionInstalled = false;
+  const installUrl = null;
+  const extensionId = '';
+  const retryVerification = () => {};
 
   const [duplicateResult, setDuplicateResult] = useState<{ isDuplicate: boolean; appliedByRecruiter?: { name: string } | null } | null>(null);
 
@@ -118,19 +118,19 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
 
   // Extension verification handler (commented out until deployed)
 
-  useEffect(() => {
-    if (isVerified && verificationResult) {
-      form.setValue('verified', true);
-      const isKeywordMatch = verificationResult.matchedRules?.includes('URL_KEYWORD_MATCH');
-      form.setValue('verificationMethod', isKeywordMatch ? 'Keyword Match' : 'Browser Extension');
-      if (verificationResult.company) form.setValue('companyName', verificationResult.company, { shouldDirty: true });
-      if (verificationResult.jobTitle) form.setValue('jobTitle', verificationResult.jobTitle, { shouldDirty: true });
-      if (verificationResult.portal) form.setValue('jobPortal', verificationResult.portal, { shouldDirty: true });
-    } else {
-      form.setValue('verified', false);
-      form.setValue('verificationMethod', null);
-    }
-  }, [isVerified, verificationResult, form]);
+  // useEffect(() => {
+  //   if (isVerified && verificationResult) {
+  //     form.setValue('verified', true);
+  //     const isKeywordMatch = verificationResult.matchedRules?.includes('URL_KEYWORD_MATCH');
+  //     form.setValue('verificationMethod', isKeywordMatch ? 'Keyword Match' : 'Browser Extension');
+  //     if (verificationResult.company) form.setValue('companyName', verificationResult.company, { shouldDirty: true });
+  //     if (verificationResult.jobTitle) form.setValue('jobTitle', verificationResult.jobTitle, { shouldDirty: true });
+  //     if (verificationResult.portal) form.setValue('jobPortal', verificationResult.portal, { shouldDirty: true });
+  //   } else {
+  //     form.setValue('verified', false);
+  //     form.setValue('verificationMethod', null);
+  //   }
+  // }, [isVerified, verificationResult, form]);
 
 
   const onSubmit = async (values: ApplicationForm) => {
@@ -202,15 +202,15 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="jobLink" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ">
+              <Label htmlFor="jobLink" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 dark:text-white ">
                 <Link2 className="h-3.5 w-3.5 text-mayzax-blue-500 " />
                 Job Posting Link
               </Label>
-              <Input id="jobLink" placeholder="https://www.linkedin.com/jobs/view/..." className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black" {...form.register('jobLink')} />
+              <Input id="jobLink" placeholder="https://www.linkedin.com/jobs/view/..." className="rounded-xl h-11 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black" {...form.register('jobLink')} />
               {debouncedLink && (
                 <div className="mt-3 space-y-2">
                   {/* ExtensionVerificationBadge commented out until extension is deployed */}
-                  <ExtensionVerificationBadge isVerified={isVerified} isChecking={isChecking} result={verificationResult} state={verificationState} isExtensionInstalled={isExtensionInstalled} installUrl={installUrl} extensionId={extensionId} onRetry={retryVerification} />
+                  {/* <ExtensionVerificationBadge isVerified={isVerified} isChecking={isChecking} result={verificationResult} state={verificationState} isExtensionInstalled={isExtensionInstalled} installUrl={installUrl} extensionId={extensionId} onRetry={retryVerification} /> */}
                   <div className="flex flex-wrap gap-2">
                     {duplicateResult?.isDuplicate ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">

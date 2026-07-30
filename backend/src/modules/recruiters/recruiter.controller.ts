@@ -68,3 +68,11 @@ export const updateMyTeamName = asyncHandler(async (req: Request, res: Response)
   const result = await recruiterService.updateMyTeamName(req.user!.sub, req.body);
   res.status(200).json({ success: true, data: result });
 });
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const result = await recruiterService.resetRecruiterPassword(
+    req.params.id,
+    { id: req.user!.sub, role: req.user!.role }
+  );
+  res.status(200).json({ success: true, data: result });
+});

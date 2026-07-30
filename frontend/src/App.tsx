@@ -20,6 +20,8 @@ import UnauthorizedPage from '@/pages/unauthorized-page';
 import HomeRedirect from '@/pages/home-redirect';
 import { MayzaxIntro } from '@/components/shared/mayzax-intro';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
+import OnboardPage from '@/pages/onboard/onboard-page';
+import AdminOnboardingPage from '@/pages/onboard/admin-onboarding-page';
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(() => {
@@ -60,6 +62,7 @@ export default function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
+        <Route path="/onboard" element={<OnboardPage />} />
 
         <Route element={<ProtectedRoute />}>
           <Route element={<AppShell />}>
@@ -80,6 +83,7 @@ export default function App() {
             <Route path="/applications" element={<ApplicationsPage />} />
             <Route path="/activity" element={<ActivityTrackingPage />} />
             <Route path="/updates" element={<UpdatesPage />} />
+            <Route path="/admin/onboarding" element={<AdminOnboardingPage />} />
           </Route>
         </Route>
 

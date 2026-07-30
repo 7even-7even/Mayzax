@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { usePermissions } from '@/hooks/use-permissions';
 import { getAssetUrl, extractErrorMessage } from '@/lib/api-client';
 import { useUpdates, useMarkUpdateAsRead, useCreateUpdate, useDeleteUpdate, SystemUpdateItem } from '@/hooks/use-updates';
-import { PageHeader } from '@/components/shared/page-header';
+import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -107,7 +107,8 @@ export default function UpdatesPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
+      <PremiumPageHeader
+        icon={Bell}
         title="Updates & Releases"
         description="Stay up to date with new features, improvements & documentation"
         badge={unreadCount > 0 ? `${unreadCount} new` : undefined}
@@ -118,6 +119,8 @@ export default function UpdatesPage() {
             </Button>
           ) : undefined
         }
+        gradient="from-indigo-500 to-indigo-700"
+        bottomGradient="from-indigo-650 via-violet-600 to-indigo-800"
       />
 
       <div className="space-y-4 ">
@@ -223,13 +226,13 @@ export default function UpdatesPage() {
                 </Label>
                 <Input id="updateTitle" placeholder="e.g. Activity Tracking & Hybrid Verification" value={title} onChange={(e) => setTitle(e.target.value)} required className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50" />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="updateVersion" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <Zap className="h-3.5 w-3.5 text-mayzax-blue-500" />
                   Version
                 </Label>
-                <Input id="updateVersion" placeholder="v2.1.0" value={version} onChange={(e) => setVersion(e.target.value)} className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50" />
+                <Input id="updateVersion" placeholder="v1.1.0" value={version} onChange={(e) => setVersion(e.target.value)} className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50" />
               </div>
 
               <div className="space-y-2">

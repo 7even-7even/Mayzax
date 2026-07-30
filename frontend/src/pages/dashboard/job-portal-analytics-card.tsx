@@ -18,6 +18,8 @@ type PortalScope = 'all' | 'currentShift' | 'custom';
 interface JobPortalAnalyticsCardProps {
   title?: string;
   description?: string;
+  recruiterId?: string;
+  teamId?: string;
 }
 
 const PORTAL_COLORS: Record<string, string> = {
@@ -56,6 +58,8 @@ const PORTAL_GRADIENTS: Record<string, string> = {
 export function JobPortalAnalyticsCard({
   title = 'Job Portal Performance',
   description = 'Interactive breakdown by portal • Real-time',
+  recruiterId,
+  teamId,
 }: JobPortalAnalyticsCardProps) {
   const [scope, setScope] = useState<PortalScope>('all');
   const [from, setFrom] = useState('');
@@ -66,6 +70,8 @@ export function JobPortalAnalyticsCard({
     scope,
     from: scope === 'custom' && from ? from : undefined,
     to: scope === 'custom' && to ? to : undefined,
+    recruiterId: recruiterId === '__all__' ? undefined : recruiterId,
+    teamId: teamId === '__all__' ? undefined : teamId,
   });
 
   const portals = data?.portals ?? [];

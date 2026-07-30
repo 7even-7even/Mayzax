@@ -9,6 +9,7 @@ interface PremiumPageHeaderProps {
   description?: string;
   live?: boolean;
   liveLabel?: string;
+  badge?: string;
   pills?: Array<{ icon?: LucideIcon; label: string; variant?: 'default' | 'premium' }>;
   actions?: ReactNode;
   gradient?: string; // tailwind gradient for icon bg
@@ -22,6 +23,7 @@ export function PremiumPageHeader({
   description,
   live = false,
   liveLabel = 'Live',
+  badge,
   pills = [],
   actions,
   gradient = 'from-mayzax-blue to-mayzax-green',
@@ -48,6 +50,11 @@ export function PremiumPageHeader({
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-300">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     {liveLabel}
+                  </span>
+                )}
+                {badge && (
+                  <span className="inline-flex items-center rounded-full bg-violet-50 border border-violet-200 text-violet-700 px-2.5 py-0.5 text-xs font-semibold dark:bg-violet-900/20 dark:border-violet-800 dark:text-violet-300">
+                    {badge}
                   </span>
                 )}
               </div>

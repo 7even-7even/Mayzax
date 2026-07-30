@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Search, Users } from 'lucide-react';
 import {
@@ -29,7 +29,22 @@ export function BulkAssignDialog({ open, onOpenChange, selectedProfileIds, onSuc
   const bulkAssignMutation = useBulkAssignProfiles();
   const { data: recruitersData } = useRecruiters({ isActive: true, pageSize: 100 });
 
-  const recruiters = recruitersData?.data ?? [];
+  const recruiters = useMemo(() => {
+    const list = [...(recruitersData?.data ?? [])];
+    if (user && user.role === 'TEAM_LEADER') {
+      const exists = list.some((r) => r.id === user.id);
+      if (!exists) {
+        list.unshift({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: true,
+        } as any);
+      }
+    }
+    return list;
+  }, [recruitersData, user]);
   const [recruiterSearch, setRecruiterSearch] = useState('');
   const [selectedRecruiterIds, setSelectedRecruiterIds] = useState<string[]>([]);
 

@@ -11,10 +11,10 @@ router.use(requireAuth);
 
 // Recruiters get their own scoped portal analytics; admins get all applications.
 router.get('/job-portals', validate({ query: jobPortalAnalyticsQuerySchema }), analyticsController.getJobPortalAnalytics);
+router.get('/summary', analyticsController.getGlobalSummary);
 
 router.use(requireRole(Role.ADMIN, Role.TEAM_LEADER));
 
-router.get('/summary', analyticsController.getGlobalSummary);
 router.get('/dashboard', validate({ query: dashboardQuerySchema }), analyticsController.getDashboardOverview);
 router.get('/dashboard/:id/breakdown', validate({ params: idParamSchema }), analyticsController.getRecruiterBreakdown);
 router.get('/daily-counts', validate({ query: dailyCountsQuerySchema }), analyticsController.getDailyCounts);

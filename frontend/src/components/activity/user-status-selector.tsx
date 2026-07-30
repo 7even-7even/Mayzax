@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { UserStatus } from '@/types';
-import { useCurrentStatus, useChangeStatus, useActivityHeartbeat } from '@/hooks/use-activity';
+import { useCurrentStatus, useChangeStatus, useActivityHeartbeat, useTodayActivity } from '@/hooks/use-activity';
 import { useAuth } from '@/context/auth-context';
 import {
   DropdownMenu,
@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, ChevronDown, Check, Loader2, Power, Wifi, Zap, Coffee, Utensils, GraduationCap, Users as UsersIcon, AlertTriangle, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export const STATUS_CONFIG: Record<
   UserStatus,
@@ -134,6 +135,7 @@ export function UserStatusSelector() {
 
   const isTracked = user?.role === 'RECRUITER' || user?.role === 'TEAM_LEADER';
   const { data: currentData, isLoading } = useCurrentStatus();
+  const { data: todayData } = useTodayActivity();
   const changeStatusMutation = useChangeStatus();
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -161,8 +163,25 @@ export function UserStatusSelector() {
   const config = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.OFFLINE;
   const CurrentIcon = config.icon;
 
+  const shortBreaksCount = todayData?.logs?.filter((l) => l.status === 'SHORT_BREAK').length ?? 0;
+  const dinnerBreaksCount = todayData?.logs?.filter((l) => l.status === 'DINNER_BREAK').length ?? 0;
+
+  const isBreakExtended =
+    (currentStatus === 'SHORT_BREAK' && elapsedSeconds > 900) ||
+    (currentStatus === 'DINNER_BREAK' && elapsedSeconds > 2400);
+
   const handleSelectStatus = (status: UserStatus) => {
     if (status === currentStatus) return;
+
+    if (status === 'SHORT_BREAK' && shortBreaksCount >= 2) {
+      toast.error('You have already taken your 2 short breaks for this shift.');
+      return;
+    }
+
+    if (status === 'DINNER_BREAK' && dinnerBreaksCount >= 1) {
+      toast.error('You have already taken your dinner break for this shift.');
+      return;
+    }
 
     if (status === 'OFFLINE') {
       setTargetStatus(status);
@@ -197,12 +216,20 @@ export function UserStatusSelector() {
     <>
       <div className="flex items-center gap-2">
         {/* Live Timer*/}
-        <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-mono font-semibold text-slate-700 shadow-sm">
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-white">
+        <div className={cn(
+          "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-mono font-semibold shadow-sm transition-all duration-300",
+          isBreakExtended
+            ? "border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:border-rose-900 dark:text-rose-400 animate-pulse"
+            : "border-slate-200 bg-white text-slate-700 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+        )}>
+          <div className={cn(
+            "flex h-5 w-5 items-center justify-center rounded-full text-white",
+            isBreakExtended ? "bg-rose-600 animate-pulse" : "bg-slate-900 dark:bg-slate-700"
+          )}>
             <Clock className="h-3 w-3" />
           </div>
           <span>{isLoading ? '00:00:00' : formatSecondsToTimer(elapsedSeconds)}</span>
-          <div className="ml-1 h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <div className={cn("ml-1 h-1.5 w-1.5 rounded-full", isBreakExtended ? "bg-rose-500 animate-ping" : "bg-emerald-500 animate-pulse")} />
         </div>
 
         {/* Current Status */}
@@ -265,17 +292,42 @@ export function UserStatusSelector() {
                 const itemConfig = STATUS_CONFIG[statusKey];
                 const isSelected = currentStatus === statusKey;
                 const ItemIcon = itemConfig.icon;
+
+                // Determine if break limit is reached
+                let isLimitReached = false;
+                let limitLabel = '';
+                if (statusKey === 'SHORT_BREAK') {
+                  isLimitReached = shortBreaksCount >= 2;
+                  limitLabel = ` (${shortBreaksCount}/2)`;
+                } else if (statusKey === 'DINNER_BREAK') {
+                  isLimitReached = dinnerBreaksCount >= 1;
+                  limitLabel = ` (${dinnerBreaksCount}/1)`;
+                }
+
                 return (
                   <DropdownMenuItem
                     key={statusKey}
+                    disabled={isLimitReached && !isSelected}
                     onClick={() => handleSelectStatus(statusKey)}
-                    className={`flex items-center justify-between cursor-pointer rounded-xl px-3 py-2 text-xs font-medium ${isSelected ? 'bg-slate-900 text-white' : 'hover:bg-slate-50'}`}
+                    className={cn(
+                      "flex items-center justify-between cursor-pointer rounded-xl px-3 py-2 text-xs font-medium transition-all",
+                      isSelected
+                        ? "bg-slate-900 text-white"
+                        : isLimitReached
+                        ? "opacity-40 cursor-not-allowed hover:bg-transparent"
+                        : "hover:bg-slate-50"
+                    )}
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${isSelected ? 'bg-white/10' : itemConfig.bgColor} ${isSelected ? 'text-white' : itemConfig.textColor}`}>
+                      <div className={cn(
+                        "flex h-6 w-6 items-center justify-center rounded-lg",
+                        isSelected ? "bg-white/10 text-white" : itemConfig.bgColor + " " + itemConfig.textColor
+                      )}>
                         <ItemIcon className="h-3.5 w-3.5" />
                       </div>
-                      <span>{itemConfig.label}</span>
+                      <span className={cn(isLimitReached && !isSelected && "line-through text-slate-400")}>
+                        {itemConfig.label}{limitLabel}
+                      </span>
                     </div>
                     {isSelected && <Check className="h-3.5 w-3.5 text-white" />}
                   </DropdownMenuItem>
@@ -358,7 +410,7 @@ export function UserStatusSelector() {
               Go Offline?
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
-              You’re about to go offline. Your shift timer will pause and Admin/TL will see you as offline. You can come back online anytime by selecting <span className="font-semibold text-slate-900">Online</span> or <span className="font-semibold text-slate-900">Active</span>.
+              You’re about to go offline. Your shift timer will pause and Admin/TL will see you as offline. You can come back online anytime by selecting <span className="font-semibold text-slate-900 dark:text-white">Active</span>.
             </DialogDescription>
           </DialogHeader>
 

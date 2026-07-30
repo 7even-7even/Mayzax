@@ -41,8 +41,8 @@ export function VirtualizedTable<T>({
   }
 
   return (
-    <div className={cn('rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col', containerClassName)}>
-      {header && <div className="shrink-0 border-b border-slate-200 bg-slate-50/50">{header}</div>}
+    <div className={cn('rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden flex flex-col', containerClassName)}>
+      {header && <div className="shrink-0 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50">{header}</div>}
       <div
         ref={parentRef}
         className={cn('flex-1 overflow-auto scrollbar-thin', className)}
@@ -76,11 +76,11 @@ export function VirtualizedTable<T>({
           </div>
         </div>
       </div>
-      <div className="shrink-0 border-t border-slate-100 bg-slate-50/30 px-3 py-2 text-[11px] text-slate-400 flex items-center justify-between ">
-        <span className='dark: text-black'>
+      <div className="shrink-0 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-850/30 px-3 py-2 text-[11px] text-slate-400 dark:text-slate-400 flex items-center justify-between ">
+        <span>
           Showing {data.length} row{data.length !== 1 ? 's' : ''}
         </span>
-        <span className="hidden sm:inline dark: text-black">Scroll to load more</span>
+        <span className="hidden sm:inline">Scroll to load more</span>
       </div>
     </div>
   );

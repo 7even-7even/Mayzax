@@ -13,7 +13,6 @@ CHANGELOG.md
 
 # Vite config timestamp files
 vite.config.ts.timestamp-*
-<<<<<<< Updated upstream
 *.timestamp-*.mjs
 .vscode/
 
@@ -22,7 +21,4 @@ vite.config.ts.timestamp-*
 *.crx
 VISION.MD
 GAP.MD
-=======
-*.timestamp-*.mjs
->>>>>>> Stashed changes
 *.docx
