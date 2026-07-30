@@ -45,6 +45,8 @@ export interface JobPortalAnalyticsParams {
   scope?: 'all' | 'currentShift' | 'custom';
   from?: string;
   to?: string;
+  recruiterId?: string;
+  teamId?: string;
 }
 
 export function useJobPortalAnalytics(params: JobPortalAnalyticsParams = {}) {
@@ -57,7 +59,7 @@ export function useJobPortalAnalytics(params: JobPortalAnalyticsParams = {}) {
   });
 }
 
-export function useDailyCounts(params: { recruiterId?: string; from?: string; to?: string }) {
+export function useDailyCounts(params: { recruiterId?: string; teamId?: string; from?: string; to?: string }) {
   return useQuery({
     queryKey: ['daily-counts', params],
     queryFn: async () => {

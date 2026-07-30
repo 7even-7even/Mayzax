@@ -406,8 +406,8 @@ export default function ApplicationsPage() {
               </div>
             </div>
             <div className="flex items-end">
-              <div className="text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 w-full">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">Filters:</span> Search is fuzzy across company, title, candidate, link. Use advanced for precise company filter.
+              <div className="text-xs text-slate-500 dark:bg-white dark:bg-slate-950/20 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 w-full text-black">
+                <span className="font-semibold text-slate-700 dark:text-black">Filters:</span> Search is fuzzy across company, title, candidate, link. Use advanced filters for precise search.
               </div>
             </div>
           </div>

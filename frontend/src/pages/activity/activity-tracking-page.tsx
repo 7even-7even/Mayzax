@@ -197,22 +197,37 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
     const displayMembers = filteredMembers ?? liveData.members;
     const totalMembers = displayMembers.length;
 
-    let activeCount = 0,
-      breakCount = 0,
-      issueCount = 0,
-      offlineCount = 0;
+    const counts: Record<UserStatus, number> = {
+      ONLINE: 0,
+      ACTIVE: 0,
+      SHORT_BREAK: 0,
+      DINNER_BREAK: 0,
+      BRIEFING_TRAINING: 0,
+      MEETING: 0,
+      SYSTEM_ISSUE: 0,
+      OFFLINE: 0,
+    };
+
     displayMembers.forEach((m) => {
-      if (m.status === 'ACTIVE') activeCount++;
-      else if (m.status === 'SYSTEM_ISSUE') issueCount++;
-      else if (m.status === 'OFFLINE') offlineCount++;
-      else breakCount++;
+      const statusKey = m.status as UserStatus;
+      if (counts[statusKey] !== undefined) {
+        counts[statusKey]++;
+      } else {
+        counts.OFFLINE++;
+      }
     });
 
+    const activeCount = counts.ACTIVE + counts.ONLINE;
+
     const chartData = [
-      { name: 'Active', value: activeCount, color: '#10B981', gradient: 'from-emerald-400 to-teal-500' },
-      { name: 'On Break', value: breakCount, color: '#F59E0B', gradient: 'from-amber-400 to-orange-500' },
-      { name: 'System Issue', value: issueCount, color: '#F43F5E', gradient: 'from-rose-400 to-red-500' },
-      { name: 'Offline', value: offlineCount, color: '#94A3B8', gradient: 'from-slate-300 to-slate-400' },
+      { name: 'Online', value: counts.ONLINE, color: '#3B82F6', gradient: 'from-blue-500 to-cyan-600' },
+      { name: 'Active', value: counts.ACTIVE, color: '#10B981', gradient: 'from-emerald-500 to-teal-600' },
+      { name: 'Short Break', value: counts.SHORT_BREAK, color: '#F59E0B', gradient: 'from-amber-500 to-orange-600' },
+      { name: 'Dinner Break', value: counts.DINNER_BREAK, color: '#F97316', gradient: 'from-orange-500 to-red-500' },
+      { name: 'Briefing / Training', value: counts.BRIEFING_TRAINING, color: '#8B5CF6', gradient: 'from-indigo-500 to-violet-600' },
+      { name: 'Meeting', value: counts.MEETING, color: '#0EA5E9', gradient: 'from-sky-500 to-blue-600' },
+      { name: 'System Issue', value: counts.SYSTEM_ISSUE, color: '#F43F5E', gradient: 'from-rose-500 to-red-600' },
+      { name: 'Offline', value: counts.OFFLINE, color: '#94A3B8', gradient: 'from-slate-400 to-slate-600' },
     ].filter((d) => d.value > 0);
 
     return (
@@ -389,6 +404,95 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
   }
 
   return null;
+}
+
+interface ExtendedBreaksSectionProps {
+  members: LiveStatusMetricsData['members'];
+}
+
+function ExtendedBreaksSection({ members }: ExtendedBreaksSectionProps) {
+  const extendedMembers = useMemo(() => {
+    return members.filter((m) => {
+      const isShortBreakExtended = m.status === 'SHORT_BREAK' && m.currentDurationSeconds > 900;
+      const isDinnerBreakExtended = m.status === 'DINNER_BREAK' && m.currentDurationSeconds > 2400;
+      return isShortBreakExtended || isDinnerBreakExtended;
+    });
+  }, [members]);
+
+  if (extendedMembers.length === 0) {
+    return (
+      <Card className="border-slate-200/60 shadow-sm overflow-hidden rounded-2xl dark:bg-slate-900 dark:border-slate-800">
+        <CardContent className="py-4 flex items-center gap-3 bg-emerald-50/40 dark:bg-emerald-950/10 border-l-4 border-emerald-500">
+          <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <div>
+            <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">All members are within break limits</p>
+            <p className="text-[10px] text-emerald-650 dark:text-emerald-400">There are no recruiters currently exceeding the 15-minute short break or 40-minute dinner break limit.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-rose-200 dark:border-rose-900/30 shadow-sm overflow-hidden rounded-2xl dark:bg-slate-900">
+      <CardHeader className="pb-2 border-b border-rose-100 bg-rose-50/30 dark:bg-rose-950/10 dark:border-rose-900/30">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500 text-white shadow-sm">
+            <AlertCircle className="h-4 w-4" />
+          </div>
+          <div>
+            <CardTitle className="text-sm font-bold text-rose-800 dark:text-rose-450 flex items-center gap-2">
+              Extended Break Alerts
+              <Badge variant="destructive" className="h-5 rounded-full px-2 text-[10px] font-black animate-pulse">
+                {extendedMembers.length} active
+              </Badge>
+            </CardTitle>
+            <CardDescription className="text-[11px] text-rose-600/80 dark:text-rose-400/80">Recruiters currently exceeding standard break allowances</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-slate-50/40 dark:bg-slate-900/30">
+              <TableHead className="font-semibold text-xs py-2 pl-4">Recruiter</TableHead>
+              <TableHead className="font-semibold text-xs py-2">Break Type</TableHead>
+              <TableHead className="font-semibold text-xs py-2">Active Duration</TableHead>
+              <TableHead className="font-semibold text-xs py-2 text-right pr-4">Exceeded By</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {extendedMembers.map((m) => {
+              const limit = m.status === 'SHORT_BREAK' ? 900 : 2400;
+              const exceededSeconds = m.currentDurationSeconds - limit;
+              const exceededFormatted = formatHoursMinutes(exceededSeconds);
+              const durationFormatted = formatHoursMinutes(m.currentDurationSeconds);
+
+              return (
+                <TableRow key={m.userId} className="hover:bg-rose-50/10 dark:hover:bg-rose-950/10 border-rose-100 dark:border-rose-900/20">
+                  <TableCell className="py-2.5 pl-4 font-bold text-slate-850 dark:text-slate-200">
+                    <div>{m.name}</div>
+                    <div className="text-[10px] text-slate-400 font-medium">{m.email}</div>
+                  </TableCell>
+                  <TableCell className="py-2.5">
+                    <Badge variant="outline" className="text-[10px] bg-rose-50/50 text-rose-700 border-rose-200 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900">
+                      {m.status === 'SHORT_BREAK' ? 'Short Break' : 'Dinner Break'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-2.5 font-mono text-xs font-semibold text-slate-700 dark:text-slate-350">
+                    {durationFormatted}
+                  </TableCell>
+                  <TableCell className="py-2.5 text-right pr-4 font-mono font-bold text-rose-600 dark:text-rose-450 text-xs">
+                    +{exceededFormatted}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
 }
 
 // Helper to get dynamic roadmap styling for each user status
@@ -747,7 +851,7 @@ export default function ActivityTrackingPage() {
         },
       });
 
-      const { reports } = data.data;
+      const { reports, fromDate: responseFromDate, toDate: responseToDate } = data.data;
       if (reports.length === 0) {
         toast.info('No attendance data available to export.');
         return;
@@ -826,8 +930,8 @@ export default function ActivityTrackingPage() {
       const filename = generateExportFilename({
         baseName: 'Attendance',
         userNameOrCandidate: selectedUser ? selectedUser.name : undefined,
-        fromDate: fromDate || undefined,
-        toDate: toDate || undefined,
+        fromDate: fromDate || responseFromDate,
+        toDate: toDate || responseToDate,
       });
       saveAs(blob, filename);
       toast.success(`Exported attendance sheet for ${reports.length} user${reports.length === 1 ? '' : 's'}.`);
@@ -981,7 +1085,7 @@ export default function ActivityTrackingPage() {
                   <BarChart3 className="h-4 w-4" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-semibold">Productivity Pulse</CardTitle>
+                  <CardTitle className="text-sm font-semibold dark:text-black">Productivity Pulse</CardTitle>
                   <CardDescription className="text-xs">Hours distribution across selected period</CardDescription>
                 </div>
               </div>
@@ -1021,6 +1125,13 @@ export default function ActivityTrackingPage() {
           isAdminView={isAdmin || isTeamLeader}
         />
       </Reveal>
+
+      {/* Extended Breaks Alert Section (Admin/TL only) */}
+      {(isAdmin || isTeamLeader) && liveData && (
+        <Reveal delay={0.18}>
+          <ExtendedBreaksSection members={liveData.members} />
+        </Reveal>
+      )}
 
       {/* Timeline for Recruiters */}
       {!isAdmin && todayData && (
@@ -1201,8 +1312,8 @@ export default function ActivityTrackingPage() {
               {selectedUserId !== ALL && (isAdmin || isTeamLeader) ? (
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <CardTitle className="text-sm font-bold dark:text-black">Event Logs — {activityUsers?.find((u) => u.id === selectedUserId)?.name || 'Selected User'}</CardTitle>
-                    <CardDescription className="text-xs dark:text-black">Detailed transition history</CardDescription>
+                    <CardTitle className="text-sm font-bold dark:text-white">Event Logs — {activityUsers?.find((u) => u.id === selectedUserId)?.name || 'Selected User'}</CardTitle>
+                    <CardDescription className="text-xs dark:text-white">Detailed transition history</CardDescription>
                   </div>
                   <Button variant="outline" size="sm" className="h-8 text-xs gap-1 border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white" onClick={() => { setSelectedUserId(ALL); setPage(1); }}>
                     ← Back to Summary

@@ -133,8 +133,9 @@ export function getBusinessDate(timestamp: Date | string | number = new Date()):
     return buildDateOnly(prev.year, prev.month, prev.day);
   }
 
-  // Daytime, no active shift -> falls on its own calendar date.
-  return buildDateOnly(year, month, day);
+  // Daytime, no active shift -> falls on the previous calendar date (most recently completed shift).
+  const prev = addDays(year, month, day, -1);
+  return buildDateOnly(prev.year, prev.month, prev.day);
 }
 
 /** Returns the business date formatted as `YYYY-MM-DD`. */

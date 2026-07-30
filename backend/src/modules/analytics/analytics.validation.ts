@@ -12,12 +12,15 @@ export const dailyCountsQuerySchema = z.object({
   recruiterId: z.string().uuid().optional(),
   from: z.string().optional(), // YYYY-MM-DD business date
   to: z.string().optional(),
+  teamId: z.string().uuid().optional(),
 });
 
 export const jobPortalAnalyticsQuerySchema = z.object({
   scope: z.enum(['all', 'currentShift', 'custom']).default('all'),
   from: z.string().optional(), // YYYY-MM-DD business date
   to: z.string().optional(),
+  recruiterId: z.string().uuid().optional(),
+  teamId: z.string().uuid().optional(),
 });
 
 export const idParamSchema = z.object({

@@ -21,3 +21,4 @@ vite.config.ts.timestamp-*
 *.crx
 VISION.MD
 GAP.MD
+*.docx

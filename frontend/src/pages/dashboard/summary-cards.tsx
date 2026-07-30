@@ -129,7 +129,7 @@ export function SummaryCards() {
                 <div>
                   <p className="text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-2">
                     Organization Teams
-                    <Badge variant="outline" className="text-[10px] bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300">
+                    <Badge variant="outline" className="text-[10px] bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-white">
                       {isLoading ? '...' : data?.totalTeams ?? 0} active
                     </Badge>
                   </p>
@@ -137,8 +137,8 @@ export function SummaryCards() {
                 </div>
               </div>
               <div className="flex items-center gap-2 text-slate-400">
-                <span className="hidden sm:inline text-xs font-medium">{teamsExpanded ? 'Collapse' : 'Expand teams'}</span>
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                <span className="hidden sm:inline text-xs font-medium text-black dark:text-white">{teamsExpanded ? 'Collapse' : 'Expand teams'}</span>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-white">
                   {teamsExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </div>
               </div>

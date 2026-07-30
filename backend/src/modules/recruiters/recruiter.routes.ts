@@ -24,6 +24,7 @@ router.post('/', validate({ body: createRecruiterSchema }), recruiterController.
 router.get('/:id/stats', validate({ params: idParamSchema }), recruiterController.getRecruiterStats);
 router.patch('/:id', validate({ params: idParamSchema, body: updateRecruiterSchema }), recruiterController.updateRecruiter);
 router.patch('/:id/status', validate({ params: idParamSchema, body: toggleActiveSchema }), recruiterController.setActiveStatus);
+router.post('/:id/reset-password', requireRole(Role.ADMIN), validate({ params: idParamSchema }), recruiterController.resetPassword);
 router.delete('/:id', validate({ params: idParamSchema }), recruiterController.deleteRecruiter);
 
 export default router;

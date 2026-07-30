@@ -181,33 +181,47 @@ export async function getRecruiterBreakdown(recruiterId: string, actor: { id: st
  * Daily counts grouped by business date - powers trend charts.
  * Uses raw SQL for efficient DB-side date grouping.
  */
-export async function getDailyCounts(query: DailyCountsQuery, actor: { id: string; role: Role }) {
+export async function getDailyCounts(query: DailyCountsQuery & { teamId?: string }, actor: { id: string; role: Role }) {
   const from = query.from ? new Date(`${query.from}T00:00:00.000Z`) : new Date(Date.now() - 30 * 86400000);
   const to = query.to ? new Date(`${query.to}T00:00:00.000Z`) : new Date();
 
-  let recruiterFilter = query.recruiterId
-    ? Prisma.sql`AND "recruiterId" = ${query.recruiterId}`
-    : Prisma.empty;
+  let allowedRecruiterIds: string[] | null = null;
 
-  if (actor.role === Role.TEAM_LEADER) {
-    if (query.recruiterId) {
-      const recruiter = await prisma.user.findFirst({
-        where: { id: query.recruiterId, createdById: actor.id, deletedAt: null }
-      });
-      if (!recruiter) {
-        throw ApiError.forbidden('You can only access stats for your own team recruiters');
-      }
-    } else {
-      const teamRecruiters = await prisma.user.findMany({
-        where: { createdById: actor.id, deletedAt: null },
-        select: { id: true }
-      });
-      const teamRecruiterIds = teamRecruiters.map(r => r.id);
-      if (teamRecruiterIds.length === 0) {
-        return [];
-      }
-      recruiterFilter = Prisma.sql`AND "recruiterId" IN (${Prisma.join(teamRecruiterIds)})`;
+  if (actor.role === Role.RECRUITER) {
+    allowedRecruiterIds = [actor.id];
+  } else if (actor.role === Role.TEAM_LEADER) {
+    const teamRecruiters = await prisma.user.findMany({
+      where: { createdById: actor.id, deletedAt: null },
+      select: { id: true }
+    });
+    allowedRecruiterIds = [actor.id, ...teamRecruiters.map(r => r.id)];
+  }
+
+  let filteredIds: string[] = [];
+
+  if (query.recruiterId) {
+    if (allowedRecruiterIds && !allowedRecruiterIds.includes(query.recruiterId)) {
+      throw ApiError.forbidden('You can only access stats for your own team recruiters');
     }
+    filteredIds = [query.recruiterId];
+  } else if (query.teamId) {
+    if (actor.role === Role.TEAM_LEADER && query.teamId !== actor.id) {
+      throw ApiError.forbidden('You can only access stats for your own team');
+    }
+    const teamRecruiters = await prisma.user.findMany({
+      where: { createdById: query.teamId, deletedAt: null },
+      select: { id: true }
+    });
+    filteredIds = [query.teamId, ...teamRecruiters.map(r => r.id)];
+  } else if (allowedRecruiterIds) {
+    filteredIds = allowedRecruiterIds;
+  }
+
+  let recruiterFilter = Prisma.empty;
+  if (filteredIds.length > 0) {
+    recruiterFilter = Prisma.sql`AND "recruiterId" IN (${Prisma.join(filteredIds)})`;
+  } else if (actor.role !== Role.ADMIN) {
+    return [];
   }
 
   const rows = await prisma.$queryRaw<Array<{ businessDate: Date; count: bigint }>>(Prisma.sql`
@@ -225,17 +239,49 @@ export async function getDailyCounts(query: DailyCountsQuery, actor: { id: strin
   }));
 }
 
-export async function getJobPortalAnalytics(actor: { id: string; role: Role }, query: JobPortalAnalyticsQuery) {
-  let where: Prisma.JobApplicationWhereInput = {};
+export async function getJobPortalAnalytics(actor: { id: string; role: Role }, query: JobPortalAnalyticsQuery & { recruiterId?: string; teamId?: string }) {
+  let allowedRecruiterIds: string[] | null = null;
+
   if (actor.role === Role.RECRUITER) {
-    where = { recruiterId: actor.id };
+    allowedRecruiterIds = [actor.id];
   } else if (actor.role === Role.TEAM_LEADER) {
     const teamRecruiters = await prisma.user.findMany({
       where: { createdById: actor.id, deletedAt: null },
       select: { id: true }
     });
-    const teamRecruiterIds = teamRecruiters.map(r => r.id);
-    where = { recruiterId: { in: teamRecruiterIds } };
+    allowedRecruiterIds = [actor.id, ...teamRecruiters.map(r => r.id)];
+  }
+
+  let filteredIds: string[] = [];
+
+  if (query.recruiterId) {
+    if (allowedRecruiterIds && !allowedRecruiterIds.includes(query.recruiterId)) {
+      throw ApiError.forbidden('You can only access stats for your own team recruiters');
+    }
+    filteredIds = [query.recruiterId];
+  } else if (query.teamId) {
+    if (actor.role === Role.TEAM_LEADER && query.teamId !== actor.id) {
+      throw ApiError.forbidden('You can only access stats for your own team');
+    }
+    const teamRecruiters = await prisma.user.findMany({
+      where: { createdById: query.teamId, deletedAt: null },
+      select: { id: true }
+    });
+    filteredIds = [query.teamId, ...teamRecruiters.map(r => r.id)];
+  } else if (allowedRecruiterIds) {
+    filteredIds = allowedRecruiterIds;
+  }
+
+  let where: Prisma.JobApplicationWhereInput = {};
+  if (filteredIds.length > 0) {
+    where.recruiterId = { in: filteredIds };
+  } else if (actor.role !== Role.ADMIN) {
+    return {
+      totalApplications: 0,
+      currentBusinessDate: getBusinessDateString(new Date()),
+      filter: { scope: query.scope, from: query.from ?? null, to: query.to ?? null },
+      portals: ANALYTICS_JOB_PORTALS.map((portal) => ({ portal, count: 0 })),
+    };
   }
 
   const currentBusinessDate = getBusinessDateString(new Date());
@@ -412,12 +458,44 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
     }
   }
 
-  const teams = teamLeaders.map((tl) => ({
-    tlId: tl.id,
-    tlName: tl.name,
-    teamName: tl.teamName ?? null,
-    memberCount: tl._count.createdUsers,
-  }));
+  const teamStats = await Promise.all(
+    teamLeaders.map(async (tl) => {
+      const [totalCount, todayCount] = await Promise.all([
+        prisma.jobApplication.count({
+          where: {
+            OR: [
+              { recruiterId: tl.id },
+              { recruiter: { createdById: tl.id } },
+            ],
+          },
+        }),
+        prisma.jobApplication.count({
+          where: {
+            businessDate: businessDateFilter,
+            OR: [
+              { recruiterId: tl.id },
+              { recruiter: { createdById: tl.id } },
+            ],
+          },
+        }),
+      ]);
+      return { tlId: tl.id, totalCount, todayCount };
+    })
+  );
+
+  const teamStatsMap = new Map(teamStats.map((s) => [s.tlId, s]));
+
+  const teams = teamLeaders.map((tl) => {
+    const stats = teamStatsMap.get(tl.id);
+    return {
+      tlId: tl.id,
+      tlName: tl.name,
+      teamName: tl.teamName ?? null,
+      memberCount: tl._count.createdUsers,
+      totalApplications: stats?.totalCount ?? 0,
+      currentApplications: stats?.todayCount ?? 0,
+    };
+  });
 
   return {
     totalRecruiters,

@@ -88,7 +88,11 @@ export function generateExportFilename(options: ExportFilenameOptions): string {
   const cleanTo = toDate ? toDate.replace(/-/g, '') : null;
 
   if (cleanFrom && cleanTo) {
-    parts.push(`FROM_${cleanFrom}_TO_${cleanTo}`);
+    if (cleanFrom === cleanTo) {
+      parts.push(cleanFrom);
+    } else {
+      parts.push(`FROM_${cleanFrom}_TO_${cleanTo}`);
+    }
   } else if (cleanFrom) {
     parts.push(`FROM_${cleanFrom}`);
   } else if (cleanTo) {
@@ -96,7 +100,17 @@ export function generateExportFilename(options: ExportFilenameOptions): string {
   }
 
   if (parts.length === 1) {
+    // If no dates provided, fallback to business date rules (since shift starts at 19:30, before that use yesterday)
     const d = new Date();
+    // 19:30 IST is 14:00 UTC (or local-time-based calculation)
+    // Let's use simple local hours/minutes checking:
+    const hour = d.getHours();
+    const minute = d.getMinutes();
+    const currentMinutes = hour * 60 + minute;
+    const startMinutes = 19 * 60 + 30; // 19:30
+    if (currentMinutes < startMinutes) {
+      d.setDate(d.getDate() - 1);
+    }
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');

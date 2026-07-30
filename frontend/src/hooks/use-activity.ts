@@ -207,8 +207,10 @@ export function useProductivityMetrics(params: { fromDate?: string; toDate?: str
  * Hook to send a lightweight heartbeat every 2 minutes for active Recruiters & TLs.
  */
 export function useActivityHeartbeat() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isTracked = user?.role === 'RECRUITER' || user?.role === 'TEAM_LEADER';
+  const changeStatus = useChangeStatus();
+  const { data: currentStatusData } = useCurrentStatus();
 
   useEffect(() => {
     if (!user || !isTracked) return;
@@ -217,10 +219,63 @@ export function useActivityHeartbeat() {
     apiClient.post('/activity/heartbeat').catch(() => {});
 
     // Periodic 2-minute heartbeat interval
-    const interval = setInterval(() => {
+    const heartbeatInterval = setInterval(() => {
       apiClient.post('/activity/heartbeat').catch(() => {});
     }, 2 * 60 * 1000);
 
-    return () => clearInterval(interval);
-  }, [user, isTracked]);
+    // Track user activity
+    let lastActivityTime = Date.now();
+    let statusTransitionedToOffline = false;
+
+    const handleActivity = () => {
+      lastActivityTime = Date.now();
+      statusTransitionedToOffline = false;
+    };
+
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+
+    // Check inactivity every 10 seconds
+    const inactivityCheckInterval = setInterval(async () => {
+      const elapsedMs = Date.now() - lastActivityTime;
+
+      // 15 minutes of inactivity -> Transition status to OFFLINE
+      if (elapsedMs >= 15 * 60 * 1000) {
+        const currentStatus = currentStatusData?.status;
+        if (currentStatus && (currentStatus === 'ACTIVE' || currentStatus === 'ONLINE') && !statusTransitionedToOffline) {
+          statusTransitionedToOffline = true;
+          try {
+            await changeStatus.mutateAsync({
+              status: 'OFFLINE',
+              optionalNote: 'Disconnected due to inactivity',
+            });
+          } catch (e) {
+            console.error('Failed to auto-transition to OFFLINE due to inactivity', e);
+          }
+        }
+      }
+
+      // 20 minutes of inactivity (5 mins after OFFLINE transition) -> Logout automatically
+      if (elapsedMs >= 20 * 60 * 1000) {
+        clearInterval(heartbeatInterval);
+        clearInterval(inactivityCheckInterval);
+        try {
+          await logout();
+        } catch (e) {
+          console.error('Failed to auto-logout due to inactivity', e);
+        }
+      }
+    }, 10000);
+
+    return () => {
+      clearInterval(heartbeatInterval);
+      clearInterval(inactivityCheckInterval);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+    };
+  }, [user, isTracked, currentStatusData?.status, changeStatus, logout]);
 }

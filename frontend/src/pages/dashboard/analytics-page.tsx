@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -70,13 +71,39 @@ function PremiumStat({ icon: Icon, label, value, sub, gradient, index }: any) {
 }
 
 export default function AnalyticsPage() {
+  const { isAdmin } = usePermissions();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [teamId, setTeamId] = useState<string>(() => searchParams.get('teamId') || ALL);
   const [recruiterId, setRecruiterId] = useState<string>(ALL);
   const [range, setRange] = useState(getDefaultRange);
 
-  const { data: recruitersData } = useRecruiters({ pageSize: 100 });
+  // Sync state from query parameters
+  const paramTeamId = searchParams.get('teamId') || ALL;
+  useEffect(() => {
+    setTeamId(paramTeamId);
+    setRecruiterId(ALL);
+  }, [paramTeamId]);
+  
+  const handleTeamChange = (newTeamId: string) => {
+    setTeamId(newTeamId);
+    setRecruiterId(ALL);
+    const newParams = new URLSearchParams(searchParams);
+    if (newTeamId === ALL) {
+      newParams.delete('teamId');
+    } else {
+      newParams.set('teamId', newTeamId);
+    }
+    setSearchParams(newParams);
+  };
+
+  const { data: recruitersData } = useRecruiters({
+    pageSize: 100,
+    createdById: teamId === ALL ? undefined : teamId
+  });
   const { data: summary, isLoading: summaryLoading } = useGlobalSummary();
   const { data: dailyCounts, isLoading, isError, refetch } = useDailyCounts({
     recruiterId: recruiterId === ALL ? undefined : recruiterId,
+    teamId: teamId === ALL ? undefined : teamId,
     from: range.from,
     to: range.to,
   });
@@ -117,10 +144,25 @@ export default function AnalyticsPage() {
           { label: `${range.from} → ${range.to}`, icon: Calendar }
         ]}
         actions={
-          <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 shadow-sm">
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 shadow-sm whitespace-nowrap overflow-x-auto">
             <Filter className="h-4 w-4 text-slate-400 dark:text-slate-400 ml-1 shrink-0" />
+            {isAdmin && (
+              <Select value={teamId} onValueChange={handleTeamChange}>
+                <SelectTrigger className="w-32 sm:w-36 h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 dark:text-white shrink-0">
+                  <SelectValue placeholder="All Teams" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL}>All Teams</SelectItem>
+                  {summary?.teams?.map((t) => (
+                    <SelectItem key={t.tlId} value={t.tlId}>
+                      {t.teamName || t.tlName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <Select value={recruiterId} onValueChange={setRecruiterId}>
-              <SelectTrigger className="w-36 sm:w-40 h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 dark:text-white">
+              <SelectTrigger className="w-32 sm:w-36 h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 dark:text-white shrink-0">
                 <SelectValue placeholder="All recruiters" />
               </SelectTrigger>
               <SelectContent>
@@ -132,8 +174,8 @@ export default function AnalyticsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Input type="date" value={range.from} onChange={(e) => setRange((prev) => ({ ...prev, from: e.target.value }))} className="w-28 sm:w-32 h-8 text-xs dark:bg-slate-900 dark:text-white dark:border-slate-700" />
-            <Input type="date" value={range.to} onChange={(e) => setRange((prev) => ({ ...prev, to: e.target.value }))} className="w-28 sm:w-32 h-8 text-xs dark:bg-slate-900 dark:text-white dark:border-slate-700" />
+            <Input type="date" value={range.from} onChange={(e) => setRange((prev) => ({ ...prev, from: e.target.value }))} className="w-28 sm:w-32 h-8 text-xs dark:bg-slate-900 dark:text-white dark:border-slate-700 shrink-0" />
+            <Input type="date" value={range.to} onChange={(e) => setRange((prev) => ({ ...prev, to: e.target.value }))} className="w-28 sm:w-32 h-8 text-xs dark:bg-slate-900 dark:text-white dark:border-slate-700 shrink-0" />
           </div>
         }
         gradient="from-mayzax-blue-600 to-mayzax-green-600"
@@ -153,7 +195,7 @@ export default function AnalyticsPage() {
       </StaggerContainer>
 
       <Reveal delay={0.1}>
-        <JobPortalAnalyticsCard />
+        <JobPortalAnalyticsCard recruiterId={recruiterId} teamId={teamId} />
       </Reveal>
 
       <Reveal delay={0.15}>
