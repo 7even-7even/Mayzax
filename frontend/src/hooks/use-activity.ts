@@ -223,6 +223,14 @@ export function useActivityHeartbeat() {
       apiClient.post('/activity/heartbeat').catch(() => { });
     }, 2 * 60 * 1000);
 
+    const isCompanionRole = user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC';
+
+    if (isCompanionRole) {
+      return () => {
+        clearInterval(heartbeatInterval);
+      };
+    }
+
     // Track user activity
     let lastActivityTime = Date.now();
     let statusTransitionedToOffline = false;
