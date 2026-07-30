@@ -320,6 +320,39 @@ export async function getJobPortalAnalytics(actor: { id: string; role: Role }, q
 }
 
 export async function getGlobalSummary(actor: { id: string; role: Role }) {
+  if (actor.role === Role.RECRUITER) {
+    const todayBusinessDate = getBusinessDateString(new Date());
+    const businessDateFilter = new Date(`${todayBusinessDate}T00:00:00.000Z`);
+    const [myTotalApplications, myTodayApplications] = await Promise.all([
+      prisma.jobApplication.count({
+        where: { recruiterId: actor.id },
+      }),
+      prisma.jobApplication.count({
+        where: {
+          recruiterId: actor.id,
+          businessDate: businessDateFilter,
+        },
+      }),
+    ]);
+
+    return {
+      totalRecruiters: 0,
+      activeRecruiters: 0,
+      totalProfiles: 0,
+      totalApplications: 0,
+      currentShiftApplications: 0,
+      currentBusinessDate: todayBusinessDate,
+      shiftWindowText: getShiftWindowText(),
+      totalTeams: 0,
+      teams: [],
+      myTotalApplications,
+      myCurrentShiftApplications: myTodayApplications,
+      activeMemberCount: 0,
+      onBreakMemberCount: 0,
+      topPerformer: '-',
+    };
+  }
+
   const todayBusinessDate = getBusinessDateString(new Date());
   const businessDateFilter = new Date(`${todayBusinessDate}T00:00:00.000Z`);
 
