@@ -17,9 +17,10 @@ const router = Router();
 router.get('/me/stats', requireAuth, recruiterController.getMyRecruiterStats);
 router.patch('/me/team-name', requireAuth, requireRole(Role.TEAM_LEADER), validate({ body: teamNameSchema }), recruiterController.updateMyTeamName);
 
+router.get('/', requireAuth, requireRole(Role.ADMIN, Role.TEAM_LEADER, Role.RECRUITER, Role.RESUME_ASSIST, Role.SALES_EXEC), validate({ query: listRecruitersQuerySchema }), recruiterController.listRecruiters);
+
 router.use(requireAuth, requireRole(Role.ADMIN, Role.TEAM_LEADER));
 
-router.get('/', validate({ query: listRecruitersQuerySchema }), recruiterController.listRecruiters);
 router.post('/', validate({ body: createRecruiterSchema }), recruiterController.createRecruiter);
 router.get('/:id/stats', validate({ params: idParamSchema }), recruiterController.getRecruiterStats);
 router.patch('/:id', validate({ params: idParamSchema, body: updateRecruiterSchema }), recruiterController.updateRecruiter);

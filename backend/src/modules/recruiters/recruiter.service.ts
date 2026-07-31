@@ -158,6 +158,13 @@ export async function listRecruiters(query: ListRecruitersQuery, actor: Requeste
   const repoQuery = { ...query };
   if (actor.role === Role.TEAM_LEADER) {
     repoQuery.createdById = actor.id;
+  } else if (actor.role === Role.RECRUITER || actor.role === Role.RESUME_ASSIST || actor.role === Role.SALES_EXEC) {
+    const user = await prisma.user.findUnique({ where: { id: actor.id } });
+    if (user?.createdById) {
+      repoQuery.createdById = user.createdById;
+    } else {
+      repoQuery.createdById = actor.id;
+    }
   }
 
   const [users, total] = await repo.listRecruiters(repoQuery as any);
