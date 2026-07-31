@@ -746,8 +746,8 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
   const { data: todayData, isLoading: todayLoading } = useTodayActivity();
   const { data: liveData, isLoading: liveLoading } = useLiveStatus();
   const { data: productivityData } = useProductivityMetrics({
-    fromDate,
-    toDate,
+    fromDate: fromDate || undefined,
+    toDate: toDate || undefined,
     recruiterId: selectedUserId === ALL ? undefined : selectedUserId,
   });
 
@@ -800,7 +800,15 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
   const handleExportExcel = async () => {
     setIsExporting(true);
     try {
-      const ExcelJS = await import('exceljs').then((m) => m.default ?? m);
+      let ExcelJS;
+      try {
+        ExcelJS = await import('exceljs').then((m) => m.default ?? m);
+      } catch (err) {
+        console.error('Failed to load exceljs', err);
+        toast.error('Application update detected. Reloading page...');
+        setTimeout(() => window.location.reload(), 1500);
+        return;
+      }
       const { saveAs } = await import('file-saver');
 
       const workbook = new ExcelJS.Workbook();
@@ -851,7 +859,15 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
   const handleExportAttendanceSheet = async () => {
     setIsExporting(true);
     try {
-      const ExcelJS = await import('exceljs').then((m) => m.default ?? m);
+      let ExcelJS;
+      try {
+        ExcelJS = await import('exceljs').then((m) => m.default ?? m);
+      } catch (err) {
+        console.error('Failed to load exceljs', err);
+        toast.error('Application update detected. Reloading page...');
+        setTimeout(() => window.location.reload(), 1500);
+        return;
+      }
       const { saveAs } = await import('file-saver');
 
       const { data } = await apiClient.get<
