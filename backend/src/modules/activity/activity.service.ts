@@ -17,7 +17,7 @@ const STALE_HEARTBEAT_THRESHOLD_MS = 40 * 60 * 1000; // 40 minutes
  * Helper to check if a role should be tracked
  */
 export function isTrackedRole(role: Role): boolean {
-  return role === Role.RECRUITER || role === Role.TEAM_LEADER;
+  return role === Role.RECRUITER || role === Role.TEAM_LEADER || role === Role.RESUME_ASSIST || role === Role.SALES_EXEC;
 }
 
 /**
@@ -184,7 +184,7 @@ export async function processHeartbeat(userId: string, role: Role) {
   if (
     openLog &&
     lastHeartbeat &&
-    (openLog.status === UserStatus.ACTIVE || openLog.status === UserStatus.ONLINE)
+    (openLog.status === UserStatus.ACTIVE)
   ) {
     const timeSinceLastHeartbeat = now.getTime() - lastHeartbeat.getTime();
     if (timeSinceLastHeartbeat > STALE_HEARTBEAT_THRESHOLD_MS) {
@@ -308,10 +308,6 @@ export async function getTodayActivity(userId: string): Promise<DailyActivitySum
     switch (log.status) {
       case UserStatus.ACTIVE:
         totalProductiveSeconds += durationSeconds;
-        break;
-      case UserStatus.ONLINE:
-        totalOnlineSeconds += durationSeconds;
-        totalProductiveSeconds += durationSeconds; // ONLINE counts as productive for utilization (user present & available)
         break;
       case UserStatus.SHORT_BREAK:
         shortBreakSeconds += durationSeconds;
@@ -463,7 +459,7 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
   todayLogs.forEach((log) => {
     const end = log.endedAt ? log.endedAt : now;
     const dur = Math.max(0, Math.floor((end.getTime() - log.startedAt.getTime()) / 1000));
-    if (log.status === UserStatus.ACTIVE || log.status === UserStatus.ONLINE) {
+    if (log.status === UserStatus.ACTIVE) {
       productiveTimeMap.set(log.userId, (productiveTimeMap.get(log.userId) ?? 0) + dur);
     } else if (log.status !== UserStatus.OFFLINE) {
       breakTimeMap.set(log.userId, (breakTimeMap.get(log.userId) ?? 0) + dur);
@@ -484,13 +480,10 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
     const isOnline =
       !!u.lastHeartbeatAt && now.getTime() - u.lastHeartbeatAt.getTime() <= STALE_HEARTBEAT_THRESHOLD_MS;
 
-    const statusToShow = (isOnline || (status !== UserStatus.ACTIVE && status !== UserStatus.ONLINE)) ? status : UserStatus.OFFLINE;
+    const statusToShow = (isOnline || (status !== UserStatus.ACTIVE)) ? status : UserStatus.OFFLINE;
 
     if (statusToShow === UserStatus.ACTIVE) {
       totalActiveCount++;
-    } else if (statusToShow === UserStatus.ONLINE) {
-      totalActiveCount++;
-      totalOnlineCount++;
     } else if (statusToShow === UserStatus.SYSTEM_ISSUE) {
       totalIssueCount++;
     } else if (statusToShow === UserStatus.OFFLINE) {
@@ -654,7 +647,7 @@ export async function getProductivityMetrics(
     const logEnd = (log.endedAt && log.endedAt < endBounds.end) ? log.endedAt : (now < endBounds.end ? now : endBounds.end);
     const dur = Math.max(0, Math.floor((logEnd.getTime() - logStart.getTime()) / 1000));
 
-    if (log.status === UserStatus.ACTIVE || log.status === UserStatus.ONLINE) {
+    if (log.status === UserStatus.ACTIVE) {
       totalProductiveSecs += dur;
     } else if (log.status !== UserStatus.OFFLINE) {
       totalBreakSecs += dur;
@@ -768,9 +761,6 @@ export async function getAttendanceReport(
       switch (log.status) {
         case UserStatus.ACTIVE:
           totalProductiveSeconds += dur;
-          break;
-        case UserStatus.ONLINE:
-          totalProductiveSeconds += dur; // ONLINE counts as productive (user present)
           break;
         case UserStatus.SHORT_BREAK:
           shortBreakSeconds += dur;

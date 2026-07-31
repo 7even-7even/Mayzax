@@ -22,3 +22,5 @@ vite.config.ts.timestamp-*
 VISION.MD
 GAP.MD
 *.docx
+.expo/
+backend/secrets/

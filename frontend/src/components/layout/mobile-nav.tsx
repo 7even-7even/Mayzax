@@ -26,16 +26,23 @@ const recruiterNav = [
 
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
-  const rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? [...adminNav] : [...recruiterNav];
-//Admin Page: Onboarding Tab Uncommented.
-  // if (user?.role === 'ADMIN') {
-  //   rawNav.splice(3, 0, {
-  //     to: '/admin/onboarding',
-  //     label: 'Onboarding',
-  //     icon: ShieldCheck,
-  //     desc: 'Verify registrations'
-  //   });
-  // }
+  let rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? [...adminNav] : [...recruiterNav];
+  if (user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC') {
+    rawNav = [
+      { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Your stats' },
+      { to: '/updates', label: 'Updates', icon: Bell, desc: 'Announcements' },
+      { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account' },
+    ];
+  }
+// Admin Page: Onboarding Tab Uncommented.
+  if (user?.role === 'ADMIN') {
+    rawNav.splice(3, 0, {
+      to: '/admin/onboarding',
+      label: 'Onboarding',
+      icon: ShieldCheck,
+      desc: 'Verify registrations'
+    });
+  }
 
   const nav = rawNav.map((item) => {
     if (user?.role === 'TEAM_LEADER') {

@@ -722,10 +722,10 @@ function TodayTimeline({ data }: { data?: TodayActivityData }) {
   );
 }
 
-export default function ActivityTrackingPage() {
+export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: string } = {}) {
   const { isAdmin, isTeamLeader } = usePermissions();
 
-  const [selectedUserId, setSelectedUserId] = useState<string | typeof ALL>(ALL);
+  const [selectedUserId, setSelectedUserId] = useState<string | typeof ALL>(forceUserId || ALL);
   const [selectedTeamId, setSelectedTeamId] = useState<string | typeof ALL_TEAMS>(ALL_TEAMS);
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');

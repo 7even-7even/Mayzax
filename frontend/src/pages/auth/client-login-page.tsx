@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
-import { Eye, EyeOff, Loader2, Lock, Mail, Sparkles, ShieldCheck, Zap, ArrowRight, MousePointer2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, Mail, Sparkles, ShieldCheck, Zap, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,7 +87,7 @@ function ParticleField() {
   );
 }
 
-export default function LoginPage() {
+export default function ClientLoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -104,9 +104,7 @@ export default function LoginPage() {
     try {
       const user = await login(values);
       toast.success(`Welcome back, ${user.name.split(' ')[0]}!`);
-      const from = (location.state as any)?.from?.pathname ?? 
-        (user.role === 'ADMIN' || user.role === 'TEAM_LEADER' ? '/dashboard' : 
-         user.role === 'CLIENT' ? '/client-dashboard' : '/recruiter-dashboard');
+      const from = (location.state as any)?.from?.pathname ?? '/client-dashboard';
       navigate(from, { replace: true });
     } catch (err) {
       toast.error(extractErrorMessage(err, 'Invalid email or password'));
@@ -155,13 +153,12 @@ export default function LoginPage() {
               <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
             </div>
             <span className="text-3xl font-semibold tracking-wider text-white/90 uppercase">Mayzax Solutions</span>
-            <span className="ml-2 rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-white/80 backdrop-blur-sm">ATS v1.1</span>
+            <span className="ml-2 rounded-full bg-white/15 border border-white/20 px-2.5 py-0.5 text-[10px] font-bold tracking-wider text-white/80 backdrop-blur-sm">Client Portal</span>
           </motion.div>
         </div>
 
         <div className="relative z-10 flex flex-col gap-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}>
-
             <h1 className="mt-6 text-5xl font-bold tracking-tight text-white leading-[1.05]">
               Where talent
               <br />
@@ -171,9 +168,9 @@ export default function LoginPage() {
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="grid grid-cols-3 gap-3 max-w-lg">
             {[
-              { icon: ShieldCheck, label: 'Enterprise', sub: 'JWT rotation' },
-              { icon: Zap, label: 'Enhanced UI', sub: 'Virtualized' },
-              { icon: Sparkles, label: 'Verified', sub: 'Extension' },
+              { icon: ShieldCheck, label: 'Secure Access', sub: 'Verified Client Area' },
+              { icon: Zap, label: 'Live Tracking', sub: 'Direct Application Stats' },
+              { icon: Sparkles, label: 'Fast Updates', sub: 'Instant status changes' },
             ].map((f, i) => (
               <div key={i} className="group rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xl p-3 hover:bg-white/15 transition-colors cursor-default">
                 <f.icon className="h-4 w-4 text-white mb-2 group-hover:scale-110 transition-transform" />
@@ -198,7 +195,7 @@ export default function LoginPage() {
             <img src={mayzaxLogo} alt="Mayzax" className="h-9 w-9 rounded-lg bg-white p-1" />
           </div>
           <div className="text-center">
-            <h1 className="text-xl font-bold text-slate-900">Mayzax ATS</h1>
+            <h1 className="text-xl font-bold text-slate-900">Mayzax Client Portal</h1>
           </div>
         </div>
 
@@ -211,9 +208,9 @@ export default function LoginPage() {
               <div className="mb-7">
                 <div className="inline-flex items-center gap-2 rounded-full bg-mayzax-blue-50 border border-mayzax-blue-100 px-3 py-1 text-[11px] font-bold tracking-wide text-mayzax-blue-700">
                   <span className="h-1.5 w-1.5 rounded-full bg-mayzax-green-500 animate-pulse" />
-                  SECURE LOGIN
+                  CLIENT LOGIN
                 </div>
-                <h2 className="mt-4 text-[22px] font-bold tracking-tight text-slate-900">Welcome back</h2>
+                <h2 className="mt-4 text-[22px] font-bold tracking-tight text-slate-900">Login To Your Dashboard</h2>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
@@ -221,7 +218,7 @@ export default function LoginPage() {
                   <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">Work Email</Label>
                   <div className="relative group">
                     <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-mayzax-blue-500 transition-colors" />
-                    <Input type="email" placeholder="you@mayzaxsolutions.com" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...register('email')} />
+                    <Input type="email" placeholder="you@clientemail.com" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...register('email')} />
                   </div>
                   {errors.email && <p className="text-xs text-red-600">{errors.email.message}</p>}
                 </div>
@@ -266,16 +263,15 @@ export default function LoginPage() {
                   <span className="relative bg-white px-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">New to Mayzax?</span>
                 </div>
                 <div className="mt-4 flex items-center justify-center gap-2 text-sm">
-                  <span className="text-slate-500">New recruiter?</span>
-                  <Link to="/signup" className="inline-flex items-center gap-1 font-bold text-mayzax-blue-700 hover:text-mayzax-blue-800">
-                    Create account <ArrowRight className="h-3.5 w-3.5" />
+                  <Link to="/onboard" className="inline-flex items-center gap-1 font-bold text-mayzax-blue-700 hover:text-mayzax-blue-800">
+                    Get Onboarded <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
               </div>
 
               <div className="mt-6 flex items-center justify-center gap-4 text-[11px] text-slate-400">
                 <span className="flex items-center gap-1">
-                  <ShieldCheck className="h-3 w-3 text-mayzax-green-600" /> Enterprise
+                  <ShieldCheck className="h-3 w-3 text-mayzax-green-600" /> Secure Area
                 </span>
                 <span className="h-3 w-px bg-slate-200" />
                 <span className="flex items-center gap-1">

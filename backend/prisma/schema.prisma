@@ -21,6 +21,9 @@ enum Role {
   ADMIN
   TEAM_LEADER
   RECRUITER
+  RESUME_ASSIST
+  SALES_EXEC
+  CLIENT
 }
 
 enum ApplicationStatus {
@@ -36,7 +39,6 @@ enum ApplicationStatus {
 }
 
 enum UserStatus {
-  ONLINE
   ACTIVE
   SHORT_BREAK
   DINNER_BREAK
@@ -124,6 +126,9 @@ model User {
   createdUpdates   SystemUpdate[] @relation("UserCreatedUpdates")
   updateReadLogs   UserUpdateRead[]
   approvedOnboardings ClientOnboarding[] @relation("ApprovedOnboardings")
+
+  clientProfileId String?          @unique
+  clientProfile   ClientProfile?   @relation("ClientUser", fields: [clientProfileId], references: [id], onDelete: SetNull)
 
   @@index([role])
   @@index([isActive])
@@ -217,6 +222,7 @@ model ClientProfile {
   updatedAt DateTime @updatedAt
 
   applications JobApplication[]
+  clientUser   User?           @relation("ClientUser")
 
   @@index([assignedRecruiterId])
   @@index([technology])

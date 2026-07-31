@@ -8,9 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useJobPortalAnalytics } from '@/hooks/use-analytics';
 import { useApplications } from '@/hooks/use-applications';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useTodayActivity, useActivityHistory } from '@/hooks/use-activity';
+import { STATUS_CONFIG } from '@/components/activity/user-status-selector';
 import { formatEnumLabel } from '@/components/shared/status-badge';
 import { formatDateTime } from '@/lib/utils';
+import { UserStatus } from '@/types';
 import { JobPortalAnalyticsCard } from './job-portal-analytics-card';
+import ActivityTrackingPage from '@/pages/activity/activity-tracking-page';
 import { useMyRecruiterStats } from '@/hooks/use-recruiters';
 import { useAuth } from '@/context/auth-context';
 import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
@@ -44,6 +48,14 @@ function PremiumMiniStat({ icon: Icon, label, value, sub, gradient, loading, ind
   );
 }
 
+function formatHoursMinutes(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+}
+
 export default function RecruiterDashboardPage() {
   const { user } = useAuth();
   const { data: recruiterStats, isLoading: isRecruiterStatsLoading } = useMyRecruiterStats();
@@ -56,10 +68,23 @@ export default function RecruiterDashboardPage() {
     recruiterId: user?.id,
   });
 
+  const { data: todayActivity, isLoading: todayActivityLoading } = useTodayActivity();
+  const { data: activityHistory, isLoading: activityHistoryLoading } = useActivityHistory({
+    userId: user?.id,
+    page: 1,
+    pageSize: 10,
+  });
+
   const portals = data?.portals ?? [];
   const topPortal = portals.reduce((best, row) => (row.count > best.count ? row : best), portals[0] ?? { portal: 'LINKEDIN' as const, count: 0 });
   const recentApplications = recentApplicationsData?.data ?? [];
   const profileWiseCounts = recruiterStats?.profileWiseCounts ?? [];
+
+  const isCompanion = user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC';
+
+  if (isCompanion) {
+    return <ActivityTrackingPage forceUserId={user?.id} />;
+  }
 
   return (
     <div className="space-y-6">
