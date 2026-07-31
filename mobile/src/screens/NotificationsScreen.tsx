@@ -34,7 +34,7 @@ export function NotificationsScreen() {
     queryFn: async ({ pageParam = 1 }) => fetchNotifications(pageParam, PAGE_SIZE),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
-      if (lastPage.pagination.page < lastPage.pagination.totalPages) {
+      if (lastPage?.pagination && lastPage.pagination.page < lastPage.pagination.totalPages) {
         return lastPage.pagination.page + 1;
       }
       return undefined;

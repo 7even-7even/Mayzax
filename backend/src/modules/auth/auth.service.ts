@@ -238,7 +238,7 @@ export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta)
     });
   } else {
     // Reuse: keep same refresh token, just sign a new access token
-    const newAccessToken = signAccessToken({ id: user.id, role: user.role, email: user.email });
+    const newAccessToken = signAccessToken({ id: user.id, role: user.role, email: user.email, clientType: stored.clientType });
     newTokens = {
       accessToken: newAccessToken,
       refreshToken: refreshTokenRaw,

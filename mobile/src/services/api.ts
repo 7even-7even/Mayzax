@@ -3,7 +3,6 @@ import * as Application from 'expo-application';
 import * as Device from 'expo-device';
 import { secureStorage } from '@/storage/secure';
 import { API_BASE_URL } from '@/utils/constants';
-import { logout as doLogout, refreshToken as doRefreshToken } from './auth';
 
 const BASE_URL = API_BASE_URL;
 
@@ -85,6 +84,13 @@ export async function buildApiClient(): Promise<AxiosInstance> {
           const msg = res.data?.error?.message ?? res.data?.message ?? 'Request failed';
           return Promise.reject(new ApiError(msg, res.status, false, res.data?.error?.code, res.data));
         }
+        if (res.data.pagination) {
+          return {
+            items: res.data.data,
+            pagination: res.data.pagination,
+            unreadCount: res.data.unreadCount,
+          };
+        }
         return res.data.data ?? null;
       }
       return res.data;
@@ -117,7 +123,12 @@ export async function buildApiClient(): Promise<AxiosInstance> {
           try {
             const refresh = await secureStorage.getRefreshToken();
             if (!refresh) return null;
-            const res = (await doRefreshToken(refresh)) as any;
+            const response = await api.post<any, any>(
+              '/auth/refresh',
+              { refreshToken: refresh },
+              { _skipAuth: true } as any
+            );
+            const res = (response ?? {}) as any;
             if (!res?.tokens?.accessToken) return null;
             await secureStorage.setAccessToken(res.tokens.accessToken);
             await secureStorage.setRefreshToken(res.tokens.refreshToken);
@@ -126,7 +137,7 @@ export async function buildApiClient(): Promise<AxiosInstance> {
             return res.tokens.accessToken;
           } catch (e) {
             processQueue(e, null);
-            await doLogout(false);
+            await secureStorage.clearAll();
             return null;
           } finally {
             isRefreshing = false;

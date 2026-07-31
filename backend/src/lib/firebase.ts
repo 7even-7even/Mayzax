@@ -20,7 +20,11 @@ function readServiceAccount(): any | null {
       return JSON.parse(Buffer.from(raw, 'base64').toString('utf8'));
     }
     if (env.FIREBASE_SERVICE_ACCOUNT_PATH) {
-      const p = path.resolve(process.cwd(), env.FIREBASE_SERVICE_ACCOUNT_PATH);
+      let p = path.resolve(process.cwd(), env.FIREBASE_SERVICE_ACCOUNT_PATH);
+      if (!fs.existsSync(p)) {
+        // Fallback: try resolving under 'backend' if running from workspace root
+        p = path.resolve(process.cwd(), 'backend', env.FIREBASE_SERVICE_ACCOUNT_PATH);
+      }
       if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
     }
   } catch (err) {

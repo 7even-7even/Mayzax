@@ -1,5 +1,6 @@
 import { UserStatus, Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 import { ApiError } from '@/utils/apiError';
 import { getBusinessDateString, getBusinessShiftBounds } from '@/utils/businessDate';
 import {
@@ -112,16 +113,16 @@ export async function changeStatus(
     import('../../jobs/processors.js').then(({ scheduleBreakReminders, scheduleShiftRemindersIfNeeded }) => {
       if (isBreakStatus(newStatus)) {
         scheduleBreakReminders(userId, newStatus, newLog.startedAt).catch((err) => {
-          // eslint-disable-next-line no-console
-          console.error('Failed to schedule break reminders', err);
+          logger.error({ err }, 'Failed to schedule break reminders');
         });
       } else if (newStatus === UserStatus.ACTIVE || newStatus === UserStatus.ONLINE) {
         scheduleShiftRemindersIfNeeded(userId).catch((err) => {
-          // eslint-disable-next-line no-console
-          console.error('Failed to schedule shift reminders', err);
+          logger.error({ err }, 'Failed to schedule shift reminders');
         });
       }
-    }).catch(() => { /* reminders unavailable */ });
+    }).catch((err) => {
+      logger.error({ err }, 'Reminders module loading failed');
+    });
   }
 
   return {

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { ApiSuccess, UserStatus } from '@/types';
@@ -213,6 +213,18 @@ export function useActivityHeartbeat() {
   const changeStatus = useChangeStatus();
   const { data: currentStatusData } = useCurrentStatus();
 
+  // Store unstable/changing values in refs to avoid restarting the interval
+  const changeStatusRef = useRef(changeStatus);
+  const logoutRef = useRef(logout);
+  const statusRef = useRef(currentStatusData?.status);
+
+  // Sync refs on every render
+  useEffect(() => {
+    changeStatusRef.current = changeStatus;
+    logoutRef.current = logout;
+    statusRef.current = currentStatusData?.status;
+  });
+
   useEffect(() => {
     if (!user || !isTracked) return;
 
@@ -225,14 +237,6 @@ export function useActivityHeartbeat() {
     }, 2 * 60 * 1000);
     
     const isCompanionRole = user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC';
-    if (isCompanionRole) {
-      return () => {
-        clearInterval(heartbeatInterval);
-      };
-    }
-
-    const isCompanionRole = user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC';
-
     if (isCompanionRole) {
       return () => {
         clearInterval(heartbeatInterval);
@@ -259,11 +263,11 @@ export function useActivityHeartbeat() {
 
       // 15 minutes of inactivity -> Transition status to OFFLINE
       if (elapsedMs >= 25 * 60 * 1000) {
-        const currentStatus = currentStatusData?.status;
+        const currentStatus = statusRef.current;
         if (currentStatus && (currentStatus === 'ACTIVE' || currentStatus === 'ONLINE') && !statusTransitionedToOffline) {
           statusTransitionedToOffline = true;
           try {
-            await changeStatus.mutateAsync({
+            await changeStatusRef.current.mutateAsync({
               status: 'OFFLINE',
               optionalNote: 'Disconnected due to inactivity',
             });
@@ -278,7 +282,7 @@ export function useActivityHeartbeat() {
         clearInterval(heartbeatInterval);
         clearInterval(inactivityCheckInterval);
         try {
-          await logout();
+          await logoutRef.current();
         } catch (e) {
           console.error('Failed to auto-logout due to inactivity', e);
         }
@@ -293,5 +297,5 @@ export function useActivityHeartbeat() {
       window.removeEventListener('click', handleActivity);
       window.removeEventListener('scroll', handleActivity);
     };
-  }, [user, isTracked, currentStatusData?.status, changeStatus, logout]);
+  }, [user?.id, isTracked]);
 }

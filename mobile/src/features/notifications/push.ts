@@ -59,22 +59,26 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
       Constants.expoConfig?.extra?.eas?.projectId ??
       (Constants.manifest2 as any)?.extra?.eas?.projectId;
 
-    const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId,
-    }).catch(() => null);
-    const expoPushToken = tokenData?.data ?? null;
+    let token: string | null = null;
+    if (Platform.OS === 'android') {
+      const deviceTokenData = await Notifications.getDevicePushTokenAsync().catch(() => null);
+      token = deviceTokenData?.data ?? null;
+    } else {
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId,
+      }).catch(() => null);
+      token = tokenData?.data ?? null;
+    }
 
-    // On Android, the Expo push token is an FCM token under the hood; register it.
-    // On iOS, it's an APNs token through Expo. Either way we send it as fcmToken to the server.
-    if (expoPushToken) {
-      await secureStorage.setFcmToken(expoPushToken);
+    if (token) {
+      await secureStorage.setFcmToken(token);
       try {
-        await registerDevice(expoPushToken);
+        await registerDevice(token);
       } catch (err) {
         // Don't fail startup if backend is unreachable; next app launch will retry.
       }
     }
-    return expoPushToken;
+    return token;
   } catch {
     return null;
   }

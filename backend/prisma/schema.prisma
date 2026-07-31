@@ -107,6 +107,11 @@ enum OnboardingStatus {
   REJECTED
 }
 
+enum ClientType {
+  WEB
+  MOBILE
+}
+
 // ---------------------------------------------------------
 // User (Admin / Recruiter)
 // ---------------------------------------------------------

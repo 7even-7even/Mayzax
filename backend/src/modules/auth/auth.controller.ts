@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { asyncHandler } from '@/utils/asyncHandler';
 import { resolveClientType } from './token.service';
 import * as authService from './auth.service';
+import { env } from '@/config/env';
 import {
   loginSchema,
   signupSchema,
@@ -27,11 +28,36 @@ function extractClientMeta(req: Request) {
     sessionMeta: extractSessionMeta(req),
   };
 }
+function setAuthCookies(res: Response, tokens: { accessToken: string; refreshToken: string }) {
+  const isProd = env.NODE_ENV === 'production';
+  const cookieOptions: any = {
+    httpOnly: true,
+    secure: env.COOKIE_SECURE || env.CROSS_SITE_COOKIES || isProd,
+    sameSite: env.CROSS_SITE_COOKIES ? 'none' : 'lax',
+    path: '/',
+  };
+  if (env.COOKIE_DOMAIN) {
+    cookieOptions.domain = env.COOKIE_DOMAIN;
+  }
+
+  // Set access token cookie
+  res.cookie('access_token', tokens.accessToken, {
+    ...cookieOptions,
+    maxAge: 15 * 60 * 1000, // 15 mins
+  });
+
+  // Set refresh token cookie
+  res.cookie('refresh_token', tokens.refreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+}
 
 export const signup = asyncHandler(async (req: Request, res: Response) => {
   const input = signupSchema.parse(req.body);
   const { clientType, deviceName, sessionMeta } = extractClientMeta(req);
   const result = await authService.signupRecruiter(input, { ...sessionMeta, clientType, deviceName });
+  setAuthCookies(res, result.tokens);
   res.status(201).json({ success: true, data: result });
 });
 
@@ -39,6 +65,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   const input = loginSchema.parse(req.body);
   const { clientType, deviceName, sessionMeta } = extractClientMeta(req);
   const result = await authService.login(input, { ...sessionMeta, clientType, deviceName });
+  setAuthCookies(res, result.tokens);
   res.status(200).json({ success: true, data: result });
 });
 
@@ -58,6 +85,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     clientType,
     deviceName,
   });
+  setAuthCookies(res, result.tokens);
   res.status(200).json({ success: true, data: result });
 });
 

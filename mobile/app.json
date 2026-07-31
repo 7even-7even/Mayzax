@@ -27,8 +27,7 @@
       },
       "package": "com.mayzax.companion",
       "permissions": ["NOTIFICATIONS", "VIBRATE", "WAKE_LOCK"],
-      "useNextNotificationsApi": true,
-      "googleServicesFile": "./google-services.json"
+      "useNextNotificationsApi": true
     },
     "web": {
       "favicon": "./assets/favicon.png"

@@ -1093,18 +1093,18 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
         </StaggerContainer>
       )}
 
-      {/* Admin: Productivity Chart */}
-      {isAdmin && productivityChartData.length > 0 && (
+      {/* Productivity Chart */}
+      {productivityChartData.length > 0 && (
         <Reveal delay={0.1}>
-          <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-            <CardHeader className="pb-2 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+          <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800">
+            <CardHeader className="pb-2 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-850 dark:to-slate-900">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
                   <BarChart3 className="h-4 w-4" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-semibold dark:text-black">Productivity Pulse</CardTitle>
-                  <CardDescription className="text-xs">Hours distribution across selected period</CardDescription>
+                  <CardTitle className="text-sm font-semibold text-slate-900 dark:text-white">Productivity Pulse</CardTitle>
+                  <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Hours distribution across selected period</CardDescription>
                 </div>
               </div>
             </CardHeader>
