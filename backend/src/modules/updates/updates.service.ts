@@ -1,9 +1,19 @@
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/utils/apiError';
 import { UpdatesResponse } from './updates.types';
+import { Role } from '@prisma/client';
 
-export async function getUpdatesForUser(userId: string): Promise<UpdatesResponse> {
+export async function getUpdatesForUser(userId: string, role: string): Promise<UpdatesResponse> {
+  const where: any = {};
+  if (role !== 'ADMIN') {
+    where.OR = [
+      { roles: { has: role as Role } },
+      { roles: { equals: [] } },
+    ];
+  }
+
   const updates = await prisma.systemUpdate.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
     include: {
       createdBy: { select: { id: true, name: true, email: true } },
@@ -26,6 +36,7 @@ export async function getUpdatesForUser(userId: string): Promise<UpdatesResponse
       updatedAt: update.updatedAt,
       createdBy: update.createdBy,
       isRead,
+      roles: update.roles,
     };
   });
 
@@ -34,7 +45,7 @@ export async function getUpdatesForUser(userId: string): Promise<UpdatesResponse
 
 export async function createUpdate(
   userId: string,
-  data: { title: string; version?: string | null; description: string; pdfUrl?: string | null; pdfOriginalName?: string | null },
+  data: { title: string; version?: string | null; description: string; pdfUrl?: string | null; pdfOriginalName?: string | null; roles?: any[] },
   file?: Express.Multer.File
 ) {
   let pdfUrl: string | null = data.pdfUrl ?? null;
@@ -59,6 +70,7 @@ export async function createUpdate(
       pdfUrl,
       pdfOriginalName,
       createdById: userId,
+      roles: (data.roles as Role[]) ?? [],
     },
     include: {
       createdBy: { select: { id: true, name: true, email: true } },

@@ -4,7 +4,7 @@ import { createUpdateSchema } from './updates.validation';
 import * as updatesService from './updates.service';
 
 export const getUpdates = asyncHandler(async (req: Request, res: Response) => {
-  const result = await updatesService.getUpdatesForUser(req.user!.sub);
+  const result = await updatesService.getUpdatesForUser(req.user!.sub, req.user!.role);
   res.status(200).json({ success: true, data: result });
 });
 

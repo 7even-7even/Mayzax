@@ -73,6 +73,9 @@ apiClient.interceptors.response.use(
         if (originalRequest.headers) originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
+        if (axios.isAxiosError(refreshError) && !refreshError.response) {
+          return Promise.reject(refreshError);
+        }
         setAccessToken(null);
         window.dispatchEvent(new CustomEvent('auth:session-expired'));
         return Promise.reject(refreshError);

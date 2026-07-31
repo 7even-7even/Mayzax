@@ -13,10 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { TableSkeleton } from '@/components/shared/table-skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { formatDateTime } from '@/lib/utils';
-import { Bell, FileText, Download, Plus, Trash2, Eye, ExternalLink, Sparkles, Loader2, Award, Calendar, Zap, BookOpen, Link2 } from 'lucide-react';
+import { Bell, FileText, Download, Plus, Trash2, Eye, ExternalLink, Sparkles, Loader2, Award, Calendar, Zap, BookOpen, Link2, Shield, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
+import { getRoleLabel } from '@/lib/permissions';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 
 export default function UpdatesPage() {
   const { isAdmin } = usePermissions();
@@ -34,6 +36,7 @@ export default function UpdatesPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
   const updates = updatesData?.updates ?? [];
   const unreadCount = updatesData?.unreadCount ?? 0;
@@ -74,6 +77,7 @@ export default function UpdatesPage() {
     if (version.trim()) formData.append('version', version.trim());
     formData.append('description', description.trim());
     if (driveUrl.trim()) formData.append('pdfUrl', driveUrl.trim());
+    formData.append('roles', JSON.stringify(selectedRoles));
     if (pdfFile) formData.append('pdfFile', pdfFile);
 
     try {
@@ -85,6 +89,7 @@ export default function UpdatesPage() {
       setDescription('');
       setDriveUrl('');
       setPdfFile(null);
+      setSelectedRoles([]);
     } catch (err) {
       toast.error(extractErrorMessage(err, 'Failed to post update. Please try again.'));
     }
@@ -153,9 +158,18 @@ export default function UpdatesPage() {
                             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                               {item.title}
                             </h3>
-                            <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
+                            <p className="text-xs text-slate-400 mt-0.5 flex flex-wrap items-center gap-1.5">
                               <Calendar className="h-3 w-3" />
                               {formatDateTime(item.createdAt)}
+                              {item.roles && item.roles.length > 0 ? (
+                                <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 dark:text-indigo-400 dark:bg-indigo-950/30 dark:border-indigo-900/30 px-2 py-0.5 rounded-full ml-1">
+                                  To: {item.roles.map((r) => getRoleLabel(r)).join(', ')}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-900/30 px-2 py-0.5 rounded-full ml-1">
+                                  To: Everyone
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -233,6 +247,50 @@ export default function UpdatesPage() {
                   Version
                 </Label>
                 <Input id="updateVersion" placeholder="v1.1.0" value={version} onChange={(e) => setVersion(e.target.value)} className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50" />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5 text-mayzax-blue-500" />
+                  Target Roles
+                </Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full justify-between rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white text-left font-normal text-slate-700 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700"
+                    >
+                      <span className="truncate">
+                        {selectedRoles.length === 0
+                          ? 'All Roles (Everyone)'
+                          : selectedRoles.map((r) => getRoleLabel(r)).join(', ')}
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-50 shrink-0 ml-2" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 max-w-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md rounded-xl">
+                    {['TEAM_LEADER', 'RECRUITER', 'SALES_EXEC', 'RESUME_ASSIST', 'CLIENT'].map((role) => {
+                      const isSelected = selectedRoles.includes(role);
+                      return (
+                        <DropdownMenuCheckboxItem
+                          key={role}
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedRoles([...selectedRoles, role]);
+                            } else {
+                              setSelectedRoles(selectedRoles.filter((r) => r !== role));
+                            }
+                          }}
+                          className="cursor-pointer text-slate-700 dark:text-slate-200 focus:bg-slate-50 dark:focus:bg-slate-800"
+                        >
+                          {getRoleLabel(role)}
+                        </DropdownMenuCheckboxItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
 
               <div className="space-y-2">

@@ -13,6 +13,7 @@ export interface SystemUpdateItem {
     email: string;
   };
   isRead: boolean;
+  roles: string[];
 }
 
 export interface UpdatesResponse {
