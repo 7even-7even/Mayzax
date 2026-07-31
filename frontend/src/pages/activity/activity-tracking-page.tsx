@@ -113,6 +113,14 @@ function formatHoursLabel(hours: number): string {
   return `${h}h ${m}m`;
 }
 
+function formatRoleLabel(role: string, short = true): string {
+  if (role === 'TEAM_LEADER') return 'Team Leader';
+  if (role === 'RECRUITER') return 'Recruiter';
+  if (role === 'RESUME_ASSIST') return 'Resume Assist';
+  if (role === 'SALES_EXEC') return 'Sales Exec';
+  return role;
+}
+
 // Premium Metric Card
 function PremiumMetricCard({
   icon: Icon,
@@ -730,6 +738,7 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<UserStatus | typeof ALL>(ALL);
+  const [selectedRole, setSelectedRole] = useState<string | typeof ALL>(ALL);
   const [page, setPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -747,6 +756,7 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
     fromDate: fromDate || undefined,
     toDate: toDate || undefined,
     status: statusFilter === ALL ? undefined : statusFilter,
+    role: selectedRole === ALL ? undefined : selectedRole,
     page,
     pageSize: 20,
   });
@@ -758,6 +768,12 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
     .filter((m) => m.role === 'TEAM_LEADER')
     .map((tl) => ({ id: tl.userId, label: tl.teamName ? `${tl.teamName}` : tl.name, tlName: tl.name }));
 
+  const filteredActivityUsers = useMemo(() => {
+    if (!activityUsers) return [];
+    if (selectedRole === ALL) return activityUsers;
+    return activityUsers.filter((u) => u.role === selectedRole);
+  }, [activityUsers, selectedRole]);
+
   const filteredMembers = useMemo(
     () =>
       members.filter((m) => {
@@ -766,9 +782,10 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
         }
         if (selectedUserId !== ALL && m.userId !== selectedUserId) return false;
         if (statusFilter !== ALL && m.status !== statusFilter) return false;
+        if (selectedRole !== ALL && m.role !== selectedRole) return false;
         return true;
       }),
-    [members, selectedTeamId, selectedUserId, statusFilter]
+    [members, selectedTeamId, selectedUserId, statusFilter, selectedRole]
   );
 
   const productivityChartData = useMemo(() => {
@@ -900,7 +917,7 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
         const row = worksheet.addRow([
           item.name,
           item.email,
-          item.role === 'TEAM_LEADER' ? 'Team Leader' : 'Recruiter',
+          formatRoleLabel(item.role, false),
           item.managerName,
           item.attendanceStatus,
           item.firstLogin ? formatDateTime(item.firstLogin) : 'N/A',
@@ -1153,7 +1170,7 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
               <div className="flex flex-wrap items-center gap-2 dark:text-white">
                 <PermissionGate permission="view:activity:all">
                   <Select value={selectedTeamId} onValueChange={(v) => { setSelectedTeamId(v as any); setPage(1); }}>
-                    <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                    <SelectTrigger className="w-full sm:w-[155px] bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                       <SelectValue placeholder="Filter by Team" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1166,15 +1183,28 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
                     </SelectContent>
                   </Select>
 
+                  <Select value={selectedRole} onValueChange={(v) => { setSelectedRole(v); setSelectedUserId(ALL); setPage(1); }}>
+                    <SelectTrigger className="w-full sm:w-[155px] bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                      <SelectValue placeholder="Filter by Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ALL}>All Roles</SelectItem>
+                      <SelectItem value="TEAM_LEADER">Team Leader</SelectItem>
+                      <SelectItem value="RECRUITER">Recruiter</SelectItem>
+                      <SelectItem value="SALES_EXEC">Sales Exec</SelectItem>
+                      <SelectItem value="RESUME_ASSIST">Resume Assist</SelectItem>
+                    </SelectContent>
+                  </Select>
+
                   <Select value={selectedUserId} onValueChange={(v) => { setSelectedUserId(v as any); setPage(1); }}>
-                    <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                    <SelectTrigger className="w-full sm:w-[155px] bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                       <SelectValue placeholder="Filter by User" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={ALL}>All Users</SelectItem>
-                      {activityUsers?.map((u) => (
+                      {filteredActivityUsers?.map((u) => (
                         <SelectItem key={u.id} value={u.id}>
-                          {u.name} ({u.role === 'TEAM_LEADER' ? 'TL' : 'Recruiter'})
+                          {u.name} ({formatRoleLabel(u.role)})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1182,7 +1212,7 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
                 </PermissionGate>
 
                 <Select value={statusFilter as any} onValueChange={(v) => { setStatusFilter(v as any); setPage(1); }}>
-                  <SelectTrigger className="w-full sm:w-48 bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white">
+                  <SelectTrigger className="w-full sm:w-[155px] bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-white">
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1276,7 +1306,7 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
                           <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{m.name}</p>
                           <p className="text-[11px] text-slate-400 dark:text-slate-400 truncate">{m.email}</p>
                         </div>
-                        <div className="text-xs font-medium text-slate-600 dark:text-slate-300">{m.role === 'TEAM_LEADER' ? 'TL' : 'Recruiter'}</div>
+                        <div className="text-xs font-medium text-slate-600 dark:text-slate-300">{formatRoleLabel(m.role)}</div>
                         <div>
                           <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border ${cfg.bgColor} ${cfg.textColor} ${cfg.borderColor}`}>
                             <span className={`h-1.5 w-1.5 rounded-full ${cfg.dotColor}`} />

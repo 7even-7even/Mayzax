@@ -160,6 +160,7 @@ export function useActivityHistory(params: {
   fromDate?: string;
   toDate?: string;
   status?: UserStatus;
+  role?: string;
   page?: number;
   pageSize?: number;
 }) {

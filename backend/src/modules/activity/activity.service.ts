@@ -381,7 +381,7 @@ export async function getActivityUsers(requester: ActivityRequester) {
   };
 
   if (requester.role === Role.ADMIN) {
-    where.role = { in: [Role.RECRUITER, Role.TEAM_LEADER] };
+    where.role = { in: [Role.RECRUITER, Role.TEAM_LEADER, Role.RESUME_ASSIST, Role.SALES_EXEC] };
   } else if (requester.role === Role.TEAM_LEADER) {
     where.OR = [{ id: requester.id }, { createdById: requester.id }];
   } else {
@@ -407,7 +407,7 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
   const userWhere: any = {
     deletedAt: null,
     isActive: true,
-    role: { in: [Role.RECRUITER, Role.TEAM_LEADER] },
+    role: { in: [Role.RECRUITER, Role.TEAM_LEADER, Role.RESUME_ASSIST, Role.SALES_EXEC] },
   };
 
   if (requester.role === Role.TEAM_LEADER) {
@@ -527,10 +527,14 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
  * Paginated historical activity logs for reporting & audit.
  */
 export async function getActivityHistory(
-  query: { userId?: string; fromDate?: string; toDate?: string; status?: UserStatus; page: number; pageSize: number },
+  query: { userId?: string; fromDate?: string; toDate?: string; status?: UserStatus; page: number; pageSize: number; role?: string },
   requester: ActivityRequester
 ) {
   const where: any = {};
+
+  if (query.role) {
+    where.user = { role: query.role };
+  }
 
   if (query.userId) {
     if (requester.role === Role.TEAM_LEADER) {
@@ -689,7 +693,7 @@ export async function getAttendanceReport(
   const userWhere: any = {
     deletedAt: null,
     isActive: true,
-    role: { in: [Role.RECRUITER, Role.TEAM_LEADER] },
+    role: { in: [Role.RECRUITER, Role.TEAM_LEADER, Role.RESUME_ASSIST, Role.SALES_EXEC] },
   };
 
   if (query.recruiterId) {

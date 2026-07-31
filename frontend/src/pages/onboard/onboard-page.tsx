@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import {
   User2, Mail, Phone, Calendar, GraduationCap, Code2, ShieldCheck,
   MapPin, Plus, Trash2, Shield, Upload, FileText, CheckCircle2,
-  DollarSign, Receipt, Download, Loader2, CreditCard, Sparkles, AlertCircle
+  DollarSign, Receipt, Download, Loader2, CreditCard, Sparkles, AlertCircle, LogIn
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -189,6 +189,7 @@ function ParticleField() {
   );
 }
 export default function OnboardPage() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [uploadedResume, setUploadedResume] = useState<{ url: string; fileName: string } | null>(null);
@@ -562,7 +563,15 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
                       Step {currentStep + 1} <span className="text-indigo-400 dark:text-indigo-600">/ {STEPS.length}</span>
                     </div>
                   </div>
-                  {/* <ThemeTogglePremium /> */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="rounded-full text-xs font-semibold text-slate-500 hover:text-indigo-650 dark:text-slate-400 dark:hover:text-indigo-400 gap-1.5 border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm"
+                    onClick={() => navigate('/client-login')}
+                  >
+                    <LogIn className="h-3.5 w-3.5" /> Back to Login
+                  </Button>
                 </div>
 
                 {/* Animated progress bar */}

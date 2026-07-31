@@ -118,7 +118,7 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold uppercase tracking-wider">Temporary Password</Label>
                 <div className="relative">
-                  <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="rounded-xl h-11 pr-10 bg-white border-slate-200" {...form.register('password' as any)} />
+                  <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="rounded-xl h-11 pr-10 bg-white border-slate-200 dark:text-black" {...form.register('password' as any)} />
                   <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
