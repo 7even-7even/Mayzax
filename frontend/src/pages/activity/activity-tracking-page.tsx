@@ -1059,57 +1059,8 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
         </StaggerContainer>
       )}
 
-      {/* Admin Productivity Overview - Premium */}
-      {isAdmin && productivityData && (
-        <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StaggerItem>
-            <PremiumMetricCard
-              icon={Clock}
-              label="Total Productive"
-              value={formatHoursLabel(productivityData.totalProductiveHours)}
-              subValue={`${productivityData.totalProductiveHours}h`}
-              color="text-emerald-700"
-              gradient="from-emerald-500 to-teal-600"
-              index={0}
-            />
-          </StaggerItem>
-          <StaggerItem>
-            <PremiumMetricCard
-              icon={Coffee}
-              label="Total Break"
-              value={formatHoursLabel(productivityData.totalBreakHours)}
-              color="text-amber-700"
-              gradient="from-amber-500 to-orange-500"
-              index={1}
-            />
-          </StaggerItem>
-          <StaggerItem>
-            <PremiumMetricCard
-              icon={BarChart3}
-              label="Shift Utilization"
-              value={`${productivityData.shiftUtilizationPercentage}%`}
-              color="text-violet-700"
-              gradient="from-violet-500 to-indigo-600"
-              index={2}
-              trend={`${productivityData.activeUsersCount} active`}
-            />
-          </StaggerItem>
-          <StaggerItem>
-            <PremiumMetricCard
-              icon={UsersIcon}
-              label="Active Users"
-              value={productivityData.activeUsersCount}
-              subValue={`${productivityData.attendancePercentage}% attendance`}
-              color="text-slate-800"
-              gradient="from-slate-700 to-slate-900"
-              index={3}
-            />
-          </StaggerItem>
-        </StaggerContainer>
-      )}
-
       {/* Admin: Productivity Chart */}
-      {isAdmin && productivityChartData.length > 0 && (
+      {!isAdmin && productivityChartData.length > 0 && (
         <Reveal delay={0.1}>
           <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
             <CardHeader className="pb-2 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">

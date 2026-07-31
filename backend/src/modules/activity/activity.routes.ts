@@ -17,7 +17,7 @@ router.get('/users', activityController.getActivityUsers);
 
 // Admin & TL monitoring endpoints
 router.get('/live-status', requireRole(Role.ADMIN, Role.TEAM_LEADER), activityController.getLiveStatus);
-router.get('/productivity', requireRole(Role.ADMIN, Role.TEAM_LEADER), activityController.getProductivity);
+router.get('/productivity', requireRole(Role.ADMIN, Role.TEAM_LEADER, Role.RECRUITER, Role.RESUME_ASSIST, Role.SALES_EXEC), activityController.getProductivity);
 router.get('/attendance', requireRole(Role.ADMIN, Role.TEAM_LEADER), activityController.getAttendanceReport);
 
 export default router;
