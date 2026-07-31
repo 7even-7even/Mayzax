@@ -207,12 +207,26 @@ export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta)
     throw ApiError.unauthorized('Account is no longer active');
   }
 
-  // Rotate: revoke old, issue new
-  const newTokens = await issueTokenPair(user.id, user.role, user.email, meta);
-  await prisma.refreshToken.update({
-    where: { id: stored.id },
-    data: { revokedAt: new Date(), replacedByTokenHash: hashToken(newTokens.refreshToken) },
-  });
+  // Rotate only if the refresh token is nearing expiration (e.g. less than 24 hours left)
+  const remainingTimeMs = stored.expiresAt.getTime() - Date.now();
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  
+  let newTokens;
+  if (remainingTimeMs < oneDayMs) {
+    // Rotate: revoke old, issue new
+    newTokens = await issueTokenPair(user.id, user.role, user.email, meta);
+    await prisma.refreshToken.update({
+      where: { id: stored.id },
+      data: { revokedAt: new Date(), replacedByTokenHash: hashToken(newTokens.refreshToken) },
+    });
+  } else {
+    // Reuse: keep same refresh token, just sign a new access token
+    const newAccessToken = signAccessToken({ id: user.id, role: user.role, email: user.email });
+    newTokens = {
+      accessToken: newAccessToken,
+      refreshToken: refreshTokenRaw,
+    };
+  }
 
   await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
 
