@@ -9,9 +9,9 @@ import { CountUp } from '@/components/motion/count-up';
 import { Badge } from '@/components/ui/badge';
 
 const adminCardConfig = [
-  { key: 'totalRecruiters', label: 'Total System Users', icon: Users, gradient: 'from-mayzax-blue-500 to-mayzax-green-500', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
-  { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, gradient: 'from-emerald-500 to-teal-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { key: 'totalProfiles', label: 'Total Profiles', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
+  { key: 'totalRecruiters', label: 'Total Users', icon: Users, gradient: 'from-mayzax-blue-500 to-mayzax-green-500', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
+  { key: 'activeRecruiters', label: 'Total Recruiters', icon: UserCheck, gradient: 'from-emerald-500 to-teal-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
+  { key: 'totalProfiles', label: 'Total Clients', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
   { key: 'totalApplications', label: 'Total Applications', icon: Briefcase, gradient: 'from-blue-500 to-cyan-600', accent: 'text-blue-600', bg: 'bg-blue-50' },
   { key: 'currentShiftApplications', label: "Today's Apps", icon: Clock, gradient: 'from-mayzax-blue-500 to-mayzax-green-600', accent: 'text-violet-600', bg: 'bg-violet-50' },
 ] as const;
@@ -19,7 +19,7 @@ const adminCardConfig = [
 const tlCardConfig = [
   { key: 'totalRecruiters', label: 'Team Recruiters', icon: Users, gradient: 'from-mayzax-blue-500 to-mayzax-green-500', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
   { key: 'activeRecruiters', label: 'Active Recruiters', icon: UserCheck, gradient: 'from-emerald-500 to-teal-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { key: 'totalProfiles', label: 'Team Profiles', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
+  { key: 'totalProfiles', label: 'Team Clients', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
   { key: 'totalApplications', label: 'Team Apps', icon: Briefcase, gradient: 'from-blue-500 to-cyan-600', accent: 'text-blue-600', bg: 'bg-blue-50' },
   { key: 'currentShiftApplications', label: "Today's Team", icon: Clock, gradient: 'from-mayzax-blue-500 to-mayzax-green-600', accent: 'text-violet-600', bg: 'bg-violet-50' },
   { key: 'myTotalApplications', label: 'My Total', icon: Briefcase, gradient: 'from-slate-700 to-slate-900', accent: 'text-slate-700', bg: 'bg-slate-100' },
@@ -29,7 +29,7 @@ const tlCardConfig = [
   { key: 'topPerformer', label: 'Top Performer', icon: Trophy, gradient: 'from-yellow-500 to-amber-600', accent: 'text-amber-600', bg: 'bg-yellow-50' },
 ] as const;
 
-function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoading, index, featured }: any) {
+function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoading, index, featured, roleBreakdown }: any) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -54,9 +54,28 @@ function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoa
             {isLoading ? (
               <div className="h-7 w-16 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
             ) : typeof value === 'number' ? (
-              <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                <CountUp value={value} />
-              </p>
+              <div>
+                <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  <CountUp value={value} />
+                </p>
+                {/* {roleBreakdown && Object.keys(roleBreakdown).length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1 text-[10px]">
+                    {Object.entries(roleBreakdown).map(([role, count]) => {
+                      if (!count) return null;
+                      const roleLabel = role === 'TEAM_LEADER' ? 'TL' : 
+                                        role === 'RECRUITER' ? 'Rec' :
+                                        role === 'RESUME_ASSIST' ? 'RA' :
+                                        role === 'SALES_EXEC' ? 'SE' :
+                                        role === 'CLIENT' ? 'Cli' : 'Adm';
+                      return (
+                        <span key={role} className="rounded bg-slate-100 dark:bg-slate-800 px-1 py-0.5 text-slate-600 dark:text-slate-400 font-medium">
+                          {roleLabel}: {String(count)}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )} */}
+              </div>
             ) : (
               <p className="text-base font-semibold text-slate-800 dark:text-slate-200 truncate" title={String(value)}>
                 {value}
@@ -107,10 +126,12 @@ export function SummaryCards() {
               accent={card.accent}
               isLoading={isLoading}
               index={i}
+              roleBreakdown={card.key === 'totalRecruiters' && !isTeamLeader ? data?.roleBreakdown : undefined}
             />
           </StaggerItem>
         ))}
-      </StaggerContainer>      {isAdmin && (
+      </StaggerContainer>
+      {isAdmin && (
         <Reveal delay={0.3}>
           <motion.div
             initial={{ opacity: 0, y: 8 }}

@@ -350,6 +350,7 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
       activeMemberCount: 0,
       onBreakMemberCount: 0,
       topPerformer: '-',
+      roleBreakdown: {},
     };
   }
 
@@ -373,15 +374,14 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
     prisma.user.count({
       where: {
         deletedAt: null,
-        ...(isTeamLeader ? { role: Role.RECRUITER, createdById: actor.id } : {}),
+        ...(isTeamLeader ? { createdById: actor.id, role: Role.RECRUITER } : {}),
       },
     }),
     prisma.user.count({
       where: {
         role: Role.RECRUITER,
         deletedAt: null,
-        isActive: true,
-        ...(isTeamLeader ? { createdById: actor.id } : {}),
+        ...(isTeamLeader ? { createdById: actor.id, isActive: true } : {}),
       },
     }),
     prisma.clientProfile.count({
@@ -529,6 +529,22 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
     };
   });
 
+  const roleGroups = await prisma.user.groupBy({
+    by: ['role'],
+    where: {
+      deletedAt: null,
+      ...(isTeamLeader ? { createdById: actor.id } : {}),
+    },
+    _count: {
+      role: true,
+    },
+  });
+
+  const roleBreakdown = roleGroups.reduce((acc, curr) => {
+    acc[curr.role] = curr._count.role;
+    return acc;
+  }, {} as Record<string, number>);
+
   return {
     totalRecruiters,
     activeRecruiters,
@@ -544,6 +560,7 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
     activeMemberCount,
     onBreakMemberCount,
     topPerformer,
+    roleBreakdown,
   };
 }
 

@@ -22,11 +22,5 @@ vite.config.ts.timestamp-*
 VISION.MD
 GAP.MD
 *.docx
-# Mobile & Firebase secrets
-mobile/.env
-mobile/google-services.json
-mobile/GoogleService-Info.plist
-backend/firebase-service-account.json
-backend/mayzax-companion-firebase-adminsdk-fbsvc-8a2e7ae48e.json
-backend/google-services.json
-/backend/secrets
+.expo/
+backend/secrets/

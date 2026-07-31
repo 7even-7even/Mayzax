@@ -126,6 +126,12 @@ export function buildWhereClause(
         ],
       });
     }
+  } else if (requester.role === Role.CLIENT) {
+    conditions.push({
+      profile: {
+        clientUser: { id: requester.id }
+      }
+    });
   }
 
   if (query.businessDateFrom || query.businessDateTo) {

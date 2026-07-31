@@ -9,14 +9,14 @@ export const createRecruiterSchema = z.object({
     .regex(/[A-Z]/, 'Password must contain an uppercase letter')
     .regex(/[a-z]/, 'Password must contain a lowercase letter')
     .regex(/[0-9]/, 'Password must contain a number'),
-  role: z.enum(['ADMIN', 'TEAM_LEADER', 'RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC']).default('RECRUITER'),
+  role: z.enum(['ADMIN', 'TEAM_LEADER', 'RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC', 'CLIENT']).default('RECRUITER'),
   createdById: z.string().uuid().nullable().optional(),
 });
 
 export const updateRecruiterSchema = z.object({
   name: z.string().min(2).max(120).optional(),
   email: z.string().email().optional(),
-  role: z.enum(['ADMIN', 'TEAM_LEADER', 'RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC']).optional(),
+  role: z.enum(['ADMIN', 'TEAM_LEADER', 'RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC', 'CLIENT']).optional(),
   createdById: z.string().uuid().nullable().optional(),
 });
 
@@ -30,7 +30,7 @@ export const toggleActiveSchema = z.object({
 
 export const listRecruitersQuerySchema = z.object({
   search: z.string().optional(),
-  role: z.enum(['ADMIN', 'TEAM_LEADER', 'RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC']).optional(),
+  role: z.enum(['ADMIN', 'TEAM_LEADER', 'RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC', 'CLIENT']).optional(),
   isActive: z
     .enum(['true', 'false'])
     .optional()

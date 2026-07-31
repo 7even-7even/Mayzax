@@ -23,7 +23,7 @@ import { useDeleteRecruiter, useRecruiters, useToggleRecruiterStatus, useResetRe
 import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage } from '@/lib/api-client';
 import { initials, timeAgo } from '@/lib/utils';
-import { Recruiter } from '@/types';
+import { Role, Recruiter } from '@/types';
 import { usePermissions } from '@/hooks/use-permissions';
 import { VirtualizedTable } from '@/components/shared/virtualized-table';
 import { CountUp } from '@/components/motion/count-up';
@@ -33,7 +33,7 @@ const ALL_ROLES = '__all__';
 export default function RecruitersPage() {
   const { isAdmin, isTeamLeader } = usePermissions();
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'RECRUITER' | 'TEAM_LEADER' | 'ADMIN' | 'RESUME_ASSIST' | 'SALES_EXEC' | typeof ALL_ROLES>(isAdmin ? ALL_ROLES : 'RECRUITER');
+  const [roleFilter, setRoleFilter] = useState<Role | typeof ALL_ROLES>(ALL_ROLES);
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search);
 
@@ -136,7 +136,7 @@ export default function RecruitersPage() {
                 <SelectItem value="RECRUITER">Recruiters</SelectItem>
                 <SelectItem value="TEAM_LEADER">Team Leaders</SelectItem>
                 <SelectItem value="ADMIN">Admins</SelectItem>
-                <SelectItem value="RESUME_ASSIST">Resume Assists</SelectItem>
+                <SelectItem value="RESUME_ASSIST">Resume Assistants</SelectItem>
                 <SelectItem value="SALES_EXEC">Sales Executives</SelectItem>
                 <SelectItem value={ALL_ROLES}>All Roles</SelectItem>
               </SelectContent>

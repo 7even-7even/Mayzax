@@ -1,4 +1,4 @@
-export type Role = 'ADMIN' | 'TEAM_LEADER' | 'RECRUITER' | 'RESUME_ASSIST' | 'SALES_EXEC';
+export type Role = 'ADMIN' | 'TEAM_LEADER' | 'RECRUITER' | 'RESUME_ASSIST' | 'SALES_EXEC' | 'CLIENT';
 
 export type UserStatus =
   | 'ONLINE'
@@ -240,6 +240,7 @@ export interface GlobalSummary {
   activeMemberCount?: number;
   onBreakMemberCount?: number;
   topPerformer?: string;
+  roleBreakdown?: Record<string, number>;
 }
 
 export interface DailyCount {

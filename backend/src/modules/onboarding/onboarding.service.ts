@@ -1,4 +1,5 @@
 import { OnboardingStatus, Role } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/utils/apiError';
 import { CreateOnboardingInput } from './onboarding.validation';
@@ -161,7 +162,20 @@ export async function approveOnboarding(id: string, adminId: string) {
     },
   });
 
-  // 2. Update Onboarding status to APPROVED
+  // 2. Create User for Client login
+  const passwordHash = await bcrypt.hash('Client@123', 12);
+  await prisma.user.create({
+    data: {
+      name: onboarding.fullName,
+      email: onboarding.email.toLowerCase(),
+      passwordHash,
+      role: Role.CLIENT,
+      isActive: true,
+      clientProfileId: profile.id,
+    },
+  });
+
+  // 3. Update Onboarding status to APPROVED
   const updatedOnboarding = await prisma.clientOnboarding.update({
     where: { id },
     data: {

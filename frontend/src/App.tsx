@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Routes, Route } from 'react-router-dom';
 import LoginPage from '@/pages/auth/login-page';
+import ClientLoginPage from '@/pages/auth/client-login-page';
 import SignupPage from '@/pages/auth/signup-page';
 import ForgotPasswordPage from '@/pages/auth/forgot-password-page';
 import { AppShell } from '@/components/layout/app-shell';
 import { ProtectedRoute } from '@/routes/protected-route';
 import DashboardPage from '@/pages/dashboard/dashboard-page';
 import RecruiterDashboardPage from '@/pages/dashboard/recruiter-dashboard-page';
-import CompanionDashboardPage from '@/pages/dashboard/companion-dashboard-page';
+import ClientDashboardPage from '@/pages/dashboard/client-dashboard-page';
 import AnalyticsPage from '@/pages/dashboard/analytics-page';
 import RecruitersPage from '@/pages/recruiters/recruiters-page';
 import ProfilesPage from '@/pages/profiles/profiles-page';
@@ -60,6 +61,7 @@ export default function App() {
 
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/client-login" element={<ClientLoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/unauthorized" element={<UnauthorizedPage />} />
@@ -75,12 +77,12 @@ export default function App() {
               <Route path="/recruiters" element={<RecruitersPage />} />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={['RECRUITER']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC']} />}>
               <Route path="/recruiter-dashboard" element={<RecruiterDashboardPage />} />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={['RESUME_ASSIST', 'SALES_EXEC']} />}>
-              <Route path="/companion-dashboard" element={<CompanionDashboardPage />} />
+            <Route element={<ProtectedRoute allowedRoles={['CLIENT']} />}>
+              <Route path="/client-dashboard" element={<ClientDashboardPage />} />
             </Route>
 
             <Route path="/profile" element={<ProfilePage />} />

@@ -10,7 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { useCreateApplication, useCheckDuplicate } from '@/hooks/use-applications';
+import { useCreateApplication, useCheckDuplicate, useApplications } from '@/hooks/use-applications';
+import { useGlobalSummary } from '@/hooks/use-analytics';
 import { useProfiles } from '@/hooks/use-profiles';
 import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage } from '@/lib/api-client';
@@ -76,6 +77,25 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
   const jobLink = form.watch('jobLink');
   const profileId = form.watch('profileId');
   const debouncedLink = useDebounce(jobLink, 500);
+
+  const { data: summary } = useGlobalSummary();
+  const currentBusinessDate = summary?.currentBusinessDate;
+
+  // All time count of applications submitted by this recruiter for the selected client profile
+  const { data: allTimeAppsData } = useApplications({
+    profileId: profileId || undefined,
+    recruiterId: user?.role === 'RECRUITER' ? user.id : undefined,
+    pageSize: 1,
+  });
+
+  // Current shift count of applications submitted by this recruiter for the selected client profile
+  const { data: shiftAppsData } = useApplications({
+    profileId: profileId || undefined,
+    recruiterId: user?.role === 'RECRUITER' ? user.id : undefined,
+    businessDateFrom: currentBusinessDate,
+    businessDateTo: currentBusinessDate,
+    pageSize: 1,
+  });
 
   // Extension verification hook (commented out until deployed)
   // const { isVerified, isChecking, verificationResult, state: verificationState, isExtensionInstalled, installUrl, extensionId, retry: retryVerification } = useExtensionVerification(debouncedLink);
@@ -183,10 +203,17 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto px-6 py-2 space-y-5">
             <div className="space-y-2">
-              <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                <User2 className="h-3.5 w-3.5 text-mayzax-blue-500" />
-                Candidate Profile
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <User2 className="h-3.5 w-3.5 text-mayzax-blue-500" />
+                  Candidate Profile
+                </Label>
+                {profileId && (
+                  <span className="text-[11px] font-semibold text-slate-500">
+                    Your apps: <span className="text-mayzax-blue-700 dark:text-mayzax-blue-400">{shiftAppsData?.pagination?.total ?? 0} today</span> · <span className="text-indigo-600">{allTimeAppsData?.pagination?.total ?? 0} total</span>
+                  </span>
+                )}
+              </div>
               <Select value={form.watch('profileId')} onValueChange={(value) => form.setValue('profileId', value)}>
                 <SelectTrigger className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black">
                   <SelectValue placeholder="Select a profile" />

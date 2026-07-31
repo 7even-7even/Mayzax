@@ -214,7 +214,7 @@ export async function processHeartbeat(userId: string, role: Role) {
   if (
     openLog &&
     lastHeartbeat &&
-    openLog.status === UserStatus.ACTIVE
+    (openLog.status === UserStatus.ACTIVE)
   ) {
     const timeSinceLastHeartbeat = now.getTime() - lastHeartbeat.getTime();
     if (timeSinceLastHeartbeat > STALE_HEARTBEAT_THRESHOLD_MS) {
@@ -339,7 +339,6 @@ export async function getTodayActivity(userId: string): Promise<DailyActivitySum
       case UserStatus.ACTIVE:
         totalProductiveSeconds += durationSeconds;
         break;
-
       case UserStatus.SHORT_BREAK:
         shortBreakSeconds += durationSeconds;
         break;
@@ -511,7 +510,7 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
     const isOnline =
       !!u.lastHeartbeatAt && now.getTime() - u.lastHeartbeatAt.getTime() <= STALE_HEARTBEAT_THRESHOLD_MS;
 
-    const statusToShow = (isOnline || status !== UserStatus.ACTIVE) ? status : UserStatus.OFFLINE;
+    const statusToShow = (isOnline || (status !== UserStatus.ACTIVE)) ? status : UserStatus.OFFLINE;
 
     if (statusToShow === UserStatus.ACTIVE) {
       totalActiveCount++;
@@ -558,10 +557,14 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
  * Paginated historical activity logs for reporting & audit.
  */
 export async function getActivityHistory(
-  query: { userId?: string; fromDate?: string; toDate?: string; status?: UserStatus; page: number; pageSize: number },
+  query: { userId?: string; fromDate?: string; toDate?: string; status?: UserStatus; page: number; pageSize: number; role?: string },
   requester: ActivityRequester
 ) {
   const where: any = {};
+
+  if (query.role) {
+    where.user = { role: query.role };
+  }
 
   if (query.userId) {
     if (requester.role === Role.TEAM_LEADER) {
@@ -793,7 +796,6 @@ export async function getAttendanceReport(
         case UserStatus.ACTIVE:
           totalProductiveSeconds += dur;
           break;
-
         case UserStatus.SHORT_BREAK:
           shortBreakSeconds += dur;
           break;

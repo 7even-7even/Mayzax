@@ -84,13 +84,17 @@ const ROLE_PERMISSIONS: RolePermissionMap = {
     'view:updates',
   ],
   RESUME_ASSIST: [
-    'view:dashboard',
-    'view:activity',
+    'view:profiles',
+    'view:applications',
     'view:updates',
   ],
   SALES_EXEC: [
-    'view:dashboard',
-    'view:activity',
+    'view:profiles',
+    'view:applications',
+    'view:updates',
+  ],
+  CLIENT: [
+    'view:applications',
     'view:updates',
   ],
 };
@@ -124,9 +128,11 @@ export function getRoleLabel(role: Role | string): string {
     case 'RECRUITER':
       return 'Recruiter';
     case 'RESUME_ASSIST':
-      return 'Resume Assist';
+      return 'Resume Assistant';
     case 'SALES_EXEC':
       return 'Sales Executive';
+    case 'CLIENT':
+      return 'Client';
     default:
       return role;
   }

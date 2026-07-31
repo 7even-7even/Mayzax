@@ -205,7 +205,7 @@ export default function UpdatesPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg rounded-2xl border-slate-200/60 p-0 overflow-hidden shadow-2xl">
           <div className="h-1 w-full bg-mayzax-gradient" />
-          <div className="p-6">
+          <div className="p-6 max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2.5 text-lg">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mayzax-gradient text-white shadow-md">
