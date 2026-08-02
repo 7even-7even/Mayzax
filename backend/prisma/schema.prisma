@@ -204,12 +204,12 @@ model ShiftConfig {
   endMinute   Int      @default(0)
 
   // Allowed break durations in seconds
-  shortBreakAllowedSec    Int @default(1800)  // 30 min
-  dinnerBreakAllowedSec   Int @default(3600)  // 60 min
+  shortBreakAllowedSec    Int @default(900)  // 30 min
+  dinnerBreakAllowedSec   Int @default(2400)  // 60 min
   briefingAllowedSec      Int @default(900)   // 15 min
-  meetingAllowedSec       Int @default(1800)  // 30 min
+  meetingAllowedSec       Int @default(900)  // 30 min
   systemIssueAllowedSec   Int @default(0)     // unlimited by default
-  expectedWorkSeconds     Int @default(32400) // 9 hours (productive + meeting)
+  expectedWorkSeconds     Int @default(28800) // 9 hours (productive + meeting)
   lateGraceMinutes        Int @default(15)
   earlyGraceMinutes       Int @default(15)
   penaltyPerLateMinute    Float @default(0)
