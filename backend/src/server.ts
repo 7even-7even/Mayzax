@@ -2,12 +2,29 @@ import { createApp } from '@/app';
 import { env } from '@/config/env';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { getQueue, stopQueue } from '@/lib/queue';
+import { getFirebaseApp } from '@/lib/firebase';
+import { registerJobProcessors, startPeriodicJobs } from '@/jobs/processors';
+import { ensureDefaultShiftConfig } from '@/modules/shifts/shift.service';
 
 async function main() {
   const app = createApp();
 
   await prisma.$connect();
   logger.info('✅ Database connected');
+
+  // Ensure a default shift config exists (idempotent)
+  await ensureDefaultShiftConfig().catch((err) => {
+    logger.error({ err }, 'Failed to ensure default shift config');
+  });
+
+  // Initialize queue subsystem (BullMQ or node-cron fallback)
+  await getQueue();
+  registerJobProcessors();
+  startPeriodicJobs();
+
+  // Initialize Firebase Admin (no-op if not configured)
+  getFirebaseApp();
 
   const server = app.listen(env.PORT, () => {
     logger.info(`🚀 Mayzax ATS API running on port ${env.PORT} [${env.NODE_ENV}]`);
@@ -17,6 +34,7 @@ async function main() {
   const shutdown = async (signal: string) => {
     logger.info(`${signal} received. Shutting down gracefully...`);
     server.close(async () => {
+      await stopQueue().catch(() => {});
       await prisma.$disconnect();
       logger.info('Shutdown complete.');
       process.exit(0);

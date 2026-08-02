@@ -1,5 +1,6 @@
 import { UserStatus, Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/logger';
 import { ApiError } from '@/utils/apiError';
 import { getBusinessDateString, getBusinessShiftBounds } from '@/utils/businessDate';
 import {
@@ -10,6 +11,18 @@ import {
   LiveStatusMetrics,
   ProductivityMetrics,
 } from './activity.types';
+
+const BREAK_STATUSES = new Set<UserStatus>([
+  UserStatus.SHORT_BREAK,
+  UserStatus.DINNER_BREAK,
+  UserStatus.BRIEFING_TRAINING,
+  UserStatus.MEETING,
+  UserStatus.SYSTEM_ISSUE,
+]);
+
+function isBreakStatus(s: UserStatus) {
+  return BREAK_STATUSES.has(s);
+}
 
 const STALE_HEARTBEAT_THRESHOLD_MS = 40 * 60 * 1000; // 40 minutes
 
@@ -93,6 +106,24 @@ export async function changeStatus(
     where: { id: userId },
     data: { lastHeartbeatAt: now, lastActiveAt: now },
   });
+
+  // Schedule mobile reminders when a break starts / shift is active.
+  // We import lazily to avoid a circular dependency between modules.
+  if (actorRole && isTrackedRole(actorRole)) {
+    import('../../jobs/processors.js').then(({ scheduleBreakReminders, scheduleShiftRemindersIfNeeded }) => {
+      if (isBreakStatus(newStatus)) {
+        scheduleBreakReminders(userId, newStatus, newLog.startedAt).catch((err) => {
+          logger.error({ err }, 'Failed to schedule break reminders');
+        });
+      } else if (newStatus === UserStatus.ACTIVE || newStatus === UserStatus.ONLINE) {
+        scheduleShiftRemindersIfNeeded(userId).catch((err) => {
+          logger.error({ err }, 'Failed to schedule shift reminders');
+        });
+      }
+    }).catch((err) => {
+      logger.error({ err }, 'Reminders module loading failed');
+    });
+  }
 
   return {
     status: newLog.status,
@@ -548,7 +579,7 @@ export async function getActivityHistory(
       if (!allowedUser) {
         throw ApiError.forbidden('You can only view activity for members in your team.');
       }
-    } else if (requester.role === Role.RECRUITER && query.userId !== requester.id) {
+    } else if ((requester.role === Role.RECRUITER || requester.role === Role.RESUME_ASSIST || requester.role === Role.SALES_EXEC) && query.userId !== requester.id) {
       throw ApiError.forbidden('You can only view your own activity.');
     }
     where.userId = query.userId;
@@ -558,7 +589,7 @@ export async function getActivityHistory(
       select: { id: true },
     });
     where.userId = { in: [requester.id, ...teamUsers.map((u) => u.id)] };
-  } else if (requester.role === Role.RECRUITER) {
+  } else if (requester.role === Role.RECRUITER || requester.role === Role.RESUME_ASSIST || requester.role === Role.SALES_EXEC) {
     where.userId = requester.id;
   }
 

@@ -15,6 +15,7 @@ const envSchema = z.object({
   ADDITIONAL_CORS_ORIGINS: z.string().optional(),
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
+  DIRECT_URL: z.string().optional(),
 
   JWT_ACCESS_SECRET: z.string().min(10, 'JWT_ACCESS_SECRET is required'),
   JWT_REFRESH_SECRET: z.string().min(10, 'JWT_REFRESH_SECRET is required'),
@@ -34,6 +35,28 @@ const envSchema = z.object({
   BUSINESS_SHIFT_END_HOUR: z.coerce.number().default(9),
   BUSINESS_SHIFT_END_MINUTE: z.coerce.number().default(0),
   BUSINESS_TIMEZONE: z.string().default('Asia/Kolkata'),
+
+  // Default shift policy (used when no per-user / named ShiftConfig is set)
+  DEFAULT_SHORT_BREAK_SECONDS: z.coerce.number().default(30 * 60), // 30 min
+  DEFAULT_DINNER_BREAK_SECONDS: z.coerce.number().default(60 * 60), // 60 min
+  DEFAULT_BRIEFING_SECONDS: z.coerce.number().default(15 * 60),
+  DEFAULT_MEETING_SECONDS: z.coerce.number().default(30 * 60),
+  DEFAULT_SYSTEM_ISSUE_SECONDS: z.coerce.number().default(0), // 0 = unlimited
+  DEFAULT_SHIFT_DURATION_SECONDS: z.coerce.number().default(9 * 60 * 60), // 9 hours
+  DEFAULT_LATE_GRACE_MINUTES: z.coerce.number().default(15),
+  DEFAULT_EARLY_GRACE_MINUTES: z.coerce.number().default(15),
+  DEFAULT_PENALTY_PER_LATE_MINUTE: z.coerce.number().default(0),
+
+  // Redis for BullMQ. If missing, reminders fall back to node-cron in-process.
+  REDIS_URL: z.string().optional(),
+
+  // Firebase Admin SDK for push notifications.
+  // Either provide the service account JSON as a string (base64 or raw),
+  // or a path to the JSON file.
+  FIREBASE_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  FIREBASE_SERVICE_ACCOUNT_PATH: z.string().optional(),
+  FIREBASE_DATABASE_URL: z.string().optional(),
+  FIREBASE_PROJECT_ID: z.string().optional(),
 
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
   RATE_LIMIT_MAX: z.coerce.number().default(300),

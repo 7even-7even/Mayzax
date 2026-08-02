@@ -24,6 +24,12 @@ const recruiterNav = [
   { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account' },
 ];
 
+const companionNav = [
+  { to: '/companion-dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Your status & timeline' },
+  { to: '/updates', label: 'Updates', icon: Bell, desc: 'Announcements' },
+  { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account' },
+];
+
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
   let rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? [...adminNav] : [...recruiterNav];

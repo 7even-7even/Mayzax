@@ -24,6 +24,7 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { formatDateTime, generateExportFilename, cn } from '@/lib/utils';
+import { getRoleLabel } from '@/lib/permissions';
 import {
   Calendar,
   Clock,
@@ -1059,18 +1060,67 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
         </StaggerContainer>
       )}
 
-      {/* Admin: Productivity Chart */}
-      {!isAdmin && productivityChartData.length > 0 && (
+      {/* Admin Productivity Overview - Premium */}
+      {isAdmin && productivityData && (
+        <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StaggerItem>
+            <PremiumMetricCard
+              icon={Clock}
+              label="Total Productive"
+              value={formatHoursLabel(productivityData.totalProductiveHours)}
+              subValue={`${productivityData.totalProductiveHours}h`}
+              color="text-emerald-700"
+              gradient="from-emerald-500 to-teal-600"
+              index={0}
+            />
+          </StaggerItem>
+          <StaggerItem>
+            <PremiumMetricCard
+              icon={Coffee}
+              label="Total Break"
+              value={formatHoursLabel(productivityData.totalBreakHours)}
+              color="text-amber-700"
+              gradient="from-amber-500 to-orange-500"
+              index={1}
+            />
+          </StaggerItem>
+          <StaggerItem>
+            <PremiumMetricCard
+              icon={BarChart3}
+              label="Shift Utilization"
+              value={`${productivityData.shiftUtilizationPercentage}%`}
+              color="text-violet-700"
+              gradient="from-violet-500 to-indigo-600"
+              index={2}
+              trend={`${productivityData.activeUsersCount} active`}
+            />
+          </StaggerItem>
+          <StaggerItem>
+            <PremiumMetricCard
+              icon={UsersIcon}
+              label="Active Users"
+              value={productivityData.activeUsersCount}
+              subValue={`${productivityData.attendancePercentage}% attendance`}
+              color="text-slate-800"
+              gradient="from-slate-700 to-slate-900"
+              index={3}
+            />
+          </StaggerItem>
+        </StaggerContainer>
+      )}
+
+      {/* Productivity Chart */}
+      {productivityChartData.length > 0 && (
         <Reveal delay={0.1}>
-          <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-            <CardHeader className="pb-2 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+          <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden dark:bg-slate-900 dark:border-slate-800">
+            <CardHeader className="pb-2 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-850 dark:to-slate-900">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white">
                   <BarChart3 className="h-4 w-4" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm font-semibold dark:text-black">Productivity Pulse</CardTitle>
-                  <CardDescription className="text-xs">Hours distribution across selected period</CardDescription>
+                  <CardTitle className="text-sm font-semibold text-slate-900 dark:text-white">Productivity Pulse</CardTitle>
+                  <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Hours distribution across selected period</CardDescription>
                 </div>
               </div>
             </CardHeader>

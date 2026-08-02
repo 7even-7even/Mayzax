@@ -1,349 +1,65 @@
-# Mayzax ATS
+# Mayzax ATS + Employee Companion
 
-**Mayzax ATS** is a Recruitment Applicant Tracking System built for **Mayzax Solutions**. It lets Admins manage recruiters and candidate profiles, lets Recruiters log job applications against their assigned profiles, provides Excel exports, profile/account management, security-question based password recovery, and gives both Admins and Recruiters analytics — all keyed off Mayzax's night-shift **business date** instead of the calendar date. You can view the Work Based Structure here: [Mayzax_WBS](./docs/Mayzax_WBS.xlsx)
+Mayzax is a Recruitment ATS / CMS with shift & attendance tracking for recruiters. It ships in three parts:
 
----
----
+- **Backend** (`backend/`) — Node.js + Express + PostgreSQL + Prisma + JWT auth, with BullMQ scheduling and optional Firebase Cloud Messaging.
+- **Web frontend** (`frontend/`) — React + TypeScript + Tailwind (existing CMS/CRM).
+- **Mobile Companion App** (`mobile/`) — Expo (React Native) + TypeScript read-only employee companion app for viewing shifts, attendance, notifications, and profile.
 
-## Live Deployment
+See each sub-project for its own README.
 
-The project is live here:
-
-- Frontend: https://mayzax.vercel.app/
-- Backend: https://mayzax.onrender.com
-- Backend health check: https://mayzax.onrender.com/api/v1/health
-- The Project Snapshots can be viewed here [Snapshots](./docs/snapshots/)
-
----
-
-## Table of Contents
-
-1. [Architecture](#architecture)
-2. [Tech Stack](#tech-stack)
-3. [Project Structure](#project-structure)
-4. [Database Schema](#database-schema)
-5. [Getting Started](#getting-started)
-6. [Environment Variables](#environment-variables)
-7. [API Reference](#api-reference)
-8. [Deployment](#deployment-checklist)
-
----
-
-## Architecture
-
-Mayzax ATS follows **clean architecture** with a clear separation of concerns on both tiers:
-
-![Mayzax ATS Architecture](./docs/arch.png)
-
-## Tech Stack
-
-| Layer | Technology |
-| --- | --- |
-| Frontend | React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui (Radix primitives) |
-| State/Data | React Hook Form + Zod (forms) |
-| Backend | Node.js + Express + TypeScript |
-| Database | Neon PostgreSQL |
-| ORM | Prisma |
-| Auth | JWT (access + refresh) with rotation, bcrypt, HttpOnly cookies |
-| Validation | Zod (shared conventions front & back) |
-| Logging | Pino / pino-http |
-
-The web app includes public `login`, `signup`, and `forgot password` flows for recruiters. New recruiter accounts are created from the signup page and are automatically signed in after registration. Authenticated users can manage their profile details, set a security question, and change their password from the Profile tab.
-
-Latest workflow updates include a Team Leader role with managed team boundaries, restricted recruiter/profile creation and modifications, double-click candidate-to-applications navigation, automatic pre-selected candidates when logging applications from profile-filtered lists, multi-recruiter profile assignment (1–5 recruiters per profile), current-shift reporting using the 7:30 PM–7:30 AM IST business window, automatic job portal detection from known job URLs, and professional ExcelJS workbook exports.
-
-## Project Structure
-
-```
-mayzax-ats/
-├── backend/
-│   ├── prisma/
-│   │   ├── schema.prisma          # Full DB schema (models, enums, constraints)
-│   │   ├── seed.ts                # Creates ONLY the initial Admin account (no mock data)
-│   │   └── migrations/            # Versioned SQL migrations
-│   ├── src/
-│   │   ├── config/env.ts          # Zod-validated environment config
-│   │   ├── lib/                   # prisma client singleton, logger
-│   │   ├── middleware/            # auth, validate, errorHandler, rateLimiter, requestLogger
-│   │   ├── modules/
-│   │   │   ├── auth/              # login, signup, refresh, profile, security question, forgot/change password
-│   │   │   ├── recruiters/        # Admin recruiter management + stats
-│   │   │   ├── profiles/          # Client profile CRUD + assignment
-│   │   │   ├── applications/      # Job applications + duplicate detection
-│   │   │   ├── analytics/         # Admin/recruiter dashboards, portal analytics, breakdowns, daily counts
-│   │   │   └── shared/            # audit logging service
-│   │   ├── routes/index.ts        # API v1 router aggregation
-│   │   ├── utils/                 # apiError, asyncHandler, businessDate, normalizeJobLink
-│   │   ├── app.ts                 # Express app wiring (helmet, cors, rate-limit, routers)
-│   │   └── server.ts              # Process entrypoint, graceful shutdown
-│   ├── .env.example
-│   ├── package.json
-│   └── tsconfig.json
-├── docs/
-│   └── arch.png                   # Project Flow Diagram
-│   └── Mayzax_WBS.xlsx            # Project Work Based Structure with completion status.
-│   └── API_DOCUMENTATION.md       # Detailed API reference
-├── frontend/
-│   ├── public/                    # Public Resources
-│   ├── src/
-│   │   ├── assets/                          # Assets Directory
-│   │   ├── components/{ui,layout,shared,motion}/   # shadcn primitives + app shell + reusable states
-│   │   ├── context/auth-context.tsx         # Auth provider (silent refresh, session state)
-│   │   ├── hooks/                           # Query hooks per domain
-│   │   ├── lib/                             # axios client w/ refresh interceptor, utils
-│   │   ├── pages/                           # Route-level pages
-│   │   ├── routes/protected-route.tsx       # RBAC route guarding
-│   │   └── types/                           # Shared TS types mirroring API contracts
-│   ├── .env.example
-│   ├── tailwind.config.ts         # Mayzax brand palette (blue/green from logo)
-│   └── package.json
-├── package.json                   # Root orchestration scripts (setup/dev/build/lint for both apps)
-└── README.md                      # ← you are here
-```
-
-## Database Schema
-
-Defined in [`backend/prisma/schema.prisma`](./backend/prisma/schema.prisma). Key models:
-
-### `User`
-
-```
-id, name, email (unique), phone, passwordHash, role (ADMIN|TEAM_LEADER|RECRUITER),
-securityQuestion, securityAnswerHash (bcrypt),
-isActive, deletedAt (soft delete), lastActiveAt, createdById (self-relation),
-createdAt, updatedAt
-```
-
-### `RefreshToken`
-
-```
-id, userId (FK), tokenHash (unique, SHA-256 — raw tokens are never stored),
-userAgent, ip, expiresAt, revokedAt, replacedByTokenHash, createdAt
-```
-
-### `ClientProfile`
-
-```
-id, candidateName, email, phone, technology, notes,
-assignedRecruiterId (legacy primary FK → User, nullable), assignedRecruiterAssignments (1–5 recruiters),
-isActive, deletedAt (soft delete), createdAt, updatedAt
-```
-
-### `JobApplication`
-
-```
-id, profileId (FK), recruiterId (FK), jobLink, normalizedJobLink,
-companyName (optional/blank allowed), jobTitle (optional/blank allowed), jobPortal (enum), status (enum),
-appliedAt, businessDate (DATE),
-createdAt, updatedAt
-
-UNIQUE (profileId, normalizedJobLink)   ← duplicate-detection constraint
-INDEX  (recruiterId), (profileId), (businessDate), (status)
-```
-
-### `AuditLog`
-
-```
-id, userId (FK, nullable), action, entity, entityId, metadata (JSON),
-ip, userAgent, createdAt
-
-```
-
-Enums: `Role {ADMIN, TEAM_LEADER, RECRUITER}`, `ApplicationStatus {APPLIED, IN_REVIEW, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEWED, OFFERED, REJECTED, WITHDRAWN, ON_HOLD}`, `JobPortal {LINKEDIN, INDEED, GLASSDOOR, JOBRIGHT, SIMPLIFY, SIMPLYHIRED, WELLFOUND, HANDSHAKE, LEVER, GREENHOUSE, NAUKRI, DICE, MONSTER, ZIPRECRUITER, COMPANY_WEBSITE, CAREERBUILDER, SPEEDY_APPLY, THE_MUSE, Y_COMBINATOR, CAREER_SITE, OTHER}`.
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js ≥ 18
-- PostgreSQL ≥ 14
-- npm ≥ 9
-
-The root `package.json` provides orchestration scripts so you rarely need to `cd` into `backend/` or `frontend/` directly.
-
-### Fastest path: one-command setup
+## Quick Start (Backend)
 
 ```bash
-git clone <repo-url> mayzax-ats
-cd mayzax-ats
-npm run install:all           # installs required node modules
-```
-
-Create `backend/.env` & `frontend/.env` afterwards and set real values for various environment variables
-Then run below command for project setup
-
-```bash
-npm run setup          
-```
-
-The seed step prints the generated admin credentials — **log in and change the password immediately** (see `POST /auth/change-password`).
-Use below command to seed sample data in DB
-
-```bash
-env.SEED_DEMO_DATA="true" npm run seed         
-```
-
-### Run in development
-
-```bash
+cd backend
+npm install
+cp .env.example .env   # edit DATABASE_URL, JWT secrets, etc.
+npx prisma migrate dev
+npm run seed
 npm run dev
 ```
 
-This runs the API and the web app **concurrently** in one terminal, with color-coded `[API]` / `[WEB]` log prefixes:
+Default API base: `http://localhost:4000/api/v1`.
 
-- API → `http://localhost:4000/api/v1`
-- Web → `http://localhost:5173`
-
-Or run them separately in two terminals if you prefer:
+## Quick Start (Mobile Companion)
 
 ```bash
-npm run dev:backend     # API only
-npm run dev:frontend    # Web app only
+cd mobile
+npm install
+cp .env.example .env   # set EXPO_PUBLIC_API_BASE_URL
+npm start              # launches Expo dev server; open in Expo Go
 ```
 
-To build the project run: 
+For build/deploy instructions, see [docs/MOBILE_SETUP.md](./docs/MOBILE_SETUP.md) and [mobile/README.md](./mobile/README.md).
 
-```bash
-npm run build
+## Key Companion App Principles
+
+- **Read-only.** The mobile app never mutates attendance. Server-side middleware rejects mutating activity endpoints for mobile-issued JWTs (`X-Client-Type: mobile`).
+- **Source of truth is the backend.** Worked hours, break remaining, late/early/penalty are all computed on the server and exposed via new read endpoints under `/attendance/*`.
+- **JWT in secure storage.** Refresh token rotation continues to work for mobile tokens; mobile logins do not create an attendance entry.
+- **Offline support.** Recent dashboard, history, profile and notifications are cached via React Query persistence.
+- **Push notifications.** FCM/APNS tokens are registered per device; BullMQ schedules break/shift reminders.
+
+## Repository Structure
+
+```
+backend/   Express + Prisma API
+frontend/  React CMS (existing)
+mobile/    Expo React Native companion app (new)
+extension/ Chrome extension (existing)
+docs/      Documentation, snapshots, setup guides
 ```
 
-To start the app:
+## Environment Variables (Backend additions for companion)
 
-```bash
-npm run start
-```
+In addition to the existing variables, the companion app requires:
 
-## Environment Variables
+- `REDIS_URL` (optional, for BullMQ; falls back to node-cron)
+- `FIREBASE_SERVICE_ACCOUNT_JSON` or `FIREBASE_SERVICE_ACCOUNT_PATH` (for push)
+- `DEFAULT_SHORT_BREAK_SECONDS`, `DEFAULT_DINNER_BREAK_SECONDS`, `DEFAULT_BRIEFING_SECONDS`, `DEFAULT_MEETING_SECONDS`, `DEFAULT_SYSTEM_ISSUE_SECONDS`, `DEFAULT_SHIFT_DURATION_SECONDS`, `DEFAULT_LATE_GRACE_MINUTES`, `DEFAULT_EARLY_GRACE_MINUTES`, `DEFAULT_PENALTY_PER_LATE_MINUTE`
 
-### Backend (`backend/.env`)
+See `backend/.env.example` for defaults.
 
-| Variable | Description | Default |
-| --- | --- | --- |
-| `NODE_ENV` | `development` \| `test` \| `production` | `development` |
-| `PORT` | API port | `4000` |
-| `API_PREFIX` | Version prefix for all routes | `/api/v1` |
-| `CLIENT_URL` | Allowed CORS origin | `http://localhost:5173` |
-| `DATABASE_URL` | Postgres connection string(pooler) | — (required) |
-| `DIRECT_URL` | Postgres connection string(direct) | — (required) |
-| `JWT_ACCESS_SECRET` | Secret for signing access tokens | — (required) |
-| `JWT_REFRESH_SECRET` | Secret for signing refresh tokens | — (required) |
-| `JWT_ACCESS_EXPIRES_IN` | Access token TTL | `15m` |
-| `JWT_REFRESH_EXPIRES_IN` | Refresh token TTL | `7d` |
-| `COOKIE_DOMAIN` | Cookie domain | `localhost` |
-| `COOKIE_SECURE` | `true` in production (HTTPS only) | `false` |
-| `BUSINESS_SHIFT_START_HOUR` / `_MINUTE` | Shift start (IST) | `19` / `30` |
-| `BUSINESS_SHIFT_END_HOUR` / `_MINUTE` | Shift end (IST) | `7` / `30` |
-| `BUSINESS_TIMEZONE` | IANA timezone for shift math | `Asia/Kolkata` |
-| `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX` | Global rate limiting | `900000` / `300` |
-| `AUTH_RATE_LIMIT_MAX` | Stricter limit on `/auth/*` | `20` |
-| `LOG_LEVEL` | Pino log level | `info` |
-| `LOGS_DIR` | Directory for daily rotating log files (`${LOGS_DIR}/YYYY-MM-DD.log`) | `logs` |
-| `SEED_ADMIN_EMAIL/PASSWORD/NAME` | Used only by `prisma/seed.ts` | see `.env.example` |
-| `SEED_DEMO_DATA` | Used to seed sample data in DB | `false` initially can be overwriiten |
+## License
 
-### Frontend (`frontend/.env`)
-
-| Variable | Description | Default |
-| --- | --- | --- |
-| `VITE_API_BASE_URL` | Base URL of the backend API | `http://localhost:4000/api/v1` |
-
----
-
-## API Reference
-
-All routes are versioned under `API_PREFIX` (default `/api/v1`). Responses follow a consistent envelope:
-
-```json
-// Success
-{ "success": true, "data": ..., "pagination": { ... } }
-
-// Failure
-{ "success": false, "error": { "code": "...", "message": "...", "details": ... } }
-```
-
-### Auth (`/auth`)
-
-| Method | Path | Auth | Description |
-| --- | --- | --- | --- |
-| POST | `/auth/signup` | Public | Recruiter self-registration. Creates a recruiter account, sets HttpOnly `access_token` / `refresh_token` cookies, and returns an access token for header-based use. |
-| POST | `/auth/login` | Public | Email + password login. Sets HttpOnly `access_token` / `refresh_token` cookies and returns an access token for header-based use. |
-| POST | `/auth/refresh` | Cookie | Rotates the refresh token, issues a new pair. Detects token reuse and revokes all sessions if triggered. |
-| POST | `/auth/forgot-password/question` | Public | Given an email, returns the configured security question for password recovery. |
-| POST | `/auth/forgot-password/reset` | Public | Verifies the security answer and resets the password. |
-| POST | `/auth/logout` | Required | Revokes the current refresh token, clears cookies. |
-| GET | `/auth/me` | Required | Returns the current authenticated user, including phone/security-question metadata. |
-| PATCH | `/auth/profile` | Required | Updates the current user's name, email, and phone number. |
-| POST | `/auth/security-question` | Required | Sets/updates the current user's password recovery security question and hashed answer. |
-| POST | `/auth/change-password` | Required | Verifies current password, changes password, and revokes all existing sessions. |
-
-### Recruiters (`/recruiters`) — Admin / Team Leader
-
-| Method | Path | Auth | Description |
-| --- | --- | --- | --- |
-| GET | `/recruiters` | Admin / Team Leader | List recruiters — search, filter by role/isActive, sort, paginate. Team Leaders only see recruiters they created/managed. |
-| POST | `/recruiters` | Admin | Create a recruiter, team leader, or admin account. |
-| GET | `/recruiters/:id/stats` | Admin / Team Leader | Assigned profiles, total applications, current-shift applications, profile-wise counts, last active. (Scoped to team for Team Leaders). |
-| PATCH | `/recruiters/:id` | Admin | Update name/email/role. |
-| PATCH | `/recruiters/:id/status` | Admin | Activate/deactivate. |
-| DELETE | `/recruiters/:id` | Admin | Soft delete (unassigns their profiles). |
-
-### Client Profiles (`/profiles`)
-
-| Method | Path | Auth | Description |
-| --- | --- | --- | --- |
-| GET | `/profiles` | Any | List — recruiters see only their assigned profiles; admins and team leaders see all, with search/filter/sort. |
-| GET | `/profiles/:id` | Any | Fetch a single profile (recruiters restricted to their own). |
-| POST | `/profiles` | Admin / Recruiter | Create a candidate profile. |
-| PATCH | `/profiles/:id` | Admin / Recruiter | Update profile fields (recruiters can't reassign). |
-| PATCH | `/profiles/:id/assign` | Admin | Reassign to a different recruiter (or unassign). |
-| DELETE | `/profiles/:id` | Admin | Soft delete. |
-
-### Job Applications (`/applications`)
-
-| Method | Path | Auth | Description |
-| --- | --- | --- | --- |
-| GET | `/applications` | Any | List — recruiters see only their own; team leaders see own + team's applications; search/filter by status, portal, business date range, profileId. |
-| GET | `/applications/check-duplicate` | Any | Pre-flight duplicate check for instant UI feedback. |
-| GET | `/applications/:id` | Any | Fetch a single application. |
-| POST | `/applications` | Any | Create an application. `jobLink` is required; `companyName` and `jobTitle` may be blank. Enforces duplicate protection (see above). |
-| PATCH | `/applications/:id` | Any | Update status/company/title/portal. |
-
-### Analytics (`/analytics`)
-
-| Method | Path | Auth | Description |
-| --- | --- | --- | --- |
-| GET | `/analytics/job-portals` | Any | Portal-wise application counts. Admins see all applications; recruiters see only their own. Supports `scope=all|currentShift|custom` plus `from`/`to` for custom business-date filtering. |
-| GET | `/analytics/summary` | Admin | Global counts: recruiters, active recruiters, profiles, applications, current-shift applications. |
-| GET | `/analytics/dashboard` | Admin | Per-recruiter rollup: assigned profiles, total applications, current-shift applications, last active. Search/sort/paginate. |
-| GET | `/analytics/dashboard/:id/breakdown` | Admin | Expandable view: assigned profile-wise total/current-shift application counts + recent applications for one recruiter. |
-| GET | `/analytics/daily-counts` | Admin | Daily application counts grouped by **business date**, optionally filtered by recruiter and date range — powers trend charts. |
-
-### Health
-
-| Method | Path | Description |
-| --- | --- | --- |
-| GET | `/health` | Liveness check. |
-
-The detailed API documentation can be viewed here: [API Documentation](./docs/API_DOCUMENTATION.md).
-
----
-
-## Deployment Checklist
-
-Before going to production:
-
-1. Set `NODE_ENV=production`.
-2. Generate strong, unique `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` (`openssl rand -hex 32`).
-3. Set `COOKIE_SECURE=true` and serve over HTTPS (required for `Secure` cookies to work).
-4. Point `DATABASE_URL` amd `DIRECT_URL`at a managed/production Postgres instance.
-5. Run database migrations (`npm run db:migrate:deploy`) so the job portal enum and user profile/security fields exist.
-6. Run `npm run seed` once against production to create the first Admin, then **change that password immediately**.
-7. Set `CLIENT_URL` to your production frontend origin (CORS).
-8. Set `VITE_API_BASE_URL` to your production API URL and rebuild the frontend.
-9. Put the API behind a reverse proxy / load balancer that forwards `X-Forwarded-For` (the app trusts proxy hop `1`).
-10. Review `RATE_LIMIT_*` values for expected production traffic.
-11. Ship logs (`pino` JSON output) to your log aggregator of choice.
-
----
+Proprietary to Mayzax Solutions.

@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
+import { ClientType, Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/utils/apiError';
 import {
@@ -95,13 +96,21 @@ export async function comparePassword(plain: string, hash: string): Promise<bool
 
 interface SessionMeta {
   ip?: string;
-  userAgent?: string;
+  userAgent?: string | null;
+  clientType?: ClientType;
+  deviceName?: string | null;
 }
 
-async function issueTokenPair(userId: string, role: any, email: string, meta: SessionMeta) {
+async function issueTokenPair(
+  userId: string,
+  role: any,
+  email: string,
+  meta: SessionMeta,
+) {
   const tokenId = randomUUID();
+  const clientType = meta.clientType ?? ClientType.WEB;
   const refreshToken = signRefreshToken({ userId, tokenId });
-  const accessToken = signAccessToken({ id: userId, role, email });
+  const accessToken = signAccessToken({ id: userId, role, email, clientType });
 
   await prisma.refreshToken.create({
     data: {
@@ -109,7 +118,9 @@ async function issueTokenPair(userId: string, role: any, email: string, meta: Se
       userId,
       tokenHash: hashToken(refreshToken),
       ip: meta.ip,
-      userAgent: meta.userAgent,
+      userAgent: meta.userAgent ?? null,
+      clientType,
+      deviceName: meta.deviceName ?? null,
       expiresAt: new Date(Date.now() + parseExpiryToMs(env.JWT_REFRESH_EXPIRES_IN)),
     },
   });
@@ -137,7 +148,11 @@ export async function login(input: LoginInput, meta: SessionMeta) {
 
   await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
 
-  await handleLoginEvent(user.id, user.role);
+  // IMPORTANT: Only start attendance tracking for WEB clients.
+  // Mobile companion is read-only and must never affect attendance.
+  if (meta.clientType !== ClientType.MOBILE) {
+    await handleLoginEvent(user.id, user.role);
+  }
 
   return {
     tokens,
@@ -156,13 +171,17 @@ export async function signupRecruiter(input: SignupInput, meta: SessionMeta) {
     name: input.name,
     email: input.email,
     passwordHash,
-    role: 'RECRUITER',
+    role: Role.RECRUITER,
     createdById: null,
   });
 
   const tokens = await issueTokenPair(user.id, user.role, user.email, meta);
 
   await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
+
+  if (meta.clientType !== ClientType.MOBILE) {
+    await handleLoginEvent(user.id, user.role);
+  }
 
   return {
     tokens,
@@ -186,8 +205,6 @@ export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta)
   }
 
   if (stored.revokedAt) {
-    // Reuse of a revoked/rotated token => possible token theft.
-    // However, we allow a 10-second grace period to handle concurrent requests (e.g. React 18 StrictMode double-mounting).
     const timeSinceRevocation = Date.now() - stored.revokedAt.getTime();
     if (timeSinceRevocation > 10000) {
       await prisma.refreshToken.updateMany({
@@ -221,7 +238,7 @@ export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta)
     });
   } else {
     // Reuse: keep same refresh token, just sign a new access token
-    const newAccessToken = signAccessToken({ id: user.id, role: user.role, email: user.email });
+    const newAccessToken = signAccessToken({ id: user.id, role: user.role, email: user.email, clientType: stored.clientType });
     newTokens = {
       accessToken: newAccessToken,
       refreshToken: refreshTokenRaw,
@@ -230,9 +247,10 @@ export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta)
 
   await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
 
-  // Restore ACTIVE status on session bootstrap (page reload / silent refresh),
-  // mirroring what the /auth/login endpoint does via handleLoginEvent.
-  await handleLoginEvent(user.id, user.role);
+  // Only restore ACTIVE attendance status for web clients.
+  if (stored.clientType !== ClientType.MOBILE) {
+    await handleLoginEvent(user.id, user.role);
+  }
 
   return {
     tokens: newTokens,
@@ -240,17 +258,23 @@ export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta)
   };
 }
 
-export async function logout(refreshTokenRaw?: string) {
+export async function logout(refreshTokenRaw: string | undefined, clientType: ClientType = ClientType.WEB) {
   if (!refreshTokenRaw) return;
   const tokenHash = hashToken(refreshTokenRaw);
   const storedToken = await prisma.refreshToken.findUnique({
     where: { tokenHash },
-    select: { userId: true, user: { select: { role: true } } },
+    select: { userId: true, clientType: true, user: { select: { role: true } } },
   });
 
   if (storedToken?.user) {
-    await handleLogoutEvent(storedToken.userId, storedToken.user.role);
+    // Only trigger attendance logout events for web client tokens
+    if (storedToken.clientType !== ClientType.MOBILE) {
+      await handleLogoutEvent(storedToken.userId, storedToken.user.role);
+    }
   }
+
+  // Also ignore clientType argument if the token is known to be mobile (defense in depth)
+  void clientType;
 
   await prisma.refreshToken.updateMany({
     where: { tokenHash, revokedAt: null },
@@ -283,10 +307,14 @@ export async function getMe(userId: string) {
       linkedInUrl: true,
       displayColor: true,
       teamName: true,
+      reportingManager: {
+        select: { id: true, name: true, email: true },
+      },
     },
   });
   if (!user || !user.isActive) throw ApiError.notFound('User not found');
-  return sanitizeUser(user as any);
+  const { reportingManager, ...rest } = user as any;
+  return { ...sanitizeUser(rest), reportingManager: reportingManager ?? null };
 }
 
 export async function changePassword(userId: string, input: ChangePasswordInput) {

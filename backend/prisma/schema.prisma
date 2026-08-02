@@ -72,6 +72,46 @@ enum JobPortal {
   OTHER
 }
 
+enum DevicePlatform {
+  ANDROID
+  IOS
+  WEB
+}
+
+enum NotificationType {
+  BREAK_5MIN
+  BREAK_2MIN
+  BREAK_EXPIRED
+  SHIFT_ENDING_15MIN
+  SHIFT_ENDING_5MIN
+  SHIFT_START_REMINDER
+  ATTENDANCE_REMINDER
+  COMPANY_NOTICE
+  SYSTEM
+  PENALTY_NOTICE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  WEEK_OFF
+  HOLIDAY
+  LEAVE
+  NOT_STARTED
+}
+
+enum OnboardingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ClientType {
+  WEB
+  MOBILE
+}
+
 // ---------------------------------------------------------
 // User (Admin / Recruiter)
 // ---------------------------------------------------------
@@ -100,8 +140,17 @@ model User {
   createdBy   User?   @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   createdUsers User[] @relation("UserCreatedBy")
 
+  // Explicit reporting manager (falls back to createdBy if unset)
+  reportingManagerId String?
+  reportingManager   User?   @relation("UserReportingManager", fields: [reportingManagerId], references: [id], onDelete: SetNull)
+  directReports      User[]  @relation("UserReportingManager")
+
   // Team name — only used by TEAM_LEADER role
   teamName String?
+
+  // Shift configuration (optional per-user override; uses default ShiftConfig if null)
+  shiftConfigId String?
+  shiftConfig   ShiftConfig? @relation("UserShiftConfig", fields: [shiftConfigId], references: [id], onDelete: SetNull)
 
   // --- profile enrichments (nullable, safe for existing data) ---
   avatarUrl   String?  // CDN URL for avatar image
@@ -121,6 +170,9 @@ model User {
   profileAssignments ClientProfileAssignment[] @relation("RecruiterProfileAssignments")
   applications     JobApplication[] @relation("RecruiterApplications")
   refreshTokens    RefreshToken[]
+  deviceTokens     DeviceToken[]
+  notifications    Notification[]
+  attendanceDays   AttendanceDay[]
   auditLogs        AuditLog[]
   activityLogs     ActivityLog[]
   createdUpdates   SystemUpdate[] @relation("UserCreatedUpdates")
@@ -134,6 +186,134 @@ model User {
   @@index([isActive])
   @@index([department])
   @@map("users")
+}
+
+// ---------------------------------------------------------
+// Shift Configuration (named shifts; one default per system)
+// ---------------------------------------------------------
+
+model ShiftConfig {
+  id          String   @id @default(uuid())
+  name        String   // e.g. "Night Shift IST", "US Shift"
+  isDefault   Boolean  @default(false)
+  timezone    String   @default("Asia/Kolkata")
+
+  startHour   Int      @default(18)
+  startMinute Int      @default(0)
+  endHour     Int      @default(9)
+  endMinute   Int      @default(0)
+
+  // Allowed break durations in seconds
+  shortBreakAllowedSec    Int @default(1800)  // 30 min
+  dinnerBreakAllowedSec   Int @default(3600)  // 60 min
+  briefingAllowedSec      Int @default(900)   // 15 min
+  meetingAllowedSec       Int @default(1800)  // 30 min
+  systemIssueAllowedSec   Int @default(0)     // unlimited by default
+  expectedWorkSeconds     Int @default(32400) // 9 hours (productive + meeting)
+  lateGraceMinutes        Int @default(15)
+  earlyGraceMinutes       Int @default(15)
+  penaltyPerLateMinute    Float @default(0)
+
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  users      User[]   @relation("UserShiftConfig")
+
+  @@map("shift_configs")
+}
+
+// ---------------------------------------------------------
+// Device Tokens (FCM / Expo push registration)
+// ---------------------------------------------------------
+
+model DeviceToken {
+  id          String         @id @default(uuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fcmToken    String         @unique // FCM / Expo push token
+  platform    DevicePlatform
+  deviceName  String?
+  deviceModel String?
+  appVersion  String?
+  osVersion   String?
+  pushToken   String?        // Expo push token (if applicable)
+
+  lastSeen    DateTime       @default(now())
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([platform])
+  @@map("device_tokens")
+}
+
+// ---------------------------------------------------------
+// Notifications (in-app + push fan-out)
+// ---------------------------------------------------------
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?            // screen, targetId, etc.
+  priority  Int              @default(0)
+
+  readAt    DateTime?
+  pushSentAt DateTime?
+  pushError String?          @db.Text
+
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+  @@index([type])
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------
+// Attendance Day — materialized daily rollup (server-computed)
+// ---------------------------------------------------------
+
+model AttendanceDay {
+  id              String           @id @default(uuid())
+  userId          String
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessDate    DateTime         @db.Date
+
+  firstLoginAt    DateTime?
+  lastLogoutAt    DateTime?
+
+  totalLoggedInSec  Int @default(0)
+  totalProductiveSec Int @default(0)
+  totalBreakSec     Int @default(0)
+  shortBreakSec     Int @default(0)
+  dinnerBreakSec    Int @default(0)
+  briefingSec       Int @default(0)
+  meetingSec        Int @default(0)
+  systemIssueSec    Int @default(0)
+  onlineSec         Int @default(0)
+
+  lateByMinutes     Int @default(0)
+  earlyByMinutes    Int @default(0)
+  penaltyMinutes    Int @default(0)
+  expectedLogoutAt  DateTime?
+  remarks           String?
+  status            AttendanceStatus @default(NOT_STARTED)
+
+  computedAt        DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, businessDate])
+  @@index([userId, businessDate])
+  @@index([businessDate])
+  @@map("attendance_days")
 }
 
 // ---------------------------------------------------------
@@ -168,6 +348,8 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   tokenHash String   @unique
+  clientType ClientType @default(WEB)
+  deviceName String?
   userAgent String?
   ip        String?
 
@@ -178,6 +360,7 @@ model RefreshToken {
   createdAt DateTime @default(now())
 
   @@index([userId])
+  @@index([clientType])
   @@map("refresh_tokens")
 }
 
@@ -347,64 +530,58 @@ model UserUpdateRead {
   @@map("user_update_reads")
 }
 
-enum OnboardingStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
 model ClientOnboarding {
   id             String           @id @default(uuid())
-  
+
   // 1. Personal / Contact Info
   fullName       String
   email          String
   phone          String
   dateOfBirth    String           // DD/MM/YYYY
   gender         String           @default("")
-  
+
   // 2. Educational Detail
   education      Json             // Array of qualification, fieldOfStudy, specialization, instituteName, honors, startDate, endDate, currentlyOngoing
-  
+
   // 3. Technical Detail
   technology     String           // Technology track
   skills         String           // Skills list / tag string
-  
+
   // 4. Visa Status Details
   visaStatus     String           // OPT, Stem OPT, H1B, CPT, etc.
   entryToUS      String?          // Month / Year (optional)
   currentLocation String
-  
+
   // 5. Address Details/History (Up to 5)
   addressHistory Json             // Array of { state, country, fromDate, toDate }
-  
+
   // 6. Experience Details
   hasExperience  Boolean          @default(false)
   experienceDetails String?       @db.Text
-  
+
   // 7. Certifications Details
   certifications String?          @db.Text
-  
+
   // 8. Resume File
   resumeUrl      String?          // Path to uploaded file
   resumeFileName String?          // Original filename
-  
+
   // 9. Self Declaration / Approval
   declared       Boolean          @default(false)
   declaredAt     DateTime         @default(now())
-  
+
   // 10. Payment & Plan Details (Mock)
   planSelected   String           // Basic, Premium, Gold, etc.
   amountPaid     Float
   paymentRef     String           // Mock reference code
   paidAt         DateTime         @default(now())
-  
+
   // 11. Approval Workflow
   status         OnboardingStatus @default(PENDING)
   approvedAt     DateTime?
   approvedById   String?
   approvedBy     User?            @relation("ApprovedOnboardings", fields: [approvedById], references: [id], onDelete: SetNull)
-  
+
   // Link to generated profile if approved
   generatedProfileId String?      @unique
 

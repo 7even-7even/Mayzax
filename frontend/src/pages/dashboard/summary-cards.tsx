@@ -22,9 +22,9 @@ const tlCardConfig = [
   { key: 'totalProfiles', label: 'Team Clients', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
   { key: 'totalApplications', label: 'Team Apps', icon: Briefcase, gradient: 'from-blue-500 to-cyan-600', accent: 'text-blue-600', bg: 'bg-blue-50' },
   { key: 'currentShiftApplications', label: "Today's Team", icon: Clock, gradient: 'from-mayzax-blue-500 to-mayzax-green-600', accent: 'text-violet-600', bg: 'bg-violet-50' },
-  { key: 'myTotalApplications', label: 'My Total', icon: Briefcase, gradient: 'from-slate-700 to-slate-900', accent: 'text-slate-700', bg: 'bg-slate-100' },
-  { key: 'myCurrentShiftApplications', label: 'My Today', icon: Clock, gradient: 'from-pink-500 to-rose-600', accent: 'text-pink-600', bg: 'bg-pink-50' },
-  { key: 'activeMemberCount', label: 'Logged In', icon: Zap, gradient: 'from-emerald-500 to-green-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
+  { key: 'myTotalApplications', label: 'My Total Apps', icon: Briefcase, gradient: 'from-slate-700 to-slate-900', accent: 'text-slate-700', bg: 'bg-slate-100' },
+  { key: 'myCurrentShiftApplications', label: 'My Current Apps', icon: Clock, gradient: 'from-pink-500 to-rose-600', accent: 'text-pink-600', bg: 'bg-pink-50' },
+  { key: 'activeMemberCount', label: 'Active', icon: Zap, gradient: 'from-emerald-500 to-green-600', accent: 'text-emerald-600', bg: 'bg-emerald-50' },
   { key: 'onBreakMemberCount', label: 'On Break', icon: Coffee, gradient: 'from-amber-500 to-yellow-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
   { key: 'topPerformer', label: 'Top Performer', icon: Trophy, gradient: 'from-yellow-500 to-amber-600', accent: 'text-amber-600', bg: 'bg-yellow-50' },
 ] as const;

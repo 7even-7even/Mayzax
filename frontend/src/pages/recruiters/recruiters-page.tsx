@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { Plus, Search, MoreVertical, BarChart3, Pencil, Trash2, Users, Sparkles, Shield, Award, Building2, CheckCircle2, XCircle, Activity } from 'lucide-react';
@@ -42,6 +42,12 @@ export default function RecruitersPage() {
   const [statsRecruiterId, setStatsRecruiterId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Recruiter | null>(null);
   const [resetTarget, setResetTarget] = useState<Recruiter | null>(null);
+
+  useEffect(() => {
+    if (isAdmin) {
+      setRoleFilter(ALL_ROLES);
+    }
+  }, [isAdmin]);
 
   const { data, isLoading, isError, refetch } = useRecruiters({
     search: debouncedSearch || undefined,

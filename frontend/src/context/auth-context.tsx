@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       // Attempt silent refresh first (cookie based)
       const { data } = await apiClient.post('/auth/refresh');
-      setAuthToken(data.data.accessToken);
+      setAuthToken(data.data.tokens.accessToken);
       setUser(data.data.user);
     } catch {
       setAuthToken(null);
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshSession = useCallback(async () => {
     try {
       const { data } = await apiClient.post('/auth/refresh');
-      setAuthToken(data.data.accessToken);
+      setAuthToken(data.data.tokens.accessToken);
       setUser(data.data.user);
     } catch {
       setAuthToken(null);
@@ -84,14 +84,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (input: LoginInput) => {
     const { data } = await apiClient.post('/auth/login', input);
-    setAuthToken(data.data.accessToken);
+    setAuthToken(data.data.tokens.accessToken);
     setUser(data.data.user);
     return data.data.user as User;
   }, [setAuthToken]);
 
   const signup = useCallback(async (input: SignupInput) => {
     const { data } = await apiClient.post('/auth/signup', input);
-    setAuthToken(data.data.accessToken);
+    setAuthToken(data.data.tokens.accessToken);
     setUser(data.data.user);
     return data.data.user as User;
   }, [setAuthToken]);

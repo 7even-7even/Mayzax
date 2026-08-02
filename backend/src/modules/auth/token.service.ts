@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { Role } from '@prisma/client';
+import { ClientType, Role } from '@prisma/client';
 import { env } from '@/config/env';
 import { AuthPayload } from '@/middleware/auth';
 
@@ -9,13 +9,26 @@ export interface RefreshPayload {
   tokenId: string;
 }
 
-export function signAccessToken(payload: { id: string; role: Role; email: string }): string {
-  const data: AuthPayload = { sub: payload.id, role: payload.role, email: payload.email };
+export function signAccessToken(payload: {
+  id: string;
+  role: Role;
+  email: string;
+  clientType?: ClientType;
+}): string {
+  const data: AuthPayload = {
+    sub: payload.id,
+    role: payload.role,
+    email: payload.email,
+    clientType: payload.clientType ?? ClientType.WEB,
+  };
   return jwt.sign(data, env.JWT_ACCESS_SECRET, { expiresIn: env.JWT_ACCESS_EXPIRES_IN as any });
 }
 
 export function verifyAccessToken(token: string): AuthPayload {
-  return jwt.verify(token, env.JWT_ACCESS_SECRET) as unknown as AuthPayload;
+  const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as AuthPayload;
+  // Backwards-compat for tokens issued before clientType was added
+  if (!decoded.clientType) decoded.clientType = ClientType.WEB;
+  return decoded;
 }
 
 export function signRefreshToken(payload: { userId: string; tokenId: string }): string {
@@ -39,4 +52,15 @@ export function parseExpiryToMs(expiresIn: string): number {
   const unit = match[2];
   const multipliers: Record<string, number> = { s: 1000, m: 60_000, h: 3_600_000, d: 86_400_000 };
   return value * multipliers[unit];
+}
+
+/**
+ * Resolve the client type from a trusted/validated source.
+ * Accepts a header value and returns a valid ClientType. WEB is the safe default.
+ */
+export function resolveClientType(value: unknown): ClientType {
+  if (typeof value !== 'string') return ClientType.WEB;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'mobile') return ClientType.MOBILE;
+  return ClientType.WEB;
 }

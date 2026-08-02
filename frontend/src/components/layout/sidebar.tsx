@@ -28,6 +28,11 @@ const recruiterNav = [
   { to: '/profile', label: 'Profile', icon: UserCircle, gradient: 'from-slate-600 to-slate-800', desc: 'Settings' },
 ];
 
+const companionNav = [
+  { to: '/companion-dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'from-mayzax-blue to-mayzax-blue-700', desc: 'Your status & timeline' },
+  { to: '/profile', label: 'Profile', icon: UserCircle, gradient: 'from-slate-600 to-slate-800', desc: 'Settings' },
+];
+
 interface SidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
@@ -98,8 +103,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
             <div className="leading-tight flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <p className="text-sm font-extrabold tracking-tight">
-                  <span className="text-mayzax-blue-500">MAY</span>
-                  <span className="text-mayzax-green-500">ZAX</span>
+                  <span className="text-black dark:text-white">MAYZAX</span>
                 </p>
                 <Badge className="bg-mayzax-gradient text-white text-[8px] px-1 py-0 h-3.5 border-0 shadow-sm">CRM</Badge>
               </div>

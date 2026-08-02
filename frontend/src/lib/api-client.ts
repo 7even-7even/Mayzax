@@ -51,7 +51,8 @@ apiClient.interceptors.response.use(
       originalRequest?.url?.includes('/auth/signup') ||
       originalRequest?.url?.includes('/auth/refresh');
 
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint) {
+    const hasAuthHeader = !!originalRequest?.headers?.Authorization;
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint && hasAuthHeader) {
       if (isRefreshing) {
         return new Promise((resolve) => {
           refreshSubscribers.push((token: string) => {
