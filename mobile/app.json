@@ -26,8 +26,7 @@
         "backgroundColor": "#0B2545"
       },
       "package": "com.mayzax.companion",
-      "permissions": ["NOTIFICATIONS", "VIBRATE", "WAKE_LOCK"],
-      "useNextNotificationsApi": true
+      "permissions": ["NOTIFICATIONS", "VIBRATE", "WAKE_LOCK"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -39,7 +38,8 @@
           "color": "#0B2545"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font"
     ],
     "extra": {
       "eas": {

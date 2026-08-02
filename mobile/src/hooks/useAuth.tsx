@@ -20,11 +20,35 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [user, setUser] = useState<MeUser | null>(null);
+  const [minSplashDone, setMinSplashDone] = useState(false);
+  const [pendingUser, setPendingUser] = useState<MeUser | null | 'none'>('none');
+
+  // Minimum splash display: 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => setMinSplashDone(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Resolve status only after both the auth check AND min splash time have completed
+  useEffect(() => {
+    if (!minSplashDone || pendingUser === 'none') return;
+    if (pendingUser === null) {
+      setStatus('unauthenticated');
+    } else {
+      setUser(pendingUser);
+      setStatus('authenticated');
+    }
+  }, [minSplashDone, pendingUser]);
 
   const doSetUser = useCallback((u: MeUser | null) => {
-    setUser(u);
-    setStatus(u ? 'authenticated' : 'unauthenticated');
-  }, []);
+    if (status === 'loading') {
+      // We're still on splash — buffer the result
+      setPendingUser(u);
+    } else {
+      setUser(u);
+      setStatus(u ? 'authenticated' : 'unauthenticated');
+    }
+  }, [status]);
 
   const logout = useCallback(async () => {
     try { await unregisterForPushNotifications(); } catch {}
@@ -59,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const token = await secureStorage.getAccessToken();
         const refresh = await secureStorage.getRefreshToken();
         if (!token && !refresh) {
-          setStatus('unauthenticated');
+          setPendingUser(null);
           return;
         }
         // Attempt to get me to verify the session; if 401, try refresh then retry.

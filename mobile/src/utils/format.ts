@@ -11,23 +11,33 @@ dayjs.extend(duration);
 
 const DEFAULT_TZ = 'Asia/Kolkata';
 
+function getTimezoneOffsetMinutes(tzName: string): number {
+  if (tzName === 'Asia/Kolkata') return 330;
+  // fallback to local device offset
+  return -new Date().getTimezoneOffset();
+}
+
 export function tz(d?: string | Date, tzName: string = DEFAULT_TZ) {
-  return dayjs(d).tz(tzName);
+  const offset = getTimezoneOffsetMinutes(tzName);
+  return dayjs(d).utc().utcOffset(offset);
 }
 
 export function formatTime(d?: string | Date, tzName: string = DEFAULT_TZ): string {
   if (!d) return '--';
-  return dayjs(d).tz(tzName).format('hh:mm A');
+  const offset = getTimezoneOffsetMinutes(tzName);
+  return dayjs(d).utc().utcOffset(offset).format('hh:mm A');
 }
 
 export function formatDate(d?: string | Date, tzName: string = DEFAULT_TZ): string {
   if (!d) return '--';
-  return dayjs(d).tz(tzName).format('DD MMM YYYY');
+  const offset = getTimezoneOffsetMinutes(tzName);
+  return dayjs(d).utc().utcOffset(offset).format('DD MMM YYYY');
 }
 
 export function formatDateTime(d?: string | Date, tzName: string = DEFAULT_TZ): string {
   if (!d) return '--';
-  return dayjs(d).tz(tzName).format('DD MM, hh:mm A');
+  const offset = getTimezoneOffsetMinutes(tzName);
+  return dayjs(d).utc().utcOffset(offset).format('DD MM, hh:mm A');
 }
 
 export function formatDuration(seconds: number): string {

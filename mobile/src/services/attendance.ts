@@ -1,10 +1,40 @@
 import { getApi } from './api';
-import type { TodayDto, ShiftDto, DayDetailDto, MonthSummaryDto, Paginated, AttendanceStatus } from '@/types/api';
+import type { TodayDto, ShiftDto, DayDetailDto, MonthSummaryDto, Paginated, AttendanceStatus, AnalyticsSummaryDto, JobPortalAnalyticsDto } from '@/types/api';
+
+export interface DailyCountsFilter {
+  from?: string;
+  to?: string;
+  recruiterId?: string;
+  teamId?: string;
+}
+
+export interface DailyCountItem {
+  businessDate: string;
+  count: number;
+}
 
 export async function fetchToday(): Promise<TodayDto> {
   const api = await getApi();
   const res = await api.get('/attendance/today');
   return res as unknown as TodayDto;
+}
+
+export async function fetchAnalyticsSummary(): Promise<AnalyticsSummaryDto> {
+  const api = await getApi();
+  const res = await api.get('/analytics/summary');
+  return res as unknown as AnalyticsSummaryDto;
+}
+
+export async function fetchJobPortalAnalytics(scope: 'currentShift' | 'custom' = 'currentShift', from?: string, to?: string): Promise<JobPortalAnalyticsDto> {
+  const api = await getApi();
+  const res = await api.get('/analytics/job-portals', { params: { scope, from, to } });
+  return res as unknown as JobPortalAnalyticsDto;
+}
+
+export async function fetchDailyCounts(filter: DailyCountsFilter = {}): Promise<DailyCountItem[]> {
+  const api = await getApi();
+  const res = await api.get('/analytics/daily-counts', { params: filter });
+  return res as unknown as DailyCountItem[];
 }
 
 export async function fetchCurrentBreak(): Promise<any> {

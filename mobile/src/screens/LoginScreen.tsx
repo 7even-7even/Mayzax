@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Alert, Image } from 'react-native';
 import { TextInput, Button, Checkbox } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useForm, Controller } from 'react-hook-form';
@@ -50,9 +50,11 @@ export function LoginScreen({ navigation }: Props) {
       >
         <View style={styles.container}>
           <View style={styles.logoWrap}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>M</Text>
-            </View>
+            <Image
+              source={require('../../assets/mayzax-logo.png')}
+              style={{ width: 85, height: 85, borderRadius: 18, marginBottom: spacing.sm }}
+              resizeMode="contain"
+            />
             <Text style={[styles.title, { color: dark ? colors.textDark : colors.text }]}>Mayzax</Text>
             <Text style={[styles.subtitle, { color: dark ? colors.textMutedDark : colors.textMuted }]}>
               Employee Companion

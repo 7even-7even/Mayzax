@@ -42,7 +42,6 @@ export type AuthStackParamList = {
 export type TabParamList = {
   HomeTab: undefined;
   ActivityTab: undefined;
-  HistoryTab: undefined;
   NotificationsTab: undefined;
   ProfileTab: undefined;
 };
@@ -67,9 +66,12 @@ function TabIcon({ name, color, size }: { name: any; color: string; size: number
 
 function TabsNavigator() {
   const dark = useResolvedTheme() === 'dark';
+  const { user: authUser } = useAuth();
+  const isAdmin = authUser?.role === 'ADMIN';
   return (
     <Tab.Navigator
       screenOptions={{
+        headerShown: false,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: dark ? colors.textMutedDark : colors.textMuted,
         tabBarStyle: {
@@ -97,16 +99,10 @@ function TabsNavigator() {
         name="ActivityTab"
         component={ActivityScreen}
         options={{
-          title: 'Today',
-          tabBarIcon: ({ color, size }) => <TabIcon name="timeline-clock" color={color} size={size} />,
-        }}
-      />
-      <Tab.Screen
-        name="HistoryTab"
-        component={HistoryScreen}
-        options={{
-          title: 'History',
-          tabBarIcon: ({ color, size }) => <TabIcon name="calendar-month" color={color} size={size} />,
+          title: isAdmin ? 'Analytics' : 'Today',
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon name={isAdmin ? 'chart-areaspline' : 'timeline-clock'} color={color} size={size} />
+          ),
         }}
       />
       <Tab.Screen
@@ -136,7 +132,6 @@ function mapTab(screen: string): keyof TabParamList {
   switch (screen) {
     case 'Today':
     case 'Activity': return 'ActivityTab';
-    case 'History': return 'HistoryTab';
     case 'Notifications': return 'NotificationsTab';
     case 'Profile': return 'ProfileTab';
     default: return 'HomeTab';
@@ -157,7 +152,6 @@ function navigateToScreen(screen: string, params?: any) {
         break;
       case 'Today':
       case 'Activity':
-      case 'History':
       case 'Notifications':
       case 'Profile':
         navigationRef.navigate('Tabs', { screen: mapTab(screen) });

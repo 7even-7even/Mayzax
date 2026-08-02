@@ -84,7 +84,7 @@ export function SettingsScreen() {
           </View>
         </Card>
 
-        <Text style={[styles.section, { color: dark ? colors.textMutedDark : colors.textMuted, marginTop: spacing.lg }]}>
+        {/* <Text style={[styles.section, { color: dark ? colors.textMutedDark : colors.textMuted, marginTop: spacing.lg }]}>
           Support & About
         </Text>
         <Card style={{ padding: 0 }}>
@@ -98,7 +98,7 @@ export function SettingsScreen() {
             <View style={{ flex: 1 }} />
             <Text style={{ color: dark ? colors.textMutedDark : colors.textMuted }}>{version}</Text>
           </View>
-        </Card>
+        </Card> */}
 
         <TouchableOpacity onPress={confirmLogout} activeOpacity={0.8} style={styles.logoutBtn}>
           <MaterialCommunityIcons name="logout" size={20} color={colors.error} style={{ marginRight: spacing.sm }} />

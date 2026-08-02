@@ -121,6 +121,8 @@ export interface TodayDto {
       briefingSec: number;
       meetingSec: number;
       systemIssueSec: number;
+      shortBreakAllowedSec: number;
+      dinnerBreakAllowedSec: number;
     };
   };
   timeline: TimelineItem[];
@@ -222,4 +224,42 @@ export interface Device {
   appVersion: string | null;
   lastSeen: string;
   createdAt: string;
+}
+
+export interface TeamSummaryItem {
+  tlId: string;
+  tlName: string;
+  teamName: string | null;
+  memberCount: number;
+  totalApplications: number;
+  currentApplications: number;
+}
+
+export interface AnalyticsSummaryDto {
+  totalRecruiters: number;
+  activeRecruiters: number;
+  totalProfiles: number;
+  totalApplications: number;
+  currentShiftApplications: number;
+  currentBusinessDate: string;
+  shiftWindowText: string;
+  totalTeams: number;
+  teams: TeamSummaryItem[];
+  myTotalApplications?: number;
+  myCurrentShiftApplications?: number;
+  activeMemberCount?: number;
+  onBreakMemberCount?: number;
+  topPerformer?: string;
+  roleBreakdown?: Record<string, number>;
+}
+
+export interface JobPortalItem {
+  portal: string;
+  count: number;
+}
+
+export interface JobPortalAnalyticsDto {
+  totalApplications: number;
+  currentBusinessDate: string;
+  portals: JobPortalItem[];
 }
