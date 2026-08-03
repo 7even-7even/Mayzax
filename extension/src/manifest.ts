@@ -35,49 +35,33 @@ export default defineManifest({
   content_scripts: [
     {
       matches: [
-        // LinkedIn
-        'https://*.linkedin.com/jobs/*',
-        'https://*.linkedin.com/easy-apply/*',
-        // Indeed
+        // Broad coverage for enterprise ATS + generic career sites (filtered in code via PortalRegistry)
+        'https://*/*',
+        'http://*/*',
+        // Explicit ATS for clarity (also covered by above)
+        'https://*.linkedin.com/*',
         'https://*.indeed.com/*',
-        // Glassdoor
         'https://*.glassdoor.com/*',
-        // Jobright
         'https://*.jobright.ai/*',
         'https://*.jobright.com/*',
-        // Simplify
         'https://*.simplify.jobs/*',
-        // SimplyHired
         'https://*.simplyhired.com/*',
-        // Wellfound / AngelList
         'https://*.wellfound.com/*',
         'https://*.angel.co/*',
-        // Handshake
         'https://*.joinhandshake.com/*',
         'https://*.handshake.com/*',
-        // Naukri
         'https://*.naukri.com/*',
-        // Dice
         'https://*.dice.com/*',
-        // Monster
         'https://*.monster.com/*',
-        // ZipRecruiter
         'https://*.ziprecruiter.com/*',
-        // CareerBuilder
         'https://*.careerbuilder.com/*',
-        // Lever
         'https://*.lever.co/*',
-        // Greenhouse
         'https://*.greenhouse.io/*',
         'https://*.greenhouse.com/*',
-        // SpeedyApply
         'https://*.speedyapply.com/*',
-        // The Muse
         'https://*.themuse.com/*',
-        // Y Combinator / Work at a Startup
         'https://*.ycombinator.com/*',
         'https://*.workatastartup.com/*',
-        // Enterprise ATS (Workday, SuccessFactors, Oracle, Taleo)
         'https://*.myworkdayjobs.com/*',
         'https://*.myworkday.com/*',
         'https://*.workday.com/*',
@@ -85,50 +69,18 @@ export default defineManifest({
         'https://*.sapsf.com/*',
         'https://*.oraclecloud.com/*',
         'https://*.taleo.net/*',
-        // Generic career sites
-        'https://*.careers.*/*',
-        'https://*.jobs.*/*',
-        'https://*/careers/*',
-        'https://*/jobs/*',
       ],
       js: ['src/content.ts'],
       run_at: 'document_idle',
+      all_frames: false,
     },
   ],
 
   permissions: ['storage', 'tabs', 'activeTab', 'scripting'],
 
   host_permissions: [
-    'https://*.linkedin.com/*',
-    'https://*.indeed.com/*',
-    'https://*.glassdoor.com/*',
-    'https://*.jobright.ai/*',
-    'https://*.jobright.com/*',
-    'https://*.simplify.jobs/*',
-    'https://*.simplyhired.com/*',
-    'https://*.wellfound.com/*',
-    'https://*.angel.co/*',
-    'https://*.joinhandshake.com/*',
-    'https://*.handshake.com/*',
-    'https://*.naukri.com/*',
-    'https://*.dice.com/*',
-    'https://*.monster.com/*',
-    'https://*.ziprecruiter.com/*',
-    'https://*.careerbuilder.com/*',
-    'https://*.lever.co/*',
-    'https://*.greenhouse.io/*',
-    'https://*.greenhouse.com/*',
-    'https://*.speedyapply.com/*',
-    'https://*.themuse.com/*',
-    'https://*.ycombinator.com/*',
-    'https://*.workatastartup.com/*',
-    'https://*.myworkdayjobs.com/*',
-    'https://*.myworkday.com/*',
-    'https://*.workday.com/*',
-    'https://*.successfactors.com/*',
-    'https://*.sapsf.com/*',
-    'https://*.oraclecloud.com/*',
-    'https://*.taleo.net/*',
+    'https://*/*',
+    'http://*/*',
   ],
 
   // Allows the Mayzax frontend to send messages to this extension.
