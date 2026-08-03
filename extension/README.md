@@ -1,49 +1,209 @@
-# Mayzax CRM Chrome Extension — Verification Engine
+# Mayzax CRM Chrome Extension — Enterprise Verification Engine v2.0
 
-Production-ready Chrome Extension (Manifest V3) that integrates with Mayzax CRM to verify candidate job applications in real-time.
+Production-ready Chrome Extension (Manifest V3) with **enterprise-grade fraud-resistant verification**.
 
-## Features
-- **Multi-Strategy Detection**: Leverages page title, URL routing patterns, headings, success banners, aria live-regions, button status, and toast/notification components to detect confirmation.
-- **Weighted Confidence Scoring**: Computes a confidence value from 0 to 100 based on matches. Passes confirmation data only if score >= 50.
-- **Privacy & Security first**: Evaluates patterns locally in the browser tab. Collects no PII (resumes, inputs, cookies, or auth tokens).
-- **Auto-evicting Storage cache**: Keeps a maximum of 100 entries. Cached items expire automatically after 24 hours.
-
-## Directory Structure
-- `src/manifest.ts`: Manifest definition (V3) consumed by the bundler.
-- `src/types/`: TypeScript definitions.
-- `src/rules/`: Individual modular evaluation logic classes (SOLID).
-- `src/detectors/`: Subclasses for the 20+ supported portals (LinkedIn, Lever, Greenhouse, etc.).
-- `src/storage/`: Local cache storage adapter wrapping Chrome storage api.
-- `src/popup/`: Chrome extension action popup view (React).
+This is a complete redesign from v1 (keyword matching) to v2 (modular weighted scoring, portal fingerprints, evidence collection, HMAC proof).
 
 ---
 
-## Installation & Setup Instructions
+## 🛡️ Security Highlights (v2 vs v1)
 
-### 1. Build the Extension
-Ensure you are in the extension directory:
+| Threat | v1 (Vulnerable) | v2 (Mitigated) |
+|---|---|---|
+| URL editing `?success=1` | `includes('success')` bypass | Strict hostname regex `(?:^|\.)greenhouse.io$`, HTTPS required, path patterns |
+| `history.replaceState` spoof | No guard | HistoryGuard wraps pushState/replaceState, -10 penalty + fraud signal |
+| DOM injection via console | Any `h1` injection passes | Structural fingerprint (Workday `data-automation-id`, Greenhouse `#application_confirmation`), visibility checks, time-on-page |
+| Fake success pages | `evil-linkedin.com` matches | Anchored subdomain validation, IP/localhost blocked, allowlist |
+| Replay attacks | Same URL infinite reuse | VerificationHash unique, TTL 24h, isReplay flag, timestamp freshness 5min |
+| Client-controlled `verified` bool | Backend trusts bool | Backend is source of truth, HMAC_SHA256 only server-side, hash required |
+| Frontend keyword fast-path | `?completed` instantly verified | **Removed** — must go through full engine + backend hash |
+| Duplicate reference | No extraction | Reference regex extraction, duplicate detection across recruiters |
+
+---
+
+## 📦 Architecture v2
+
+```
+verification/
+  engine/
+    VerificationEngine.ts        // orchestrates evidence collection + rules + scoring
+    EngineConfig.ts              // weights, thresholds, version
+    RuleRegistry.ts
+  types/
+    index.ts                     // VerificationResultV2, Evidence, PortalPlugin, etc
+  rules/
+    BaseRule.ts
+    DomainRule.ts (10)           // hostname anchored regex, HTTPS, allowlist
+    PageTitleRule.ts (15)        // portal-specific title patterns, no exact match required
+    HeadingRule.ts (20)          // h1,h2, aria headings, fuzzy matching
+    ConfirmationBodyRule.ts (20) // confirmation paragraphs, avoid single sentence
+    ReferenceRule.ts (15)        // Application ID, Reference Number, JR ID, etc
+    DomFingerprintRule.ts (15)   // structural fingerprints per portal
+    PortalComplianceRule.ts (5)  // portal plugin bonus
+    ApplyButtonRule.ts (-15)     // if Apply still visible+enabled, penalty
+  portals/
+    PortalPluginBase.ts
+    GreenhouseVerifier.ts
+    LeverVerifier.ts
+    WorkdayVerifier.ts
+    LinkedInVerifier.ts
+    IndeedVerifier.ts
+    SuccessFactorsVerifier.ts
+    OracleVerifier.ts
+    TaleoVerifier.ts
+    GenericVerifiers.ts (ZipRecruiter, Glassdoor, Naukri, etc)
+    index.ts (PortalRegistryV2)
+  scoring/
+    Scorer.ts                    // weighted sum + penalty logic
+    ConfidenceMapper.ts          // 0-49 Rejected LOW, 50-79 Suspicious MEDIUM, 80-100 Verified HIGH
+  evidence/
+    EvidenceCollector.ts         // structured evidence, no screenshots, lightweight
+    EvidenceNormalizer.ts        // canonicalize for hashing (sort keys, normalize whitespace)
+  utils/
+    dom.ts                       // semantic DOM helpers, visibility checks
+    text.ts                      // fuzzy matching, Levenshtein
+    url.ts                       // strict hostname validation, HTTPS, path patterns
+  hashing/ (client requests hash, never generates)
+storage/
+  VerificationStoreV2.ts         // v2 storage + replay guard
+content.ts                       // uses VerificationEngine v2, HistoryGuard, interaction tracking
+background.ts                    // rate limiting 30/min, origin validation, evidence exposure
+popup/
+  Popup.tsx                      // shows score, confidence LOW/MEDIUM/HIGH, hash, reference, fraud signals
+  components/VerificationCard.tsx
+  components/ConfidenceBadge.tsx
+```
+
+### Backend (mirrors extension)
+
+```
+backend/src/modules/verification/
+  types/verification.types.ts
+  hashing/canonicalize.ts
+  hashing/hash.service.ts (HMAC_SHA256)
+  evidence/evidence.schemas.ts (Zod)
+  evidence/evidence.validator.ts
+  portals/portal.definitions.ts (allowlist + path patterns)
+  portals/portal.registry.ts
+  scoring/scorer.service.ts (server re-score for defense in depth)
+  scoring/confidence.ts
+  verification.validation.ts
+  verification.service.ts (hash generation, replay check, fraud signals, VerificationLog)
+  verification.controller.ts
+  verification.routes.ts
+  POST /verifications/verify-evidence (generates hash)
+  GET /verifications/hash/:hash (checks existence)
+```
+
+---
+
+## 🔍 Verification Flow (Enterprise)
+
+1. **Content script** on supported ATS (Greenhouse, Lever, Workday, LinkedIn, Indeed + 15) collects evidence:
+   ```json
+   {
+     "portal": "GREENHOUSE",
+     "hostname": "boards.greenhouse.io",
+     "pathname": "/company/jobs/123/confirmation",
+     "title": "Application Submitted",
+     "headings": ["Application Submitted", "Thank you"],
+     "confirmationText": "Your application for Engineer has been submitted. Ref APP-123",
+     "applicationReference": "APP-123",
+     "detectedButtons": [],
+     "domFingerprint": { "hasConfirmationCard": true, "expectedContainersFound": 2 },
+     "verificationTimestamp": 1710000000000,
+     "extensionVersion": "2.0.0",
+     "https": true,
+     "timeOnPageMs": 4500,
+     "userInteractionDetected": true
+   }
+   ```
+
+2. **Rules engine** scores:
+   - Domain 10 + Title 15 + Heading 20 + Body 20 + Reference 15 + Fingerprint 15 + Portal 5 + ApplyButton bonus = 100
+   - Penalties: ApplyButton still visible -15, History manipulation -10, Short time <3s -5, Negative title -20
+   - Thresholds: 0-49 Rejected LOW, 50-79 Suspicious MEDIUM, 80-100 Verified HIGH
+
+3. **Storage** — if score >=50, saves to `chrome.storage.local` key `verifications_v2` with TTL 24h, max 100
+
+4. **Frontend** (`use-extension-verification` v2):
+   - Calls `chrome.runtime.sendMessage(extensionId, {action:'VERIFY_URL', url})`
+   - Receives evidence + score
+   - If score >=80, calls backend `POST /verifications/verify-evidence` with evidence + recruiter JWT
+   - Backend validates (HTTPS, hostname not IP/localhost, timestamp freshness 5min), re-scores, canonicalizes (sort keys, normalize whitespace, lowercase), generates `HMAC_SHA256(canonical, SECRET)` -> returns `verificationHash`
+   - Frontend stores hash
+
+5. **Application creation** `POST /applications`:
+   - Requires `verificationHash` if `verified=true`
+   - Backend checks hash exists in `VerificationLog`, belongs to recruiter, not expired (24h), normalized link matches, not replay
+   - Sets `verified = confidence HIGH && score>=80` (server truth, not client bool)
+   - Stores `verificationHash, Score, Confidence, Evidence, Reference, Portal, Timestamp`
+
+---
+
+## 🚀 Installation
+
 ```bash
 cd extension
 npm install
 npm run build
+# dist folder ready
 ```
-This produces a compiled, production-ready bundle inside the `extension/dist` directory.
 
-### 2. Load the Extension into Chrome
-1. Open Google Chrome.
-2. Navigate to `chrome://extensions/`.
-3. Enable **Developer mode** in the top right corner.
-4. Click **Load unpacked** in the top left corner.
-5. Select the `extension/dist` folder on your disk.
+Load unpacked in `chrome://extensions` -> Developer mode -> Load `dist`
 
 ---
 
-## Testing & Verification Workflow
+## 🧪 Testing
 
-1. Open any Greenhouse or Lever job portal confirmation page (e.g. submitting a test application or landing on a `/confirmation` routing path).
-2. Click the extension icon in the toolbar. The popup should show a green badge indicating success status, along with the extracted company and job title metadata.
-3. Open the Mayzax CRM web interface.
-4. Open the "Log Job Application" form.
-5. Paste the confirmation page URL into the **Job Posting Link** field.
-6. The frontend queries the extension. A green badge saying **"Verified via Chrome Extension"** will appear beneath the link, and the form will automatically populate the extracted company name and job title fields.
-7. Click **Submit Application**. The application is logged in the backend with `verified = true` and `verificationMethod = "Browser Extension"`.
+### Manual Positive
+- Apply to real Greenhouse/Lever/Workday job -> popup shows HIGH 80%+ with reference, hostname, reasons
+
+### Manual Negative
+- Edit URL add `?success=true` on non-success page -> score <50 Rejected (Domain passes but Title/Heading/Body fail)
+- Fake page `https://evil-linkedin.com/success` -> Domain fails 0, REJECTED
+- Inject DOM `document.body.innerHTML='<h1>Application Submitted</h1>'` -> historyManipulation flag, short time penalty, fingerprint fails -> score reduced
+- `history.replaceState({},'','/success')` -> fraud signal, -10
+- HTTP `http://boards.greenhouse.io/...` -> instant reject
+- Replay same evidence hash for different profile -> backend `isReplay=true` flagged
+
+### Unit Tests (planned)
+```
+extension/src/verification/rules/__tests__/DomainRule.test.ts
+extension/src/verification/scoring/Scorer.test.ts
+backend/src/modules/verification/__tests__/hash.service.test.ts
+```
+
+---
+
+## 🔐 Security Design Principles
+
+- **Never trust client alone** — server re-scores, validates hostname, HTTPS, timestamp, and is source of truth for hash
+- **HMAC only backend** — `VERIFICATION_HMAC_SECRET` never leaves server
+- **Strict hostname validation** — anchored regex `(?:^|\.)greenhouse.io$` prevents `evil-greenhouse.com` bypass
+- **No keyword bypass** — removed URL fast-path that allowed `?completed` bypass
+- **Evidence lightweight** — no screenshots, pure JSON, canonicalized and sorted
+- **Replay protection** — hash unique, TTL, timestamp freshness, isReplay flag
+- **Fraud signals** — HISTORY_MANIPULATION, APPLY_BUTTON_STILL_ENABLED, SHORT_TIME_ON_PAGE, DUPLICATE_REFERENCE, etc stored in VerificationLog
+- **Backward compatible** — v1 entries still readable, v2 adds fields, old popup works, migration via feature flags `REQUIRE_HASH_FOR_VERIFIED=false` initially then true
+
+---
+
+## 📄 Deliverables
+
+- ✅ Repository audit `docs/VERIFICATION_ENGINE_AUDIT_AND_DESIGN.md`
+- ✅ Enterprise verification engine implementation (30+ new files)
+- ✅ Backend HMAC hashing + VerificationLog + API endpoints
+- ✅ Frontend secure hook (no keyword bypass) + HMAC flow
+- ✅ Extension v2 popup with score, confidence, hash, reference, fraud signals
+- ✅ Manifest v2.0.0 with expanded host permissions (Workday, SuccessFactors, Oracle, Taleo)
+- ✅ Build passes `npm run build`
+
+---
+
+## 👤 Author
+
+Siddharth Ohal (7even-7even) <sidxohal9049@gmail.com>
+Branch: `arena/019fc8fc-mayzax` -> PR to `extension`
+Version: v2.0.0
+

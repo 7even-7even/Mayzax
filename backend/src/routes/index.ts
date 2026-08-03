@@ -11,6 +11,7 @@ import shiftRoutes from '@/modules/shifts/shift.routes';
 import devicesRoutes from '@/modules/devices/devices.routes';
 import notificationsRoutes from '@/modules/notifications/notifications.routes';
 import attendanceRoutes from '@/modules/attendance/attendance.routes';
+import verificationRoutes from '@/modules/verification/verification.routes';
 
 const router = Router();
 
@@ -32,5 +33,8 @@ router.use('/shifts', shiftRoutes);
 router.use('/devices', devicesRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/attendance', attendanceRoutes);
+
+// Enterprise Verification v2
+router.use('/verifications', verificationRoutes);
 
 export default router;

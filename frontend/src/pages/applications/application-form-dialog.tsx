@@ -52,6 +52,10 @@ const applicationSchema = z.object({
   jobPortal: z.enum(ALL_JOB_PORTALS),
   verified: z.boolean().default(false),
   verificationMethod: z.string().nullable().optional(),
+  verificationHash: z.string().regex(/^[a-f0-9]{64}$/i).optional().nullable(),
+  verificationScore: z.number().int().min(0).max(100).optional().nullable(),
+  verificationConfidence: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional().nullable(),
+  applicationReference: z.string().max(100).optional().nullable(),
 });
 
 type ApplicationForm = z.infer<typeof applicationSchema>;
@@ -71,7 +75,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
 
   const form = useForm<ApplicationForm>({
     resolver: zodResolver(applicationSchema),
-    defaultValues: { profileId: defaultProfileId ?? '', jobLink: '', companyName: '', jobTitle: '', jobPortal: 'OTHER', verified: false, verificationMethod: null },
+    defaultValues: { profileId: defaultProfileId ?? '', jobLink: '', companyName: '', jobTitle: '', jobPortal: 'OTHER', verified: false, verificationMethod: null, verificationHash: null, verificationScore: null, verificationConfidence: null, applicationReference: null },
   });
 
   const jobLink = form.watch('jobLink');
@@ -97,8 +101,8 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
     pageSize: 1,
   });
 
-  // Extension verification hook (commented out until deployed)
-  const { isVerified, isChecking, verificationResult, state: verificationState, isExtensionInstalled, installUrl, extensionId, retry: retryVerification } = useExtensionVerification(debouncedLink);
+  // Enterprise verification hook v2
+  const { isVerified, isChecking, verificationResult, state: verificationState, isExtensionInstalled, installUrl, extensionId, retry: retryVerification, verificationHash, evidence } = useExtensionVerification(debouncedLink);
 
   // Extension placeholder states
   // const isVerified = false;
@@ -122,6 +126,10 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
         jobPortal: 'OTHER',
         verified: false,
         verificationMethod: null,
+        verificationHash: null,
+        verificationScore: null,
+        verificationConfidence: null,
+        applicationReference: null,
       });
       setDuplicateResult(null);
     }
@@ -141,22 +149,36 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
   useEffect(() => {
     if (isVerified && verificationResult) {
       form.setValue('verified', true);
-      const isKeywordMatch = verificationResult.matchedRules?.includes('URL_KEYWORD_MATCH');
-      form.setValue('verificationMethod', isKeywordMatch ? 'Keyword Match' : 'Browser Extension');
+      form.setValue('verificationMethod', `Extension v2 (${verificationResult.portal}) - Score ${verificationResult.score}% ${verificationResult.confidence}`);
+      form.setValue('verificationHash', verificationHash || verificationResult.verificationHash || null);
+      form.setValue('verificationScore', verificationResult.score || null);
+      form.setValue('verificationConfidence', verificationResult.confidence || null);
+      form.setValue('applicationReference', verificationResult.applicationReference || verificationResult.evidence?.applicationReference || null);
       if (verificationResult.company) form.setValue('companyName', verificationResult.company, { shouldDirty: true });
       if (verificationResult.jobTitle) form.setValue('jobTitle', verificationResult.jobTitle, { shouldDirty: true });
-      if (verificationResult.portal) form.setValue('jobPortal', verificationResult.portal, { shouldDirty: true });
+      if (verificationResult.portal) form.setValue('jobPortal', verificationResult.portal as any, { shouldDirty: true });
+    } else if (verificationResult && verificationResult.score >= 50) {
+      // Suspicious — not verified but has evidence
+      form.setValue('verified', false);
+      form.setValue('verificationMethod', `Suspicious (${verificationResult.confidence} ${verificationResult.score}%) — manual review`);
+      form.setValue('verificationHash', verificationHash || null);
+      form.setValue('verificationScore', verificationResult.score || null);
+      form.setValue('verificationConfidence', verificationResult.confidence || null);
     } else {
       form.setValue('verified', false);
       form.setValue('verificationMethod', null);
+      form.setValue('verificationHash', null);
+      form.setValue('verificationScore', null);
+      form.setValue('verificationConfidence', null);
+      form.setValue('applicationReference', null);
     }
-  }, [isVerified, verificationResult, form]);
+  }, [isVerified, verificationResult, verificationHash, form]);
 
 
   const onSubmit = async (values: ApplicationForm) => {
     try {
       await createMutation.mutateAsync(values);
-      toast.success('Application submitted successfully • Premium tracking enabled');
+      toast.success(`Application submitted • ${values.verified ? `Verified v2 ${values.verificationConfidence} ${values.verificationScore}%` : 'Legacy mode'} • HMAC secured`);
       form.reset({
         profileId: profiles.length === 1 ? profiles[0].id : (defaultProfileId ?? ''),
         jobLink: '',
@@ -165,6 +187,10 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
         jobPortal: 'OTHER',
         verified: false,
         verificationMethod: null,
+        verificationHash: null,
+        verificationScore: null,
+        verificationConfidence: null,
+        applicationReference: null,
       });
       setDuplicateResult(null);
     } catch (err) {

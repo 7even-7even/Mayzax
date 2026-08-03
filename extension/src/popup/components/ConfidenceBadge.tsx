@@ -1,11 +1,12 @@
 import React from 'react';
-import { ConfidenceLevel } from '../../types';
+import { ConfidenceLevel } from '../../verification/types';
+import { VerificationConfidence } from '../../verification/types';
 
-interface Props {
+interface PropsLegacy {
   level: ConfidenceLevel;
 }
 
-export function ConfidenceBadge({ level }: Props) {
+export function ConfidenceBadge({ level }: PropsLegacy) {
   const getLabel = () => {
     switch (level) {
       case 'VERIFIED': return 'Verified';
@@ -23,5 +24,24 @@ export function ConfidenceBadge({ level }: Props) {
     <span className={getClassName()}>
       {getLabel()}
     </span>
+  );
+}
+
+interface PropsV2 {
+  confidence: VerificationConfidence;
+  score: number;
+}
+
+export function ConfidenceBadgeV2({ confidence, score }: PropsV2) {
+  const label = confidence === 'HIGH' ? 'Verified' : confidence === 'MEDIUM' ? 'Suspicious' : 'Rejected';
+  const className = confidence === 'HIGH' ? 'verified' : confidence === 'MEDIUM' ? 'possible' : 'not-verified';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+      <span className={`badge ${className}`}>
+        {label} {score}%
+      </span>
+      <span style={{ fontSize: '9px', color: '#64748B' }}>{confidence}</span>
+    </div>
   );
 }

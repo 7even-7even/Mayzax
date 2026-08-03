@@ -1,6 +1,5 @@
-import { ShieldCheck, XCircle, Download, Puzzle, AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import { ShieldCheck, XCircle, Download, Puzzle, AlertCircle, ExternalLink, RefreshCw, Shield, AlertTriangle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Button } from '@/components/ui/button';
 import { ExtensionVerificationResult, ExtensionState } from '@/hooks/use-extension-verification';
 import { motion } from 'framer-motion';
 
@@ -24,18 +23,20 @@ export function ExtensionVerificationBadge({
   installUrl,
   onRetry,
 }: Props) {
-  if (isChecking || state === 'checking') {
+  if (isChecking || state === 'checking' || state === 'verifying_hash') {
     return (
       <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500 border border-slate-200 animate-pulse">
         <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
-        Verifying via extension...
+        {state === 'verifying_hash' ? 'Securing proof via HMAC...' : 'Verifying via extension v2...'}
       </div>
     );
   }
 
-  if (isVerified && (state === 'verified' || result?.verified)) {
-    const confidence = result?.confidenceScore ?? 100;
+  if (isVerified && (state === 'verified' || result?.verified) && result?.confidence === 'HIGH') {
+    const score = result?.score ?? result?.confidenceScore ?? 100;
     const portal = result?.portal ?? 'OTHER';
+    const ref = result?.applicationReference;
+    const hash = result?.verificationHash;
     return (
       <TooltipProvider>
         <Tooltip>
@@ -46,23 +47,67 @@ export function ExtensionVerificationBadge({
               className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 border border-emerald-200/60 shadow-sm cursor-help"
             >
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
-              Verified
+              Verified v2
               <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
-                {confidence}%
+                {score}% HIGH
               </span>
+              {hash && <span className="ml-1 text-[9px] text-emerald-600/70">• HMAC {hash.slice(0,6)}...</span>}
             </motion.div>
           </TooltipTrigger>
-          <TooltipContent className="max-w-xs text-xs">
+          <TooltipContent className="max-w-sm text-xs">
             <div className="space-y-1">
-              <p className="font-semibold">Extension Verified ✓</p>
+              <p className="font-semibold">Enterprise Verified ✓ v2 HMAC Secured</p>
               {result?.company && <p>Company: {result.company}</p>}
               {result?.jobTitle && <p>Role: {result.jobTitle}</p>}
               <p>Portal: {portal}</p>
-              <p className="text-[11px] text-slate-400">Matched rules: {result?.matchedRules?.join(', ') || 'URL heuristic'}</p>
+              {ref && <p>Ref: {ref}</p>}
+              {hash && <p className="text-[10px] font-mono">Hash: {hash.slice(0,16)}...</p>}
+              <p className="text-[11px] text-slate-400">Reasons: {result?.reasons?.slice(0,3).join(' • ') || result?.matchedRules?.join(', ')}</p>
+              <p className="text-[10px] text-emerald-600">Score {score}% • Confidence HIGH • Version {result?.version || 'v2'}</p>
             </div>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
+    );
+  }
+
+  if (state === 'suspicious' || (result && result.score >= 50 && result.score < 80)) {
+    const score = result?.score ?? 0;
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 border border-amber-200 shadow-sm cursor-help">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              Suspicious
+              <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
+                {score}% MEDIUM
+              </span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs text-xs">
+            <p className="font-semibold">Suspicious — Manual Review Required</p>
+            <p>Score {score}% below 80 threshold</p>
+            {result?.reasons && <p className="text-[11px] text-slate-400">Reasons: {result.reasons.slice(0,2).join(', ')}</p>}
+            {result?.fraudSignals && result.fraudSignals.length > 0 && <p className="text-[11px] text-red-400">Fraud signals: {result.fraudSignals.join(', ')}</p>}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  if (state === 'fraud_detected' || result?.fraudSignals?.includes('REPLAY_DETECTED') || result?.isReplay) {
+    return (
+      <div className="flex items-center gap-2 rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 border border-red-200">
+        <Shield className="h-4 w-4 text-red-600" />
+        Fraud Detected
+        <span className="text-[10px] text-red-600">• {result?.fraudSignals?.slice(0,2).join(', ') || 'Replay/Invalid'}</span>
+        {onRetry && (
+          <button onClick={onRetry} className="ml-1 rounded-full p-1 hover:bg-red-100">
+            <RefreshCw className="h-3 w-3" />
+          </button>
+        )}
+      </div>
     );
   }
 
@@ -74,8 +119,8 @@ export function ExtensionVerificationBadge({
             <Puzzle className="h-4 w-4" />
           </div>
           <div className="flex flex-col">
-            <span className="leading-none">Mayzax Verifier not detected</span>
-            <span className="text-[11px] font-normal text-amber-700/80 mt-0.5">Install our extension to auto-verify applications</span>
+            <span className="leading-none">Mayzax Verifier v2 not detected</span>
+            <span className="text-[11px] font-normal text-amber-700/80 mt-0.5">Install enterprise extension for HMAC-secured verification</span>
           </div>
         </div>
 
@@ -88,7 +133,7 @@ export function ExtensionVerificationBadge({
               className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
-              Install Extension
+              Install Extension v2
               <ExternalLink className="h-3 w-3 opacity-70" />
             </a>
           ) : (
@@ -106,15 +151,14 @@ export function ExtensionVerificationBadge({
 
         <div className="rounded-lg bg-white/70 border border-amber-100 p-2">
           <p className="text-[11px] leading-snug text-slate-600">
-            <span className="font-semibold">How to verify:</span> After installing, open a job portal (LinkedIn, Indeed, etc.) and apply. The extension will auto-detect success and mark this link as verified when you paste it back here.
+            <span className="font-semibold">Enterprise v2:</span> Auto-detects success on Greenhouse, Lever, Workday, LinkedIn, Indeed + 15 ATS, collects evidence, generates HMAC proof via backend. No keyword bypass.
           </p>
         </div>
       </div>
     );
   }
 
-  // not_verified but extension is installed
-  if (isExtensionInstalled && state === 'not_verified') {
+  if (isExtensionInstalled && (state === 'not_verified' || state === 'idle')) {
     return (
       <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-200">
         <XCircle className="h-4 w-4 text-slate-400" />
@@ -129,23 +173,21 @@ export function ExtensionVerificationBadge({
     );
   }
 
-  // default fallback - chrome runtime not available (e.g. Firefox or normal browser)
   return (
     <div className="flex items-center gap-1.5 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500 border border-slate-100">
       <AlertCircle className="h-4 w-4 text-slate-400" />
       Verification unavailable
-      <span className="hidden sm:inline text-[11px] text-slate-400 ml-1">• Use Chrome + extension for auto-verification</span>
+      <span className="hidden sm:inline text-[11px] text-slate-400 ml-1">• Use Chrome + extension v2 for HMAC verification</span>
     </div>
   );
 }
 
-// Legacy simple wrapper kept for backward compat - richer version above is preferred
 export function SimpleExtensionVerificationBadge({ isVerified, isChecking }: { isVerified: boolean; isChecking: boolean }) {
   if (isChecking) {
     return (
       <div className="flex items-center gap-1.5 rounded-md bg-slate-50 px-2 py-1.5 text-xs font-medium text-slate-500 border border-slate-100">
         <span className="h-3 w-3 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
-        Verifying...
+        Verifying v2...
       </div>
     );
   }
@@ -153,7 +195,7 @@ export function SimpleExtensionVerificationBadge({ isVerified, isChecking }: { i
     return (
       <div className="flex items-center gap-1.5 rounded-md bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-800 border border-emerald-100/80">
         <ShieldCheck className="h-4 w-4 text-emerald-600" />
-        Verified
+        Verified v2
       </div>
     );
   }
