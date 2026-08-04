@@ -34,61 +34,10 @@ export default defineManifest({
 
   content_scripts: [
     {
-      matches: [
-        // LinkedIn
-        'https://*.linkedin.com/jobs/*',
-        'https://*.linkedin.com/easy-apply/*',
-        // Indeed
-        'https://*.indeed.com/*',
-        // Glassdoor
-        'https://*.glassdoor.com/*',
-        // Jobright
-        'https://*.jobright.ai/*',
-        'https://*.jobright.com/*',
-        // Simplify
-        'https://*.simplify.jobs/*',
-        // SimplyHired
-        'https://*.simplyhired.com/*',
-        // Wellfound / AngelList
-        'https://*.wellfound.com/*',
-        'https://*.angel.co/*',
-        // Handshake
-        'https://*.joinhandshake.com/*',
-        'https://*.handshake.com/*',
-        // Naukri
-        'https://*.naukri.com/*',
-        // Dice
-        'https://*.dice.com/*',
-        // Monster
-        'https://*.monster.com/*',
-        // ZipRecruiter
-        'https://*.ziprecruiter.com/*',
-        // CareerBuilder
-        'https://*.careerbuilder.com/*',
-        // Lever
-        'https://*.lever.co/*',
-        // Greenhouse
-        'https://*.greenhouse.io/*',
-        'https://*.greenhouse.com/*',
-        // SpeedyApply
-        'https://*.speedyapply.com/*',
-        // The Muse
-        'https://*.themuse.com/*',
-        // Y Combinator / Work at a Startup
-        'https://*.ycombinator.com/*',
-        'https://*.workatastartup.com/*',
-        // Enterprise ATS (Workday, SuccessFactors, Oracle, Taleo)
-        'https://*.myworkdayjobs.com/*',
-        'https://*.myworkday.com/*',
-        'https://*.workday.com/*',
-        'https://*.successfactors.com/*',
-        'https://*.sapsf.com/*',
-        'https://*.oraclecloud.com/*',
-        'https://*.taleo.net/*',
-        // Generic path-based job pages
-        'https://*/careers/*',
-        'https://*/jobs/*',
-      ],
+      // Universal injection — the RecruitmentPageDetector inside content.ts
+      // immediately filters out non-recruitment pages in <1ms, so there is
+      // no performance cost on regular browsing.
+      matches: ['https://*/*'],
       js: ['src/content.ts'],
       run_at: 'document_idle',
     },
@@ -96,41 +45,11 @@ export default defineManifest({
 
   permissions: ['storage', 'tabs', 'activeTab', 'scripting'],
 
-  host_permissions: [
-    'https://*.linkedin.com/*',
-    'https://*.indeed.com/*',
-    'https://*.glassdoor.com/*',
-    'https://*.jobright.ai/*',
-    'https://*.jobright.com/*',
-    'https://*.simplify.jobs/*',
-    'https://*.simplyhired.com/*',
-    'https://*.wellfound.com/*',
-    'https://*.angel.co/*',
-    'https://*.joinhandshake.com/*',
-    'https://*.handshake.com/*',
-    'https://*.naukri.com/*',
-    'https://*.dice.com/*',
-    'https://*.monster.com/*',
-    'https://*.ziprecruiter.com/*',
-    'https://*.careerbuilder.com/*',
-    'https://*.lever.co/*',
-    'https://*.greenhouse.io/*',
-    'https://*.greenhouse.com/*',
-    'https://*.speedyapply.com/*',
-    'https://*.themuse.com/*',
-    'https://*.ycombinator.com/*',
-    'https://*.workatastartup.com/*',
-    'https://*.myworkdayjobs.com/*',
-    'https://*.myworkday.com/*',
-    'https://*.workday.com/*',
-    'https://*.successfactors.com/*',
-    'https://*.sapsf.com/*',
-    'https://*.oraclecloud.com/*',
-    'https://*.taleo.net/*',
-  ],
+  // Universal host permission — required to match the universal content_script.
+  // The actual filtering happens inside the content script via RecruitmentPageDetector.
+  host_permissions: ['https://*/*'],
 
   // Allows the Mayzax frontend to send messages to this extension.
-  // Update MAYZAX_FRONTEND_ORIGIN to your production URL before packaging.
   externally_connectable: {
     matches: [
       // Production
