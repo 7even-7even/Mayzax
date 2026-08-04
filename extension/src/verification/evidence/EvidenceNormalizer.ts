@@ -1,16 +1,32 @@
 import { VerificationEvidence } from '../types';
-import { normalizeWhitespace, normalizeForHash, sortKeysRecursive } from '../utils/normalization';
 
-/**
- * Evidence Normalization — v1.1 Universal ATS Intelligence
- * Normalizes evidence for consistent scoring and hashing
- * Consumes normalized evidence rather than raw DOM text
- */
+function normalizeWhitespace(text: string): string {
+  return text.replace(/[\n\r\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeForHash(text: string): string {
+  return normalizeWhitespace(text).toLowerCase();
+}
+
+function sortKeysRecursive(input: any): any {
+  if (Array.isArray(input)) {
+    return input.map(sortKeysRecursive);
+  }
+  if (input !== null && typeof input === 'object') {
+    const sorted: any = {};
+    Object.keys(input).sort().forEach(k => {
+      const v = input[k];
+      if (v === null || v === undefined || v === '') return;
+      sorted[k] = sortKeysRecursive(v);
+    });
+    return sorted;
+  }
+  return input;
+}
 
 export class EvidenceNormalizer {
   /**
    * Canonicalization for hashing — mirrors backend canonicalizeEvidence
-   * Uses normalized evidence, not raw DOM
    */
   static canonicalize(evidence: VerificationEvidence): string {
     const subset: any = {
@@ -30,15 +46,6 @@ export class EvidenceNormalizer {
         expectedContainersFound: evidence.domFingerprint?.expectedContainersFound || 0,
         unexpectedApplyButtonPresent: !!evidence.domFingerprint?.unexpectedApplyButtonPresent,
       },
-      // v1.1 universal — include normalized universal evidence for stronger hash binding
-      urlEvidence: {
-        hasSuccessPath: !!evidence.urlEvidence?.hasSuccessPath,
-        matchedPattern: evidence.urlEvidence?.matchedPattern ? normalizeForHash(evidence.urlEvidence.matchedPattern) : null,
-      },
-      referenceEvidence: {
-        hasAnyReference: !!evidence.referenceEvidence?.hasAnyReference,
-        strongestReference: evidence.referenceEvidence?.strongestReference ? normalizeForHash(evidence.referenceEvidence.strongestReference) : null,
-      },
     };
 
     const sorted = sortKeysRecursive(subset);
@@ -53,79 +60,6 @@ export class EvidenceNormalizer {
       headings: evidence.headings.map(normalizeWhitespace).filter(Boolean),
       confirmationText: normalizeWhitespace(evidence.confirmationText),
       applicationReference: evidence.applicationReference ? normalizeWhitespace(evidence.applicationReference) : null,
-      // Normalize universal fields
-      positiveSignals: evidence.positiveSignals?.map(normalizeWhitespace) || [],
-      neutralSignals: evidence.neutralSignals?.map(normalizeWhitespace) || [],
-      negativeSignals: evidence.negativeSignals?.map(normalizeWhitespace) || [],
     };
-  }
-
-  /**
-   * Normalize entire evidence object for weighted confidence engine
-   * Returns normalized copy ready for scoring
-   */
-  static normalize(evidence: VerificationEvidence): VerificationEvidence {
-    const normalized = this.normalizeForStorage(evidence);
-
-    // Normalize title evidence
-    if (normalized.titleEvidence) {
-      normalized.titleEvidence.matchedPhrases = normalized.titleEvidence.matchedPhrases.map(normalizeWhitespace);
-    }
-
-    // Normalize heading evidence
-    if (normalized.headingEvidence) {
-      normalized.headingEvidence.allHeadings = normalized.headingEvidence.allHeadings.map(normalizeWhitespace);
-      normalized.headingEvidence.matchedSuccessPhrases = normalized.headingEvidence.matchedSuccessPhrases.map(normalizeWhitespace);
-    }
-
-    // Normalize body evidence
-    if (normalized.bodyEvidence) {
-      normalized.bodyEvidence.matchedSuccessPhrases = normalized.bodyEvidence.matchedSuccessPhrases.map(normalizeWhitespace);
-      normalized.bodyEvidence.confirmationText = normalizeWhitespace(normalized.bodyEvidence.confirmationText);
-    }
-
-    // Normalize meta evidence
-    if (normalized.metaEvidence) {
-      if (normalized.metaEvidence.ogTitle) normalized.metaEvidence.ogTitle = normalizeWhitespace(normalized.metaEvidence.ogTitle);
-      if (normalized.metaEvidence.description) normalized.metaEvidence.description = normalizeWhitespace(normalized.metaEvidence.description);
-    }
-
-    // Normalize breadcrumb evidence
-    if (normalized.breadcrumbEvidence) {
-      normalized.breadcrumbEvidence.items = normalized.breadcrumbEvidence.items.map(normalizeWhitespace);
-    }
-
-    // Ensure evidence breakdown exists
-    if (!normalized.evidenceScoreBreakdown) {
-      normalized.evidenceScoreBreakdown = {};
-    }
-
-    return normalized;
-  }
-
-  /**
-   * Create a debug-friendly normalized view for logging
-   */
-  static createDebugView(evidence: VerificationEvidence): string {
-    const positive = evidence.positiveSignals || [];
-    const neutral = evidence.neutralSignals || [];
-    const negative = evidence.negativeSignals || [];
-    const breakdown = evidence.evidenceScoreBreakdown || {};
-    const totalScore = Object.values(breakdown).reduce((a, b) => a + (b as number), 0);
-
-    let log = '\n=== Positive Evidence ===\n';
-    log += positive.length > 0 ? positive.map(s => `  ${s}`).join('\n') : '  (none)';
-    log += '\n\n=== Neutral Evidence ===\n';
-    log += neutral.length > 0 ? neutral.map(s => `  ${s}`).join('\n') : '  (none)';
-    log += '\n\n=== Weak Negative Evidence ===\n';
-    log += negative.length > 0 ? negative.map(s => `  ${s}`).join('\n') : '  (none)';
-    log += '\n\n=== Evidence Breakdown ===\n';
-    for (const [key, val] of Object.entries(breakdown)) {
-      log += `  ${key}: ${val}\n`;
-    }
-    log += `  TOTAL: ${totalScore}\n`;
-    log += `  Positive signals: ${evidence.totalPositiveSignals || positive.length}\n`;
-
-    return log;
   }
 }
