@@ -25,6 +25,7 @@ import { motion } from 'framer-motion';
 import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 
 const sortOptions = [
+  { value: 'currentShiftApplications', label: 'Current Applications' },
   { value: 'totalApplications', label: 'Total Applications' },
   { value: 'assignedProfiles', label: 'Assigned Profiles' },
   { value: 'name', label: 'Name' },

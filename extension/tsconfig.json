@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
@@ -11,12 +15,18 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
+    "ignoreDeprecations": "6.0",
     "noEmit": true,
     "skipLibCheck": true,
     "baseUrl": ".",
+    "types": ["chrome"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ],
 }
