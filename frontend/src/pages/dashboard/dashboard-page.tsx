@@ -26,13 +26,14 @@ import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 
 const sortOptions = [
   { value: 'totalApplications', label: 'Total Applications' },
+  { value: 'currentShiftApplications', label: 'Current Applications' },
   { value: 'assignedProfiles', label: 'Assigned Profiles' },
   { value: 'name', label: 'Name' },
   { value: 'lastActiveAt', label: 'Last Active' },
 ];
 
 const SHIFT_GOAL_KEY = 'mayzax_tl_shift_goal';
-const DEFAULT_GOAL = 20;
+const DEFAULT_GOAL = 500;
 
 function TlTeamCard() {
   const { data: stats, isLoading: statsLoading } = useMyRecruiterStats();

@@ -105,7 +105,7 @@ export function LiveStatusCard() {
                     </div>
                     <div>
                       <Badge variant="outline" className="text-[10px] font-medium dark:bg-slate-850 dark:text-slate-300 dark:border-slate-700">
-                        {member.role === 'TEAM_LEADER' ? 'TL' : 'Rec'}
+                        {member.role}
                       </Badge>
                     </div>
                     <div>
