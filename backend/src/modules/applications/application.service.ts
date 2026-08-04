@@ -5,6 +5,7 @@ import { detectJobPortalFromUrl } from '@/utils/detectJobPortal';
 import { getBusinessDate } from '@/utils/businessDate';
 import { writeAuditLog } from '@/modules/shared/audit.service';
 import { prisma } from '@/lib/prisma';
+import { env } from '@/config/env';
 import * as repo from './application.repository';
 import { CreateApplicationInput, UpdateApplicationInput, ListApplicationsQuery } from './application.validation';
 
@@ -74,6 +75,96 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
     );
   }
 
+  // Enterprise v2 verification handling
+  let verificationLog: any = null;
+  let finalVerified = input.verified ?? false;
+  let finalVerificationMethod = input.verificationMethod ?? null;
+  let finalScore: number | null = null;
+  let finalConfidence: string | null = null;
+  let finalEvidence: any = null;
+  let finalPortal: string | null = null;
+  let finalTimestamp: Date | null = null;
+  let finalReference: string | null = null;
+  let finalHash: string | null = input.verificationHash || null;
+
+  if (input.verificationHash) {
+    // Validate hash exists and belongs to recruiter
+    verificationLog = await prisma.verificationLog.findUnique({
+      where: { verificationHash: input.verificationHash },
+    });
+    if (!verificationLog) {
+      throw ApiError.badRequest('Invalid verification hash — not found. Please re-verify via extension.', {
+        verificationHash: input.verificationHash,
+      });
+    }
+    if (verificationLog.recruiterId !== actor.id && actor.role === Role.RECRUITER) {
+      throw ApiError.forbidden('Verification hash does not belong to you');
+    }
+    // Check TTL
+    const age = Date.now() - new Date(verificationLog.createdAt).getTime();
+    if (age > env.VERIFICATION_HASH_TTL_MS) {
+      throw ApiError.badRequest('Verification hash expired — please re-verify via extension', {
+        ageMs: age,
+        ttlMs: env.VERIFICATION_HASH_TTL_MS,
+      });
+    }
+    // Check normalized link matches (prevent reuse for different job)
+    const logNormalized = verificationLog.normalizedJobLink;
+    if (logNormalized !== normalizedJobLink) {
+      // Allow slight mismatch? For strict security, require exact match or at least same hostname
+      // We'll allow if same hostname but warn — here we require exact for HIGH confidence
+      if (verificationLog.confidence === 'HIGH') {
+        throw ApiError.badRequest('Verification hash does not match this job link — hash was generated for different job', {
+          expectedNormalized: logNormalized,
+          providedNormalized: normalizedJobLink,
+        });
+      }
+    }
+
+    // Server is source of truth for verified status
+    finalVerified = verificationLog.confidence === 'HIGH' && verificationLog.score >= 80;
+    finalScore = verificationLog.score;
+    finalConfidence = verificationLog.confidence;
+    finalEvidence = verificationLog.evidence;
+    finalPortal = verificationLog.portal;
+    finalTimestamp = new Date(verificationLog.createdAt);
+    finalReference = verificationLog.reference || input.applicationReference || null;
+    finalVerificationMethod = `Extension v2 (${verificationLog.portal}) - Score ${verificationLog.score}%`;
+
+    if (verificationLog.isReplay) {
+      throw ApiError.badRequest('This verification has already been used — possible replay attack detected', {
+        hash: input.verificationHash,
+        isReplay: true,
+      });
+    }
+  } else {
+    // If REQUIRE_HASH_FOR_VERIFIED is true and client claims verified true without hash, reject
+    if (env.REQUIRE_HASH_FOR_VERIFIED && input.verified) {
+      throw ApiError.badRequest('Verification hash required for verified applications — please verify via extension v2', {
+        requireHash: true,
+      });
+    }
+    // If no hash, force verified=false unless legacy allowed
+    if (!env.REQUIRE_HASH_FOR_VERIFIED && input.verified) {
+      // Legacy path — allow but log warning
+      finalVerified = false; // downgrade to false since no hash proof, or keep true for backward compat? We'll keep false for security
+      // To maintain backward compat during migration, allow verified=true without hash but set confidence LOW
+      // Actually per spec, during migration we still allow but mark as legacy
+      // We'll allow verified=false enforcement only if REQUIRE_HASH is false and we want to warn
+      // For now, if no hash but verified true, we downgrade to false and require manual review
+      if (input.verified) {
+        finalVerified = false;
+        finalVerificationMethod = 'Legacy — no hash proof';
+        finalConfidence = 'LOW';
+        finalScore = 0;
+      }
+    }
+  }
+
+  if (input.applicationReference) {
+    finalReference = input.applicationReference;
+  }
+
   try {
     // Layer 2: DB-level UNIQUE(profile_id, normalized_job_link) constraint - the
     // authoritative guard against race conditions (e.g. two rapid duplicate submits).
@@ -88,9 +179,17 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
       status: input.status,
       appliedAt,
       businessDate,
-      verified: input.verified,
-      verificationMethod: input.verificationMethod,
-    });
+      verified: finalVerified,
+      verificationMethod: finalVerificationMethod,
+      verificationHash: finalHash,
+      verificationVersion: finalHash ? 'v2' : null,
+      verificationScore: finalScore,
+      verificationConfidence: finalConfidence,
+      verificationEvidence: finalEvidence,
+      verificationPortal: finalPortal,
+      verificationTimestamp: finalTimestamp,
+      applicationReference: finalReference,
+    } as any);
 
     await writeAuditLog({
       userId: actor.id,

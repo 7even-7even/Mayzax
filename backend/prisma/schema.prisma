@@ -169,6 +169,7 @@ model User {
   assignedProfiles ClientProfile[]  @relation("AssignedRecruiter")
   profileAssignments ClientProfileAssignment[] @relation("RecruiterProfileAssignments")
   applications     JobApplication[] @relation("RecruiterApplications")
+  verificationLogs VerificationLog[] @relation("RecruiterVerificationLogs")
   refreshTokens    RefreshToken[]
   deviceTokens     DeviceToken[]
   notifications    Notification[]
@@ -462,6 +463,16 @@ model JobApplication {
   verified           Boolean  @default(false)
   verificationMethod String?
 
+  // Enterprise Verification v2 fields
+  verificationHash       String?   @db.VarChar(128)
+  verificationVersion    String?   @default("v2")
+  verificationScore      Int?
+  verificationConfidence String?   // LOW|MEDIUM|HIGH
+  verificationEvidence   Json?     // snapshot of evidence
+  verificationPortal     String?   // portal detected by verification engine
+  verificationTimestamp  DateTime?
+  applicationReference   String?
+
   // Critical duplicate-prevention constraint:
   // Same profile cannot apply to the same normalized job link twice.
   @@unique([profileId, normalizedJobLink], name: "unique_profile_joblink")
@@ -469,7 +480,38 @@ model JobApplication {
   @@index([profileId])
   @@index([businessDate])
   @@index([status])
+  @@index([verificationHash])
+  @@index([applicationReference])
+  @@index([verificationConfidence])
   @@map("job_applications")
+}
+
+model VerificationLog {
+  id                String   @id @default(uuid())
+  recruiterId       String
+  recruiter         User     @relation("RecruiterVerificationLogs", fields: [recruiterId], references: [id], onDelete: Cascade)
+  profileId         String?
+  jobLink           String
+  normalizedJobLink String
+  evidence          Json
+  canonicalEvidence String?  @db.Text
+  verificationHash  String   @unique
+  score             Int
+  confidence        String   // LOW|MEDIUM|HIGH
+  portal            JobPortal
+  hostname          String
+  pathname          String
+  reference         String?
+  isReplay          Boolean  @default(false)
+  fraudSignals      Json?
+  createdAt         DateTime @default(now())
+
+  @@index([recruiterId])
+  @@index([hostname])
+  @@index([portal])
+  @@index([profileId])
+  @@index([createdAt])
+  @@map("verification_logs")
 }
 
 // ---------------------------------------------------------

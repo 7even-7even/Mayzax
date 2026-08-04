@@ -146,9 +146,9 @@ export async function stopQueue() {
 
 // Known job names (centralized to avoid typos)
 export const Jobs = {
-  BreakReminder: 'reminder:break',
-  ShiftEndReminder: 'reminder:shift-end',
-  DispatchNotification: 'notification:dispatch',
-  RollupAttendanceDay: 'attendance:rollup-day',
-  RollupAllToday: 'attendance:rollup-all',
+  BreakReminder: 'reminder-break',
+  ShiftEndReminder: 'reminder-shift-end',
+  DispatchNotification: 'notification-dispatch',
+  RollupAttendanceDay: 'attendance-rollup-day',
+  RollupAllToday: 'attendance-rollup-all',
 } as const;

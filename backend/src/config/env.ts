@@ -62,19 +62,78 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().default(300),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().default(20),
 
+  // Verification Engine v2 - HMAC secret for hashing evidence (required in production)
+  VERIFICATION_HMAC_SECRET: z.string().min(16).default('dev-verification-secret-change-in-production-32chars'),
+  REQUIRE_HASH_FOR_VERIFIED: z.coerce.boolean().default(false),
+  MIN_EXTENSION_VERSION: z.string().default('2.0.0'),
+  VERIFICATION_TIMESTAMP_TOLERANCE_MS: z.coerce.number().default(5 * 60 * 1000), // 5min
+  VERIFICATION_HASH_TTL_MS: z.coerce.number().default(24 * 60 * 60 * 1000), // 24h
+
   LOG_LEVEL: z.string().default('info'),
   LOGS_DIR: z.string().default('logs'),
 });
 
 const parsed = envSchema.safeParse(process.env);
 
+let envData: any;
 if (!parsed.success) {
-  // eslint-disable-next-line no-console
-  console.error('❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
-  process.exit(1);
+  if (process.env.NODE_ENV === 'test') {
+    console.warn('⚠️ Invalid env in test, using defaults');
+    // Provide minimal defaults for test
+    envData = {
+      NODE_ENV: 'test',
+      PORT: 4000,
+      API_PREFIX: '/api/v1',
+      CLIENT_URL: 'http://localhost:5173',
+      DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
+      DIRECT_URL: undefined,
+      JWT_ACCESS_SECRET: 'test-access-secret-min-10-chars-long-for-test',
+      JWT_REFRESH_SECRET: 'test-refresh-secret-min-10-chars-long-for-test',
+      JWT_ACCESS_EXPIRES_IN: '15m',
+      JWT_REFRESH_EXPIRES_IN: '7d',
+      COOKIE_DOMAIN: undefined,
+      COOKIE_SECURE: false,
+      CROSS_SITE_COOKIES: false,
+      BUSINESS_SHIFT_START_HOUR: 18,
+      BUSINESS_SHIFT_START_MINUTE: 0,
+      BUSINESS_SHIFT_END_HOUR: 9,
+      BUSINESS_SHIFT_END_MINUTE: 0,
+      BUSINESS_TIMEZONE: 'Asia/Kolkata',
+      DEFAULT_SHORT_BREAK_SECONDS: 1800,
+      DEFAULT_DINNER_BREAK_SECONDS: 3600,
+      DEFAULT_BRIEFING_SECONDS: 900,
+      DEFAULT_MEETING_SECONDS: 1800,
+      DEFAULT_SYSTEM_ISSUE_SECONDS: 0,
+      DEFAULT_SHIFT_DURATION_SECONDS: 32400,
+      DEFAULT_LATE_GRACE_MINUTES: 15,
+      DEFAULT_EARLY_GRACE_MINUTES: 15,
+      DEFAULT_PENALTY_PER_LATE_MINUTE: 0,
+      REDIS_URL: undefined,
+      FIREBASE_SERVICE_ACCOUNT_JSON: undefined,
+      FIREBASE_SERVICE_ACCOUNT_PATH: undefined,
+      FIREBASE_DATABASE_URL: undefined,
+      FIREBASE_PROJECT_ID: undefined,
+      RATE_LIMIT_WINDOW_MS: 900000,
+      RATE_LIMIT_MAX: 300,
+      AUTH_RATE_LIMIT_MAX: 20,
+      VERIFICATION_HMAC_SECRET: 'test-verification-secret-32-chars-long-for-test',
+      REQUIRE_HASH_FOR_VERIFIED: false,
+      MIN_EXTENSION_VERSION: '2.0.0',
+      VERIFICATION_TIMESTAMP_TOLERANCE_MS: 300000,
+      VERIFICATION_HASH_TTL_MS: 86400000,
+      LOG_LEVEL: 'info',
+      LOGS_DIR: 'logs',
+    };
+  } else {
+    // eslint-disable-next-line no-console
+    console.error('❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
+    process.exit(1);
+  }
+} else {
+  envData = parsed.data;
 }
 
-export const env = { ...parsed.data };
+export const env = { ...envData };
 
 export const isProduction = env.NODE_ENV === 'production';
 export const isDevelopment = env.NODE_ENV === 'development';

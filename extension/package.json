@@ -1,7 +1,7 @@
 {
   "name": "mayzax-crm-extension",
-  "version": "1.0.0",
-  "description": "Mayzax CRM — Job Application Verification Engine (Chrome Extension MV3)",
+  "version": "2.0.0",
+  "description": "Mayzax CRM — Enterprise Job Application Verification Engine v2 (HMAC secured, fraud-resistant, 15+ ATS)",
   "private": true,
   "type": "module",
   "scripts": {

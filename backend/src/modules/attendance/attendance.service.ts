@@ -198,8 +198,6 @@ export async function getTodayForUser(userId: string): Promise<TodayResponse> {
         briefingSec: summary.briefingSec,
         meetingSec: summary.meetingSec,
         systemIssueSec: summary.systemIssueSec,
-        // shortBreakSec: cfg.shortBreakSec,
-        // dinnerBreakSec: cfg.dinnerBreakSec,
       },
     },
     timeline: summary.timeline,

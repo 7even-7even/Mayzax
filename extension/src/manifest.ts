@@ -4,10 +4,10 @@ import { defineManifest } from '@crxjs/vite-plugin';
 export default defineManifest({
   manifest_version: 3,
   name: 'Mayzax CRM — Application Verifier',
-  version: '1.0.0',
+  version: '2.0.0',
   key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw220UyDVVNfL81OzAEqBsrlsKl6S/QXy/imnWSEKXR75upb1oG/2rVDvTpNHMXBRLcmoNJE3YPJh/6SivUeOowTAPN8aCLBu5opxM0adn0SuKQFPkQFDFI1EtpGL9GbymGbQ7OJ6I1itHhgCvWjkh2EFevFx13DFAmZ+9sSXCPphH8aSxkHD5EfmI5u/64wnaUt4UmdvV4J+PC4CRup2dmqWUWjYGaUnLrlRVFVS+Rjy1MUbpLElTxtS2bYoNwlAXNVuurCbwW6jL5mOCZcF+g80hazcqqrKsgqeQGXEPBqAVL3bE8RGF8OYnnkMpRSeW34oVco7ZOWpwiY3wcoYpwIDAQAB',
   description:
-    'Verifies job application submissions on supported portals and reports confirmation to Mayzax CRM.',
+    'Enterprise-grade job application verification engine — fraud-resistant detection with HMAC proof, multi-portal fingerprints, and evidence collection.',
 
   icons: {
     '16': 'icons/icon16.png',
@@ -77,6 +77,17 @@ export default defineManifest({
         // Y Combinator / Work at a Startup
         'https://*.ycombinator.com/*',
         'https://*.workatastartup.com/*',
+        // Enterprise ATS (Workday, SuccessFactors, Oracle, Taleo)
+        'https://*.myworkdayjobs.com/*',
+        'https://*.myworkday.com/*',
+        'https://*.workday.com/*',
+        'https://*.successfactors.com/*',
+        'https://*.sapsf.com/*',
+        'https://*.oraclecloud.com/*',
+        'https://*.taleo.net/*',
+        // Generic path-based job pages
+        'https://*/careers/*',
+        'https://*/jobs/*',
       ],
       js: ['src/content.ts'],
       run_at: 'document_idle',
@@ -109,6 +120,13 @@ export default defineManifest({
     'https://*.themuse.com/*',
     'https://*.ycombinator.com/*',
     'https://*.workatastartup.com/*',
+    'https://*.myworkdayjobs.com/*',
+    'https://*.myworkday.com/*',
+    'https://*.workday.com/*',
+    'https://*.successfactors.com/*',
+    'https://*.sapsf.com/*',
+    'https://*.oraclecloud.com/*',
+    'https://*.taleo.net/*',
   ],
 
   // Allows the Mayzax frontend to send messages to this extension.

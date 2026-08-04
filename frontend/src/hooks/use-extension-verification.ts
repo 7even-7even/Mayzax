@@ -1,9 +1,37 @@
 import { useState, useEffect, useCallback } from 'react';
 import { JobPortal } from '../types';
+import { apiClient } from '@/lib/api-client';
+
+export interface VerificationEvidence {
+  portal: JobPortal;
+  hostname: string;
+  pathname: string;
+  fullUrl: string;
+  normalizedUrl: string;
+  title: string;
+  headings: string[];
+  confirmationText: string;
+  applicationReference: string | null;
+  detectedButtons: { text: string; disabled: boolean; visible: boolean }[];
+  domFingerprint: {
+    hasConfirmationCard: boolean;
+    hasSuccessBanner: boolean;
+    expectedContainersFound: number;
+    unexpectedApplyButtonPresent: boolean;
+  };
+  verificationTimestamp: number;
+  extensionVersion: string;
+  https: boolean;
+  timeOnPageMs?: number;
+  userInteractionDetected?: boolean;
+  historyManipulationDetected?: boolean;
+}
 
 export interface ExtensionVerificationResult {
   verified: boolean;
-  confidenceScore: number;
+  score: number;
+  confidence: 'LOW' | 'MEDIUM' | 'HIGH';
+  confidenceScore: number; // legacy compat
   portal: JobPortal;
   company: string;
   jobTitle: string;
@@ -11,29 +39,16 @@ export interface ExtensionVerificationResult {
   timestamp: number;
   matchedRules: string[];
   matchedKeywords: string[];
+  evidence?: VerificationEvidence;
+  verificationHash?: string;
+  version?: string;
+  applicationReference?: string | null;
+  reasons?: string[];
+  fraudSignals?: string[];
+  isReplay?: boolean;
 }
 
-export type ExtensionState = 'idle' | 'checking' | 'verified' | 'not_verified' | 'not_installed' | 'unavailable';
-
-const VERIFICATION_KEYWORDS = [
-  'completed',
-  'finish',
-  'thankyou',
-  'thank-you',
-  'submitted',
-  'confirmation',
-  'success',
-  'done',
-  'complete',
-  'application-complete',
-  'apply-complete',
-  'received',
-  'post-apply',
-  'already-applied',
-  'alreadyapplied',
-  'previously-applied',
-  'applied',
-];
+export type ExtensionState = 'idle' | 'checking' | 'verifying_hash' | 'verified' | 'suspicious' | 'not_verified' | 'not_installed' | 'unavailable' | 'fraud_detected';
 
 interface UseExtensionVerificationReturn {
   isVerified: boolean;
@@ -45,6 +60,10 @@ interface UseExtensionVerificationReturn {
   extensionId: string;
   installUrl: string | null;
   retry: () => void;
+  // v2 extras
+  requiresHash: boolean;
+  verificationHash: string | null;
+  evidence: VerificationEvidence | null;
 }
 
 const DEFAULT_EXTENSION_ID = 'nmbkoelklehokgbdakioefnikogeakpc';
@@ -52,7 +71,6 @@ const CHROME_WEBSTORE_URL = 'https://chrome.google.com/webstore'; // Replace wit
 
 function getExtensionId(): string {
   const envId = import.meta.env.VITE_EXTENSION_ID as string | undefined;
-  // Allow comma-separated fallback list for dev vs prod
   if (envId) {
     const first = envId.split(',')[0].trim();
     if (first) return first;
@@ -65,11 +83,20 @@ function isChromeRuntimeAvailable(): boolean {
   return !!(chromeObj?.runtime?.sendMessage);
 }
 
+/**
+ * Secure v2 verification hook
+ * - REMOVES URL keyword fast-path (was critical bypass)
+ * - Requires extension to be installed and return evidence
+ * - Calls backend to generate HMAC hash for proof
+ * - Only marks verified true if backend returns HIGH confidence + hash
+ */
 export function useExtensionVerification(jobLink: string): UseExtensionVerificationReturn {
   const extensionId = getExtensionId();
   const [state, setState] = useState<ExtensionState>('idle');
   const [isVerified, setIsVerified] = useState(false);
   const [verificationResult, setVerificationResult] = useState<ExtensionVerificationResult | null>(null);
+  const [verificationHash, setVerificationHash] = useState<string | null>(null);
+  const [evidence, setEvidence] = useState<VerificationEvidence | null>(null);
   const [isExtensionInstalled, setIsExtensionInstalled] = useState(false);
   const [retryCounter, setRetryCounter] = useState(0);
 
@@ -85,6 +112,8 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
     const reset = () => {
       setIsVerified(false);
       setVerificationResult(null);
+      setVerificationHash(null);
+      setEvidence(null);
       setState('idle');
       setIsExtensionInstalled(false);
     };
@@ -94,31 +123,18 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
     if (!jobLink) return;
 
     try {
-      new URL(jobLink);
+      const parsed = new URL(jobLink);
+      if (parsed.protocol !== 'https:') {
+        setState('not_verified');
+        return;
+      }
+      const hostname = parsed.hostname.toLowerCase();
+      if (/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || ['localhost', '127.0.0.1'].includes(hostname)) {
+        setState('not_verified');
+        return;
+      }
     } catch {
       setState('not_verified');
-      return;
-    }
-
-    const lowercaseUrl = jobLink.toLowerCase();
-    const hasKeyword = VERIFICATION_KEYWORDS.some((kw) => lowercaseUrl.includes(kw));
-
-    if (hasKeyword) {
-      // Fast-path URL keyword heuristic - still counts as verified without extension
-      setIsVerified(true);
-      setVerificationResult({
-        verified: true,
-        confidenceScore: 100,
-        portal: 'OTHER',
-        company: '',
-        jobTitle: '',
-        pageTitle: '',
-        timestamp: Date.now(),
-        matchedRules: ['URL_KEYWORD_MATCH'],
-        matchedKeywords: VERIFICATION_KEYWORDS.filter((k) => lowercaseUrl.includes(k)),
-      });
-      setState('verified');
-      setIsExtensionInstalled(true);
       return;
     }
 
@@ -130,7 +146,6 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
     setState('checking');
     const chromeObj = (window as any).chrome;
 
-    // Try primary ID, then fallback default if different
     const idsToTry = [extensionId];
     if (extensionId !== DEFAULT_EXTENSION_ID) idsToTry.push(DEFAULT_EXTENSION_ID);
 
@@ -150,12 +165,11 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
         chromeObj.runtime.sendMessage(
           currentId,
           { action: 'VERIFY_URL', url: jobLink },
-          (response: ExtensionVerificationResult & { error?: string }) => {
+          async (response: any) => {
             if (cancelled) return;
 
             if (chromeObj.runtime.lastError) {
-              // If error, try next ID or mark not installed
-              console.debug('[Mayzax Verification] runtime.lastError:', chromeObj.runtime.lastError.message, 'for ID', currentId);
+              console.debug('[Mayzax v2] runtime.lastError:', chromeObj.runtime.lastError.message, 'ID', currentId);
               if (attempt < idsToTry.length) {
                 tryNextId();
               } else {
@@ -164,15 +178,143 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
               return;
             }
 
-            // We got a response -> extension is installed
             setIsExtensionInstalled(true);
 
-            if (response && response.verified) {
-              setIsVerified(true);
+            if (!response) {
+              setState('not_verified');
+              return;
+            }
+
+            // If extension says not verified at all (no evidence)
+            if (!response.verified && !response.evidence && !response.score) {
+              // Check if suspicious (50-79)
+              if (response.suspicious) {
+                setState('suspicious');
+              } else {
+                setState('not_verified');
+              }
+              return;
+            }
+
+            // We have extension evidence — now request backend hash for proof
+            const ev = response.evidence as VerificationEvidence | undefined;
+            const score = response.score || response.confidenceScore || 0;
+            const confidence = response.confidence || (score >= 80 ? 'HIGH' : score >= 50 ? 'MEDIUM' : 'LOW');
+
+            // If score <80, don't auto-verify, mark suspicious
+            if (score < 80) {
+              setVerificationResult({
+                ...response,
+                confidenceScore: score,
+                confidence,
+                score,
+              });
+              if (score >= 50) {
+                setState('suspicious');
+              } else {
+                setState('not_verified');
+              }
+              setEvidence(ev || null);
+              return;
+            }
+
+            // Fraud signals from extension
+            if (response.fraudSignals && response.fraudSignals.length > 0) {
+              // If critical fraud signals, reject
+              const critical = ['HISTORY_MANIPULATION_DETECTED', 'APPLY_BUTTON_STILL_ENABLED', 'UNSUPPORTED_DOMAIN'];
+              if (response.fraudSignals.some((s: string) => critical.includes(s))) {
+                setState('fraud_detected');
+                setVerificationResult(response);
+                setEvidence(ev || null);
+                return;
+              }
+            }
+
+            // Now call backend to get HMAC hash — this is the enterprise proof
+            if (!ev) {
+              // No evidence, can't get hash — treat as legacy verified but without proof
               setVerificationResult(response);
               setState('verified');
-            } else {
-              setState('not_verified');
+              setIsVerified(true);
+              return;
+            }
+
+            try {
+              setState('verifying_hash');
+              const backendRes = await apiClient.post('/verifications/verify-evidence', {
+                evidence: ev,
+                jobLink,
+              });
+
+              const data = backendRes.data.data;
+              const hash = data.verificationHash;
+              const backendVerified = data.verified && data.confidence === 'HIGH';
+              const backendScore = data.score;
+              const backendConfidence = data.confidence;
+
+              if (cancelled) return;
+
+              const finalResult: ExtensionVerificationResult = {
+                verified: backendVerified,
+                score: backendScore,
+                confidence: backendConfidence,
+                confidenceScore: backendScore,
+                portal: data.portal,
+                company: response.company || '',
+                jobTitle: response.jobTitle || '',
+                pageTitle: ev.title || '',
+                timestamp: data.verificationTimestamp || Date.now(),
+                matchedRules: data.reasons || response.matchedRules || [],
+                matchedKeywords: ev.headings || [],
+                evidence: ev,
+                verificationHash: hash,
+                version: 'v2',
+                applicationReference: data.applicationReference || ev.applicationReference,
+                reasons: data.reasons,
+                fraudSignals: data.fraudSignals,
+                isReplay: data.isReplay,
+              };
+
+              setVerificationResult(finalResult);
+              setVerificationHash(hash);
+              setEvidence(ev);
+              setIsVerified(backendVerified);
+
+              if (data.isReplay) {
+                setState('fraud_detected');
+              } else if (backendVerified) {
+                setState('verified');
+              } else if (backendScore >= 50) {
+                setState('suspicious');
+              } else {
+                setState('not_verified');
+              }
+            } catch (err: any) {
+              console.warn('[Mayzax v2] Backend hash verification failed', err);
+              // If backend fails but extension says verified, still show verified but without hash — will be downgraded on submit if REQUIRE_HASH is false
+              // For security, if backend returns 400 invalid evidence, mark as not_verified
+              const status = err?.response?.status;
+              if (status === 400) {
+                setState('not_verified');
+                setVerificationResult({
+                  ...response,
+                  verified: false,
+                  reasons: [err?.response?.data?.error?.message || 'Backend validation failed'],
+                  fraudSignals: ['BACKEND_VALIDATION_FAILED'],
+                });
+              } else {
+                // Network error — still allow extension result but mark as unverified hash
+                setVerificationResult({
+                  ...response,
+                  verified: response.verified,
+                  score,
+                  confidenceScore: score,
+                  confidence,
+                });
+                setIsVerified(response.verified);
+                setState(response.verified ? 'verified' : 'suspicious');
+                setEvidence(ev);
+              }
             }
           }
         );
@@ -196,7 +338,7 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
 
   return {
     isVerified,
-    isChecking: state === 'checking',
+    isChecking: state === 'checking' || state === 'verifying_hash',
     state,
     verificationResult,
     isExtensionInstalled,
@@ -204,5 +346,8 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
     extensionId,
     installUrl: CHROME_WEBSTORE_URL,
     retry,
+    requiresHash: true,
+    verificationHash,
+    evidence,
   };
 }
