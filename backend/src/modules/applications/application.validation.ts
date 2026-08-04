@@ -73,7 +73,7 @@ export const createApplicationSchema = z.object({
   appliedAt: z.coerce.date().optional(),
   verified: z.boolean().default(false).optional(),
   verificationMethod: z.string().trim().max(100).nullable().optional(),
-  // Enterprise v2 fields
+  // Enterprise v1 fields
   verificationHash: z.string().regex(/^[a-f0-9]{64}$/i).optional().nullable(),
   verificationScore: z.number().int().min(0).max(100).optional().nullable(),
   verificationConfidence: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional().nullable(),

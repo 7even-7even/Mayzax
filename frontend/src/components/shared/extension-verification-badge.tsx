@@ -151,7 +151,7 @@ export function ExtensionVerificationBadge({
 
         <div className="rounded-lg bg-white/70 border border-amber-100 p-2">
           <p className="text-[11px] leading-snug text-slate-600">
-            <span className="font-semibold">Enterprise v2:</span> Auto-detects success on Greenhouse, Lever, Workday, LinkedIn, Indeed + 15 ATS, collects evidence, generates HMAC proof via backend. No keyword bypass.
+            <span className="font-semibold">Enterprise v1:</span> Auto-detects success on Greenhouse, Lever, Workday, LinkedIn, Indeed + 15 ATS, collects evidence, generates HMAC proof via backend. No keyword bypass.
           </p>
         </div>
       </div>
