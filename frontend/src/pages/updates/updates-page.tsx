@@ -270,7 +270,7 @@ export default function UpdatesPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 max-w-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md rounded-xl">
-                    {['TEAM_LEADER', 'RECRUITER', 'SALES_EXEC', 'RESUME_ASSIST', 'CLIENT'].map((role) => {
+                    {['ADMIN','TEAM_LEADER', 'RECRUITER', 'SALES_EXEC', 'RESUME_ASSIST', 'CLIENT'].map((role) => {
                       const isSelected = selectedRoles.includes(role);
                       return (
                         <DropdownMenuCheckboxItem

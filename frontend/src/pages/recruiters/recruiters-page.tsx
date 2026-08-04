@@ -138,6 +138,7 @@ export default function RecruitersPage() {
                 <SelectItem value="ADMIN">Admins</SelectItem>
                 <SelectItem value="RESUME_ASSIST">Resume Assistants</SelectItem>
                 <SelectItem value="SALES_EXEC">Sales Executives</SelectItem>
+                <SelectItem value="CLIENT">Clients</SelectItem>
                 <SelectItem value={ALL_ROLES}>All Roles</SelectItem>
               </SelectContent>
             </Select>
