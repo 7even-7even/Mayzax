@@ -4,7 +4,7 @@ import { defineManifest } from '@crxjs/vite-plugin';
 export default defineManifest({
   manifest_version: 3,
   name: 'Mayzax CRM — Application Verifier',
-  version: '2.0.0',
+  version: '1.0.0',
   key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw220UyDVVNfL81OzAEqBsrlsKl6S/QXy/imnWSEKXR75upb1oG/2rVDvTpNHMXBRLcmoNJE3YPJh/6SivUeOowTAPN8aCLBu5opxM0adn0SuKQFPkQFDFI1EtpGL9GbymGbQ7OJ6I1itHhgCvWjkh2EFevFx13DFAmZ+9sSXCPphH8aSxkHD5EfmI5u/64wnaUt4UmdvV4J+PC4CRup2dmqWUWjYGaUnLrlRVFVS+Rjy1MUbpLElTxtS2bYoNwlAXNVuurCbwW6jL5mOCZcF+g80hazcqqrKsgqeQGXEPBqAVL3bE8RGF8OYnnkMpRSeW34oVco7ZOWpwiY3wcoYpwIDAQAB',
   description:
     'Enterprise-grade job application verification engine — fraud-resistant detection with HMAC proof, multi-portal fingerprints, and evidence collection.',
@@ -35,33 +35,49 @@ export default defineManifest({
   content_scripts: [
     {
       matches: [
-        // Broad coverage for enterprise ATS + generic career sites (filtered in code via PortalRegistry)
-        'https://*/*',
-        'http://*/*',
-        // Explicit ATS for clarity (also covered by above)
-        'https://*.linkedin.com/*',
+        // LinkedIn
+        'https://*.linkedin.com/jobs/*',
+        'https://*.linkedin.com/easy-apply/*',
+        // Indeed
         'https://*.indeed.com/*',
+        // Glassdoor
         'https://*.glassdoor.com/*',
+        // Jobright
         'https://*.jobright.ai/*',
         'https://*.jobright.com/*',
+        // Simplify
         'https://*.simplify.jobs/*',
+        // SimplyHired
         'https://*.simplyhired.com/*',
+        // Wellfound / AngelList
         'https://*.wellfound.com/*',
         'https://*.angel.co/*',
+        // Handshake
         'https://*.joinhandshake.com/*',
         'https://*.handshake.com/*',
+        // Naukri
         'https://*.naukri.com/*',
+        // Dice
         'https://*.dice.com/*',
+        // Monster
         'https://*.monster.com/*',
+        // ZipRecruiter
         'https://*.ziprecruiter.com/*',
+        // CareerBuilder
         'https://*.careerbuilder.com/*',
+        // Lever
         'https://*.lever.co/*',
+        // Greenhouse
         'https://*.greenhouse.io/*',
         'https://*.greenhouse.com/*',
+        // SpeedyApply
         'https://*.speedyapply.com/*',
+        // The Muse
         'https://*.themuse.com/*',
+        // Y Combinator / Work at a Startup
         'https://*.ycombinator.com/*',
         'https://*.workatastartup.com/*',
+        // Enterprise ATS (Workday, SuccessFactors, Oracle, Taleo)
         'https://*.myworkdayjobs.com/*',
         'https://*.myworkday.com/*',
         'https://*.workday.com/*',
@@ -72,7 +88,6 @@ export default defineManifest({
         // Generic path-based job pages
         'https://*/careers/*',
         'https://*/jobs/*',
->>>>>>> Stashed changes
       ],
       js: ['src/content.ts'],
       run_at: 'document_idle',
@@ -82,20 +97,20 @@ export default defineManifest({
 
   permissions: ['storage', 'tabs', 'activeTab', 'scripting'],
 
-  host_permissions: [
-    'https://*/*',
-    'http://*/*',
-  ],
+  // Universal host permission — required to match the universal content_script.
+  // The actual filtering happens inside the content script via RecruitmentPageDetector.
+  host_permissions: ['https://*/*'],
 
   // Allows the Mayzax frontend to send messages to this extension.
-  // Update MAYZAX_FRONTEND_ORIGIN to your production URL before packaging.
   externally_connectable: {
     matches: [
-      // Production (update to your actual domain)
+      // Production
       'https://*.mayzax.app/*',
       'https://*.mayzax.vercel.app/*',
-      // Local development
+      // Local development — explicit Vite port + wildcard fallback
+      'http://localhost:5173/*',
       'http://localhost:*/*',
+      'http://127.0.0.1:5173/*',
       'http://127.0.0.1:*/*',
     ],
   },

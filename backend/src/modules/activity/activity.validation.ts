@@ -10,8 +10,8 @@ export const changeStatusSchema = z.object({
 
 export const activityHistoryQuerySchema = z.object({
   userId: z.string().uuid().optional(),
-  fromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'fromDate must be YYYY-MM-DD').optional(),
-  toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'toDate must be YYYY-MM-DD').optional(),
+  fromDate: z.preprocess((val) => (val === '' ? undefined : val), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'fromDate must be YYYY-MM-DD').optional()),
+  toDate: z.preprocess((val) => (val === '' ? undefined : val), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'toDate must be YYYY-MM-DD').optional()),
   status: userStatusEnum.optional(),
   role: z.enum(['TEAM_LEADER', 'RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC']).optional(),
   page: z.coerce.number().int().min(1).default(1),
@@ -19,7 +19,7 @@ export const activityHistoryQuerySchema = z.object({
 });
 
 export const productivityQuerySchema = z.object({
-  fromDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'fromDate must be YYYY-MM-DD').optional(),
-  toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'toDate must be YYYY-MM-DD').optional(),
+  fromDate: z.preprocess((val) => (val === '' ? undefined : val), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'fromDate must be YYYY-MM-DD').optional()),
+  toDate: z.preprocess((val) => (val === '' ? undefined : val), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'toDate must be YYYY-MM-DD').optional()),
   recruiterId: z.string().uuid().optional(),
 });

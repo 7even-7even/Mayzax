@@ -30,7 +30,15 @@ function formatBusinessDateLabel(dateStr: string): string {
 }
 
 async function downloadApplicationsExcel(applications: JobApplication[], isAdmin: boolean, filename: string) {
-  const ExcelJS = await import('exceljs').then((m) => m.default ?? m);
+  let ExcelJS;
+  try {
+    ExcelJS = await import('exceljs').then((m) => m.default ?? m);
+  } catch (err) {
+    console.error('Failed to load exceljs', err);
+    toast.error('Application update detected. Reloading page...');
+    setTimeout(() => window.location.reload(), 1500);
+    return;
+  }
   const { saveAs } = await import('file-saver');
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'Mayzax ATS';

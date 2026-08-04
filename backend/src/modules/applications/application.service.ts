@@ -75,7 +75,7 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
     );
   }
 
-  // Enterprise v2 verification handling
+  // Enterprise v1 verification handling
   let verificationLog: any = null;
   let finalVerified = input.verified ?? false;
   let finalVerificationMethod = input.verificationMethod ?? null;

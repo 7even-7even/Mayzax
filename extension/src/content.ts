@@ -1,8 +1,22 @@
+/**
+ * content.ts — Mayzax Extension Content Script
+ *
+ * Injected into every HTTPS page (matches: all https pages).
+ *
+ * Pipeline:
+ *   1. RecruitmentPageDetector.detect() — lightweight gate, exits in <1ms on
+ *      unrelated pages. No MutationObserver, no heavy DOM work.
+ *   2. If NOT recruitment → log and exit immediately.
+ *   3. If recruitment → run VerificationEngine + store result + notify background.
+ *   4. MutationObserver is only wired AFTER the page passes detection.
+ *   5. SPA polling (setInterval URL check) is only started for recruitment pages.
+ */
+
 import { VerificationEngine } from './verification/engine/VerificationEngine';
 import { VerificationStoreV2 } from './storage/VerificationStoreV2';
 import { PortalRegistryV2 } from './verification/portals';
 import { ENGINE_VERSION_NAME } from './verification/engine/EngineConfig';
-import { isConfirmationUrl } from './verification/utils/dom';
+import { RecruitmentPageDetector } from './detectors/RecruitmentPageDetector';
 
 // Legacy fallback imports
 import { PortalRegistry } from './detectors/PortalRegistry';
@@ -11,71 +25,32 @@ import { extractPageMetadata } from './utils/metadata';
 const engine = new VerificationEngine();
 const portalRegistryV2 = PortalRegistryV2.getInstance();
 
-function setupInteractionTracking() {
-  document.addEventListener('click', () => {}, { passive: true });
-  document.addEventListener('submit', () => {}, { passive: true });
-}
+// ── State ────────────────────────────────────────────────────────────────────
 
-function setupHistoryGuard() {
-  try {
-    window.addEventListener('popstate', () => {});
-  } catch (err) {
-    console.warn('[Mayzax v1] History guard setup failed', err);
-  }
-}
+/** Set to true once the page has been confirmed as recruitment-related. */
+let isRecruitmentPage = false;
 
-function isGreenhouseConfirmationUrl(url: string): boolean {
-  try {
-    const u = new URL(url);
-    const host = u.hostname.toLowerCase();
-    const path = (u.pathname + u.search).toLowerCase();
-    if (host.includes('greenhouse.io') || host.includes('greenhouse.com')) {
-      if (path.includes('confirmation') || path.includes('thank-you') || path.includes('submitted') || path.includes('success')) {
-        return true;
-      }
-      // Greenhouse job-boards often have /confirmation at end even if not in pathPatterns strict? Check any confirmation-like
-      if (isConfirmationUrl(url)) return true;
-    }
-    return isConfirmationUrl(url);
-  } catch {
-    return false;
-  }
-}
+/** Debounce timer for MutationObserver-triggered re-runs. */
+let debounceTimer: number | null = null;
 
-async function runDetectionV2() {
+/** Last URL seen — used for SPA navigation detection. */
+let lastUrl = window.location.href;
+
+// ── Core verification logic ──────────────────────────────────────────────────
+
+async function runDetectionV2(): Promise<void> {
   const currentUrl = window.location.href;
-  console.debug('[Mayzax v1] Running detection for', currentUrl);
+  console.debug(`[Mayzax] Starting verification for ${currentUrl}`);
 
   try {
     const result = await engine.verify(document, currentUrl, ENGINE_VERSION_NAME);
-    
-    console.log(`[Mayzax v1] Verification result: score=${result.score} confidence=${result.confidence} verified=${result.verified}`, result.reasons);
 
-    // Determine if we should save: save if score>=30 OR if URL looks like confirmation (to ensure UX)
-    const confirmationLike = isConfirmationUrl(currentUrl) || isGreenhouseConfirmationUrl(currentUrl);
-    const shouldSave = result.score >= 30 || confirmationLike;
+    console.log(
+      `[Mayzax] Verification result: score=${result.score} confidence=${result.confidence} verified=${result.verified}`,
+      result.reasons,
+    );
 
-    // If URL is confirmation-like but score low, boost score to at least 70 for UX while keeping reasons
-    let finalResult = result;
-    if (confirmationLike && result.score < 70) {
-      console.log(`[Mayzax v2] URL is confirmation-like (${currentUrl}) but score low (${result.score}), boosting to 75 for UX`);
-      finalResult = {
-        ...result,
-        score: Math.max(result.score, 75),
-        confidence: result.score >= 50 ? 'MEDIUM' as const : 'MEDIUM' as const,
-        verified: result.score >= 50 ? true : result.verified, // mark verified if >=50 and confirmation-like
-        reasons: [...result.reasons, `URL pattern indicates confirmation page: ${currentUrl} — boosted for UX`],
-      };
-      // For strong confirmation URLs like greenhouse, boost to HIGH if basic checks passed
-      if (result.evidence.hostname.includes('greenhouse') && result.evidence.title) {
-        finalResult.score = Math.max(finalResult.score, 85);
-        finalResult.confidence = 'HIGH';
-        finalResult.verified = true;
-        finalResult.reasons.push('Greenhouse confirmation detected — auto-verified HIGH');
-      }
-    }
-
-    if (shouldSave) {
+    if (result.score >= 50) {
       const plugin = portalRegistryV2.getPluginForHostname(new URL(currentUrl).hostname);
       let company = '';
       let jobTitle = '';
@@ -90,32 +65,31 @@ async function runDetectionV2() {
           }
         }
       } catch {
-        company = finalResult.evidence.hostname.split('.')[0];
-        jobTitle = finalResult.evidence.title.slice(0, 100);
+        company = result.evidence.hostname.split('.')[0];
+        jobTitle = result.evidence.title.slice(0, 100);
       }
 
-      // Filter generic titles
-      if (/thank you|application submitted|success|confirmation|applied|done|thanks|applicationcompleted/i.test(jobTitle)) {
+      // Filter generic thank-you page titles from job title field
+      if (
+        /thank you|application submitted|success|confirmation|applied|done|thanks|applicationcompleted/i.test(jobTitle)
+      ) {
         jobTitle = '';
       }
 
-      // Save via V2 store
       const entry = await VerificationStoreV2.saveV2(result, company, jobTitle);
-      console.log('[Mayzax v1] Verification cached:', entry);
+      console.log('[Mayzax] Verification cached:', entry);
 
-      // Notify background with full v1 payload
+      // Notify background — v2 payload
       try {
         chrome.runtime.sendMessage({
           action: 'PAGE_VERIFIED_V1',
-          payload: {
-            result,
-            entry,
-          },
+          payload: { result, entry },
         });
       } catch (e) {
-        console.warn('[Mayzax v1] Failed to notify background', e);
+        console.warn('[Mayzax] Failed to notify background', e);
       }
 
+      // Legacy PAGE_VERIFIED for backward compat (popup, etc.)
       try {
         chrome.runtime.sendMessage({
           action: 'PAGE_VERIFIED',
@@ -130,7 +104,6 @@ async function runDetectionV2() {
             matchedRules: result.reasons,
             matchedKeywords: result.evidence.headings,
             timestamp: result.verificationTimestamp,
-            // v1 extras
             score: result.score,
             confidence: result.confidence,
             evidence: result.evidence,
@@ -139,18 +112,18 @@ async function runDetectionV2() {
             fraudSignals: result.fraudSignals,
           },
         });
-      } catch {}
+      } catch { /* ignore — popup may not be open */ }
     } else {
-      console.debug('[Mayzax v1] Score below threshold, not caching', result.score);
+      console.debug(`[Mayzax] Verification skipped — score ${result.score} below threshold (need ≥50)`);
     }
   } catch (err) {
-    console.error('[Mayzax v1] Detection failed', err);
-    // Fallback to legacy detector for migration safety
+    console.error('[Mayzax] Detection failed:', err);
+    // Fallback to legacy detector for backward compat
     runLegacyDetection();
   }
 }
 
-function runLegacyDetection(forceForConfirmation = false) {
+function runLegacyDetection(): void {
   try {
     const currentUrl = window.location.href;
     const confirmationLike = isConfirmationUrl(currentUrl);
@@ -193,7 +166,12 @@ function runLegacyDetection(forceForConfirmation = false) {
             confirmationText: result.matchedKeywords.join(' ') || document.body.textContent?.slice(0, 500) || '',
             applicationReference: null,
             detectedButtons: [],
-            domFingerprint: { hasConfirmationCard: confirmationLike, hasSuccessBanner: confirmationLike, expectedContainersFound: confirmationLike ? 1 : 0, unexpectedApplyButtonPresent: false },
+            domFingerprint: {
+              hasConfirmationCard: false,
+              hasSuccessBanner: false,
+              expectedContainersFound: 0,
+              unexpectedApplyButtonPresent: false,
+            },
             verificationTimestamp: Date.now(),
             extensionVersion: ENGINE_VERSION_NAME,
             https: currentUrl.startsWith('https://'),
@@ -204,114 +182,90 @@ function runLegacyDetection(forceForConfirmation = false) {
           fraudSignals: confirmationLike ? [] : undefined,
         } as any,
         meta.company,
-        meta.jobTitle
-      ).then(entry => {
-        console.log('[Mayzax v2] Legacy verification cached', entry);
-        chrome.runtime.sendMessage({ action: 'PAGE_VERIFIED', payload: {
-          portal: detector.portal,
-          company: meta.company,
-          jobTitle: meta.jobTitle,
-          url: currentUrl,
-          pageTitle: meta.pageTitle,
-          verified: boostedScore >= 50,
-          confidenceScore: boostedScore,
-          matchedRules: result.matchedRules,
-          matchedKeywords: result.matchedKeywords,
-          timestamp: Date.now(),
-          score: boostedScore,
-          confidence: boostedScore >= 80 ? 'HIGH' : boostedScore >= 50 ? 'MEDIUM' : 'LOW',
-        }});
-      });
-    } else if (confirmationLike) {
-      // Force save for confirmation URLs even if legacy detection failed
-      console.log('[Mayzax v2] Forcing save for confirmation-like URL despite low legacy score');
-      const meta = extractPageMetadata(document, currentUrl, detector.portal);
-      const forcedResult = {
-        verified: true,
-        score: 75,
-        confidence: 'MEDIUM' as const,
-        portal: detector.portal as any,
-        reasons: ['Forced save for confirmation URL pattern', ...result.matchedRules],
-        evidence: {
-          portal: detector.portal as any,
-          hostname: new URL(currentUrl).hostname,
-          pathname: new URL(currentUrl).pathname,
-          fullUrl: currentUrl,
-          normalizedUrl: currentUrl,
-          title: document.title,
-          headings: [document.title],
-          confirmationText: document.body.textContent?.slice(0, 1000) || '',
-          applicationReference: null,
-          detectedButtons: [],
-          domFingerprint: { hasConfirmationCard: true, hasSuccessBanner: true, expectedContainersFound: 1, unexpectedApplyButtonPresent: false },
-          verificationTimestamp: Date.now(),
-          extensionVersion: ENGINE_VERSION_NAME,
-          https: currentUrl.startsWith('https://'),
-        },
-        verificationTimestamp: Date.now(),
-        version: 'v2' as const,
-        applicationReference: null,
-      };
-      VerificationStoreV2.saveV2(forcedResult as any, meta.company || new URL(currentUrl).hostname.split('.')[0], meta.jobTitle).then(entry => {
-        console.log('[Mayzax v2] Forced verification cached', entry);
-      });
+        meta.jobTitle,
+      );
+      chrome.runtime.sendMessage({ action: 'PAGE_VERIFIED', payload });
     }
   } catch (e) {
-    console.warn('[Mayzax v1] Legacy fallback failed', e);
+    console.warn('[Mayzax] Legacy fallback failed:', e);
   }
 }
 
-// Initial setup
-setupInteractionTracking();
-setupHistoryGuard();
+// ── SPA-aware observer — only wired after page passes detection ─────────────
+
+function setupSpaObserver(): void {
+  const observer = new MutationObserver(() => {
+    const currentUrl = window.location.href;
+    if (currentUrl !== lastUrl) {
+      lastUrl = currentUrl;
+    }
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = window.setTimeout(() => {
+      // Re-run fast detection on new SPA route before committing to engine
+      const check = RecruitmentPageDetector.detect(document, window.location.href);
+      if (check.isRecruitment) {
+        runDetectionV2();
+      } else {
+        console.debug('[Mayzax] SPA navigation — new route not recruitment, skipping');
+      }
+    }, 1200) as unknown as number;
+  });
+
+  if (document.body) {
+    observer.observe(document.body, { childList: true, subtree: true });
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+  }
+
+  // URL polling for history.pushState-based SPAs (MutationObserver alone misses these)
+  setInterval(() => {
+    const current = window.location.href;
+    if (current !== lastUrl) {
+      lastUrl = current;
+      setTimeout(() => {
+        const check = RecruitmentPageDetector.detect(document, current);
+        if (check.isRecruitment) {
+          runDetectionV2();
+        }
+      }, 1000);
+    }
+  }, 1000);
+}
+
+// ── Entry point ──────────────────────────────────────────────────────────────
+
+async function main(): Promise<void> {
+  const currentUrl = window.location.href;
+
+  // Fast gate — runs synchronously in <1ms for non-recruitment pages
+  const detection = RecruitmentPageDetector.detect(document, currentUrl);
+
+  if (!detection.isRecruitment) {
+    // Exit immediately — no observers, no engine, no DOM crawling
+    console.debug('[Mayzax] Page ignored (not recruitment related)');
+    return;
+  }
+
+  isRecruitmentPage = true;
+  console.debug(`[Mayzax] Recruitment page detected (trigger: ${detection.trigger})`);
+
+  // Wire up SPA observer only for confirmed recruitment pages
+  setupSpaObserver();
+
+  // Slight delay to let the SPA settle before running verification
+  setTimeout(runDetectionV2, 1500);
+}
+
+// ── Bootstrap ────────────────────────────────────────────────────────────────
+
+console.log(`[Mayzax] Content script loaded v${ENGINE_VERSION_NAME} — universal mode`);
 
 console.log(`[Mayzax v2] Content script loaded v${ENGINE_VERSION_NAME} on ${window.location.href}`);
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  setTimeout(runDetectionV2, 800);
-  setTimeout(runDetectionV2, 2500);
-  setTimeout(runDetectionV2, 5000);
+  main();
 } else {
-  window.addEventListener('DOMContentLoaded', () => {
-    setTimeout(runDetectionV2, 800);
-    setTimeout(runDetectionV2, 2500);
-  });
+  window.addEventListener('DOMContentLoaded', main);
 }
-
-// MutationObserver for SPA
-let debounceTimer: number | null = null;
-let lastUrl = window.location.href;
-
-const observer = new MutationObserver(() => {
-  const currentUrl = window.location.href;
-  if (currentUrl !== lastUrl) {
-    console.log(`[Mayzax v2] URL changed from ${lastUrl} to ${currentUrl}`);
-    lastUrl = currentUrl;
-  }
-
-  if (debounceTimer) clearTimeout(debounceTimer);
-  debounceTimer = window.setTimeout(() => {
-    runDetectionV2();
-  }, 800) as unknown as number;
-});
-
-if (document.body) {
-  observer.observe(document.body, { childList: true, subtree: true });
-} else {
-  document.addEventListener('DOMContentLoaded', () => {
-    if (document.body) observer.observe(document.body, { childList: true, subtree: true });
-  });
-}
-
-// SPA navigation detection
-let lastHref = window.location.href;
-setInterval(() => {
-  if (window.location.href !== lastHref) {
-    console.log(`[Mayzax v2] Navigation detected: ${lastHref} -> ${window.location.href}`);
-    lastHref = window.location.href;
-    setTimeout(runDetectionV2, 500);
-    setTimeout(runDetectionV2, 2000);
-  }
-}, 500);
-
-console.log(`[Mayzax v1] Content script loaded v${ENGINE_VERSION_NAME}`);

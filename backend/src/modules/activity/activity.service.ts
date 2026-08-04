@@ -661,13 +661,19 @@ export async function getProductivityMetrics(
   };
 
   if (query.recruiterId) {
-    where.userId = query.recruiterId;
+    if (requester.role !== Role.ADMIN && requester.role !== Role.TEAM_LEADER) {
+      where.userId = requester.id;
+    } else {
+      where.userId = query.recruiterId;
+    }
   } else if (requester.role === Role.TEAM_LEADER) {
     const teamUsers = await prisma.user.findMany({
       where: { createdById: requester.id, deletedAt: null },
       select: { id: true },
     });
     where.userId = { in: [requester.id, ...teamUsers.map((u) => u.id)] };
+  } else if (requester.role !== Role.ADMIN) {
+    where.userId = requester.id;
   }
 
   const logs = await prisma.activityLog.findMany({ where });

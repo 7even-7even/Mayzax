@@ -61,7 +61,7 @@ export default function Popup() {
         <div style={{ padding: '20px', textAlign: 'center', color: '#94A3B8' }}>Loading...</div>
       ) : (
         <>
-          <div className="section-title">Latest Verification (Enterprise v2)</div>
+          <div className="section-title">Latest Verification (Enterprise v1)</div>
           {latestEntry ? (
             <VerificationCard entry={latestEntry} />
           ) : (
@@ -120,7 +120,7 @@ export default function Popup() {
 
           <div className="footer-actions" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '10px', color: '#475569' }}>
-              {entries.length} cached • Enterprise v2 • HMAC secured
+              {entries.length} cached • Enterprise v1 • HMAC secured
             </span>
             {entries.length > 0 && (
               <button className="btn btn-danger" onClick={handleClear}>

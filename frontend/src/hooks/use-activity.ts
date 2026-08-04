@@ -192,7 +192,7 @@ export function useActivityUsers() {
 
 export function useProductivityMetrics(params: { fromDate?: string; toDate?: string; recruiterId?: string }) {
   const { user } = useAuth();
-  const canMonitor = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER';
+  const canMonitor = ['ADMIN', 'TEAM_LEADER', 'RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC'].includes(user?.role || '');
 
   return useQuery({
     queryKey: ['activity-productivity', params],
