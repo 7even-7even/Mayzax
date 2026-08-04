@@ -1,7 +1,7 @@
 {
   "name": "mayzax-crm-extension",
-  "version": "2.0.0",
-  "description": "Mayzax CRM — Enterprise Job Application Verification Engine v2 (HMAC secured, fraud-resistant, 15+ ATS)",
+  "version": "1.1.0",
+  "description": "Mayzax CRM — Universal ATS Intelligence v1.1 (Enterprise Verification Engine, evidence aggregation, 25+ ATS, HMAC secured)",
   "private": true,
   "type": "module",
   "scripts": {
