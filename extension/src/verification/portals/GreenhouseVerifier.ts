@@ -1,23 +1,34 @@
 import { BasePortalPlugin } from './PortalPluginBase';
 import { JobPortal } from '../types';
+import {
+  TITLE_SUCCESS_PHRASES,
+  HEADING_SUCCESS_PHRASES,
+  BODY_SUCCESS_PHRASES,
+  FAILURE_PHRASES,
+  URL_SUCCESS_PATTERNS,
+  POSITIVE_BUTTON_PATTERNS,
+  NEGATIVE_BUTTON_PATTERNS,
+} from '../utils/successPhrases';
 
 export class GreenhouseVerifier extends BasePortalPlugin {
   readonly portal = JobPortal.GREENHOUSE;
   readonly displayName = 'Greenhouse';
-  readonly hostPatterns = [/(?:^|\.)greenhouse\.io$/, /(?:^|\.)greenhouse\.com$/, /^boards\.greenhouse\.io$/];
-  readonly pathPatterns = [/\/confirmation/i, /\/applications?\/.*submitted/i, /\/thank.?you/i, /\/success/i];
-  readonly titlePatterns = [/application submitted/i, /thank you/i, /confirmation/i, /your application/i];
+  readonly hostPatterns = [/(?:^|\.)greenhouse\.io$/, /(?:^|\.)greenhouse\.com$/, /^boards\.greenhouse\.io$/, /(?:^|\.)job-boards\.greenhouse\.io$/];
+  readonly pathPatterns = [/\/confirmation/i, /\/applications?\/.*submitted/i, /\/thank.?you/i, /\/success/i, ...URL_SUCCESS_PATTERNS];
+  readonly titlePatterns = [/application submitted/i, /thank you/i, /confirmation/i, /your application/i, ...TITLE_SUCCESS_PHRASES];
   readonly headingPatterns = [
     /application submitted/i,
     /thank you for applying/i,
     /your application has been submitted/i,
     /application received/i,
+    ...HEADING_SUCCESS_PHRASES,
   ];
   readonly confirmationPatterns = [
     /your application for .* has been submitted/i,
     /thank you for applying/i,
     /application submitted/i,
     /we have received your application/i,
+    ...BODY_SUCCESS_PHRASES,
   ];
   readonly referencePatterns = [
     /application\s*(id|reference|number)\s*[:#]?\s*([A-Z0-9-]{6,})/i,
@@ -29,9 +40,46 @@ export class GreenhouseVerifier extends BasePortalPlugin {
     '.thank-you',
     '[class*="confirmation"]',
     '.board-content',
+    '.application--confirmation',
+    '[data-mapped="true"]',
+    '.success-card',
+    '.confirmation-card',
   ];
   readonly applyButtonSelectors = ['a[href*="apply"]', 'button', '#apply_button'];
   readonly weightBonus = 5;
+
+  // v1.1 Enhanced
+  readonly successPhrases = BODY_SUCCESS_PHRASES;
+  readonly failurePhrases = FAILURE_PHRASES;
+  readonly confirmationSelectors = [
+    '#application_confirmation',
+    '.application-submitted',
+    '.thank-you',
+    '[class*="confirmation"]',
+    '.board-content',
+    '.application--confirmation',
+    '[data-mapped="true"]',
+    '.success-card',
+    '.confirmation-card',
+  ];
+  readonly applicationIdSelectors = ['.application-id', '#applicationId', '[class*="application-id"]'];
+  readonly candidateIdSelectors = ['.candidate-id', '#candidateId'];
+  readonly receiptSelectors = ['.receipt-card', '.receipt'];
+  readonly successIconSelectors = ['[class*="checkmark"]', '[class*="success-icon"]', '.icon-success'];
+  readonly progressSelectors = ['.progress-completed', '.completed-timeline'];
+  readonly positiveButtonPatterns = POSITIVE_BUTTON_PATTERNS;
+  readonly negativeButtonPatterns = NEGATIVE_BUTTON_PATTERNS;
+  readonly domFingerprints = {
+    successCard: ['#application_confirmation', '.application-submitted', '.success-card', '.confirmation-card'],
+    confirmationBanner: ['.alert-success', '[role="alert"]', '.success-banner'],
+    successIcon: ['[class*="checkmark"]', '[class*="success-icon"]'],
+    progressCompleted: ['.progress-completed', '.completed-timeline'],
+    disabledForm: ['form[disabled]', '.form-disabled'],
+    readOnlySummary: ['.application-summary', '.read-only'],
+    receiptCard: ['.receipt-card'],
+    confirmationPanel: ['.confirmation-panel', '.success-panel'],
+    applicationSummary: ['.application-summary'],
+  };
 
   extractCompany(doc: Document, url: URL): string | null {
     const companyEl = doc.querySelector('.company-name');
@@ -39,7 +87,6 @@ export class GreenhouseVerifier extends BasePortalPlugin {
       const text = companyEl.textContent?.replace(/at\s+/i, '').trim();
       if (text) return text;
     }
-    // URL path: boards.greenhouse.io/company/jobs/...
     const parts = url.pathname.split('/').filter(Boolean);
     if (parts.length > 0) return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
     return super.extractCompany(doc, url);
