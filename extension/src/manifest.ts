@@ -85,9 +85,7 @@ export default defineManifest({
         'https://*.sapsf.com/*',
         'https://*.oraclecloud.com/*',
         'https://*.taleo.net/*',
-        // Generic career sites
-        'https://*.careers.*/*',
-        'https://*.jobs.*/*',
+        // Generic path-based job pages
         'https://*/careers/*',
         'https://*/jobs/*',
       ],

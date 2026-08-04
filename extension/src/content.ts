@@ -23,18 +23,18 @@ function setupHistoryGuard() {
   try {
     window.addEventListener('popstate', () => {});
   } catch (err) {
-    console.warn('[Mayzax v2] History guard setup failed', err);
+    console.warn('[Mayzax v1] History guard setup failed', err);
   }
 }
 
 async function runDetectionV2() {
   const currentUrl = window.location.href;
-  console.debug('[Mayzax v2] Running detection for', currentUrl);
+  console.debug('[Mayzax v1] Running detection for', currentUrl);
 
   try {
     const result = await engine.verify(document, currentUrl, ENGINE_VERSION_NAME);
     
-    console.log(`[Mayzax v2] Verification result: score=${result.score} confidence=${result.confidence} verified=${result.verified}`, result.reasons);
+    console.log(`[Mayzax v1] Verification result: score=${result.score} confidence=${result.confidence} verified=${result.verified}`, result.reasons);
 
     // Only save if score >= 50 (suspicious threshold) to avoid noise, but store all for audit?
     // We'll save if score >= 50, but for verified we need >=80
@@ -53,25 +53,25 @@ async function runDetectionV2() {
       }
 
       // Filter generic titles
-      if (/thank you|application submitted|success|confirmation/i.test(jobTitle)) {
+      if (/thank you|application submitted|success|confirmation|applied|done|thanks|applicationcompleted/i.test(jobTitle)) {
         jobTitle = '';
       }
 
       // Save via V2 store
       const entry = await VerificationStoreV2.saveV2(result, company, jobTitle);
-      console.log('[Mayzax v2] Verification cached:', entry);
+      console.log('[Mayzax v1] Verification cached:', entry);
 
-      // Notify background with full v2 payload
+      // Notify background with full v1 payload
       try {
         chrome.runtime.sendMessage({
-          action: 'PAGE_VERIFIED_V2',
+          action: 'PAGE_VERIFIED_V1',
           payload: {
             result,
             entry,
           },
         });
       } catch (e) {
-        console.warn('[Mayzax v2] Failed to notify background', e);
+        console.warn('[Mayzax v1] Failed to notify background', e);
       }
 
       // Also notify legacy PAGE_VERIFIED for backward compat
@@ -89,7 +89,7 @@ async function runDetectionV2() {
             matchedRules: result.reasons,
             matchedKeywords: result.evidence.headings,
             timestamp: result.verificationTimestamp,
-            // v2 extras
+            // v1 extras
             score: result.score,
             confidence: result.confidence,
             evidence: result.evidence,
@@ -100,10 +100,10 @@ async function runDetectionV2() {
         });
       } catch {}
     } else {
-      console.debug('[Mayzax v2] Score below threshold, not caching', result.score);
+      console.debug('[Mayzax v1] Score below threshold, not caching', result.score);
     }
   } catch (err) {
-    console.error('[Mayzax v2] Detection failed', err);
+    console.error('[Mayzax v1] Detection failed', err);
     // Fallback to legacy detector for migration safety
     runLegacyDetection();
   }
@@ -153,7 +153,7 @@ function runLegacyDetection() {
             https: currentUrl.startsWith('https://'),
           },
           verificationTimestamp: Date.now(),
-          version: 'v2',
+          version: 'v1',
           applicationReference: null,
         } as any,
         meta.company,
@@ -162,7 +162,7 @@ function runLegacyDetection() {
       chrome.runtime.sendMessage({ action: 'PAGE_VERIFIED', payload });
     }
   } catch (e) {
-    console.warn('[Mayzax v2] Legacy fallback failed', e);
+    console.warn('[Mayzax v1] Legacy fallback failed', e);
   }
 }
 
@@ -210,4 +210,4 @@ setInterval(() => {
   }
 }, 1000);
 
-console.log(`[Mayzax v2] Content script loaded v${ENGINE_VERSION_NAME}`);
+console.log(`[Mayzax v1] Content script loaded v${ENGINE_VERSION_NAME}`);
