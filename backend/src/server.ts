@@ -20,8 +20,12 @@ async function main() {
 
   // Initialize queue subsystem (BullMQ or node-cron fallback)
   await getQueue();
-  registerJobProcessors();
-  startPeriodicJobs();
+  try {
+    await registerJobProcessors();
+    startPeriodicJobs();
+  } catch (err) {
+    logger.error({ err }, 'Failed to register/start background job processors');
+  }
 
   // Initialize Firebase Admin (no-op if not configured)
   getFirebaseApp();
@@ -45,6 +49,10 @@ async function main() {
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('unhandledRejection', (reason) => {
+    if (reason instanceof Error) {
+      logger.error({ err: reason, message: reason.message, stack: reason.stack }, 'Unhandled promise rejection');
+      return;
+    }
     logger.error({ reason }, 'Unhandled promise rejection');
   });
 }

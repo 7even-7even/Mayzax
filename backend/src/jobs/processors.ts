@@ -189,12 +189,26 @@ async function processRollupAll() {
   await rollUpAllForDate(yesterday);
 }
 
-export function registerJobProcessors() {
-  registerProcessor(Jobs.BreakReminder, processBreakReminder);
-  registerProcessor(Jobs.ShiftEndReminder, processShiftEndReminder);
-  registerProcessor(Jobs.DispatchNotification, processDispatchNotification);
-  registerProcessor(Jobs.RollupAttendanceDay, processRollupDay);
-  registerProcessor(Jobs.RollupAllToday, processRollupAll);
+export async function registerJobProcessors() {
+  const registrations = [
+    [Jobs.BreakReminder, registerProcessor(Jobs.BreakReminder, processBreakReminder)],
+    [Jobs.ShiftEndReminder, registerProcessor(Jobs.ShiftEndReminder, processShiftEndReminder)],
+    [Jobs.DispatchNotification, registerProcessor(Jobs.DispatchNotification, processDispatchNotification)],
+    [Jobs.RollupAttendanceDay, registerProcessor(Jobs.RollupAttendanceDay, processRollupDay)],
+    [Jobs.RollupAllToday, registerProcessor(Jobs.RollupAllToday, processRollupAll)],
+  ] as const;
+
+  const results = await Promise.allSettled(registrations.map(([, promise]) => promise));
+  const failed = results
+    .map((result, idx) => ({ result, job: registrations[idx][0] }))
+    .filter((x) => x.result.status === 'rejected');
+
+  if (failed.length > 0) {
+    for (const f of failed) {
+      logger.error({ job: f.job, err: (f.result as PromiseRejectedResult).reason }, 'Failed to register queue processor');
+    }
+    throw new Error(`Failed to register ${failed.length} queue processor(s)`);
+  }
 }
 
 /** Schedule periodic jobs (daily rollup) — called once at server boot. */

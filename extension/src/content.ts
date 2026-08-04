@@ -20,7 +20,7 @@ function setupHistoryGuard() {
   try {
     window.addEventListener('popstate', () => {});
   } catch (err) {
-    console.warn('[Mayzax v2] History guard setup failed', err);
+    console.warn('[Mayzax v1] History guard setup failed', err);
   }
 }
 
@@ -44,12 +44,12 @@ function isGreenhouseConfirmationUrl(url: string): boolean {
 
 async function runDetectionV2() {
   const currentUrl = window.location.href;
-  console.log(`[Mayzax v2] Running detection for ${currentUrl} at ${new Date().toISOString()}`);
+  console.debug('[Mayzax v1] Running detection for', currentUrl);
 
   try {
     const result = await engine.verify(document, currentUrl, ENGINE_VERSION_NAME);
     
-    console.log(`[Mayzax v2] Verification result: score=${result.score} confidence=${result.confidence} verified=${result.verified}`, result.reasons, result.fraudSignals);
+    console.log(`[Mayzax v1] Verification result: score=${result.score} confidence=${result.confidence} verified=${result.verified}`, result.reasons);
 
     // Determine if we should save: save if score>=30 OR if URL looks like confirmation (to ensure UX)
     const confirmationLike = isConfirmationUrl(currentUrl) || isGreenhouseConfirmationUrl(currentUrl);
@@ -94,45 +94,26 @@ async function runDetectionV2() {
         jobTitle = finalResult.evidence.title.slice(0, 100);
       }
 
-      if (/thank you|application submitted|success|confirmation/i.test(jobTitle)) {
-        // Try to get job title from og:title or meta
-        const ogTitle = document.querySelector('meta[property="og:title"]');
-        if (ogTitle) {
-          const ogContent = ogTitle.getAttribute('content') || '';
-          if (!/thank you|submitted|confirmation/i.test(ogContent)) {
-            jobTitle = ogContent.slice(0, 100);
-          } else {
-            jobTitle = '';
-          }
-        } else {
-          jobTitle = '';
-        }
+      // Filter generic titles
+      if (/thank you|application submitted|success|confirmation|applied|done|thanks|applicationcompleted/i.test(jobTitle)) {
+        jobTitle = '';
       }
 
-      // For greenhouse, also try to extract job title from URL or h1 that is not confirmation
-      if (!jobTitle) {
-        const possibleTitles = document.querySelectorAll('h1, h2, .app-title, .posting-header h2');
-        for (const el of Array.from(possibleTitles)) {
-          const txt = (el.textContent || '').trim();
-          if (txt && !/thank you|application submitted|confirmation|success/i.test(txt) && txt.length < 100 && txt.length > 5) {
-            jobTitle = txt;
-            break;
-          }
-        }
-      }
+      // Save via V2 store
+      const entry = await VerificationStoreV2.saveV2(result, company, jobTitle);
+      console.log('[Mayzax v1] Verification cached:', entry);
 
-      console.log(`[Mayzax v2] Saving verification: company=${company}, jobTitle=${jobTitle}, score=${finalResult.score}`);
-
-      const entry = await VerificationStoreV2.saveV2(finalResult, company, jobTitle);
-      console.log('[Mayzax v2] Verification cached:', entry);
-
+      // Notify background with full v1 payload
       try {
         chrome.runtime.sendMessage({
-          action: 'PAGE_VERIFIED_V2',
-          payload: { result: finalResult, entry },
+          action: 'PAGE_VERIFIED_V1',
+          payload: {
+            result,
+            entry,
+          },
         });
       } catch (e) {
-        console.warn('[Mayzax v2] Failed to notify background', e);
+        console.warn('[Mayzax v1] Failed to notify background', e);
       }
 
       try {
@@ -143,28 +124,28 @@ async function runDetectionV2() {
             company,
             jobTitle,
             url: currentUrl,
-            pageTitle: finalResult.evidence.title,
-            verified: finalResult.verified,
-            confidenceScore: finalResult.score,
-            matchedRules: finalResult.reasons,
-            matchedKeywords: finalResult.evidence.headings,
-            timestamp: finalResult.verificationTimestamp,
-            score: finalResult.score,
-            confidence: finalResult.confidence,
-            evidence: finalResult.evidence,
-            version: finalResult.version,
-            applicationReference: finalResult.applicationReference,
-            fraudSignals: finalResult.fraudSignals,
+            pageTitle: result.evidence.title,
+            verified: result.verified,
+            confidenceScore: result.score,
+            matchedRules: result.reasons,
+            matchedKeywords: result.evidence.headings,
+            timestamp: result.verificationTimestamp,
+            // v1 extras
+            score: result.score,
+            confidence: result.confidence,
+            evidence: result.evidence,
+            version: result.version,
+            applicationReference: result.applicationReference,
+            fraudSignals: result.fraudSignals,
           },
         });
       } catch {}
     } else {
-      console.debug('[Mayzax v2] Score below save threshold and not confirmation-like, not caching', result.score, currentUrl);
-      // Still try legacy detection for this URL
-      runLegacyDetection(true);
+      console.debug('[Mayzax v1] Score below threshold, not caching', result.score);
     }
   } catch (err) {
-    console.error('[Mayzax v2] Detection failed', err);
+    console.error('[Mayzax v1] Detection failed', err);
+    // Fallback to legacy detector for migration safety
     runLegacyDetection();
   }
 }
@@ -218,7 +199,7 @@ function runLegacyDetection(forceForConfirmation = false) {
             https: currentUrl.startsWith('https://'),
           },
           verificationTimestamp: Date.now(),
-          version: 'v2',
+          version: 'v1',
           applicationReference: null,
           fraudSignals: confirmationLike ? [] : undefined,
         } as any,
@@ -276,7 +257,7 @@ function runLegacyDetection(forceForConfirmation = false) {
       });
     }
   } catch (e) {
-    console.warn('[Mayzax v2] Legacy fallback failed', e);
+    console.warn('[Mayzax v1] Legacy fallback failed', e);
   }
 }
 
@@ -333,10 +314,4 @@ setInterval(() => {
   }
 }, 500);
 
-// Focus event (user returns to tab after applying)
-window.addEventListener('focus', () => {
-  console.log('[Mayzax v2] Window focus, re-running detection');
-  setTimeout(runDetectionV2, 300);
-});
-
-console.log(`[Mayzax v2] Content script initialization complete`);
+console.log(`[Mayzax v1] Content script loaded v${ENGINE_VERSION_NAME}`);

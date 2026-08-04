@@ -69,9 +69,7 @@ export default defineManifest({
         'https://*.sapsf.com/*',
         'https://*.oraclecloud.com/*',
         'https://*.taleo.net/*',
-<<<<<<< Updated upstream
-=======
-        // Generic career/job paths (avoid invalid host wildcards)
+        // Generic path-based job pages
         'https://*/careers/*',
         'https://*/jobs/*',
 >>>>>>> Stashed changes
