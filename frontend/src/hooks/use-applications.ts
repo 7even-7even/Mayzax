@@ -39,6 +39,11 @@ export interface CreateApplicationInput {
   status?: ApplicationStatus;
   verified?: boolean;
   verificationMethod?: string | null;
+  // Enterprise v2 HMAC verification fields
+  verificationHash?: string | null;
+  verificationScore?: number | null;
+  verificationConfidence?: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+  applicationReference?: string | null;
 }
 
 export function useCreateApplication() {
@@ -48,6 +53,11 @@ export function useCreateApplication() {
       const { data } = await apiClient.post<ApiSuccess<JobApplication>>('/applications', {
         ...input,
         applicationCompleted: input.applicationCompleted ?? true,
+        // Forward enterprise v2 verification fields so backend can cross-link VerificationLog
+        verificationHash: input.verificationHash ?? undefined,
+        verificationScore: input.verificationScore ?? undefined,
+        verificationConfidence: input.verificationConfidence ?? undefined,
+        applicationReference: input.applicationReference ?? undefined,
       });
       return data.data;
     },

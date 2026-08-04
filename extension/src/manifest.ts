@@ -133,11 +133,13 @@ export default defineManifest({
   // Update MAYZAX_FRONTEND_ORIGIN to your production URL before packaging.
   externally_connectable: {
     matches: [
-      // Production (update to your actual domain)
+      // Production
       'https://*.mayzax.app/*',
       'https://*.mayzax.vercel.app/*',
-      // Local development
+      // Local development — explicit Vite port + wildcard fallback
+      'http://localhost:5173/*',
       'http://localhost:*/*',
+      'http://127.0.0.1:5173/*',
       'http://127.0.0.1:*/*',
     ],
   },
