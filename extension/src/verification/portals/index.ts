@@ -8,24 +8,6 @@ import { SuccessFactorsVerifier } from './SuccessFactorsVerifier';
 import { OracleVerifier } from './OracleVerifier';
 import { TaleoVerifier } from './TaleoVerifier';
 import { GenericCareerVerifier, OtherVerifier, ZipRecruiterVerifier, GlassdoorVerifier, NaukriVerifier, DiceVerifier } from './GenericVerifiers';
-import {
-  RecruiteeVerifier,
-  AshbyVerifier,
-  TeamtailorVerifier,
-  SmartRecruitersVerifier,
-  BambooHRVerifier,
-  JobviteVerifier,
-  PersonioVerifier,
-  IcimsVerifier,
-  JazzHRVerifier,
-  BreezyHRVerifier,
-  ComeetVerifier,
-  FountainVerifier,
-  PinpointVerifier,
-  RipplingVerifier,
-  WorkableVerifier,
-  DoverVerifier,
-} from './UniversalATSVerifiers';
 
 export class PortalRegistryV2 {
   private static instance: PortalRegistryV2;
@@ -34,7 +16,6 @@ export class PortalRegistryV2 {
 
   private constructor() {
     this.verifiers = [
-      // Core — existing, backward compatible
       new GreenhouseVerifier(),
       new LeverVerifier(),
       new WorkdayVerifier(),
@@ -47,24 +28,6 @@ export class PortalRegistryV2 {
       new GlassdoorVerifier(),
       new NaukriVerifier(),
       new DiceVerifier(),
-      // Universal ATS Intelligence — v1.1 new
-      new RecruiteeVerifier(),
-      new AshbyVerifier(),
-      new TeamtailorVerifier(),
-      new SmartRecruitersVerifier(),
-      new BambooHRVerifier(),
-      new JobviteVerifier(),
-      new PersonioVerifier(),
-      new IcimsVerifier(),
-      new JazzHRVerifier(),
-      new BreezyHRVerifier(),
-      new ComeetVerifier(),
-      new FountainVerifier(),
-      new PinpointVerifier(),
-      new RipplingVerifier(),
-      new WorkableVerifier(),
-      new DoverVerifier(),
-      // Generic fallback before final Other
       new GenericCareerVerifier(),
     ];
     this.fallback = new OtherVerifier();
