@@ -18,12 +18,9 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
-    "ignoreDeprecations": "6.0",
     "noEmit": true,
     "skipLibCheck": true,
-    // "ignoreDeprecations": "6.0",
     "baseUrl": ".",
-    "types": ["chrome"],
     "paths": {
       "@/*": [
         "./src/*"
