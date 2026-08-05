@@ -236,7 +236,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
                 </Label>
                 {profileId && (
                   <span className="text-[11px] font-semibold text-slate-500">
-                    Your apps: <span className="text-mayzax-blue-700 dark:text-mayzax-blue-400">{shiftAppsData?.pagination?.total ?? 0} today</span> · <span className="text-indigo-600">{allTimeAppsData?.pagination?.total ?? 0} total</span>
+                    Applications: <span className="text-mayzax-blue-700 dark:text-mayzax-blue-400">{shiftAppsData?.pagination?.total ?? 0} today</span> · <span className="text-indigo-600">{allTimeAppsData?.pagination?.total ?? 0} total</span>
                   </span>
                 )}
               </div>
@@ -263,7 +263,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
               {debouncedLink && (
                 <div className="mt-3 space-y-2">
                   {/* ExtensionVerificationBadge commented out until extension is deployed */}
-                  <ExtensionVerificationBadge isVerified={isVerified} isChecking={isChecking} result={verificationResult} state={verificationState} isExtensionInstalled={isExtensionInstalled} installUrl={installUrl} extensionId={extensionId} onRetry={retryVerification} />
+                  {/* <ExtensionVerificationBadge isVerified={isVerified} isChecking={isChecking} result={verificationResult} state={verificationState} isExtensionInstalled={isExtensionInstalled} installUrl={installUrl} extensionId={extensionId} onRetry={retryVerification} /> */}
                   <div className="flex flex-wrap gap-2">
                     {duplicateResult?.isDuplicate ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">
