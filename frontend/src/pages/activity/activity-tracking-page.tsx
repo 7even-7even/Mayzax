@@ -1060,8 +1060,8 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
         </StaggerContainer>
       )}
 
-      {/* Admin Productivity Overview - Premium
-      {isAdmin && productivityData && (
+      {/* Admin Productivity Overview - Premium */}
+      {/* {isAdmin && productivityData && (
         <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StaggerItem>
             <PremiumMetricCard

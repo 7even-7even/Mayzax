@@ -135,7 +135,8 @@ export default function RecruitersPage() {
               <SelectContent className="rounded-xl">
                 <SelectItem value="RECRUITER">Recruiters</SelectItem>
                 <SelectItem value="TEAM_LEADER">Team Leaders</SelectItem>
-                <SelectItem value="ADMIN">Admins</SelectItem>
+                <SelectItem value="CLIENT">Clients</SelectItem>
+                {/* <SelectItem value="ADMIN">Admins</SelectItem> */}
                 <SelectItem value="RESUME_ASSIST">Resume Assistants</SelectItem>
                 <SelectItem value="SALES_EXEC">Sales Executives</SelectItem>
                 <SelectItem value={ALL_ROLES}>All Roles</SelectItem>
