@@ -188,6 +188,7 @@ export default function OnboardPage() {
   const [resumePreviewUrl, setResumePreviewUrl] = useState<string | null>(null);
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isFinished, setIsFinished] = useState(false);
 
   // Revoke the object URL whenever it is replaced, and on unmount, to avoid memory leaks
   useEffect(() => {
@@ -431,6 +432,40 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
 
   const dateInputClass =
     'flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:opacity-60 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:dark:invert';
+
+  if (isFinished) {
+    return (
+      <div className="relative flex min-h-screen w-full flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 p-6">
+        <ParticleField />
+        <FloatingCube size={120} top="10%" left="10%" variant="blue" duration={12} />
+        <FloatingCube size={80} bottom="15%" right="12%" variant="green" duration={10} delay={1} />
+        
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800 p-8 text-center shadow-2xl relative z-10 overflow-hidden"
+        >
+          <div className="h-1.5 w-full bg-mayzax-gradient absolute top-0 left-0" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 mb-6 animate-none">
+            <CheckCircle2 className="h-8 w-8" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-3">
+            Thank You For Providing Your Data
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-450 leading-relaxed mb-6">
+            Our team will verify your onboarding information and contact you back within 24 business hours.
+          </p>
+          <Button 
+            variant="brand" 
+            className="w-full rounded-full bg-mayzax-gradient border-0 text-white font-bold h-11 shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            onClick={() => navigate('/client-login')}
+          >
+            Go to Login
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -1540,7 +1575,7 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
 
                       <div className="flex flex-wrap gap-2 justify-end pt-1">
                         <Button type="button" variant="outline" onClick={() => window.print()}>Print / Save as PDF</Button>
-                        <Button type="button" variant="brand" onClick={() => navigate('/client-login')}>
+                        <Button type="button" variant="brand" onClick={() => setIsFinished(true)}>
                           <Sparkles className="h-3.5 w-3.5" /> Finish
                         </Button>
                       </div>

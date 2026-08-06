@@ -163,7 +163,7 @@ export async function approveOnboarding(id: string, adminId: string) {
   });
 
   // 2. Create User for Client login
-  const passwordHash = await bcrypt.hash('Client@123', 12);
+  const passwordHash = await bcrypt.hash('Pass@123', 12);
   await prisma.user.create({
     data: {
       name: onboarding.fullName,

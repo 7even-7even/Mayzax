@@ -98,13 +98,13 @@ export class EvidenceCollector {
     // ── Universal Evidence Collection ────────────────────────────────────
 
     // URL evidence — success path detection
-    const urlEvidence = collectUrlEvidence(urlString, [...URL_SUCCESS_PATTERNS, ...plugin.pathPatterns]);
+    const urlEvidence = collectUrlEvidence(urlString, [...URL_SUCCESS_PATTERNS, ...(plugin.pathPatterns || [])]);
 
     // Meta evidence — og:title, description
-    const metaEvidence = collectMetaEvidence(document, [...TITLE_SUCCESS_PHRASES, ...plugin.titlePatterns]);
+    const metaEvidence = collectMetaEvidence(document, [...TITLE_SUCCESS_PHRASES, ...(plugin.titlePatterns || [])]);
 
     // Breadcrumb evidence
-    const breadcrumbEvidence = collectBreadcrumbEvidence(document, [...TITLE_SUCCESS_PHRASES, ...plugin.titlePatterns]);
+    const breadcrumbEvidence = collectBreadcrumbEvidence(document, [...TITLE_SUCCESS_PHRASES, ...(plugin.titlePatterns || [])]);
 
     // Structured data (JSON-LD)
     const structuredDataEvidence = collectStructuredDataEvidence(document);
@@ -122,12 +122,12 @@ export class EvidenceCollector {
     // Reference evidence — strongest positive
     const referenceEvidence = collectReferenceEvidence(
       document,
-      [...REFERENCE_PATTERNS, ...plugin.referencePatterns],
+      [...REFERENCE_PATTERNS, ...(plugin.referencePatterns || [])],
       [...(plugin.applicationIdSelectors || []), ...(plugin.candidateIdSelectors || []), ...(plugin.expectedSelectors || [])]
     );
 
     // Legacy fingerprint for backward compat
-    const fingerprintResult = checkDomFingerprint(document, plugin.expectedSelectors);
+    const fingerprintResult = checkDomFingerprint(document, plugin.expectedSelectors || []);
     const domFingerprint: DomFingerprint = {
       hasConfirmationCard: fingerprintResult.hasConfirmationCard || domFingerprintUniversal.hasSuccessCard || domFingerprintUniversal.hasConfirmationBanner,
       hasSuccessBanner: fingerprintResult.hasSuccessBanner || domFingerprintUniversal.hasConfirmationBanner,
@@ -171,17 +171,17 @@ export class EvidenceCollector {
     // ── Universal Evidence Aggregation ───────────────────────────────────
 
     // Title evidence
-    const titleHasSuccess = TITLE_SUCCESS_PHRASES.some(p => p.test(title)) || plugin.titlePatterns.some(p => p.test(title));
-    const titleMatched = [...TITLE_SUCCESS_PHRASES, ...plugin.titlePatterns].filter(p => p.test(title)).map(p => p.source);
+    const titleHasSuccess = TITLE_SUCCESS_PHRASES.some(p => p.test(title)) || (plugin.titlePatterns || []).some(p => p.test(title));
+    const titleMatched = [...TITLE_SUCCESS_PHRASES, ...(plugin.titlePatterns || [])].filter(p => p.test(title)).map(p => p.source);
 
     // Heading evidence
     const allHeadingsText = headings.join(' ');
-    const headingHasSuccess = HEADING_SUCCESS_PHRASES.some(p => p.test(allHeadingsText)) || plugin.headingPatterns.some(p => p.test(allHeadingsText));
-    const headingMatched = [...HEADING_SUCCESS_PHRASES, ...plugin.headingPatterns].filter(p => p.test(allHeadingsText)).map(p => p.source);
+    const headingHasSuccess = HEADING_SUCCESS_PHRASES.some(p => p.test(allHeadingsText)) || (plugin.headingPatterns || []).some(p => p.test(allHeadingsText));
+    const headingMatched = [...HEADING_SUCCESS_PHRASES, ...(plugin.headingPatterns || [])].filter(p => p.test(allHeadingsText)).map(p => p.source);
 
     // Body evidence
-    const bodyHasSuccess = BODY_SUCCESS_PHRASES.some(p => p.test(confirmationText)) || plugin.confirmationPatterns.some(p => p.test(confirmationText));
-    const bodyMatched = [...BODY_SUCCESS_PHRASES, ...plugin.confirmationPatterns].filter(p => p.test(confirmationText)).map(p => p.source);
+    const bodyHasSuccess = BODY_SUCCESS_PHRASES.some(p => p.test(confirmationText)) || (plugin.confirmationPatterns || []).some(p => p.test(confirmationText));
+    const bodyMatched = [...BODY_SUCCESS_PHRASES, ...(plugin.confirmationPatterns || [])].filter(p => p.test(confirmationText)).map(p => p.source);
 
     // Positive signals aggregation for logging
     const positiveSignals: string[] = [];

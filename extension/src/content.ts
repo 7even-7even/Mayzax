@@ -21,6 +21,7 @@ import { RecruitmentPageDetector } from './detectors/RecruitmentPageDetector';
 // Legacy fallback imports
 import { PortalRegistry } from './detectors/PortalRegistry';
 import { extractPageMetadata } from './utils/metadata';
+import { isConfirmationUrl } from './verification/utils/dom';
 
 const engine = new VerificationEngine();
 const portalRegistryV2 = PortalRegistryV2.getInstance();
@@ -94,7 +95,7 @@ async function runDetectionV2(): Promise<void> {
         chrome.runtime.sendMessage({
           action: 'PAGE_VERIFIED',
           payload: {
-            portal: finalResult.portal,
+            portal: result.portal,
             company,
             jobTitle,
             url: currentUrl,
@@ -127,8 +128,8 @@ function runLegacyDetection(): void {
   try {
     const currentUrl = window.location.href;
     const confirmationLike = isConfirmationUrl(currentUrl);
-    if (!forceForConfirmation && !confirmationLike) {
-      // Only run legacy if URL looks like confirmation or we are forced
+    if (!confirmationLike) {
+      // Only run legacy if URL looks like confirmation
       // But for safety, run anyway for greenhouse
       if (!currentUrl.includes('greenhouse')) return;
     }
@@ -184,6 +185,18 @@ function runLegacyDetection(): void {
         meta.company,
         meta.jobTitle,
       );
+      const payload = {
+        portal: detector.portal,
+        company: meta.company,
+        jobTitle: meta.jobTitle,
+        url: currentUrl,
+        pageTitle: meta.pageTitle || document.title,
+        verified: boostedScore >= 50,
+        confidenceScore: boostedScore,
+        matchedRules: result.matchedRules,
+        matchedKeywords: result.matchedKeywords,
+        timestamp: Date.now(),
+      };
       chrome.runtime.sendMessage({ action: 'PAGE_VERIFIED', payload });
     }
   } catch (e) {

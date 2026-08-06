@@ -428,6 +428,12 @@ export const DOM_FINGERPRINTS = {
     '.application-review',
     '[class*="review-page" i]',
   ],
+  completedTimeline: [
+    '.completed-timeline',
+    '.timeline-completed',
+    '[class*="completed-timeline" i]',
+    '[class*="timeline-completed" i]',
+  ],
   applicationSummary: [
     '.application-summary',
     '.summary-card',

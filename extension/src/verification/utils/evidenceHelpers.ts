@@ -5,6 +5,7 @@
 
 import { normalizeWhitespace } from './normalization';
 import { META_SELECTORS, BREADCRUMB_SELECTORS, JSONLD_SUCCESS_INDICATORS, DOM_FINGERPRINTS } from './successPhrases';
+import { DetectedButton } from '../types';
 
 export function querySafe(doc: Document, selector: string): Element | null {
   try {
@@ -336,8 +337,9 @@ export function collectUrlEvidence(urlString: string, successPatterns: RegExp[])
 // ───────────────────────────
 
 export interface ButtonEvidenceResult {
-  positiveButtons: { text: string; selector?: string }[];
-  negativeButtons: { text: string; selector?: string }[];
+  positiveButtons: DetectedButton[];
+  negativeButtons: DetectedButton[];
+  neutralButtons: DetectedButton[];
   hasPositive: boolean;
   hasNegative: boolean;
   positiveCount: number;
@@ -345,8 +347,9 @@ export interface ButtonEvidenceResult {
 }
 
 export function collectButtonEvidence(doc: Document, positivePatterns: RegExp[], negativePatterns: RegExp[]): ButtonEvidenceResult {
-  const positiveButtons: { text: string }[] = [];
-  const negativeButtons: { text: string }[] = [];
+  const positiveButtons: DetectedButton[] = [];
+  const negativeButtons: DetectedButton[] = [];
+  const neutralButtons: DetectedButton[] = [];
 
   const buttons = queryAllSafe(doc, 'button, [role="button"], input[type="submit"], a[class*="button" i], a[class*="btn" i]');
 
@@ -355,16 +358,21 @@ export function collectButtonEvidence(doc: Document, positivePatterns: RegExp[],
     const text = getText(btn);
     if (!text || text.length > 80) continue;
 
+    const disabled = btn.hasAttribute('disabled') || 
+                     btn.getAttribute('aria-disabled') === 'true' ||
+                     btn.classList.contains('disabled');
+    const visible = isVisible(btn);
+
     for (const pat of positivePatterns) {
       if (pat.test(text)) {
-        positiveButtons.push({ text });
+        positiveButtons.push({ text, disabled, visible, type: 'positive' });
         break;
       }
     }
 
     for (const pat of negativePatterns) {
       if (pat.test(text)) {
-        negativeButtons.push({ text });
+        negativeButtons.push({ text, disabled, visible, type: 'negative' });
         break;
       }
     }
@@ -373,6 +381,7 @@ export function collectButtonEvidence(doc: Document, positivePatterns: RegExp[],
   return {
     positiveButtons,
     negativeButtons,
+    neutralButtons,
     hasPositive: positiveButtons.length > 0,
     hasNegative: negativeButtons.length > 0,
     positiveCount: positiveButtons.length,

@@ -35,59 +35,8 @@ export default defineManifest({
   content_scripts: [
     {
       matches: [
-        // LinkedIn
-        'https://*.linkedin.com/jobs/*',
-        'https://*.linkedin.com/easy-apply/*',
-        // Indeed
-        'https://*.indeed.com/*',
-        // Glassdoor
-        'https://*.glassdoor.com/*',
-        // Jobright
-        'https://*.jobright.ai/*',
-        'https://*.jobright.com/*',
-        // Simplify
-        'https://*.simplify.jobs/*',
-        // SimplyHired
-        'https://*.simplyhired.com/*',
-        // Wellfound / AngelList
-        'https://*.wellfound.com/*',
-        'https://*.angel.co/*',
-        // Handshake
-        'https://*.joinhandshake.com/*',
-        'https://*.handshake.com/*',
-        // Naukri
-        'https://*.naukri.com/*',
-        // Dice
-        'https://*.dice.com/*',
-        // Monster
-        'https://*.monster.com/*',
-        // ZipRecruiter
-        'https://*.ziprecruiter.com/*',
-        // CareerBuilder
-        'https://*.careerbuilder.com/*',
-        // Lever
-        'https://*.lever.co/*',
-        // Greenhouse
-        'https://*.greenhouse.io/*',
-        'https://*.greenhouse.com/*',
-        // SpeedyApply
-        'https://*.speedyapply.com/*',
-        // The Muse
-        'https://*.themuse.com/*',
-        // Y Combinator / Work at a Startup
-        'https://*.ycombinator.com/*',
-        'https://*.workatastartup.com/*',
-        // Enterprise ATS (Workday, SuccessFactors, Oracle, Taleo)
-        'https://*.myworkdayjobs.com/*',
-        'https://*.myworkday.com/*',
-        'https://*.workday.com/*',
-        'https://*.successfactors.com/*',
-        'https://*.sapsf.com/*',
-        'https://*.oraclecloud.com/*',
-        'https://*.taleo.net/*',
-        // Generic path-based job pages
-        'https://*/careers/*',
-        'https://*/jobs/*',
+        'http://*/*',
+        'https://*/*',
       ],
       js: ['src/content.ts'],
       run_at: 'document_idle',
@@ -99,7 +48,7 @@ export default defineManifest({
 
   // Universal host permission — required to match the universal content_script.
   // The actual filtering happens inside the content script via RecruitmentPageDetector.
-  host_permissions: ['https://*/*'],
+  host_permissions: ['https://*/*', 'http://*/*'],
 
   // Allows the Mayzax frontend to send messages to this extension.
   externally_connectable: {

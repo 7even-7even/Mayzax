@@ -135,9 +135,9 @@ export class RecruitmentPageDetector {
    * Typical execution: <1ms for unrelated pages, <5ms for recruitment pages.
    */
   static detect(doc: Document, urlString: string): DetectionResult {
-    // ── 1. HTTPS guard ──────────────────────────────────────────────────────
-    if (!urlString.startsWith('https://')) {
-      log('Page ignored (not HTTPS)');
+    // ── 1. HTTP/HTTPS guard ──────────────────────────────────────────────────
+    if (!urlString.startsWith('https://') && !urlString.startsWith('http://')) {
+      log('Page ignored (not HTTP or HTTPS)');
       return { isRecruitment: false, trigger: null };
     }
 
