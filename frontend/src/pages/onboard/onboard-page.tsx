@@ -122,8 +122,6 @@ const STEPS = [
   { name: 'Certifications', desc: 'Credentials & courses', icon: Shield },
   { name: 'Resume Upload', desc: 'Attach PDF/Word resume', icon: Upload },
   { name: 'Declaration', desc: 'Self-attestation & terms', icon: CheckCircle2 },
-  { name: 'Mock Payment', desc: 'Billing plan & checkout', icon: CreditCard },
-  { name: 'Receipt', desc: 'Confirmation receipt', icon: Receipt },
   { name: 'Preview', desc: 'Review all details and documents', icon: Eye }
 ];
 
@@ -143,8 +141,6 @@ const STEP_HEADERS = [
   { title: "Certifications & Coursework", desc: "List credentials, key awards, or external courses that show your expertise." },
   { title: "Resume & Profile Documents", desc: "Upload your latest resume. Only PDF, DOCX, or DOC formats are supported." },
   { title: "Self-Attestation & Declaration", desc: "Confirm and declare that the information provided is accurate and true." },
-  { title: "Billing Plan & Checkout", desc: "Choose a marketing/support plan and complete mock payment checkout." },
-  { title: "Confirmation Receipt", desc: "Your registration is complete! Save or print this receipt for your records." },
   { title: "Preview & Confirm", desc: "Review all provided information and uploaded files before finalizing." }
 ];
 
@@ -231,9 +227,9 @@ export default function OnboardPage() {
       resumeUrl: '',
       resumeFileName: '',
       declared: false,
-      planSelected: 'Gold Plan',
-      amountPaid: 2500,
-      paymentRef: ''
+      planSelected: 'Basic',
+      amountPaid: 0,
+      paymentRef: 'MOCK_GATEWAY'
     }
   });
 
@@ -321,7 +317,7 @@ export default function OnboardPage() {
       fieldsToValidate = ['resumeUrl', 'resumeFileName'];
     }
     if (currentStep === 8) fieldsToValidate = ['declared'];
-    if (currentStep === 9) fieldsToValidate = ['planSelected', 'amountPaid', 'paymentRef'];
+    if (currentStep === 8) fieldsToValidate = ['declared'];
 
     const isValid = await trigger(fieldsToValidate as any);
 
@@ -343,12 +339,6 @@ export default function OnboardPage() {
         toast.error(err?.response?.data?.error || err?.message || 'Error checking for duplicate registration.');
         return;
       }
-    }
-
-    // Final payment step -> submit the whole form (receipt is the next step)
-    if (currentStep === 9) {
-      await handleSubmit(onSubmit)();
-      return;
     }
 
     setCurrentStep((prev) => prev + 1);
@@ -414,8 +404,8 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
 
       const res = await createMutation.mutateAsync(data);
       setCreatedId(res.id);
-      toast.success('Onboarding details and payment submitted successfully!');
-      setCurrentStep(10); // Go to receipt (step 10). Preview is now the final step (11)
+      toast.success('Onboarding details submitted successfully!');
+      setIsFinished(true);
     } catch (err: any) {
       toast.error(err?.message || 'Submission failed.');
     }
@@ -1075,7 +1065,7 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
                       <div className="flex items-center gap-3 bg-slate-50/60 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl">
                         <input type="checkbox" id="hasExperience" className="h-5 w-5 rounded border-slate-250 dark:border-slate-800 text-indigo-650 bg-white dark:bg-slate-955 focus:ring-indigo-600 cursor-pointer animate-none" {...register('hasExperience')} />
                         <label htmlFor="hasExperience" className="text-sm font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
-                          I have genuine work experience in this field and want to retain it on my resume
+                          I already have work experience in this field and want to retain it on my resume
                         </label>
                       </div>
                       {hasExperience && (
@@ -1294,133 +1284,8 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
                   </motion.div>
                 )}
 
-                {/* Step 10: Mock Payment Checkout */}
+                {/* Step 9: Preview & Confirm (FINAL STEP) */}
                 {currentStep === 9 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {PLANS.map((plan, planIdx) => (
-                        <div key={plan.name} className={`cursor-pointer rounded-2xl border overflow-hidden transition-all duration-200 ${
-                          selectedPlan === plan.name
-                            ? 'border-indigo-500 shadow-xl shadow-indigo-100/60 dark:shadow-indigo-900/20 scale-[1.02]'
-                            : 'border-slate-200 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md'
-                        }`} onClick={() => handlePlanSelect(plan)}>
-                          <div className={`h-1 w-full ${planIdx === 0 ? 'bg-gradient-to-r from-slate-400 to-slate-500' : planIdx === 1 ? 'bg-gradient-to-r from-amber-400 to-yellow-500' : 'bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600'}`} />
-                          <div className={`p-4 ${selectedPlan === plan.name ? 'bg-indigo-50 dark:bg-indigo-950/20' : 'bg-white dark:bg-slate-950'}`}>
-                            <div className="flex justify-between items-start">
-                              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">{plan.name}</h3>
-                              {selectedPlan === plan.name && <CheckCircle2 className="h-4 w-4 text-indigo-500 shrink-0" />}
-                            </div>
-                            <p className="text-2xl font-black mt-2 text-indigo-600 dark:text-indigo-400">${plan.price}<span className="text-xs font-normal text-slate-400">/one-time</span></p>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">{plan.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-850 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Selected Plan</Label>
-                        <Input readOnly className="rounded-xl border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400" value={selectedPlan} />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Plan Amount ($) *</Label>
-                        <Input type="number" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955" {...register('amountPaid', { valueAsNumber: true })} />
-                        {errors.amountPaid && <p className="text-xs text-rose-500">{errors.amountPaid.message}</p>}
-                      </div>
-                      <div className="col-span-2 space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                          <AlertCircle className="h-3.5 w-3.5 text-indigo-500" /> Mock Payment Transaction ID / Reference Code *
-                        </Label>
-                        <Input placeholder="e.g. TXN-9847294829" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 font-mono" {...register('paymentRef')} />
-                        {errors.paymentRef && <p className="text-xs text-rose-500">{errors.paymentRef.message}</p>}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Step 11: Printable Confirmation Receipt */}
-                {currentStep === 10 && (
-                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
-                    <div className="text-center space-y-2">
-                      <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 mb-2 animate-none">
-                        <CheckCircle2 className="h-6 w-6" />
-                      </div>
-                      <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100">Onboarding Registration Complete!</h2>
-                      <p className="text-xs text-slate-500 dark:text-slate-450">Your documents will be verified by our administrative team within 24 hours.</p>
-                    </div>
-
-                    {/* Receipt Document */}
-                    <div id="payment-receipt" className="relative bg-white text-slate-900 rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-200 overflow-hidden font-sans">
-                      {/* Company Logo Watermark */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] select-none pointer-events-none rotate-12">
-                        <span className="text-8xl font-black tracking-widest text-slate-800">MAYZAX SOLUTIONS</span>
-                      </div>
-
-                      {/* Receipt Header */}
-                      <div className="flex justify-between items-start border-b border-slate-100 pb-5">
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="h-6 w-6 rounded-lg bg-indigo-650 text-white font-extrabold flex items-center justify-center text-xs">M</span>
-                            <span className="text-lg font-black tracking-wider text-slate-900">MAYZAX SOLUTIONS</span>
-                          </div>
-                          {/* <p className="text-[10px] text-slate-500 mt-1">Mayzax Talent &amp; Operations Management</p>
-                          <p className="text-[10px] text-slate-500">Aubrey, Texas, USA</p> */}
-                        </div>
-                        <div className="text-right">
-                          <span className="inline-block px-3 py-1 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full">PAYMENT COMPLETED</span>
-                          <p className="text-xs font-mono font-bold text-slate-600 mt-2">Receipt: MZ-{createdId?.slice(0, 8).toUpperCase() || 'RECEIPT'}</p>
-                        </div>
-                      </div>
-
-                      {/* Receipt Details */}
-                      <div className="py-5 grid grid-cols-2 gap-4 text-xs">
-                        <div>
-                          <p className="text-slate-400 font-semibold uppercase tracking-wider text-[9px]">Bill To</p>
-                          <p className="font-bold text-slate-800 mt-1">{fullName}</p>
-                          <p className="text-slate-500">{email}</p>
-                          <p className="text-slate-500">{phone}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-slate-400 font-semibold uppercase tracking-wider text-[9px]">Transaction Info</p>
-                          <p className="font-bold text-slate-800 mt-1">Reference: <span className="font-mono">{paymentRef}</span></p>
-                          <p className="text-slate-500">Paid: ${amountPaid}.00</p>
-                          <p className="text-slate-500">Date: {new Date().toLocaleDateString()}</p>
-                        </div>
-                      </div>
-
-                      {/* Item Table */}
-                      <div className="border-t border-b border-slate-100 py-3 mt-2">
-                        <div className="grid grid-cols-3 font-semibold text-[10px] text-slate-400 uppercase tracking-wider">
-                          <span>Description</span>
-                          <span className="text-center">Plan</span>
-                          <span className="text-right">Total</span>
-                        </div>
-                        <div className="grid grid-cols-3 text-xs text-slate-800 font-bold mt-2">
-                          <span>Onboarding &amp; Profile Setup Fee</span>
-                          <span className="text-center text-slate-600">{selectedPlan}</span>
-                          <span className="text-right text-indigo-750">${amountPaid}.00</span>
-                        </div>
-                      </div>
-
-                      {/* Receipt Footer */}
-                      <div className="pt-5 text-center text-[10px] text-slate-400">
-                        <p>Thank you for choosing Mayzax Solutions. A confirmation email has been sent.</p>
-                        <p className="mt-0.5">Please allow 24 hours for administrative document verification.</p>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-center gap-3">
-                      <Button type="button" variant="outline" className="rounded-full gap-1.5" onClick={handlePrint}>
-                        <Download className="h-4 w-4" /> Download Receipt
-                      </Button>
-                      <Button type="button" variant="brand" className="rounded-full gap-1.5 bg-mayzax-gradient border-0 text-white" onClick={() => setCurrentStep(11)}>
-                        <Eye className="h-3.5 w-3.5" /> View Full Preview
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Step 12: Preview & Confirm (FINAL STEP) */}
-                {currentStep === 11 && (
                   <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
                     <div className="text-center space-y-2">
                       <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100">Preview Your Submission</h2>
@@ -1564,19 +1429,14 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
                         <PreviewField label="Self-Declaration" value={declared ? 'Agreed & confirmed' : 'Not agreed'} />
                       </PreviewSection>
 
-                      {/* Payment & Plan */}
-                      <PreviewSection title="Payment & Plan" icon={CreditCard}>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          <PreviewField label="Plan Selected" value={selectedPlan} />
-                          <PreviewField label="Amount Paid" value={`$${amountPaid || 0}.00`} />
-                          <PreviewField label="Reference" value={paymentRef} />
-                        </div>
-                      </PreviewSection>
-
                       <div className="flex flex-wrap gap-2 justify-end pt-1">
                         <Button type="button" variant="outline" onClick={() => window.print()}>Print / Save as PDF</Button>
-                        <Button type="button" variant="brand" onClick={() => setIsFinished(true)}>
-                          <Sparkles className="h-3.5 w-3.5" /> Finish
+                        <Button type="submit" variant="brand" className="bg-mayzax-gradient border-0 text-white shadow-lg" disabled={createMutation.isPending}>
+                          {createMutation.isPending ? (
+                            <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Submitting...</>
+                          ) : (
+                            <><Sparkles className="h-3.5 w-3.5" /> Submit Onboarding</>
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -1586,7 +1446,7 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
             </div>
 
             {/* Navigation Action Buttons (only for data-entry steps) */}
-            {currentStep < 10 && (
+            {currentStep < 9 && (
               <div className="flex justify-between items-center mt-8 border-t border-slate-100 dark:border-slate-800 pt-5">
                 <Button
                   type="button"
@@ -1784,12 +1644,6 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
 
               <PrintSection title="Declaration">
                 <PrintRow label="Self-Declaration" value={declared ? 'Agreed & confirmed' : 'Not agreed'} />
-              </PrintSection>
-
-              <PrintSection title="Payment & Plan">
-                <PrintRow label="Plan Selected" value={selectedPlan} />
-                <PrintRow label="Amount Paid" value={`$${amountPaid || 0}.00`} />
-                <PrintRow label="Reference" value={paymentRef} />
               </PrintSection>
             </div>
 

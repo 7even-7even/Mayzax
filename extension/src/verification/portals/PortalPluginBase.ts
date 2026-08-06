@@ -137,7 +137,53 @@ export abstract class BasePortalPlugin implements PortalPlugin {
     };
   }
 
-  extractCompany(doc: Document, _url: URL): string | null {
+  extractFromSuccessHeaders(doc: Document): { jobTitle: string | null; company: string | null } | null {
+    const headings = Array.from(doc.querySelectorAll('h1, h2, h3, h4, p, span, div'))
+      .map(el => el.textContent?.trim() || '')
+      .filter(txt => txt.length > 5 && txt.length < 200);
+
+    const patterns = [
+      /your application was sent to\s+(.+?)\s+for\s+(.+)/i,
+      /your application has been submitted to\s+(.+?)\s+for\s+(.+)/i,
+      /applied to\s+(.+?)\s+for\s+(.+)/i,
+      /applied to\s+(.+?)\s+as\s+(.+)/i,
+      /applied successfully to\s+(.+?)\s+for\s+(.+)/i,
+      /application for\s+(.+?)\s+at\s+(.+?)\s+was/i,
+      /application for\s+(.+?)\s+was sent to\s+(.+)/i,
+      /application to\s+(.+?)\s+for\s+(.+?)\s+successful/i,
+      /thanks for applying to\s+(.+?)\s+for\s+(.+)/i,
+      /thank you for applying to\s+(.+?)\s+for\s+(.+)/i,
+    ];
+
+    for (const text of headings) {
+      for (const pattern of patterns) {
+        const match = text.match(pattern);
+        if (match) {
+          const src = pattern.source;
+          if (
+            src.includes('sent to\\s+(.+?)\\s+for') || 
+            src.includes('submitted to\\s+(.+?)\\s+for') || 
+            src.includes('applied to\\s+(.+?)\\s+for') || 
+            src.includes('applied to\\s+(.+?)\\s+as') ||
+            src.includes('successfully to\\s+(.+?)\\s+for') ||
+            src.includes('applying to\\s+(.+?)\\s+for')
+          ) {
+            return { company: match[1].trim(), jobTitle: match[2].trim() };
+          } else if (src.includes('for\\s+(.+?)\\s+at') || src.includes('application for\\s+(.+?)\\s+was')) {
+            return { jobTitle: match[1].trim(), company: match[2].trim() };
+          } else if (src.includes('to\\s+(.+?)\\s+for')) {
+            return { company: match[1].trim(), jobTitle: match[2].trim() };
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  extractCompany(doc: Document, url: URL): string | null {
+    const parsed = this.extractFromSuccessHeaders(doc);
+    if (parsed && parsed.company) return parsed.company;
+
     const og = doc.querySelector('meta[property="og:site_name"]');
     if (og) return og.getAttribute('content') || null;
     
@@ -161,7 +207,10 @@ export abstract class BasePortalPlugin implements PortalPlugin {
     return null;
   }
 
-  extractJobTitle(doc: Document, _url: URL): string | null {
+  extractJobTitle(doc: Document, url: URL): string | null {
+    const parsed = this.extractFromSuccessHeaders(doc);
+    if (parsed && parsed.jobTitle) return parsed.jobTitle;
+
     const og = doc.querySelector('meta[property="og:title"]');
     if (og) {
       const content = og.getAttribute('content') || '';

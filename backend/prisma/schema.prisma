@@ -127,6 +127,12 @@ enum OnboardingStatus {
   REJECTED
 }
 
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum ClientType {
   WEB
   MOBILE
@@ -200,6 +206,8 @@ model User {
   createdUpdates   SystemUpdate[] @relation("UserCreatedUpdates")
   updateReadLogs   UserUpdateRead[]
   approvedOnboardings ClientOnboarding[] @relation("ApprovedOnboardings")
+  profileChangeRequests ClientProfileChangeRequest[] @relation("ProfileChangeRequester")
+  reviewedChangeRequests ClientProfileChangeRequest[] @relation("ProfileChangeReviewer")
 
   clientProfileId String?          @unique
   clientProfile   ClientProfile?   @relation("ClientUser", fields: [clientProfileId], references: [id], onDelete: SetNull)
@@ -423,6 +431,7 @@ model ClientProfile {
   assignedRecruiterAssignments ClientProfileAssignment[] @relation("ProfileRecruiterAssignments")
 
   isActive  Boolean   @default(true)
+  paymentBlocked Boolean @default(false)
   deletedAt DateTime? // soft delete
 
   createdAt DateTime @default(now())
@@ -430,6 +439,8 @@ model ClientProfile {
 
   applications JobApplication[]
   clientUser   User?           @relation("ClientUser")
+  changeRequests ClientProfileChangeRequest[]
+  payments     ClientPayment[]
 
   @@index([assignedRecruiterId])
   @@index([assignedResumeAssistId])
@@ -655,4 +666,57 @@ model ClientOnboarding {
   updatedAt      DateTime         @updatedAt
 
   @@map("client_onboardings")
+}
+
+// ---------------------------------------------------------
+// Client Profile Change Requests (pending update approvals)
+// ---------------------------------------------------------
+
+model ClientProfileChangeRequest {
+  id            String              @id @default(uuid())
+  profileId     String
+  profile       ClientProfile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  requestedById String
+  requestedBy   User                @relation("ProfileChangeRequester", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  changes       Json                // Snapshot of all changed fields
+
+  status        ChangeRequestStatus @default(PENDING)
+
+  reviewedById  String?
+  reviewedBy    User?               @relation("ProfileChangeReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt    DateTime?
+  rejectionNote String?
+
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([profileId])
+  @@index([status])
+  @@map("client_profile_change_requests")
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  FAILED
+}
+
+model ClientPayment {
+  id             String        @id @default(uuid())
+  profileId      String
+  profile        ClientProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  amount         Float
+  status         PaymentStatus @default(PENDING)
+  dueDate        DateTime
+  paidAt         DateTime?
+  paymentRef     String?
+  installmentNo  Int
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([profileId])
+  @@map("client_payments")
 }

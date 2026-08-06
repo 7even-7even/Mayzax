@@ -12,6 +12,7 @@ import devicesRoutes from '@/modules/devices/devices.routes';
 import notificationsRoutes from '@/modules/notifications/notifications.routes';
 import attendanceRoutes from '@/modules/attendance/attendance.routes';
 import verificationRoutes from '@/modules/verification/verification.routes';
+import profileChangesRoutes from '@/modules/profile-changes/profile-changes.routes';
 
 const router = Router();
 
@@ -36,5 +37,8 @@ router.use('/attendance', attendanceRoutes);
 
 // Enterprise Verification v2
 router.use('/verifications', verificationRoutes);
+
+// Profile Change Requests (client profile update approvals)
+router.use('/profile-changes', profileChangesRoutes);
 
 export default router;

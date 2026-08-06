@@ -108,7 +108,9 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
   const recruiters = useMemo(() => {
-    const list = [...(recruitersData?.data ?? [])];
+    const list = [...(recruitersData?.data ?? [])].filter(
+      (r) => r.role === 'RECRUITER' || r.role === 'TEAM_LEADER'
+    );
     if (user && user.role === 'TEAM_LEADER') {
       const exists = list.some((r) => r.id === user.id);
       if (!exists) {

@@ -97,6 +97,7 @@ export interface ClientProfile {
   paymentRef?: string;
   skills?: string;
 
+  paymentBlocked?: boolean;
   assignedRecruiterId: string | null;
   assignedRecruiter?: { id: string; name: string; email: string } | null;
   assignedResumeAssistId?: string | null;

@@ -55,7 +55,9 @@ async function isProfileInTeam(profileId: string, teamLeaderId: string): Promise
       id: profileId,
       deletedAt: null,
       OR: [
+        { assignedRecruiterId: teamLeaderId },
         { assignedRecruiter: { createdById: teamLeaderId } },
+        { assignedRecruiterAssignments: { some: { recruiterId: teamLeaderId } } },
         { assignedRecruiterAssignments: { some: { recruiter: { createdById: teamLeaderId } } } },
       ],
     },
@@ -399,3 +401,130 @@ export async function resetPassword(id: string, actor: Requester, meta?: Meta) {
 
   return { message: 'Password reset to Pass@123 successfully' };
 }
+
+export async function getPaymentHistory(profileId: string, actor: { id: string; role: Role }) {
+  const profile = await prisma.clientProfile.findUnique({
+    where: { id: profileId },
+  });
+  if (!profile) throw ApiError.notFound('Profile not found');
+
+  const payments = await prisma.clientPayment.findMany({
+    where: { profileId },
+    orderBy: { installmentNo: 'asc' },
+  });
+
+  return payments;
+}
+
+export async function postPaymentDetails(
+  profileId: string,
+  planSelected: string,
+  payments: Array<{
+    amount: number;
+    status: 'PAID' | 'PENDING' | 'FAILED';
+    dueDate: string;
+    paidAt?: string | null;
+    paymentRef?: string | null;
+    installmentNo: number;
+  }>,
+  actor: { id: string; role: Role }
+) {
+  if (actor.role !== Role.ADMIN && actor.role !== Role.TEAM_LEADER) {
+    throw ApiError.forbidden('Only Admins or Team Leaders can update payment details');
+  }
+
+  const profile = await prisma.clientProfile.findUnique({ where: { id: profileId } });
+  if (!profile) throw ApiError.notFound('Profile not found');
+
+  const result = await prisma.$transaction(async (tx) => {
+    // Delete existing payment history for this client
+    await tx.clientPayment.deleteMany({
+      where: { profileId }
+    });
+
+    const createdPayments: any[] = [];
+    let totalPaid = 0;
+    for (const p of payments) {
+      const created = await tx.clientPayment.create({
+        data: {
+          profileId,
+          amount: p.amount,
+          status: p.status,
+          dueDate: new Date(p.dueDate),
+          paidAt: p.paidAt ? new Date(p.paidAt) : null,
+          paymentRef: p.paymentRef || null,
+          installmentNo: p.installmentNo,
+        }
+      });
+      createdPayments.push(created);
+      if (p.status === 'PAID') {
+        totalPaid += p.amount;
+      }
+    }
+
+    await tx.clientProfile.update({
+      where: { id: profileId },
+      data: {
+        amountPaid: totalPaid,
+        planSelected,
+      }
+    });
+
+    return createdPayments;
+  });
+
+  return result;
+}
+
+export async function payInstallment(
+  profileId: string,
+  paymentId: string,
+  paymentRef: string,
+  actor: { id: string; role: Role }
+) {
+  const payment = await prisma.clientPayment.findUnique({
+    where: { id: paymentId },
+  });
+  if (!payment || payment.profileId !== profileId) {
+    throw ApiError.notFound('Payment record not found');
+  }
+  if (payment.status === 'PAID') {
+    throw ApiError.badRequest('Payment has already been paid');
+  }
+
+  const updatedPayment = await prisma.$transaction(async (tx) => {
+    const updated = await tx.clientPayment.update({
+      where: { id: paymentId },
+      data: {
+        status: 'PAID',
+        paidAt: new Date(),
+        paymentRef,
+      },
+    });
+
+    await tx.clientProfile.update({
+      where: { id: profileId },
+      data: {
+        amountPaid: { increment: payment.amount }
+      }
+    });
+
+    return updated;
+  });
+
+  return updatedPayment;
+}
+
+export async function unblockPayment(id: string, actor: { id: string; role: Role }) {
+  if (actor.role !== Role.ADMIN && actor.role !== Role.TEAM_LEADER) {
+    throw ApiError.forbidden('Only Admins or Team Leaders can reactivate payment-blocked profiles');
+  }
+
+  const profile = await prisma.clientProfile.update({
+    where: { id },
+    data: { paymentBlocked: false },
+  });
+
+  return profile;
+}
+

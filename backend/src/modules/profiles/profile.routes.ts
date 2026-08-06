@@ -47,4 +47,42 @@ router.post(
   profileController.resetPassword,
 );
 
+// Payment history (CLIENT can access their own, Admin/TL can see any)
+router.get(
+  '/:id/payment-history',
+  validate({ params: idParamSchema }),
+  profileController.getPaymentHistory,
+);
+
+// Download PDF receipt
+router.get(
+  '/:id/payment-receipt',
+  validate({ params: idParamSchema }),
+  profileController.downloadPaymentReceipt,
+);
+
+// Pay/Record installment payment
+router.post(
+  '/:id/payments/:paymentId/pay',
+  requireRole(Role.ADMIN, Role.TEAM_LEADER),
+  profileController.payInstallment,
+);
+
+// Unblock/Reactivate payment-blocked client profile
+router.post(
+  '/:id/unblock-payment',
+  requireRole(Role.ADMIN, Role.TEAM_LEADER),
+  validate({ params: idParamSchema }),
+  profileController.unblockPayment,
+);
+
+// Admin post/update client payment details explicitly
+router.post(
+  '/:id/post-payment',
+  requireRole(Role.ADMIN, Role.TEAM_LEADER),
+  validate({ params: idParamSchema }),
+  profileController.postPaymentDetails,
+);
+
 export default router;
+

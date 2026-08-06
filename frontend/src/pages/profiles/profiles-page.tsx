@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Loader2, Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2, FileText, Sparkles, Briefcase, Users, Activity, Eye, Calendar, UserCheck, MapPin, Award, CheckCircle, ShieldCheck, Upload, Key } from 'lucide-react';
+import { Loader2, Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2, FileText, Sparkles, Briefcase, Users, Activity, Eye, Calendar, UserCheck, MapPin, Award, CheckCircle, ShieldCheck, Upload, Key, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
@@ -56,12 +56,18 @@ export default function ProfilesPage() {
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedProfileForPayment, setSelectedProfileForPayment] = useState<ClientProfile | null>(null);
 
   const { data: recruitersData } = useRecruiters({
     isActive: true,
     pageSize: 100,
   });
-  const rawRecruiters = recruitersData?.data ?? [];
+  const rawRecruiters = useMemo(() => {
+    return (recruitersData?.data ?? []).filter(
+      (r) => r.role === 'RECRUITER' || r.role === 'TEAM_LEADER'
+    );
+  }, [recruitersData]);
   const recruiters = useMemo(() => {
     if (isTeamLeader && user) {
       const exists = rawRecruiters.some((r) => r.id === user.id);
@@ -108,38 +114,20 @@ export default function ProfilesPage() {
     }
   };
 
-  const handleUploadResumeClick = (profileId: string) => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.pdf,.docx,.doc';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      const fd = new FormData();
-      fd.append('resume', file);
-
-      const loadToast = toast.loading('Uploading resume...');
-      try {
-        const uploadRes = await apiClient.post('/onboarding/upload', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        
-        await apiClient.patch(`/profiles/${profileId}`, {
-          resumeUrl: uploadRes.data.data.url,
-          resumeFileName: uploadRes.data.data.fileName || file.name,
-        });
-
-        toast.dismiss(loadToast);
-        toast.success('Resume uploaded successfully!');
-        refetch();
-      } catch (err: any) {
-        toast.dismiss(loadToast);
-        toast.error(err?.response?.data?.error?.message || 'Upload failed.');
-      }
-    };
-    input.click();
+  const handleReactivateAccount = async (profileId: string) => {
+    if (!window.confirm("Are you sure you want to reactivate this payment-blocked account?")) return;
+    const loadToast = toast.loading('Reactivating account...');
+    try {
+      await apiClient.post(`/profiles/${profileId}/unblock-payment`);
+      toast.dismiss(loadToast);
+      toast.success('Account reactivated successfully!');
+      refetch();
+    } catch (err: any) {
+      toast.dismiss(loadToast);
+      toast.error(err?.response?.data?.error?.message || 'Failed to reactivate account.');
+    }
   };
+
 
   const deleteProfile = useDeleteProfile();
   const bulkDeleteMutation = useBulkDeleteProfiles();
@@ -203,7 +191,11 @@ export default function ProfilesPage() {
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     <Badge className="bg-mayzax-blue-50 text-mayzax-blue-700 border border-mayzax-blue-200 text-[11px] rounded-full px-2 py-0">{profile.technology}</Badge>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Live</span>
+                    {profile.paymentBlocked ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-[11px] font-medium text-rose-700">Payment Blocked</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Live</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -215,16 +207,25 @@ export default function ProfilesPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="rounded-xl">
                   <DropdownMenuItem onClick={() => setViewingProfile(profile)} className="gap-2"><Eye className="h-4 w-4" /> View Details</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate(`/applications?profileId=${profile.id}`)} className="gap-2"><FileText className="h-4 w-4" /> View Applications</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { setEditingProfile(profile); setFormOpen(true); }} className="gap-2"><Pencil className="h-4 w-4" /> {isManager ? 'Edit / Reassign' : 'Edit'}</DropdownMenuItem>
-                  {(isManager || user?.role === 'RESUME_ASSIST') && (
-                     <DropdownMenuItem onClick={() => handleUploadResumeClick(profile.id)} className="gap-2">
-                       <Upload className="h-4 w-4" /> Upload Resume
-                     </DropdownMenuItem>
-                   )}
-                   {isAdmin && (
+                  {user?.role !== 'RESUME_ASSIST' && (
+                    <DropdownMenuItem onClick={() => navigate(`/applications?profileId=${profile.id}`)} className="gap-2"><FileText className="h-4 w-4" /> View Applications</DropdownMenuItem>
+                  )}
+                  {user?.role !== 'RESUME_ASSIST' && (
+                    <DropdownMenuItem onClick={() => { setEditingProfile(profile); setFormOpen(true); }} className="gap-2"><Pencil className="h-4 w-4" /> {isManager ? 'Edit / Reassign' : 'Edit'}</DropdownMenuItem>
+                  )}
+                    {isAdmin && (
                      <DropdownMenuItem onClick={() => handleResetPassword(profile.id)} className="gap-2 text-amber-600 focus:text-amber-600">
                        <Key className="h-4 w-4" /> Reset Password
+                     </DropdownMenuItem>
+                   )}
+                   {(isAdmin || user?.role === 'TEAM_LEADER') && (
+                      <DropdownMenuItem onClick={() => { setSelectedProfileForPayment(profile); setPaymentDialogOpen(true); }} className="gap-2 text-indigo-650 focus:text-indigo-700">
+                        <CreditCard className="h-4 w-4" /> Record Payment
+                      </DropdownMenuItem>
+                   )}
+                   {(isAdmin || user?.role === 'TEAM_LEADER') && profile.paymentBlocked && (
+                     <DropdownMenuItem onClick={() => handleReactivateAccount(profile.id)} className="gap-2 text-emerald-600 focus:text-emerald-600">
+                       <CheckCircle className="h-4 w-4" /> Reactivate Account
                      </DropdownMenuItem>
                    )}
                    {canDeleteProfile && <DropdownMenuItem onClick={() => setDeleteTarget(profile)} className="text-red-600 focus:text-red-600 gap-2"><Trash2 className="h-4 w-4" /> Delete</DropdownMenuItem>}
@@ -697,6 +698,192 @@ export default function ProfilesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* RECORD PAYMENT DIALOG */}
+      <Dialog open={paymentDialogOpen} onOpenChange={(open) => { setPaymentDialogOpen(open); if (!open) setSelectedProfileForPayment(null); }}>
+        <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6">
+          <DialogHeader className="space-y-1.5 pb-2">
+            <DialogTitle className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-indigo-650" /> Record Client Payment
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Record a payment history entry for <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedProfileForPayment?.candidateName}</span>. This will overwrite previous history.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedProfileForPayment && (
+            <PaymentRecordForm 
+              profile={selectedProfileForPayment} 
+              onClose={() => { setPaymentDialogOpen(false); setSelectedProfileForPayment(null); refetch(); }} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+import { useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+
+function PaymentRecordForm({ profile, onClose }: { profile: any; onClose: () => void }) {
+  const [plan, setPlan] = useState(profile.planSelected || 'Basic');
+  const [isFull, setIsFull] = useState(true);
+  const [amount, setAmount] = useState(1500);
+  const [ref, setRef] = useState('');
+  const [paidAt, setPaidAt] = useState(new Date().toISOString().slice(0, 10));
+  const [dueDate, setDueDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().slice(0, 10);
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const prices: Record<string, number> = { Basic: 1500, Gold: 2500, Premium: 3500 };
+    if (isFull) {
+      setAmount(prices[plan] || 1500);
+    } else {
+      setAmount(500);
+    }
+  }, [plan, isFull]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ref.trim()) {
+      toast.error('Payment Reference code is required');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const loadToast = toast.loading('Posting payment details...');
+
+    try {
+      const prices: Record<string, number> = { Basic: 1500, Gold: 2500, Premium: 3500 };
+      const fullPrice = prices[plan] || 1500;
+      
+      const paymentsPayload = [];
+      if (isFull) {
+        paymentsPayload.push({
+          amount: amount,
+          status: 'PAID',
+          dueDate: paidAt,
+          paidAt: paidAt,
+          paymentRef: ref,
+          installmentNo: 1,
+        });
+      } else {
+        paymentsPayload.push({
+          amount: amount,
+          status: 'PAID',
+          dueDate: paidAt,
+          paidAt: paidAt,
+          paymentRef: ref,
+          installmentNo: 1,
+        });
+        paymentsPayload.push({
+          amount: fullPrice - amount,
+          status: 'PENDING',
+          dueDate: dueDate,
+          installmentNo: 2,
+        });
+      }
+
+      await apiClient.post(`/profiles/${profile.id}/post-payment`, { planSelected: plan, payments: paymentsPayload });
+      toast.dismiss(loadToast);
+      toast.success('Payment details recorded successfully!');
+      onClose();
+    } catch (err: any) {
+      toast.dismiss(loadToast);
+      toast.error(err?.response?.data?.error?.message || 'Failed to record payment details');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-1.5 col-span-2">
+          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Plan Selected</Label>
+          <Select value={plan} onValueChange={(val) => setPlan(val)}>
+            <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+              <SelectValue placeholder="Select Plan" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="Basic">Basic ($1,500)</SelectItem>
+              <SelectItem value="Gold">Gold ($2,500)</SelectItem>
+              <SelectItem value="Premium">Premium ($3,500)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5 col-span-2">
+          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Payment Option</Label>
+          <Select value={isFull ? 'full' : 'partial'} onValueChange={(val) => setIsFull(val === 'full')}>
+            <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="full">Full Payment</SelectItem>
+              <SelectItem value="partial">Partial Payment / Installment</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Amount Paid ($)</Label>
+          <Input 
+            type="number" 
+            value={amount} 
+            onChange={(e) => setAmount(Number(e.target.value))} 
+            className="rounded-xl border-slate-200 dark:border-slate-800" 
+            min={500}
+            readOnly={isFull}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Payment Date</Label>
+          <Input 
+            type="date" 
+            value={paidAt} 
+            onChange={(e) => setPaidAt(e.target.value)} 
+            className="rounded-xl border-slate-200 dark:border-slate-800 cursor-pointer"
+          />
+        </div>
+
+        <div className="space-y-1.5 col-span-2">
+          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Payment Reference Code</Label>
+          <Input 
+            value={ref} 
+            onChange={(e) => setRef(e.target.value)} 
+            placeholder="e.g. CHQ-9382 or TXN-8372" 
+            className="rounded-xl border-slate-200 dark:border-slate-800 font-mono"
+          />
+        </div>
+
+        {!isFull && (
+          <div className="space-y-1.5 col-span-2">
+            <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Remaining Balance Due Date</Label>
+            <Input 
+              type="date" 
+              value={dueDate} 
+              onChange={(e) => setDueDate(e.target.value)} 
+              className="rounded-xl border-slate-200 dark:border-slate-800 cursor-pointer"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end gap-2 pt-2 border-t dark:border-slate-800">
+        <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">Cancel</Button>
+        <Button type="submit" variant="brand" className="rounded-xl bg-indigo-650 hover:bg-indigo-700 text-white font-bold" disabled={isSubmitting}>
+          {isSubmitting ? 'Recording...' : 'Record Payment'}
+        </Button>
+      </div>
+    </form>
+  );
+}
+

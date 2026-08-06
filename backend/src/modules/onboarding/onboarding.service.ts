@@ -163,6 +163,52 @@ export async function approveOnboarding(id: string, adminId: string) {
     },
   });
 
+  // Generate Payment Record(s)
+  const planName = onboarding.planSelected || 'Basic';
+  const PLAN_PRICES: Record<string, number> = { Basic: 1500, Gold: 2500, Premium: 3500 };
+  const fullPrice = PLAN_PRICES[planName] ?? 1500;
+  const amountPaid = onboarding.amountPaid || 0;
+  const now = new Date();
+
+  if (amountPaid >= fullPrice) {
+    // Full Payment: Generate exactly one PAID receipt
+    await prisma.clientPayment.create({
+      data: {
+        profileId: profile.id,
+        amount: amountPaid,
+        status: 'PAID',
+        dueDate: now,
+        paidAt: onboarding.paidAt || now,
+        paymentRef: onboarding.paymentRef,
+        installmentNo: 1,
+      },
+    });
+  } else {
+    // Partial Payment: Create one PAID receipt for amount paid, and one PENDING for remaining balance
+    await prisma.clientPayment.create({
+      data: {
+        profileId: profile.id,
+        amount: amountPaid,
+        status: 'PAID',
+        dueDate: now,
+        paidAt: onboarding.paidAt || now,
+        paymentRef: onboarding.paymentRef,
+        installmentNo: 1,
+      },
+    });
+
+    const remainingBalance = fullPrice - amountPaid;
+    await prisma.clientPayment.create({
+      data: {
+        profileId: profile.id,
+        amount: remainingBalance,
+        status: 'PENDING',
+        dueDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // 1 month later
+        installmentNo: 2,
+      },
+    });
+  }
+
   // 2. Create User for Client login
   const passwordHash = await bcrypt.hash('Pass@123', 12);
   await prisma.user.create({
