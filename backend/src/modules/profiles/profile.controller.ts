@@ -49,3 +49,8 @@ export const bulkDeleteProfiles = asyncHandler(async (req: Request, res: Respons
   const result = await profileService.bulkDeleteProfiles(req.body.profileIds, actor(req), meta(req));
   res.status(200).json({ success: true, data: result });
 });
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const result = await profileService.resetPassword(req.params.id, actor(req), meta(req));
+  res.status(200).json({ success: true, data: result });
+});

@@ -187,6 +187,7 @@ model User {
 
   // Recruiter relations
   assignedProfiles ClientProfile[]  @relation("AssignedRecruiter")
+  assignedResumeAssistProfiles ClientProfile[] @relation("AssignedResumeAssist")
   profileAssignments ClientProfileAssignment[] @relation("RecruiterProfileAssignments")
   applications     JobApplication[] @relation("RecruiterApplications")
   verificationLogs VerificationLog[] @relation("RecruiterVerificationLogs")
@@ -417,6 +418,8 @@ model ClientProfile {
 
   assignedRecruiterId String?
   assignedRecruiter   User?   @relation("AssignedRecruiter", fields: [assignedRecruiterId], references: [id], onDelete: SetNull)
+  assignedResumeAssistId String?
+  assignedResumeAssist   User?   @relation("AssignedResumeAssist", fields: [assignedResumeAssistId], references: [id], onDelete: SetNull)
   assignedRecruiterAssignments ClientProfileAssignment[] @relation("ProfileRecruiterAssignments")
 
   isActive  Boolean   @default(true)
@@ -429,6 +432,7 @@ model ClientProfile {
   clientUser   User?           @relation("ClientUser")
 
   @@index([assignedRecruiterId])
+  @@index([assignedResumeAssistId])
   @@index([technology])
   @@index([email])
   @@map("client_profiles")

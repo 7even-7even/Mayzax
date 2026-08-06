@@ -2,6 +2,7 @@ import { OnboardingStatus, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/utils/apiError';
+import { logger } from '@/lib/logger';
 import { CreateOnboardingInput } from './onboarding.validation';
 
 export async function createOnboarding(input: CreateOnboardingInput) {
@@ -245,4 +246,60 @@ export async function checkDuplicate(email?: string, phone?: string) {
 
   return { exists: false };
 }
+
+export async function ensureClientCredentials() {
+  const clientProfiles = await prisma.clientProfile.findMany({
+    select: {
+      id: true,
+      candidateName: true,
+      email: true,
+    },
+  });
+
+  const passwordHash = await bcrypt.hash('Pass@123', 12);
+  let createdCount = 0;
+
+  for (const profile of clientProfiles) {
+    const emailNormalized = profile.email.toLowerCase();
+    
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: emailNormalized },
+          { clientProfileId: profile.id }
+        ]
+      },
+    });
+
+    if (!existingUser) {
+      await prisma.user.create({
+        data: {
+          name: profile.candidateName,
+          email: emailNormalized,
+          passwordHash,
+          role: Role.CLIENT,
+          isActive: true,
+          clientProfileId: profile.id,
+        },
+      });
+      createdCount++;
+    } else if (existingUser.role !== Role.CLIENT) {
+      if (!existingUser.clientProfileId) {
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            role: Role.CLIENT,
+            clientProfileId: profile.id,
+          },
+        });
+        createdCount++;
+      }
+    }
+  }
+
+  if (createdCount > 0) {
+    logger.info(`🔑 Auto-created login credentials for ${createdCount} existing clients.`);
+  }
+}
+
 

@@ -128,9 +128,9 @@ const STEPS = [
 ];
 
 const PLANS = [
-  { name: 'Basic Plan', price: 1500, description: 'Basic profile matching & support' },
-  { name: 'Gold Plan', price: 2500, description: 'Priority submission & 1-on-1 coaching' },
-  { name: 'Premium Plan', price: 3500, description: 'Comprehensive marketing & direct vendor pipelines' }
+  { name: 'Basic Plan', price: 1500, description: 'Basic support (50-100 applications)' },
+  { name: 'Gold Plan', price: 2500, description: 'Priority support & coaching (100-150 applications)' },
+  { name: 'Premium Plan', price: 3500, description: 'Comprehensive marketing & vendor pipelines (150-200 applications)' }
 ];
 
 const STEP_HEADERS = [

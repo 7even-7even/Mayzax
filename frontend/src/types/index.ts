@@ -34,6 +34,8 @@ export interface User {
   linkedInUrl?: string | null;
   displayColor?: string | null;
   teamName?: string | null;
+  clientProfileId?: string | null;
+  clientProfile?: any;
 }
 
 export interface Recruiter extends User {
@@ -97,6 +99,8 @@ export interface ClientProfile {
 
   assignedRecruiterId: string | null;
   assignedRecruiter?: { id: string; name: string; email: string } | null;
+  assignedResumeAssistId?: string | null;
+  assignedResumeAssist?: { id: string; name: string; email: string } | null;
   assignedRecruiterAssignments?: Array<{
     recruiterId: string;
     recruiter: { id: string; name: string; email: string };

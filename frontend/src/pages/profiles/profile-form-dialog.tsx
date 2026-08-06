@@ -24,6 +24,7 @@ const profileSchema = z.object({
   notes: z.string().optional(),
   assignedRecruiterId: z.string().nullable().optional(),
   assignedRecruiterIds: z.array(z.string().uuid()).min(1, 'Assign at least 1 recruiter').max(5, 'You can assign up to 5 recruiters').optional(),
+  assignedResumeAssistId: z.string().nullable().optional(),
 });
 
 type ProfileForm = z.infer<typeof profileSchema>;
@@ -43,10 +44,11 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
   const createMutation = useCreateProfile();
   const updateMutation = useUpdateProfile();
   const { data: recruitersData } = useRecruiters({ isActive: true, pageSize: 100 });
+  const { data: resumeAssistsData } = useRecruiters({ role: 'RESUME_ASSIST', isActive: true, pageSize: 100 });
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { candidateName: '', email: '', phone: '', technology: '', notes: '', assignedRecruiterId: null, assignedRecruiterIds: [] },
+    defaultValues: { candidateName: '', email: '', phone: '', technology: '', notes: '', assignedRecruiterId: null, assignedRecruiterIds: [], assignedResumeAssistId: null },
   });
 
   const selectedRecruiterIds = form.watch('assignedRecruiterIds') ?? [];
@@ -63,6 +65,7 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
               notes: profile.notes ?? '',
               assignedRecruiterId: profile.assignedRecruiterId,
               assignedRecruiterIds: profile.assignedRecruiterAssignments?.map((a) => a.recruiterId) ?? (profile.assignedRecruiterId ? [profile.assignedRecruiterId] : []),
+              assignedResumeAssistId: profile.assignedResumeAssistId ?? null,
             }
           : {
               candidateName: '',
@@ -72,6 +75,7 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
               notes: '',
               assignedRecruiterId: user?.role === 'RECRUITER' ? user.id : null,
               assignedRecruiterIds: user?.role === 'RECRUITER' ? [user.id] : [],
+              assignedResumeAssistId: null,
             }
       );
     }
@@ -83,13 +87,17 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
       return;
     }
     try {
-      const payload = { ...values, notes: values.notes || undefined };
+      const payload = {
+        ...values,
+        notes: values.notes || undefined,
+        assignedResumeAssistId: values.assignedResumeAssistId === '' ? null : values.assignedResumeAssistId
+      };
       if (isEdit && profile) {
         const { assignedRecruiterId, assignedRecruiterIds, ...rest } = payload;
         await updateMutation.mutateAsync({ id: profile.id, ...(isManager ? payload : rest) });
         toast.success('Profile updated successfully • Success');
       } else {
-        await createMutation.mutateAsync(payload);
+        await createMutation.mutateAsync(payload as any);
         toast.success('Client profile created • Client vault');
       }
       onOpenChange(false);
@@ -200,6 +208,26 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
                     )}
                   </div>
                   {form.formState.errors.assignedRecruiterIds && <p className="text-xs text-red-600">{form.formState.errors.assignedRecruiterIds.message}</p>}
+                </div>
+              )}
+
+              {isManager && (
+                <div className="col-span-2 space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <User2 className="h-3 w-3 text-mayzax-blue-500" /> Assigned Resume Assist
+                  </Label>
+                  <select
+                    className="flex h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-mayzax-blue-500/40 transition dark:text-black"
+                    {...form.register('assignedResumeAssistId')}
+                    defaultValue={profile?.assignedResumeAssistId ?? ''}
+                  >
+                    <option value="">Unassigned</option>
+                    {resumeAssistsData?.data?.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name} ({u.email})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
 

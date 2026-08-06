@@ -42,6 +42,7 @@ export interface CreateProfileInput {
   notes?: string;
   assignedRecruiterId?: string | null;
   assignedRecruiterIds?: string[];
+  assignedResumeAssistId?: string | null;
 }
 
 export function useCreateProfile() {
@@ -112,5 +113,14 @@ export function useBulkDeleteProfiles() {
       return data.data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['profiles'] }),
+  });
+}
+
+export function useResetClientPassword() {
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await apiClient.post<ApiSuccess<{ message: string }>>(`/profiles/${id}/reset-password`);
+      return data.data;
+    },
   });
 }

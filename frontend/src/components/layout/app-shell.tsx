@@ -3,10 +3,22 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
 import { MobileNav } from './mobile-nav';
+import { useAuth } from '@/context/auth-context';
 
 export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { user } = useAuth();
+
+  if (user?.role === 'CLIENT') {
+    return (
+      <div className="flex h-screen flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
+        <div className="flex-1 overflow-y-auto">
+          <Outlet />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-white to-indigo-50/20">

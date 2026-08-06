@@ -32,7 +32,7 @@ router.post(
 );
 router.get('/:id', validate({ params: idParamSchema }), profileController.getProfile);
 router.post('/', requireRole(Role.ADMIN, Role.TEAM_LEADER), validate({ body: createProfileSchema }), profileController.createProfile);
-router.patch('/:id', requireRole(Role.ADMIN, Role.TEAM_LEADER, Role.RECRUITER), validate({ params: idParamSchema, body: updateProfileSchema }), profileController.updateProfile);
+router.patch('/:id', requireRole(Role.ADMIN, Role.TEAM_LEADER, Role.RECRUITER, Role.CLIENT, Role.RESUME_ASSIST), validate({ params: idParamSchema, body: updateProfileSchema }), profileController.updateProfile);
 router.patch(
   '/:id/assign',
   requireRole(Role.ADMIN, Role.TEAM_LEADER),
@@ -40,5 +40,11 @@ router.patch(
   profileController.assignRecruiter,
 );
 router.delete('/:id', requireRole(Role.ADMIN), validate({ params: idParamSchema }), profileController.deleteProfile);
+router.post(
+  '/:id/reset-password',
+  requireRole(Role.ADMIN),
+  validate({ params: idParamSchema }),
+  profileController.resetPassword,
+);
 
 export default router;

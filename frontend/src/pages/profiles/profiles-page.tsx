@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Loader2, Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2, FileText, Sparkles, Briefcase, Users, Activity, Eye, Calendar, UserCheck, MapPin, Award, CheckCircle, ShieldCheck } from 'lucide-react';
+import { Loader2, Plus, Search, MoreVertical, Pencil, Trash2, UserSquare2, Mail, Phone, User2, FileText, Sparkles, Briefcase, Users, Activity, Eye, Calendar, UserCheck, MapPin, Award, CheckCircle, ShieldCheck, Upload, Key } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
@@ -29,10 +29,10 @@ import { ErrorState } from '@/components/shared/error-state';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { ProfileFormDialog } from './profile-form-dialog';
 import { BulkAssignDialog } from './bulk-assign-dialog';
-import { useDeleteProfile, useProfiles, useBulkDeleteProfiles } from '@/hooks/use-profiles';
+import { useDeleteProfile, useProfiles, useBulkDeleteProfiles, useResetClientPassword } from '@/hooks/use-profiles';
 import { useRecruiters } from '@/hooks/use-recruiters';
 import { useDebounce } from '@/hooks/use-debounce';
-import { extractErrorMessage } from '@/lib/api-client';
+import { apiClient, extractErrorMessage } from '@/lib/api-client';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useAuth } from '@/context/auth-context';
 import { PermissionGate } from '@/components/shared/permission-gate';
@@ -90,6 +90,56 @@ export default function ProfilesPage() {
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
+
+  const resetPasswordMutation = useResetClientPassword();
+
+  const handleResetPassword = async (profileId: string) => {
+    const confirmReset = window.confirm("Are you sure you want to reset this client's password to 'Pass@123'?");
+    if (!confirmReset) return;
+
+    const loadToast = toast.loading('Resetting password...');
+    try {
+      await resetPasswordMutation.mutateAsync(profileId);
+      toast.dismiss(loadToast);
+      toast.success('Password reset successfully to Pass@123');
+    } catch (err: any) {
+      toast.dismiss(loadToast);
+      toast.error(err?.response?.data?.error?.message || 'Password reset failed.');
+    }
+  };
+
+  const handleUploadResumeClick = (profileId: string) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.docx,.doc';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const fd = new FormData();
+      fd.append('resume', file);
+
+      const loadToast = toast.loading('Uploading resume...');
+      try {
+        const uploadRes = await apiClient.post('/onboarding/upload', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        await apiClient.patch(`/profiles/${profileId}`, {
+          resumeUrl: uploadRes.data.data.url,
+          resumeFileName: uploadRes.data.data.fileName || file.name,
+        });
+
+        toast.dismiss(loadToast);
+        toast.success('Resume uploaded successfully!');
+        refetch();
+      } catch (err: any) {
+        toast.dismiss(loadToast);
+        toast.error(err?.response?.data?.error?.message || 'Upload failed.');
+      }
+    };
+    input.click();
+  };
 
   const deleteProfile = useDeleteProfile();
   const bulkDeleteMutation = useBulkDeleteProfiles();
@@ -167,7 +217,17 @@ export default function ProfilesPage() {
                   <DropdownMenuItem onClick={() => setViewingProfile(profile)} className="gap-2"><Eye className="h-4 w-4" /> View Details</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate(`/applications?profileId=${profile.id}`)} className="gap-2"><FileText className="h-4 w-4" /> View Applications</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => { setEditingProfile(profile); setFormOpen(true); }} className="gap-2"><Pencil className="h-4 w-4" /> {isManager ? 'Edit / Reassign' : 'Edit'}</DropdownMenuItem>
-                  {canDeleteProfile && <DropdownMenuItem onClick={() => setDeleteTarget(profile)} className="text-red-600 focus:text-red-600 gap-2"><Trash2 className="h-4 w-4" /> Delete</DropdownMenuItem>}
+                  {(isManager || user?.role === 'RESUME_ASSIST') && (
+                     <DropdownMenuItem onClick={() => handleUploadResumeClick(profile.id)} className="gap-2">
+                       <Upload className="h-4 w-4" /> Upload Resume
+                     </DropdownMenuItem>
+                   )}
+                   {isAdmin && (
+                     <DropdownMenuItem onClick={() => handleResetPassword(profile.id)} className="gap-2 text-amber-600 focus:text-amber-600">
+                       <Key className="h-4 w-4" /> Reset Password
+                     </DropdownMenuItem>
+                   )}
+                   {canDeleteProfile && <DropdownMenuItem onClick={() => setDeleteTarget(profile)} className="text-red-600 focus:text-red-600 gap-2"><Trash2 className="h-4 w-4" /> Delete</DropdownMenuItem>}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
