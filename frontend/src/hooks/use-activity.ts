@@ -264,7 +264,7 @@ export function useActivityHeartbeat() {
       // 15 minutes of inactivity -> Transition status to OFFLINE
       if (elapsedMs >= 25 * 60 * 1000) {
         const currentStatus = statusRef.current;
-        if (currentStatus && (currentStatus === 'ACTIVE' || currentStatus === 'ONLINE') && !statusTransitionedToOffline) {
+        if (currentStatus && currentStatus === 'ACTIVE' && !statusTransitionedToOffline) {
           statusTransitionedToOffline = true;
           try {
             await changeStatusRef.current.mutateAsync({

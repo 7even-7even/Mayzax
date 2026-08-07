@@ -48,8 +48,7 @@ function getStatusColor(status: string) {
     case 'BRIEFING_TRAINING': return colors.statusBriefing;
     case 'MEETING': return colors.statusMeeting;
     case 'SYSTEM_ISSUE': return colors.statusSystemIssue;
-    case 'ACTIVE':
-    case 'ONLINE': return colors.statusActive;
+    case 'ACTIVE': return colors.statusActive;
     default: return colors.textMuted;
   }
 }

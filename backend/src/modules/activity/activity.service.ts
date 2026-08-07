@@ -115,7 +115,7 @@ export async function changeStatus(
         scheduleBreakReminders(userId, newStatus, newLog.startedAt).catch((err) => {
           logger.error({ err }, 'Failed to schedule break reminders');
         });
-      } else if (newStatus === UserStatus.ACTIVE || newStatus === UserStatus.ONLINE) {
+      } else if (newStatus === UserStatus.ACTIVE) {
         scheduleShiftRemindersIfNeeded(userId).catch((err) => {
           logger.error({ err }, 'Failed to schedule shift reminders');
         });
@@ -134,8 +134,8 @@ export async function changeStatus(
 }
 
 /**
- * Called on user login / session restore: starts ONLINE status (user is present).
- * User can then toggle to ACTIVE (productive) or other break statuses.
+ * Called on user login / session restore: starts ACTIVE status (user is present).
+ * User can then toggle to other break statuses.
  * Skipped if the user already has an open (non-OFFLINE) activity log,
  * so a page refresh does not interrupt an in-progress status change.
  */
@@ -498,7 +498,6 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
   });
 
   let totalActiveCount = 0;
-  let totalOnlineCount = 0;
   let totalBreakCount = 0;
   let totalIssueCount = 0;
   let totalOfflineCount = 0;

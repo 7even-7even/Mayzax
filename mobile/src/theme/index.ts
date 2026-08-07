@@ -90,7 +90,6 @@ export const darkTheme = {
 export function getStatusColor(status: string): string {
   switch (status) {
     case 'ACTIVE':
-    case 'ONLINE':
     case 'PRESENT':
       return colors.statusActive;
     case 'SHORT_BREAK':

@@ -31,17 +31,6 @@ export const STATUS_CONFIG: Record<
   UserStatus,
   { label: string; shortLabel: string; dotColor: string; bgColor: string; textColor: string; borderColor: string; icon: any; description: string; gradient: string }
 > = {
-  ONLINE: {
-    label: 'Online',
-    shortLabel: 'Online',
-    dotColor: 'bg-blue-500 animate-pulse',
-    bgColor: 'bg-blue-50',
-    textColor: 'text-blue-700',
-    borderColor: 'border-blue-200',
-    icon: Wifi,
-    description: 'Available & online',
-    gradient: 'from-blue-500 to-cyan-600',
-  },
   ACTIVE: {
     label: 'Active',
     shortLabel: 'Active',
@@ -288,7 +277,7 @@ export function UserStatusSelector() {
             {/* Breaks & Meetings */}
             <div className="space-y-1 p-1">
               <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-2 pt-1">Break & Meetings</p>
-              {(Object.keys(STATUS_CONFIG) as UserStatus[]).filter((k) => !['ONLINE', 'ACTIVE', 'OFFLINE'].includes(k)).map((statusKey) => {
+              {(Object.keys(STATUS_CONFIG) as UserStatus[]).filter((k) => !['ACTIVE', 'OFFLINE'].includes(k)).map((statusKey) => {
                 const itemConfig = STATUS_CONFIG[statusKey];
                 const isSelected = currentStatus === statusKey;
                 const ItemIcon = itemConfig.icon;

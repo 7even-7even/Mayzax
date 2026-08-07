@@ -183,7 +183,6 @@ export function getAllowedSecondsForStatus(status: UserStatus, cfg: ResolvedShif
 export function statusLabel(status: UserStatus): string {
   switch (status) {
     case UserStatus.ACTIVE: return 'Working';
-    case UserStatus.ONLINE: return 'Online';
     case UserStatus.SHORT_BREAK: return 'Short Break';
     case UserStatus.DINNER_BREAK: return 'Dinner Break';
     case UserStatus.BRIEFING_TRAINING: return 'Briefing / Training';
@@ -268,10 +267,6 @@ export async function computeAttendanceDay(
 
     switch (log.status) {
       case UserStatus.ACTIVE:
-        totalProductiveSec += dur;
-        break;
-      case UserStatus.ONLINE:
-        onlineSec += dur;
         totalProductiveSec += dur;
         break;
       case UserStatus.SHORT_BREAK:
