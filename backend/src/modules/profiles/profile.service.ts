@@ -4,6 +4,7 @@ import { writeAuditLog } from '@/modules/shared/audit.service';
 import * as repo from './profile.repository';
 import { prisma } from '@/lib/prisma';
 import { CreateProfileInput, UpdateProfileInput, ListProfilesQuery } from './profile.validation';
+import { hashPassword } from '@/modules/auth/auth.service';
 
 interface Requester {
   id: string;
@@ -54,7 +55,9 @@ async function isProfileInTeam(profileId: string, teamLeaderId: string): Promise
       id: profileId,
       deletedAt: null,
       OR: [
+        { assignedRecruiterId: teamLeaderId },
         { assignedRecruiter: { createdById: teamLeaderId } },
+        { assignedRecruiterAssignments: { some: { recruiterId: teamLeaderId } } },
         { assignedRecruiterAssignments: { some: { recruiter: { createdById: teamLeaderId } } } },
       ],
     },
@@ -69,9 +72,17 @@ async function syncProfileAssignments(profileId: string, recruiterIds: string[])
   await repo.update(profileId, { assignedRecruiterId: primaryRecruiterId } as any);
 }
 
+async function assertResumeAssistExists(id?: string | null) {
+  if (!id) return;
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user || user.deletedAt || user.role !== Role.RESUME_ASSIST) {
+    throw ApiError.badRequest('Selected Resume Assist user does not exist or does not have the required role');
+  }
+}
+
 export async function createProfile(input: CreateProfileInput, actor: Requester, meta?: Meta) {
-  if (actor.role === Role.RECRUITER) {
-    throw ApiError.forbidden('Recruiters are not allowed to create new client profiles');
+  if (actor.role === Role.RECRUITER || actor.role === Role.RESUME_ASSIST) {
+    throw ApiError.forbidden('Only admins and team leaders can create new client profiles');
   }
   const recruiterIds = input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
   await assertRecruitersExist(recruiterIds, actor);
@@ -91,6 +102,8 @@ export async function createProfile(input: CreateProfileInput, actor: Requester,
     throw ApiError.badRequest('Existing Client with same Email/Phone Number');
   }
 
+  await assertResumeAssistExists(input.assignedResumeAssistId);
+
   const profile = await repo.create({
     candidateName: input.candidateName,
     email: input.email,
@@ -98,6 +111,7 @@ export async function createProfile(input: CreateProfileInput, actor: Requester,
     technology: input.technology,
     notes: input.notes ?? null,
     assignedRecruiterId: recruiterIds[0] ?? null,
+    assignedResumeAssistId: input.assignedResumeAssistId ?? null,
   });
 
   if (recruiterIds.length > 0) {
@@ -136,18 +150,38 @@ export async function updateProfile(id: string, input: UpdateProfileInput, actor
     }
   }
 
+  if (actor.role === Role.RESUME_ASSIST) {
+    if (existing.assignedResumeAssistId !== actor.id) {
+      throw ApiError.forbidden('You can only edit profiles assigned to you');
+    }
+  }
+
+  if (actor.role === Role.CLIENT) {
+    const user = await prisma.user.findUnique({ where: { id: actor.id } });
+    if (!user || user.clientProfileId !== id) {
+      throw ApiError.forbidden('You can only edit your own client profile');
+    }
+  }
+
   if (actor.role === Role.TEAM_LEADER) {
     const inTeam = await isProfileInTeam(id, actor.id);
     if (!inTeam) throw ApiError.forbidden('You can only edit profiles belonging to your team');
   }
 
   if (input.assignedRecruiterIds !== undefined || input.assignedRecruiterId !== undefined) {
-    if (actor.role === Role.RECRUITER) {
+    if (actor.role === Role.RECRUITER || actor.role === Role.CLIENT || actor.role === Role.RESUME_ASSIST) {
       throw ApiError.forbidden('Only admins and team leaders can reassign profiles');
     }
     const recruiterIds = input.assignedRecruiterIds ?? (input.assignedRecruiterId ? [input.assignedRecruiterId] : []);
     await assertRecruitersExist(recruiterIds, actor);
     await syncProfileAssignments(id, recruiterIds);
+  }
+
+  if (input.assignedResumeAssistId !== undefined) {
+    if (actor.role === Role.RECRUITER || actor.role === Role.CLIENT || actor.role === Role.RESUME_ASSIST) {
+      throw ApiError.forbidden('Only admins and team leaders can reassign resume assists');
+    }
+    await assertResumeAssistExists(input.assignedResumeAssistId);
   }
 
   // Check if active profile with same email or phone number already exists (excluding current profile)
@@ -340,3 +374,157 @@ export async function listProfiles(query: ListProfilesQuery, actor: Requester) {
     },
   };
 }
+
+export async function resetPassword(id: string, actor: Requester, meta?: Meta) {
+  const existing = await repo.findActiveById(id);
+  if (!existing) throw ApiError.notFound('Client profile not found');
+
+  const clientUser = await prisma.user.findFirst({ where: { clientProfileId: id } });
+  if (!clientUser) {
+    throw ApiError.badRequest('No login credentials exist for this client profile');
+  }
+
+  const defaultHash = await hashPassword('Pass@123');
+  await prisma.user.update({
+    where: { id: clientUser.id },
+    data: { passwordHash: defaultHash }
+  });
+
+  await writeAuditLog({
+    userId: actor.id,
+    action: 'PASSWORD_RESET',
+    entity: 'User',
+    entityId: clientUser.id,
+    metadata: { clientProfileId: id },
+    ...meta,
+  });
+
+  return { message: 'Password reset to Pass@123 successfully' };
+}
+
+export async function getPaymentHistory(profileId: string, actor: { id: string; role: Role }) {
+  const profile = await prisma.clientProfile.findUnique({
+    where: { id: profileId },
+  });
+  if (!profile) throw ApiError.notFound('Profile not found');
+
+  const payments = await prisma.clientPayment.findMany({
+    where: { profileId },
+    orderBy: { installmentNo: 'asc' },
+  });
+
+  return payments;
+}
+
+export async function postPaymentDetails(
+  profileId: string,
+  planSelected: string,
+  payments: Array<{
+    amount: number;
+    status: 'PAID' | 'PENDING' | 'FAILED';
+    dueDate: string;
+    paidAt?: string | null;
+    paymentRef?: string | null;
+    installmentNo: number;
+  }>,
+  actor: { id: string; role: Role }
+) {
+  if (actor.role !== Role.ADMIN && actor.role !== Role.TEAM_LEADER) {
+    throw ApiError.forbidden('Only Admins or Team Leaders can update payment details');
+  }
+
+  const profile = await prisma.clientProfile.findUnique({ where: { id: profileId } });
+  if (!profile) throw ApiError.notFound('Profile not found');
+
+  const result = await prisma.$transaction(async (tx) => {
+    // Delete existing payment history for this client
+    await tx.clientPayment.deleteMany({
+      where: { profileId }
+    });
+
+    const createdPayments: any[] = [];
+    let totalPaid = 0;
+    for (const p of payments) {
+      const created = await tx.clientPayment.create({
+        data: {
+          profileId,
+          amount: p.amount,
+          status: p.status,
+          dueDate: new Date(p.dueDate),
+          paidAt: p.paidAt ? new Date(p.paidAt) : null,
+          paymentRef: p.paymentRef || null,
+          installmentNo: p.installmentNo,
+        }
+      });
+      createdPayments.push(created);
+      if (p.status === 'PAID') {
+        totalPaid += p.amount;
+      }
+    }
+
+    await tx.clientProfile.update({
+      where: { id: profileId },
+      data: {
+        amountPaid: totalPaid,
+        planSelected,
+      }
+    });
+
+    return createdPayments;
+  });
+
+  return result;
+}
+
+export async function payInstallment(
+  profileId: string,
+  paymentId: string,
+  paymentRef: string,
+  actor: { id: string; role: Role }
+) {
+  const payment = await prisma.clientPayment.findUnique({
+    where: { id: paymentId },
+  });
+  if (!payment || payment.profileId !== profileId) {
+    throw ApiError.notFound('Payment record not found');
+  }
+  if (payment.status === 'PAID') {
+    throw ApiError.badRequest('Payment has already been paid');
+  }
+
+  const updatedPayment = await prisma.$transaction(async (tx) => {
+    const updated = await tx.clientPayment.update({
+      where: { id: paymentId },
+      data: {
+        status: 'PAID',
+        paidAt: new Date(),
+        paymentRef,
+      },
+    });
+
+    await tx.clientProfile.update({
+      where: { id: profileId },
+      data: {
+        amountPaid: { increment: payment.amount }
+      }
+    });
+
+    return updated;
+  });
+
+  return updatedPayment;
+}
+
+export async function unblockPayment(id: string, actor: { id: string; role: Role }) {
+  if (actor.role !== Role.ADMIN && actor.role !== Role.TEAM_LEADER) {
+    throw ApiError.forbidden('Only Admins or Team Leaders can reactivate payment-blocked profiles');
+  }
+
+  const profile = await prisma.clientProfile.update({
+    where: { id },
+    data: { paymentBlocked: false },
+  });
+
+  return profile;
+}
+

@@ -1,7 +1,6 @@
 export type Role = 'ADMIN' | 'TEAM_LEADER' | 'RECRUITER' | 'RESUME_ASSIST' | 'SALES_EXEC' | 'CLIENT';
 
 export type UserStatus =
-  | 'ONLINE'
   | 'ACTIVE'
   | 'SHORT_BREAK'
   | 'DINNER_BREAK'
@@ -34,6 +33,8 @@ export interface User {
   linkedInUrl?: string | null;
   displayColor?: string | null;
   teamName?: string | null;
+  clientProfileId?: string | null;
+  clientProfile?: any;
 }
 
 export interface Recruiter extends User {
@@ -95,8 +96,11 @@ export interface ClientProfile {
   paymentRef?: string;
   skills?: string;
 
+  paymentBlocked?: boolean;
   assignedRecruiterId: string | null;
   assignedRecruiter?: { id: string; name: string; email: string } | null;
+  assignedResumeAssistId?: string | null;
+  assignedResumeAssist?: { id: string; name: string; email: string } | null;
   assignedRecruiterAssignments?: Array<{
     recruiterId: string;
     recruiter: { id: string; name: string; email: string };

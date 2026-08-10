@@ -38,7 +38,6 @@ function formatHoursMinutes(totalSeconds: number): string {
 function getStatusNodeStyles(status: UserStatus) {
   switch (status) {
     case 'ACTIVE':
-    case 'ONLINE':
       return {
         btnClass: "bg-gradient-to-b from-emerald-400 to-emerald-600 border-emerald-300 shadow-[0_4px_0_#047857] hover:shadow-[0_1px_0_#047857] hover:translate-y-[2px]",
         pingColor: '#10b981'

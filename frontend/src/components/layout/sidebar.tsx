@@ -46,7 +46,13 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const unreadCount = updatesData?.unreadCount ?? 0;
 
   let rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? [...adminNav] : [...recruiterNav];
-  if (user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC') {
+  if (user?.role === 'RESUME_ASSIST') {
+    rawNav = [
+      { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'from-mayzax-blue to-mayzax-blue-700', desc: 'Your stats' },
+      { to: '/profiles', label: 'My Clients', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', desc: 'Assigned clients' },
+      { to: '/profile', label: 'Profile', icon: UserCircle, gradient: 'from-slate-600 to-slate-800', desc: 'Settings' },
+    ];
+  } else if (user?.role === 'SALES_EXEC') {
     rawNav = [
       { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard, gradient: 'from-mayzax-blue to-mayzax-blue-700', desc: 'Your stats' },
       { to: '/profile', label: 'Profile', icon: UserCircle, gradient: 'from-slate-600 to-slate-800', desc: 'Settings' },

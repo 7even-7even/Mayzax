@@ -7,6 +7,7 @@ export function findActiveById(id: string) {
     where: { id, deletedAt: null },
     include: {
       assignedRecruiter: { select: { id: true, name: true, email: true } },
+      assignedResumeAssist: { select: { id: true, name: true, email: true } },
       assignedRecruiterAssignments: {
         include: { recruiter: { select: { id: true, name: true, email: true } } },
       },
@@ -29,11 +30,13 @@ export function create(data: {
   technology: string;
   notes?: string | null;
   assignedRecruiterId?: string | null;
+  assignedResumeAssistId?: string | null;
 }) {
   return prisma.clientProfile.create({
     data,
     include: {
       assignedRecruiter: { select: { id: true, name: true, email: true } },
+      assignedResumeAssist: { select: { id: true, name: true, email: true } },
       assignedRecruiterAssignments: {
         include: { recruiter: { select: { id: true, name: true, email: true } } },
       },
@@ -92,7 +95,9 @@ export function buildWhereClause(
     });
   }
 
-  if (requester.role === Role.RECRUITER) {
+  if (requester.role === Role.RESUME_ASSIST) {
+    conditions.push({ assignedResumeAssistId: requester.id });
+  } else if (requester.role === Role.RECRUITER) {
     conditions.push({
       OR: [
         { assignedRecruiterId: requester.id },
@@ -153,6 +158,7 @@ export function list(query: ListProfilesQuery, requester: { id: string; role: Ro
       take: query.pageSize,
       include: {
         assignedRecruiter: { select: { id: true, name: true, email: true } },
+        assignedResumeAssist: { select: { id: true, name: true, email: true } },
         assignedRecruiterAssignments: {
           include: { recruiter: { select: { id: true, name: true, email: true } } },
         },

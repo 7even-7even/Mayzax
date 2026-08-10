@@ -71,6 +71,8 @@ function sanitizeUser(user: {
     linkedInUrl: user.linkedInUrl ?? null,
     displayColor: user.displayColor ?? null,
     teamName: (user as any).teamName ?? null,
+    clientProfileId: (user as any).clientProfileId ?? null,
+    clientProfile: (user as any).clientProfile ?? null,
   };
 }
 
@@ -129,7 +131,16 @@ async function issueTokenPair(
 }
 
 export async function login(input: LoginInput, meta: SessionMeta) {
-  const user = await prisma.user.findUnique({ where: { email: input.email.toLowerCase() } });
+  const user = await prisma.user.findUnique({
+    where: { email: input.email.toLowerCase() },
+    include: {
+      clientProfile: {
+        include: {
+          assignedRecruiter: true,
+        }
+      }
+    }
+  });
 
   if (!user || user.deletedAt) {
     throw ApiError.unauthorized('Invalid email or password');
@@ -219,7 +230,16 @@ export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta)
     throw ApiError.unauthorized('Refresh token expired');
   }
 
-  const user = await prisma.user.findUnique({ where: { id: stored.userId } });
+  const user = await prisma.user.findUnique({
+    where: { id: stored.userId },
+    include: {
+      clientProfile: {
+        include: {
+          assignedRecruiter: true,
+        }
+      }
+    }
+  });
   if (!user || user.deletedAt || !user.isActive) {
     throw ApiError.unauthorized('Account is no longer active');
   }
@@ -309,6 +329,12 @@ export async function getMe(userId: string) {
       teamName: true,
       reportingManager: {
         select: { id: true, name: true, email: true },
+      },
+      clientProfileId: true,
+      clientProfile: {
+        include: {
+          assignedRecruiter: true,
+        }
       },
     },
   });

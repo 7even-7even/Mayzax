@@ -21,7 +21,7 @@ import { getRoleLabel } from '@/lib/permissions';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 
 export default function UpdatesPage() {
-  const { isAdmin } = usePermissions();
+  const { isAdmin, role } = usePermissions();
 
   const { data: updatesData, isLoading } = useUpdates();
   const markAsReadMutation = useMarkUpdateAsRead();
@@ -38,8 +38,12 @@ export default function UpdatesPage() {
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
 
-  const updates = updatesData?.updates ?? [];
-  const unreadCount = updatesData?.unreadCount ?? 0;
+  const updates = (updatesData?.updates ?? []).filter((item) => {
+    if (isAdmin) return true;
+    if (!item.roles || item.roles.length === 0) return true;
+    return role && item.roles.includes(role);
+  });
+  const unreadCount = updates.filter((item) => !item.isRead).length;
 
   const handleDownloadPdf = async (e: React.MouseEvent, item: SystemUpdateItem) => {
     e.stopPropagation();

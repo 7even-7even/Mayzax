@@ -18,9 +18,10 @@ import { PortalRegistryV2 } from './verification/portals';
 import { ENGINE_VERSION_NAME } from './verification/engine/EngineConfig';
 import { RecruitmentPageDetector } from './detectors/RecruitmentPageDetector';
 
-// Legacy fallback imports (kept for backward compat during migration)
+// Legacy fallback imports
 import { PortalRegistry } from './detectors/PortalRegistry';
 import { extractPageMetadata } from './utils/metadata';
+import { isConfirmationUrl } from './verification/utils/dom';
 
 const engine = new VerificationEngine();
 const portalRegistryV2 = PortalRegistryV2.getInstance();
@@ -57,6 +58,13 @@ async function runDetectionV2(): Promise<void> {
       try {
         company = plugin.extractCompany(document, new URL(currentUrl)) || '';
         jobTitle = plugin.extractJobTitle(document, new URL(currentUrl)) || '';
+        // Greenhouse specific: extract from URL path /spacex/jobs/...
+        if (!company && plugin.portal === 'GREENHOUSE') {
+          const parts = new URL(currentUrl).pathname.split('/').filter(Boolean);
+          if (parts.length > 0) {
+            company = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+          }
+        }
       } catch {
         company = result.evidence.hostname.split('.')[0];
         jobTitle = result.evidence.title.slice(0, 100);
@@ -119,39 +127,44 @@ async function runDetectionV2(): Promise<void> {
 function runLegacyDetection(): void {
   try {
     const currentUrl = window.location.href;
+    const confirmationLike = isConfirmationUrl(currentUrl);
+    if (!confirmationLike) {
+      // Only run legacy if URL looks like confirmation
+      // But for safety, run anyway for greenhouse
+      if (!currentUrl.includes('greenhouse')) return;
+    }
+
     const registry = PortalRegistry.getInstance();
     const detector = registry.getDetector(currentUrl);
     const result = detector.detectSuccess(document, currentUrl);
-    if (result.success && result.confidenceScore >= 50) {
+    
+    console.log('[Mayzax v2] Legacy detection result', result);
+
+    // For confirmation URLs, accept even 20+ score
+    const threshold = confirmationLike ? 20 : 50;
+    
+    if (result.success || result.confidenceScore >= threshold) {
       const meta = extractPageMetadata(document, currentUrl, detector.portal);
-      const payload = {
-        portal: detector.portal,
-        company: meta.company,
-        jobTitle: meta.jobTitle,
-        url: currentUrl,
-        pageTitle: meta.pageTitle,
-        verified: true,
-        confidenceScore: result.confidenceScore,
-        matchedRules: result.matchedRules,
-        matchedKeywords: result.matchedKeywords,
-        timestamp: Date.now(),
-      };
+      console.log('[Mayzax v2] Legacy meta', meta);
+
+      const boostedScore = confirmationLike ? Math.max(result.confidenceScore, 75) : result.confidenceScore;
+
       VerificationStoreV2.saveV2(
         {
-          verified: true,
-          score: result.confidenceScore,
-          confidence: result.confidenceScore >= 80 ? 'HIGH' : result.confidenceScore >= 50 ? 'MEDIUM' : 'LOW',
+          verified: boostedScore >= 50,
+          score: boostedScore,
+          confidence: boostedScore >= 80 ? 'HIGH' : boostedScore >= 50 ? 'MEDIUM' : 'LOW',
           portal: detector.portal as any,
-          reasons: result.matchedRules,
+          reasons: [...result.matchedRules, ...(confirmationLike ? ['URL pattern indicates confirmation (legacy fallback)'] : [])],
           evidence: {
             portal: detector.portal as any,
             hostname: new URL(currentUrl).hostname,
             pathname: new URL(currentUrl).pathname,
             fullUrl: currentUrl,
             normalizedUrl: currentUrl,
-            title: meta.pageTitle,
+            title: meta.pageTitle || document.title,
             headings: result.matchedKeywords,
-            confirmationText: result.matchedKeywords.join(' '),
+            confirmationText: result.matchedKeywords.join(' ') || document.body.textContent?.slice(0, 500) || '',
             applicationReference: null,
             detectedButtons: [],
             domFingerprint: {
@@ -167,10 +180,23 @@ function runLegacyDetection(): void {
           verificationTimestamp: Date.now(),
           version: 'v1',
           applicationReference: null,
+          fraudSignals: confirmationLike ? [] : undefined,
         } as any,
         meta.company,
         meta.jobTitle,
       );
+      const payload = {
+        portal: detector.portal,
+        company: meta.company,
+        jobTitle: meta.jobTitle,
+        url: currentUrl,
+        pageTitle: meta.pageTitle || document.title,
+        verified: boostedScore >= 50,
+        confidenceScore: boostedScore,
+        matchedRules: result.matchedRules,
+        matchedKeywords: result.matchedKeywords,
+        timestamp: Date.now(),
+      };
       chrome.runtime.sendMessage({ action: 'PAGE_VERIFIED', payload });
     }
   } catch (e) {
@@ -248,6 +274,8 @@ async function main(): Promise<void> {
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 
 console.log(`[Mayzax] Content script loaded v${ENGINE_VERSION_NAME} — universal mode`);
+
+console.log(`[Mayzax v2] Content script loaded v${ENGINE_VERSION_NAME} on ${window.location.href}`);
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   main();

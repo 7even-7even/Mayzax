@@ -73,9 +73,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     bootstrap();
 
     const handleExpired = () => {
+      // Check role before clearing user so we know where to redirect
+      const currentRole = user?.role;
       setUser(null);
       setAuthToken(null);
-      navigate('/login', { replace: true });
+      navigate(currentRole === 'CLIENT' ? '/client-login' : '/login', { replace: true });
     };
     window.addEventListener('auth:session-expired', handleExpired);
     return () => window.removeEventListener('auth:session-expired', handleExpired);
@@ -97,14 +99,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [setAuthToken]);
 
   const logout = useCallback(async () => {
+    const redirectTo = user?.role === 'CLIENT' ? '/client-login' : '/login';
     try {
       await apiClient.post('/auth/logout');
     } finally {
       setAuthToken(null);
       setUser(null);
-      navigate('/login', { replace: true });
+      navigate(redirectTo, { replace: true });
     }
-  }, [navigate, setAuthToken]);
+  }, [navigate, setAuthToken, user]);
 
   // isAuthenticated now depends solely on user presence, avoiding token/memory race.
   // Token state is tracked separately for axios interceptor but UI gate uses user.

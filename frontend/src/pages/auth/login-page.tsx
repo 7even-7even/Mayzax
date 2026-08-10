@@ -88,7 +88,7 @@ function ParticleField() {
 }
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
@@ -103,10 +103,14 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginForm) => {
     try {
       const user = await login(values);
+      if (user.role === 'CLIENT') {
+        await logout();
+        toast.error('Clients are not allowed to log in here. Please use the Client Portal.');
+        return;
+      }
       toast.success(`Welcome back, ${user.name.split(' ')[0]}!`);
       const from = (location.state as any)?.from?.pathname ?? 
-        (user.role === 'ADMIN' || user.role === 'TEAM_LEADER' ? '/dashboard' : 
-         user.role === 'CLIENT' ? '/client-dashboard' : '/recruiter-dashboard');
+        (user.role === 'ADMIN' || user.role === 'TEAM_LEADER' ? '/dashboard' : '/recruiter-dashboard');
       navigate(from, { replace: true });
     } catch (err) {
       toast.error(extractErrorMessage(err, 'Invalid email or password'));

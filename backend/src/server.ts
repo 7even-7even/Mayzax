@@ -6,12 +6,18 @@ import { getQueue, stopQueue } from '@/lib/queue';
 import { getFirebaseApp } from '@/lib/firebase';
 import { registerJobProcessors, startPeriodicJobs } from '@/jobs/processors';
 import { ensureDefaultShiftConfig } from '@/modules/shifts/shift.service';
+import { ensureClientCredentials } from '@/modules/onboarding/onboarding.service';
 
 async function main() {
   const app = createApp();
 
   await prisma.$connect();
   logger.info('✅ Database connected');
+
+  // Ensure default credentials for existing clients
+  await ensureClientCredentials().catch((err) => {
+    logger.error({ err }, 'Failed to ensure client credentials');
+  });
 
   // Ensure a default shift config exists (idempotent)
   await ensureDefaultShiftConfig().catch((err) => {

@@ -88,7 +88,7 @@ function ParticleField() {
 }
 
 export default function ClientLoginPage() {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
@@ -103,6 +103,11 @@ export default function ClientLoginPage() {
   const onSubmit = async (values: LoginForm) => {
     try {
       const user = await login(values);
+      if (user.role !== 'CLIENT') {
+        await logout();
+        toast.error('Staff members are not allowed to log in here. Please use the Admin/Recruiter Portal.');
+        return;
+      }
       toast.success(`Welcome back, ${user.name.split(' ')[0]}!`);
       const from = (location.state as any)?.from?.pathname ?? '/client-dashboard';
       navigate(from, { replace: true });
