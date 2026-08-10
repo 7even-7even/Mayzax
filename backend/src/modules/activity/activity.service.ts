@@ -235,6 +235,14 @@ export async function processHeartbeat(userId: string, role: Role) {
           optionalNote: 'Disconnected due to inactivity',
         },
       });
+
+      // Revoke refresh tokens to prevent silent re-authentication
+      await prisma.refreshToken.deleteMany({
+        where: { userId },
+      });
+
+      // Throw Unauthorized to trigger immediate logout on the user screen
+      throw ApiError.unauthorized('Session expired due to inactivity');
     }
   }
 
@@ -292,9 +300,12 @@ export async function getTodayActivity(userId: string): Promise<DailyActivitySum
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, role: true },
+    select: { id: true, name: true, email: true, role: true, lastHeartbeatAt: true },
   });
   if (!user) throw ApiError.notFound('User not found');
+
+  const lastHb = user.lastHeartbeatAt;
+  const isStale = lastHb && (now.getTime() - lastHb.getTime() > STALE_HEARTBEAT_THRESHOLD_MS);
 
   const logs = await prisma.activityLog.findMany({
     where: {
@@ -322,7 +333,14 @@ export async function getTodayActivity(userId: string): Promise<DailyActivitySum
 
   const formattedLogs = logs.map((log) => {
     const logStart = log.startedAt < startOfToday ? startOfToday : log.startedAt;
-    const logEnd = log.endedAt ? log.endedAt : now;
+    let logEnd = log.endedAt;
+    if (!logEnd) {
+      if (isStale && log.status === UserStatus.ACTIVE) {
+        logEnd = lastHb;
+      } else {
+        logEnd = now;
+      }
+    }
     const durationSeconds = Math.max(0, Math.floor((logEnd.getTime() - logStart.getTime()) / 1000));
 
     if (!firstLogin && log.status !== UserStatus.OFFLINE) {
@@ -484,11 +502,25 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
     },
   });
 
+  const lastHeartbeatMap = new Map<string, Date>();
+  users.forEach((u) => {
+    if (u.lastHeartbeatAt) lastHeartbeatMap.set(u.id, u.lastHeartbeatAt);
+  });
+
   const productiveTimeMap = new Map<string, number>();
   const breakTimeMap = new Map<string, number>();
 
   todayLogs.forEach((log) => {
-    const end = log.endedAt ? log.endedAt : now;
+    let end = log.endedAt;
+    if (!end) {
+      const lastHb = lastHeartbeatMap.get(log.userId);
+      const isStale = lastHb && (now.getTime() - lastHb.getTime() > STALE_HEARTBEAT_THRESHOLD_MS);
+      if (isStale && log.status === UserStatus.ACTIVE) {
+        end = lastHb;
+      } else {
+        end = now;
+      }
+    }
     const dur = Math.max(0, Math.floor((end.getTime() - log.startedAt.getTime()) / 1000));
     if (log.status === UserStatus.ACTIVE) {
       productiveTimeMap.set(log.userId, (productiveTimeMap.get(log.userId) ?? 0) + dur);

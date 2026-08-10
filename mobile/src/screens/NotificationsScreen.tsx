@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect } from '@react-navigation/native';
-import { Screen } from '@/components/Screen';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { Skeleton } from '@/components/Skeleton';
@@ -44,6 +45,50 @@ const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string }> =
   PENALTY_NOTICE:       { icon: 'alert-octagon', color: '#EF4444', bg: '#FEE2E2' },
   SYSTEM:               { icon: 'bell-ring', color: colors.primary, bg: '#E0E7FF' },
 };
+
+function NotificationsHeader({ unreadCount, onMarkAllRead, markAllDisabled, dark }: {
+  unreadCount: number;
+  onMarkAllRead: () => void;
+  markAllDisabled: boolean;
+  dark: boolean;
+}) {
+  return (
+    <LinearGradient
+      colors={['#2A5DA8', '#347F80', '#3F9C71']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.heroBanner}
+    >
+      <View style={styles.heroGlowTL} />
+      <View style={styles.heroGlowBR} />
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.heroGreeting}>ALERTS & REMINDERS</Text>
+          <Text style={styles.heroName} numberOfLines={1}>Notifications</Text>
+          <View style={styles.heroBadgeRow}>
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeText}>
+                {unreadCount > 0 ? `${unreadCount} unread` : 'All caught up'}
+              </Text>
+            </View>
+          </View>
+        </View>
+        {unreadCount > 0 && (
+          <TouchableOpacity
+            onPress={onMarkAllRead}
+            disabled={markAllDisabled}
+            style={[styles.heroBadge, { backgroundColor: 'rgba(255,255,255,0.22)', borderColor: 'rgba(255,255,255,0.4)', paddingVertical: 6, paddingHorizontal: 12 }]}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <MaterialCommunityIcons name="check-all" size={14} color="#fff" />
+              <Text style={[styles.heroBadgeText, { color: '#fff' }]}>Mark all read</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      </View>
+    </LinearGradient>
+  );
+}
 
 function getTypeConfig(type: string) {
   return TYPE_CONFIG[type] ?? { icon: 'bell-ring', color: colors.primary, bg: '#E0E7FF' };
@@ -128,116 +173,112 @@ export function NotificationsScreen() {
 
   if (isLoading && items.length === 0) {
     return (
-      <Screen>
-        <Skeleton height={28} width="50%" style={{ marginBottom: spacing.sm }} />
-        <Skeleton height={80} style={{ marginBottom: spacing.sm }} />
-        <Skeleton height={80} style={{ marginBottom: spacing.sm }} />
-        <Skeleton height={80} />
-      </Screen>
+      <SafeAreaView style={{ flex: 1, backgroundColor: dark ? '#0B1220' : colors.background }} edges={['top']}>
+        <Skeleton height={190} style={{ borderRadius: 0 }} />
+        <View style={{ flex: 1, padding: spacing.lg }}>
+          <Skeleton height={80} style={{ marginBottom: spacing.sm }} />
+          <Skeleton height={80} style={{ marginBottom: spacing.sm }} />
+          <Skeleton height={80} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <Screen scroll={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.title, { color: dark ? colors.textDark : colors.text }]}>Notifications</Text>
-          {unread > 0 ? (
-            <Text style={[styles.subtitle, { color: dark ? colors.textMutedDark : colors.textMuted }]}>
-              {unread} unread
-            </Text>
-          ) : (
-            <Text style={[styles.subtitle, { color: dark ? colors.textMutedDark : colors.textMuted }]}>All caught up</Text>
-          )}
-        </View>
-        {unread > 0 ? (
-          <TouchableOpacity
-            onPress={() => readAll.mutate()}
-            disabled={readAll.isPending}
-            style={styles.markAllBtn}
-          >
-            <MaterialCommunityIcons name="check-all" size={16} color={colors.accent} />
-            <Text style={styles.markAllText}>Mark all read</Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
-
-      <FlatList
-        data={items}
-        keyExtractor={(i) => i.id}
-        contentContainerStyle={{ paddingVertical: spacing.sm, paddingBottom: spacing.xxl }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
-        ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
-        ListEmptyComponent={
-          <EmptyState
-            title="You're all caught up!"
-            description="No notifications yet. We'll alert you about breaks, reminders, and company news."
-            icon="🔔"
-          />
-        }
-        onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
-        }}
-        onEndReachedThreshold={0.5}
-        renderItem={({ item }) => {
-          const cfg = getTypeConfig(item.type);
-          const isUnread = !item.readAt;
-          return (
-            <TouchableOpacity activeOpacity={0.75} onPress={() => tap(item)}>
-              <Card
-                padded
-                style={[
-                  styles.item,
-                  {
-                    backgroundColor: isUnread
-                      ? (dark ? '#1E293B' : '#F0F7FF')
-                      : (dark ? colors.cardDark : colors.surface),
-                    borderLeftWidth: 3,
-                    borderLeftColor: isUnread ? cfg.color : 'transparent',
-                  },
-                ]}
-              >
-                {/* Icon circle */}
-                <View style={[styles.iconCircle, { backgroundColor: cfg.bg }]}>
-                  <MaterialCommunityIcons name={cfg.icon as any} size={20} color={cfg.color} />
-                </View>
-
-                {/* Content */}
-                <View style={{ flex: 1 }}>
-                  <View style={styles.titleRow}>
-                    <Text
-                      style={[
-                        styles.itemTitle,
-                        { color: dark ? colors.textDark : colors.text },
-                        isUnread && { fontWeight: '800' },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {item.title}
-                    </Text>
-                    {isUnread ? <View style={[styles.unreadDot, { backgroundColor: cfg.color }]} /> : null}
-                  </View>
-                  <Text
-                    style={[styles.itemBody, { color: dark ? colors.textMutedDark : colors.textMuted }]}
-                    numberOfLines={2}
-                  >
-                    {item.body}
-                  </Text>
-                  <Text style={[styles.time, { color: dark ? colors.textMutedDark : colors.textMuted }]}>
-                    {dayjs(item.createdAt).fromNow()}
-                  </Text>
-                </View>
-              </Card>
-            </TouchableOpacity>
-          );
-        }}
+    <SafeAreaView style={{ flex: 1, backgroundColor: dark ? '#0B1220' : colors.background }} edges={['top']}>
+      <NotificationsHeader
+        unreadCount={unread}
+        onMarkAllRead={() => readAll.mutate()}
+        markAllDisabled={readAll.isPending}
+        dark={dark}
       />
-    </Screen>
+      <View style={{ flex: 1, paddingHorizontal: spacing.lg }}>
+        <FlatList
+          data={items}
+          keyExtractor={(i) => i.id}
+          contentContainerStyle={{ paddingVertical: spacing.sm, paddingBottom: spacing.xxl }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
+          ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+          ListEmptyComponent={
+            <EmptyState
+              title="You're all caught up!"
+              description="No notifications yet. We'll alert you about breaks, reminders, and company news."
+              icon="🔔"
+            />
+          }
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+          }}
+          onEndReachedThreshold={0.5}
+          renderItem={({ item }) => {
+            const cfg = getTypeConfig(item.type);
+            const isUnread = !item.readAt;
+            return (
+              <TouchableOpacity activeOpacity={0.75} onPress={() => tap(item)}>
+                <Card
+                  padded
+                  style={[
+                    styles.item,
+                    {
+                      backgroundColor: isUnread
+                        ? (dark ? '#1E293B' : '#F0F7FF')
+                        : (dark ? colors.cardDark : colors.surface),
+                      borderLeftWidth: 3,
+                      borderLeftColor: isUnread ? cfg.color : 'transparent',
+                    },
+                  ]}
+                >
+                  {/* Icon circle */}
+                  <View style={[styles.iconCircle, { backgroundColor: cfg.bg }]}>
+                    <MaterialCommunityIcons name={cfg.icon as any} size={20} color={cfg.color} />
+                  </View>
+
+                  {/* Content */}
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.titleRow}>
+                      <Text
+                        style={[
+                          styles.itemTitle,
+                          { color: dark ? colors.textDark : colors.text },
+                          isUnread && { fontWeight: '800' },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {item.title}
+                      </Text>
+                      {isUnread && (
+                        <View style={[styles.unreadDot, { backgroundColor: cfg.color }]} />
+                      )}
+                    </View>
+                    <Text
+                      style={[styles.itemBody, { color: dark ? colors.textMutedDark : colors.textMuted }]}
+                      numberOfLines={2}
+                    >
+                      {item.body}
+                    </Text>
+                    <Text style={[styles.time, { color: dark ? colors.textMutedDark : colors.textMuted }]}>
+                      {dayjs(item.createdAt).fromNow()}
+                    </Text>
+                  </View>
+                </Card>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  heroBanner: { padding: spacing.lg, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden' },
+  heroGlowTL: { position: 'absolute', top: -50, left: -50, width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.1)' },
+  heroGlowBR: { position: 'absolute', bottom: -50, right: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.05)' },
+  heroGreeting: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+  heroName: { color: '#fff', fontSize: 24, fontWeight: '800', marginTop: 4 },
+  heroBadgeRow: { flexDirection: 'row', marginTop: 12 },
+  heroBadge: { backgroundColor: 'rgba(0,0,0,0.15)', borderRadius: 12, paddingVertical: 4, paddingHorizontal: 10 },
+  heroBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',

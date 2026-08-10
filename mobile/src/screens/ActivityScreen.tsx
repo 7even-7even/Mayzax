@@ -7,10 +7,13 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Image,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Screen } from '@/components/Screen';
 import { Card } from '@/components/Card';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -56,15 +59,82 @@ function portalLabel(name: string) {
   return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function formatTopPerformer(nameStr: string): string {
+  if (!nameStr || nameStr === '—') return '—';
+  let normalized = nameStr.replace(/\r?\n|\r/g, ' ').trim();
+  const scoreMatch = normalized.match(/\(\d+\)/);
+  const score = scoreMatch ? ' ' + scoreMatch[0] : '';
+  let nameOnly = scoreMatch ? normalized.replace(scoreMatch[0], '') : normalized;
+  nameOnly = nameOnly.replace(/\s+/g, ' ').trim();
+  const parts = nameOnly.split(' ');
+  if (parts.length <= 1) return normalized;
+  const firstName = parts[0];
+  const lastInitial = parts[1].charAt(0).toUpperCase() + '.';
+  return `${firstName} ${lastInitial}${score}`;
+}
+
+function AnalyticsHeader({ dateText, shiftText, dark }: { dateText: string; shiftText: string; dark: boolean }) {
+  return (
+    <LinearGradient
+      colors={['#2A5DA8', '#347F80', '#3F9C71']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.heroBanner}
+    >
+      <View style={styles.heroGlowTL} />
+      <View style={styles.heroGlowBR} />
+      {/* <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg }}>
+        <Image
+          source={require('../../assets/mayzax-logo.png')}
+          style={styles.heroLogo}
+          resizeMode="contain"
+        />
+        <Text style={styles.heroAppName}>Mayzax Companion</Text>
+      </View> */}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.heroGreeting}>Performance & Stats</Text>
+          <Text style={styles.heroName} numberOfLines={1}>Analytics Hub</Text>
+          <View style={styles.heroBadgeRow}>
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeText}>{dateText}</Text>
+            </View>
+            {shiftText ? (
+              <View style={[styles.heroBadge, { backgroundColor: 'rgba(255,255,255,0.12)' }]}>
+                <Text style={styles.heroBadgeText}>{shiftText}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </View>
+    </LinearGradient>
+  );
+}
+
 // ─── Big metric tile ──────────────────────────────────────────────────────────
 function BigTile({ label, value, accent, icon, dark }: {
   label: string; value: string | number; accent: string; icon: string; dark: boolean;
 }) {
+  const isLongText = typeof value === 'string' && /[a-zA-Z]/.test(value);
   return (
     <Card style={[styles.bigTile, { borderLeftWidth: 3, borderLeftColor: accent }]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={[styles.bigTileValue, { color: accent }]}>{value}</Text>
-        <MaterialCommunityIcons name={icon as any} size={24} color={accent} style={{ opacity: 0.7 }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+        <Text
+          style={[
+            styles.bigTileValue,
+            {
+              color: accent,
+              flex: 1,
+              marginRight: spacing.xs,
+              fontSize: isLongText ? 15 : 24,
+              lineHeight: isLongText ? 18 : 28,
+            },
+          ]}
+          numberOfLines={3}
+        >
+          {value}
+        </Text>
+        <MaterialCommunityIcons name={icon as any} size={24} color={accent} style={{ opacity: 0.7, marginRight: 6 }} />
       </View>
       <Text style={[styles.bigTileLabel, { color: dark ? colors.textMutedDark : colors.textMuted }]}>{label}</Text>
     </Card>
@@ -141,52 +211,54 @@ function AdminAnalyticsScreen({ dark }: { dark: boolean }) {
 
   if (summaryLoading && !summary) {
     return (
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.lg }}>
-        <Skeleton height={28} width="60%" style={{ marginBottom: spacing.md }} />
-        <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
-          <Skeleton height={80} style={{ flex: 1 }} />
-          <Skeleton height={80} style={{ flex: 1 }} />
-        </View>
-        <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg }}>
-          <Skeleton height={80} style={{ flex: 1 }} />
-          <Skeleton height={80} style={{ flex: 1 }} />
-        </View>
-        <Skeleton height={160} style={{ marginBottom: spacing.md }} />
-        <Skeleton height={200} />
-      </ScrollView>
+      <SafeAreaView style={{ flex: 1, backgroundColor: dark ? '#0B1220' : colors.background }} edges={['top']}>
+        <Skeleton height={190} style={{ borderRadius: 0 }} />
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.lg }}>
+          <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
+            <Skeleton height={80} style={{ flex: 1 }} />
+            <Skeleton height={80} style={{ flex: 1 }} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg }}>
+            <Skeleton height={80} style={{ flex: 1 }} />
+            <Skeleton height={80} style={{ flex: 1 }} />
+          </View>
+          <Skeleton height={160} style={{ marginBottom: spacing.md }} />
+          <Skeleton height={200} />
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   if (summaryError && !summary) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: dark ? '#0B1220' : colors.background, justifyContent: 'center' }}>
         <ErrorState message="Failed to load analytics" onRetry={() => { refetchSummary(); refetchPortals(); refetchDaily(); }} />
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: dark ? colors.surfaceDark : colors.background }}
-      contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl * 2 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
-    >
-      {/* Header */}
-      <Text style={[styles.pageTitle, { color: dark ? colors.textDark : colors.text }]}>Analytics Hub</Text>
-      <Text style={[styles.pageSub, { color: dark ? colors.textMutedDark : colors.textMuted }]}>
-        {summary?.currentBusinessDate} · {summary?.shiftWindowText}
-      </Text>
-
-      {/* ─── Live Status Row ─── */}
-      <SectionHeader title="Live Status" sub="Current shift activity" dark={dark} />
-      <View style={styles.tileGrid}>
-        <BigTile label="Active Now" value={summary?.activeMemberCount ?? 0} accent={colors.success} icon="account-check" dark={dark} />
-        <BigTile label="On Break" value={summary?.onBreakMemberCount ?? 0} accent={colors.warning} icon="coffee" dark={dark} />
-      </View>
-      <View style={styles.tileGrid}>
-        <BigTile label="Today's Apps" value={summary?.currentShiftApplications ?? 0} accent="#8b5cf6" icon="briefcase-upload" dark={dark} />
-        <BigTile label="Top Performer" value={summary?.topPerformer || '—'} accent={colors.accent} icon="trophy" dark={dark} />
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: dark ? '#0B1220' : colors.background }} edges={['top']}>
+      <AnalyticsHeader
+        dateText={summary?.currentBusinessDate || ''}
+        shiftText={summary?.shiftWindowText || ''}
+        dark={dark}
+      />
+      <ScrollView
+        style={{ flex: 1, backgroundColor: dark ? colors.surfaceDark : colors.background }}
+        contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl * 2 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
+      >
+        {/* ─── Live Status Row ─── */}
+        <SectionHeader title="Live Status" sub="Current shift activity" dark={dark} />
+        <View style={styles.tileGrid}>
+          <BigTile label="Active Now" value={summary?.activeMemberCount ?? 0} accent={colors.success} icon="account-check" dark={dark} />
+          <BigTile label="On Break" value={summary?.onBreakMemberCount ?? 0} accent={colors.warning} icon="coffee" dark={dark} />
+        </View>
+        <View style={styles.tileGrid}>
+          <BigTile label="Today's Apps" value={summary?.currentShiftApplications ?? 0} accent="#8b5cf6" icon="briefcase-upload" dark={dark} />
+          <BigTile label="Top Performer" value={formatTopPerformer(summary?.topPerformer || '—')} accent={colors.accent} icon="trophy" dark={dark} />
+        </View>
 
       {/* ─── Organisation Overview ─── */}
       <SectionHeader title="Organisation" sub="Total counts across all roles" dark={dark} />
@@ -376,6 +448,7 @@ function AdminAnalyticsScreen({ dark }: { dark: boolean }) {
         )}
       </Card>
     </ScrollView>
+  </SafeAreaView>
   );
 }
 
@@ -523,6 +596,33 @@ function StatChip({ icon, value, label, accent, dark }: { icon: string; value: s
 
 // ─── Styles ────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  // Hero banner
+  heroBanner: {
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    overflow: 'hidden',
+  },
+  heroGlowTL: {
+    position: 'absolute', top: -50, left: -50, width: 180, height: 180,
+    borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.10)',
+  },
+  heroGlowBR: {
+    position: 'absolute', bottom: -30, right: -30, width: 160, height: 160,
+    borderRadius: 80, backgroundColor: 'rgba(63,156,113,0.22)',
+  },
+  heroLogo: { width: 32, height: 32, borderRadius: 8, marginRight: 8 },
+  heroAppName: { fontSize: 18, fontWeight: '800', color: 'rgba(255,255,255,0.92)', letterSpacing: 0.5 },
+  heroGreeting: { fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 0.8 },
+  heroName: { fontSize: 26, fontWeight: '800', color: '#fff', marginTop: 2, letterSpacing: -0.3 },
+  heroBadgeRow: { flexDirection: 'row', gap: 6, marginTop: 6 },
+  heroBadge: {
+    backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 3,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)',
+  },
+  heroBadgeText: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.88)' },
+
   pageTitle: { ...typography.h2, fontWeight: '800' },
   pageSub: { ...typography.small, marginTop: 2 },
   row: { flexDirection: 'row', alignItems: 'center' },

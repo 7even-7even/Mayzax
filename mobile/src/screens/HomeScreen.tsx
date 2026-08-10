@@ -55,17 +55,46 @@ function getStatusColor(status: string) {
 
 // ─── Shared components ────────────────────────────────────────────────────────
 
+function formatTopPerformer(nameStr: string): string {
+  if (!nameStr || nameStr === '—') return '—';
+  let normalized = nameStr.replace(/\r?\n|\r/g, ' ').trim();
+  const scoreMatch = normalized.match(/\(\d+\)/);
+  const score = scoreMatch ? ' ' + scoreMatch[0] : '';
+  let nameOnly = scoreMatch ? normalized.replace(scoreMatch[0], '') : normalized;
+  nameOnly = nameOnly.replace(/\s+/g, ' ').trim();
+  const parts = nameOnly.split(' ');
+  if (parts.length <= 1) return normalized;
+  const firstName = parts[0];
+  const lastInitial = parts[1].charAt(0).toUpperCase() + '.';
+  return `${firstName} ${lastInitial}${score}`;
+}
+
 /** Metric tile with icon, bold value, small label */
 function DashTile({
   icon, label, value, accent, dark, wide,
 }: {
   icon: string; label: string; value: string | number; accent: string; dark: boolean; wide?: boolean;
 }) {
+  const isLongText = typeof value === 'string' && /[a-zA-Z]/.test(value);
   return (
     <Card style={[styles.dashTile, wide && { flex: 2 }, { borderLeftWidth: 3, borderLeftColor: accent }]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={[styles.dashTileValue, { color: accent }]}>{value}</Text>
-        <MaterialCommunityIcons name={icon as any} size={22} color={accent} style={{ opacity: 0.65 }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+        <Text
+          style={[
+            styles.dashTileValue,
+            {
+              color: accent,
+              flex: 1,
+              marginRight: spacing.xs,
+              fontSize: isLongText ? 14 : 22,
+              lineHeight: isLongText ? 17 : 26,
+            },
+          ]}
+          numberOfLines={3}
+        >
+          {value}
+        </Text>
+        <MaterialCommunityIcons name={icon as any} size={22} color={accent} style={{ opacity: 0.65, marginRight: 6 }} />
       </View>
       <Text style={[styles.dashTileLabel, { color: dark ? colors.textMutedDark : colors.textMuted }]}>{label}</Text>
     </Card>
@@ -275,7 +304,7 @@ export function HomeScreen() {
               </View>
               <View style={styles.tileRow}>
                 <DashTile icon="briefcase-upload" label="Today's Apps" value={analytics?.currentShiftApplications ?? 0} accent="#8b5cf6" dark={dark} />
-                <DashTile icon="trophy" label="Top Performer" value={analytics?.topPerformer || '—'} accent={colors.accent} dark={dark} />
+                {/* <DashTile icon="account" label="Top Performer" value={formatTopPerformer(analytics?.topPerformer || '—')} accent={colors.accent} dark={dark} /> */}
               </View>
 
               {/* Organisation row */}
@@ -402,7 +431,7 @@ export function HomeScreen() {
                   </View>
                   <View style={styles.tileRow}>
                     <DashTile icon="coffee" label="On Break" value={analytics?.onBreakMemberCount ?? 0} accent={colors.warning} dark={dark} />
-                    <DashTile icon="trophy" label="Top Performer" value={analytics?.topPerformer || '—'} accent={colors.accent} dark={dark} />
+                    <DashTile icon="trophy" label="Top Performer" value={formatTopPerformer(analytics?.topPerformer || '—')} accent={colors.accent} dark={dark} />
                   </View>
                 </>
               ) : null}

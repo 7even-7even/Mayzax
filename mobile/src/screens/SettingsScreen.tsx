@@ -5,11 +5,35 @@ import { useNavigation } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import * as Application from 'expo-application';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '@/components/Card';
 import { useResolvedTheme, useThemeStore, type ThemeMode } from '@/hooks/useThemeMode';
 import { colors, spacing, typography, radius } from '@/theme';
 import { useAuth } from '@/hooks/useAuth';
 import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL } from '@/utils/constants';
+
+function SettingsHeader({ onBack, dark }: { onBack: () => void; dark: boolean }) {
+  return (
+    <LinearGradient
+      colors={['#2A5DA8', '#347F80', '#3F9C71']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.heroBanner}
+    >
+      <View style={styles.heroGlowTL} />
+      <View style={styles.heroGlowBR} />
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <TouchableOpacity onPress={onBack} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} style={{ marginRight: spacing.md }}>
+          <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.heroGreeting}>APP PREFERENCES</Text>
+          <Text style={styles.heroName} numberOfLines={1}>Settings</Text>
+        </View>
+      </View>
+    </LinearGradient>
+  );
+}
 
 export function SettingsScreen() {
   const dark = useResolvedTheme() === 'dark';
@@ -45,13 +69,7 @@ export function SettingsScreen() {
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: dark ? '#0B1220' : colors.background }}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => nav.goBack()} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-          <MaterialCommunityIcons name="arrow-left" size={22} color={dark ? colors.textDark : colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: dark ? colors.textDark : colors.text }]}>Settings</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <SettingsHeader onBack={() => nav.goBack()} dark={dark} />
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xxl }}>
         <Text style={[styles.section, { color: dark ? colors.textMutedDark : colors.textMuted }]}>Appearance</Text>
         <Card style={{ padding: 0 }}>
@@ -121,6 +139,11 @@ function LinkRow({ icon, label, onPress, dark }: { icon: any; label: string; onP
 }
 
 const styles = StyleSheet.create({
+  heroBanner: { padding: spacing.lg, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden' },
+  heroGlowTL: { position: 'absolute', top: -50, left: -50, width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.1)' },
+  heroGlowBR: { position: 'absolute', bottom: -50, right: -50, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.05)' },
+  heroGreeting: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+  heroName: { color: '#fff', fontSize: 24, fontWeight: '800', marginTop: 4 },
   header: { flexDirection: 'row', alignItems: 'center', padding: spacing.lg, paddingBottom: spacing.sm },
   title: { ...typography.h2, flex: 1, textAlign: 'center' },
   section: { ...typography.small, textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: '700', marginBottom: spacing.sm },

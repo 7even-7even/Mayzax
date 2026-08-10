@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../backend/src/*"],
+      "@prisma/client": ["../backend/node_modules/@prisma/client"]
+    },
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    // "ignoreDeprecations": "6.0"
+  },
+  "include": ["tests/**/*.test.ts"]
+}
