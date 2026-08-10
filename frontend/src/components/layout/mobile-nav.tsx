@@ -33,7 +33,14 @@ const companionNav = [
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user } = useAuth();
   let rawNav = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER' ? [...adminNav] : [...recruiterNav];
-  if (user?.role === 'RESUME_ASSIST' || user?.role === 'SALES_EXEC') {
+  if (user?.role === 'RESUME_ASSIST') {
+    rawNav = [
+      { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Your stats' },
+      { to: '/profiles', label: 'My Clients', icon: UserSquare2, desc: 'Assigned clients' },
+      { to: '/updates', label: 'Updates', icon: Bell, desc: 'Announcements' },
+      { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account' },
+    ];
+  } else if (user?.role === 'SALES_EXEC') {
     rawNav = [
       { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Your stats' },
       { to: '/updates', label: 'Updates', icon: Bell, desc: 'Announcements' },

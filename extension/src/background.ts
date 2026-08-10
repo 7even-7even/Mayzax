@@ -95,8 +95,8 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
     // Strict URL validation — reject if not HTTPS or blocked hostname
     try {
       const parsed = new URL(targetUrl);
-      if (parsed.protocol !== 'https:') {
-        sendResponse({ verified: false, error: 'HTTPS required', reason: 'INSECURE_PROTOCOL' });
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        sendResponse({ verified: false, error: 'HTTP/HTTPS required', reason: 'INSECURE_PROTOCOL' });
         return true;
       }
       const hostname = parsed.hostname.toLowerCase();

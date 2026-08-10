@@ -50,7 +50,6 @@ export function Timeline({ items }: Props) {
 function colorForStatus(s: string): string {
   switch (s) {
     case 'ACTIVE':
-    case 'ONLINE':
       return colors.statusActive;
     case 'SHORT_BREAK':
       return colors.statusShortBreak;

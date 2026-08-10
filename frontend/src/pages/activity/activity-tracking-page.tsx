@@ -207,7 +207,6 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
     const totalMembers = displayMembers.length;
 
     const counts: Record<UserStatus, number> = {
-      ONLINE: 0,
       ACTIVE: 0,
       SHORT_BREAK: 0,
       DINNER_BREAK: 0,
@@ -226,10 +225,9 @@ function ShiftActivityPieChart({ todayData, liveData, filteredMembers, isAdminVi
       }
     });
 
-    const activeCount = counts.ACTIVE + counts.ONLINE;
+    const activeCount = counts.ACTIVE;
 
     const chartData = [
-      { name: 'Online', value: counts.ONLINE, color: '#3B82F6', gradient: 'from-blue-500 to-cyan-600' },
       { name: 'Active', value: counts.ACTIVE, color: '#10B981', gradient: 'from-emerald-500 to-teal-600' },
       { name: 'Short Break', value: counts.SHORT_BREAK, color: '#F59E0B', gradient: 'from-amber-500 to-orange-600' },
       { name: 'Dinner Break', value: counts.DINNER_BREAK, color: '#F97316', gradient: 'from-orange-500 to-red-500' },
@@ -508,7 +506,6 @@ function ExtendedBreaksSection({ members }: ExtendedBreaksSectionProps) {
 function getStatusNodeStyles(status: UserStatus) {
   switch (status) {
     case 'ACTIVE':
-    case 'ONLINE':
       return {
         btnClass: "bg-gradient-to-b from-emerald-400 to-emerald-600 border-emerald-300 shadow-[0_4px_0_#047857] hover:shadow-[0_1px_0_#047857] hover:translate-y-[2px]",
         pingColor: '#10b981'

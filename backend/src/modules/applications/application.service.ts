@@ -122,7 +122,7 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
     }
 
     // Server is source of truth for verified status
-    finalVerified = verificationLog.confidence === 'HIGH' && verificationLog.score >= 80;
+    finalVerified = verificationLog.confidence === 'HIGH' && verificationLog.score >= 40;
     finalScore = verificationLog.score;
     finalConfidence = verificationLog.confidence;
     finalEvidence = verificationLog.evidence;

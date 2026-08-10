@@ -12,6 +12,20 @@ export const createProfileSchema = z.object({
   notes: z.string().max(5000).optional().nullable(),
   assignedRecruiterId: z.string().uuid().optional().nullable(),
   assignedRecruiterIds: z.array(z.string().uuid()).min(1, 'Assign at least 1 recruiter').max(5, 'You can assign up to 5 recruiters').optional(),
+  assignedResumeAssistId: z.string().uuid().optional().nullable(),
+  dateOfBirth: z.string().max(20).optional().nullable(),
+  gender: z.string().max(20).optional().nullable(),
+  visaStatus: z.string().max(50).optional().nullable(),
+  entryToUS: z.string().max(20).optional().nullable(),
+  currentLocation: z.string().max(200).optional().nullable(),
+  education: z.any().optional(),
+  addressHistory: z.any().optional(),
+  hasExperience: z.boolean().optional().nullable(),
+  experienceDetails: z.string().max(10000).optional().nullable(),
+  certifications: z.string().max(5000).optional().nullable(),
+  resumeUrl: z.string().max(1000).optional().nullable(),
+  resumeFileName: z.string().max(200).optional().nullable(),
+  skills: z.string().max(5000).optional().nullable(),
 });
 
 export const updateProfileSchema = createProfileSchema.partial();

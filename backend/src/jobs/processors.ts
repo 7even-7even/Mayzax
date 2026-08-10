@@ -211,11 +211,36 @@ export async function registerJobProcessors() {
   }
 }
 
-/** Schedule periodic jobs (daily rollup) — called once at server boot. */
+export async function checkFailedInstallments() {
+  const now = new Date();
+  try {
+    const pastDuePayments = await prisma.clientPayment.findMany({
+      where: {
+        status: 'PENDING',
+        dueDate: { lt: now },
+      },
+      select: { profileId: true }
+    });
+
+    if (pastDuePayments.length > 0) {
+      const profileIds = Array.from(new Set(pastDuePayments.map(p => p.profileId)));
+      await prisma.clientProfile.updateMany({
+        where: { id: { in: profileIds } },
+        data: { paymentBlocked: true }
+      });
+      logger.info(`Automatically deactivated ${profileIds.length} profiles due to failed/past-due installment payments.`);
+    }
+  } catch (err) {
+    logger.error({ err }, 'Failed to check installment payments status');
+  }
+}
+
+/** Schedule periodic jobs (daily rollup & payment checks) — called once at server boot. */
 export function startPeriodicJobs() {
   // Schedule a daily rollup to catch up anything missed.
   // Prefer BullMQ repeat; if using node-cron fallback, use node-cron directly.
   enqueue(Jobs.RollupAllToday, {}, {}).catch(() => {});
+  checkFailedInstallments().catch(() => {});
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -225,6 +250,11 @@ export function startPeriodicJobs() {
       cron.schedule('30 2 * * *', () => {
         processRollupAll().catch((err: any) => logger.error({ err }, 'Daily rollup failed'));
       }, { timezone: 'UTC' });
+
+      // Run hourly payment check
+      cron.schedule('0 * * * *', () => {
+        checkFailedInstallments().catch((err: any) => logger.error({ err }, 'Hourly payment check failed'));
+      });
     }
   } catch {
     // node-cron is available; if not installed, periodic job only runs at boot.

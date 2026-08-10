@@ -41,7 +41,6 @@ declare module '@prisma/client' {
     ON_HOLD = 'ON_HOLD',
   }
   export enum UserStatus {
-    ONLINE = 'ONLINE',
     ACTIVE = 'ACTIVE',
     SHORT_BREAK = 'SHORT_BREAK',
     DINNER_BREAK = 'DINNER_BREAK',

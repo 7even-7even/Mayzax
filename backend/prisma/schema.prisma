@@ -70,6 +70,26 @@ enum JobPortal {
   Y_COMBINATOR
   CAREER_SITE
   OTHER
+  // v1.1 Universal ATS Intelligence
+  RECRUITEE
+  ASHBY
+  TEAMTAILOR
+  SMARTRECRUITERS
+  BAMBOOHR
+  JOBVITE
+  PERSONIO
+  TALEO
+  SUCCESSFACTORS
+  ICIMS
+  JAZZHR
+  BREEZYHR
+  COMEET
+  FOUNTAIN
+  PINPOINT
+  RIPPLING
+  WORKABLE
+  WORKDAY
+  ORACLE
 }
 
 enum DevicePlatform {
@@ -102,6 +122,12 @@ enum AttendanceStatus {
 }
 
 enum OnboardingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ChangeRequestStatus {
   PENDING
   APPROVED
   REJECTED
@@ -167,6 +193,7 @@ model User {
 
   // Recruiter relations
   assignedProfiles ClientProfile[]  @relation("AssignedRecruiter")
+  assignedResumeAssistProfiles ClientProfile[] @relation("AssignedResumeAssist")
   profileAssignments ClientProfileAssignment[] @relation("RecruiterProfileAssignments")
   applications     JobApplication[] @relation("RecruiterApplications")
   verificationLogs VerificationLog[] @relation("RecruiterVerificationLogs")
@@ -179,6 +206,8 @@ model User {
   createdUpdates   SystemUpdate[] @relation("UserCreatedUpdates")
   updateReadLogs   UserUpdateRead[]
   approvedOnboardings ClientOnboarding[] @relation("ApprovedOnboardings")
+  profileChangeRequests ClientProfileChangeRequest[] @relation("ProfileChangeRequester")
+  reviewedChangeRequests ClientProfileChangeRequest[] @relation("ProfileChangeReviewer")
 
   clientProfileId String?          @unique
   clientProfile   ClientProfile?   @relation("ClientUser", fields: [clientProfileId], references: [id], onDelete: SetNull)
@@ -397,9 +426,12 @@ model ClientProfile {
 
   assignedRecruiterId String?
   assignedRecruiter   User?   @relation("AssignedRecruiter", fields: [assignedRecruiterId], references: [id], onDelete: SetNull)
+  assignedResumeAssistId String?
+  assignedResumeAssist   User?   @relation("AssignedResumeAssist", fields: [assignedResumeAssistId], references: [id], onDelete: SetNull)
   assignedRecruiterAssignments ClientProfileAssignment[] @relation("ProfileRecruiterAssignments")
 
   isActive  Boolean   @default(true)
+  paymentBlocked Boolean @default(false)
   deletedAt DateTime? // soft delete
 
   createdAt DateTime @default(now())
@@ -407,8 +439,11 @@ model ClientProfile {
 
   applications JobApplication[]
   clientUser   User?           @relation("ClientUser")
+  changeRequests ClientProfileChangeRequest[]
+  payments     ClientPayment[]
 
   @@index([assignedRecruiterId])
+  @@index([assignedResumeAssistId])
   @@index([technology])
   @@index([email])
   @@map("client_profiles")
@@ -631,4 +666,57 @@ model ClientOnboarding {
   updatedAt      DateTime         @updatedAt
 
   @@map("client_onboardings")
+}
+
+// ---------------------------------------------------------
+// Client Profile Change Requests (pending update approvals)
+// ---------------------------------------------------------
+
+model ClientProfileChangeRequest {
+  id            String              @id @default(uuid())
+  profileId     String
+  profile       ClientProfile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  requestedById String
+  requestedBy   User                @relation("ProfileChangeRequester", fields: [requestedById], references: [id], onDelete: Cascade)
+
+  changes       Json                // Snapshot of all changed fields
+
+  status        ChangeRequestStatus @default(PENDING)
+
+  reviewedById  String?
+  reviewedBy    User?               @relation("ProfileChangeReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt    DateTime?
+  rejectionNote String?
+
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([profileId])
+  @@index([status])
+  @@map("client_profile_change_requests")
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  FAILED
+}
+
+model ClientPayment {
+  id             String        @id @default(uuid())
+  profileId      String
+  profile        ClientProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  amount         Float
+  status         PaymentStatus @default(PENDING)
+  dueDate        DateTime
+  paidAt         DateTime?
+  paymentRef     String?
+  installmentNo  Int
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([profileId])
+  @@map("client_payments")
 }

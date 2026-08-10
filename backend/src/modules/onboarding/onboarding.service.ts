@@ -2,6 +2,7 @@ import { OnboardingStatus, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/utils/apiError';
+import { logger } from '@/lib/logger';
 import { CreateOnboardingInput } from './onboarding.validation';
 
 export async function createOnboarding(input: CreateOnboardingInput) {
@@ -162,8 +163,54 @@ export async function approveOnboarding(id: string, adminId: string) {
     },
   });
 
+  // Generate Payment Record(s)
+  const planName = onboarding.planSelected || 'Basic';
+  const PLAN_PRICES: Record<string, number> = { Basic: 1500, Gold: 2500, Premium: 3500 };
+  const fullPrice = PLAN_PRICES[planName] ?? 1500;
+  const amountPaid = onboarding.amountPaid || 0;
+  const now = new Date();
+
+  if (amountPaid >= fullPrice) {
+    // Full Payment: Generate exactly one PAID receipt
+    await prisma.clientPayment.create({
+      data: {
+        profileId: profile.id,
+        amount: amountPaid,
+        status: 'PAID',
+        dueDate: now,
+        paidAt: onboarding.paidAt || now,
+        paymentRef: onboarding.paymentRef,
+        installmentNo: 1,
+      },
+    });
+  } else {
+    // Partial Payment: Create one PAID receipt for amount paid, and one PENDING for remaining balance
+    await prisma.clientPayment.create({
+      data: {
+        profileId: profile.id,
+        amount: amountPaid,
+        status: 'PAID',
+        dueDate: now,
+        paidAt: onboarding.paidAt || now,
+        paymentRef: onboarding.paymentRef,
+        installmentNo: 1,
+      },
+    });
+
+    const remainingBalance = fullPrice - amountPaid;
+    await prisma.clientPayment.create({
+      data: {
+        profileId: profile.id,
+        amount: remainingBalance,
+        status: 'PENDING',
+        dueDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // 1 month later
+        installmentNo: 2,
+      },
+    });
+  }
+
   // 2. Create User for Client login
-  const passwordHash = await bcrypt.hash('Client@123', 12);
+  const passwordHash = await bcrypt.hash('Pass@123', 12);
   await prisma.user.create({
     data: {
       name: onboarding.fullName,
@@ -245,4 +292,60 @@ export async function checkDuplicate(email?: string, phone?: string) {
 
   return { exists: false };
 }
+
+export async function ensureClientCredentials() {
+  const clientProfiles = await prisma.clientProfile.findMany({
+    select: {
+      id: true,
+      candidateName: true,
+      email: true,
+    },
+  });
+
+  const passwordHash = await bcrypt.hash('Pass@123', 12);
+  let createdCount = 0;
+
+  for (const profile of clientProfiles) {
+    const emailNormalized = profile.email.toLowerCase();
+    
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: emailNormalized },
+          { clientProfileId: profile.id }
+        ]
+      },
+    });
+
+    if (!existingUser) {
+      await prisma.user.create({
+        data: {
+          name: profile.candidateName,
+          email: emailNormalized,
+          passwordHash,
+          role: Role.CLIENT,
+          isActive: true,
+          clientProfileId: profile.id,
+        },
+      });
+      createdCount++;
+    } else if (existingUser.role !== Role.CLIENT) {
+      if (!existingUser.clientProfileId) {
+        await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            role: Role.CLIENT,
+            clientProfileId: profile.id,
+          },
+        });
+        createdCount++;
+      }
+    }
+  }
+
+  if (createdCount > 0) {
+    logger.info(`🔑 Auto-created login credentials for ${createdCount} existing clients.`);
+  }
+}
+
 
