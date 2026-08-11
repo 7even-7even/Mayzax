@@ -73,7 +73,37 @@ Complete reference for the Mayzax ATS backend REST API. Every request/response e
 
 Mayzax ATS uses **JWT access tokens + rotating refresh tokens**, delivered two ways simultaneously so both cookie-based web clients and header-based API clients work:
 
-1. **HttpOnly cookies** — `access_token` and `refresh_token` are set automatically by `/auth/login` and `/auth/refresh`. Browser clients using `credentials: 'include'` never need to touch tokens manually.
+1. **HttpOnly cookies** — `access_token` and `refresh_token` are set automatically by ` [2026-08-12 01:32:34.034 +0530] INFO: request completed
+[API]     service: "mayzax-ats-api"
+[API]     req: {
+[API]       "method": "GET",
+[API]       "url": "/api/v1/applications?pageSize=1000&sortBy=appliedAt&sortOrder=desc"
+[API]     }
+[API]     res: {
+[API]       "statusCode": 304
+[API]     }
+[API]     responseTime: 685
+[API] [2026-08-12 01:32:38.766 +0530] INFO: request completed
+[API]     service: "mayzax-ats-api"
+[API]     req: {
+[API]       "method": "GET",
+[API]       "url": "/api/v1/applications?page=1&pageSize=10&sortBy=appliedAt&sortOrder=desc"
+[API]     }
+[API]     res: {
+[API]       "statusCode": 304
+[API]     }
+[API]     responseTime: 412
+[API] [2026-08-12 01:32:38.768 +0530] INFO: request completed
+[API]     service: "mayzax-ats-api"
+[API]     req: {
+[API]       "method": "GET",
+[API]       "url": "/api/v1/applications?pageSize=1000&sortBy=appliedAt&sortOrder=desc"
+[API]     }
+[API]     res: {
+[API]       "statusCode": 304
+[API]     }
+[API]     responseTime: 411
+` and `/auth/refresh`. Browser clients using `credentials: 'include'` never need to touch tokens manually.
 2. **Authorization header** — the access token is also returned in the JSON body (`data.accessToken`) for clients that prefer `Authorization: Bearer <token>`.
 
 | Token | Lifetime (default) | Where it lives | Purpose |

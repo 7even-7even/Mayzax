@@ -2,7 +2,7 @@ import { Prisma, Role } from '@prisma/client';
 import { ApiError } from '@/utils/apiError';
 import { normalizeJobLink } from '@/utils/normalizeJobLink';
 import { detectJobPortalFromUrl } from '@/utils/detectJobPortal';
-import { getBusinessDate } from '@/utils/businessDate';
+import { getBusinessDate, getBusinessDateString } from '@/utils/businessDate';
 import { writeAuditLog } from '@/modules/shared/audit.service';
 import { prisma } from '@/lib/prisma';
 import { env } from '@/config/env';
@@ -333,5 +333,90 @@ export async function checkDuplicate(profileId: string, jobLink: string, actor: 
     appliedByRecruiter: existing?.recruiter
       ? { id: existing.recruiter.id, name: existing.recruiter.name, email: existing.recruiter.email }
       : null,
+  };
+}
+
+export async function getClientStats(actor: Requester) {
+  if (actor.role !== Role.CLIENT) {
+    throw ApiError.forbidden('Only candidate users can retrieve candidate dashboard statistics');
+  }
+
+  const profile = await prisma.clientProfile.findFirst({
+    where: { clientUser: { id: actor.id }, deletedAt: null },
+    select: { id: true },
+  });
+  if (!profile) {
+    throw ApiError.notFound('Candidate profile not found');
+  }
+
+  const profileId = profile.id;
+  const currentBusinessDateStr = getBusinessDateString(new Date());
+
+  // Run database checks concurrently
+  const [totalCount, todayCount, recentApps] = await Promise.all([
+    // 1. Total applications
+    prisma.jobApplication.count({
+      where: { profileId },
+    }),
+    // 2. Applications today (shift-correct business date matching)
+    prisma.jobApplication.count({
+      where: {
+        profileId,
+        businessDate: new Date(`${currentBusinessDateStr}T00:00:00.000Z`),
+      },
+    }),
+    // 3. Status counters and trend logic (fetch only the last 7 days of dates/counts)
+    prisma.jobApplication.groupBy({
+      by: ['businessDate'],
+      where: {
+        profileId,
+        businessDate: {
+          gte: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // gte last 10 days to be safe
+        },
+      },
+      _count: { id: true },
+    }),
+  ]);
+
+  // Format trend data
+  const trendMap = new Map<string, number>();
+  for (const group of recentApps) {
+    if (group.businessDate) {
+      const dateStr = group.businessDate.toISOString().slice(0, 10);
+      trendMap.set(dateStr, group._count.id);
+    }
+  }
+
+  // Get status counts from raw applications to keep dashboard counters working
+  const statusCounts = await prisma.jobApplication.groupBy({
+    by: ['status'],
+    where: { profileId },
+    _count: { id: true },
+  });
+
+  const statuses = {
+    inReview: 0,
+    interviews: 0,
+    offers: 0,
+  };
+
+  for (const item of statusCounts) {
+    if (item.status === 'IN_REVIEW' || item.status === 'APPLIED') {
+      statuses.inReview += item._count.id;
+    } else if (item.status === 'INTERVIEW_SCHEDULED' || item.status === 'INTERVIEWED') {
+      statuses.interviews += item._count.id;
+    } else if (item.status === 'OFFERED') {
+      statuses.offers += item._count.id;
+    }
+  }
+
+  return {
+    totalApps: totalCount,
+    appsToday: todayCount,
+    statuses,
+    trend: Array.from(trendMap.entries()).map(([dateStr, count]) => ({
+      businessDate: dateStr,
+      count,
+    })),
   };
 }

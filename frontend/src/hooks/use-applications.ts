@@ -26,6 +26,32 @@ export function useApplications(params: ApplicationListParams) {
       const { data } = await apiClient.get<ApiSuccess<JobApplication[]>>('/applications', { params });
       return data;
     },
+    staleTime: 0, // Always fetch fresh — applications change frequently (extension submissions)
+  });
+}
+
+export interface ClientStats {
+  totalApps: number;
+  appsToday: number;
+  statuses: {
+    inReview: number;
+    interviews: number;
+    offers: number;
+  };
+  trend: Array<{
+    businessDate: string;
+    count: number;
+  }>;
+}
+
+export function useClientStats() {
+  return useQuery({
+    queryKey: ['client-stats'],
+    queryFn: async () => {
+      const { data } = await apiClient.get<ApiSuccess<ClientStats>>('/applications/client-stats');
+      return data.data;
+    },
+    staleTime: 0,
   });
 }
 

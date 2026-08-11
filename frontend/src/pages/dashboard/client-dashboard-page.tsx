@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useApplications } from '@/hooks/use-applications';
+import { useApplications, useClientStats } from '@/hooks/use-applications';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -11,13 +11,14 @@ import { TableSkeleton } from '@/components/shared/table-skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { useAuth } from '@/context/auth-context';
 import { formatDateTime } from '@/lib/utils';
+import { getCurrentBusinessDate } from '@/lib/businessDate';
 import { formatEnumLabel } from '@/components/shared/status-badge';
 import { apiClient } from '@/lib/api-client';
 import { toast } from 'sonner';
 import {
   Briefcase, Clock, Award, Zap, Calendar, FileText, User, Settings,
   ShieldCheck, Mail, Phone, Upload, CheckCircle2, ChevronLeft, ChevronRight,
-  LogOut, Sparkles, MessageSquare, ArrowRight, Loader2, Key, HelpCircle, CreditCard, ShieldAlert, Download, Plus, Trash2
+  LogOut, Sparkles, MessageSquare, ArrowRight, Loader2, Key, HelpCircle, CreditCard, ShieldAlert, Download, Plus, Trash2, RefreshCw
 } from 'lucide-react';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
@@ -183,21 +184,24 @@ export default function ClientDashboardPage() {
   const applications = appResponse?.data ?? [];
   const pagination = appResponse?.pagination;
 
-  // Fetch all applications for stats and charts (max 1000)
-  const { data: allAppsResponse } = useApplications({
-    pageSize: 1000,
-    profileId: clientProfile?.id || undefined,
-  });
+  // Fetch unified client statistics in a single query
+  const { data: stats, refetch: refetchStats } = useClientStats();
 
-  const allApplications = allAppsResponse?.data ?? [];
+  // Manual refresh helper
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refetch(), refetchStats()]);
+      toast.success('Dashboard metrics refreshed successfully!');
+    } catch {
+      toast.error('Failed to refresh metrics. Please check connection.');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
-  // Stats rollups
-  const totalApps = allAppsResponse?.pagination?.total ?? 0;
-  const inReview = allApplications.filter((a) => a.status === 'IN_REVIEW' || a.status === 'APPLIED').length;
-  const interviewsCount = allApplications.filter((a) => a.status === 'INTERVIEW_SCHEDULED' || a.status === 'INTERVIEWED').length;
-  const offersCount = allApplications.filter((a) => a.status === 'OFFERED').length;
-
-  // Get date strings for the last 7 days (YYYY-MM-DD)
+  // Get date strings for the last 7 days
   const getLast7Days = () => {
     const days = [];
     for (let i = 6; i >= 0; i--) {
@@ -210,27 +214,31 @@ export default function ClientDashboardPage() {
 
   const last7Days = getLast7Days();
 
-  // For each day in last7Days, count applications matching that day
-  const trendData = last7Days.map((date) => {
-    const dateString = date.toISOString().split('T')[0]; // "YYYY-MM-DD"
-    const count = allApplications.filter((app) => {
-      if (!app.appliedAt) return false;
-      return app.appliedAt.split('T')[0] === dateString;
-    }).length;
+  // Stats rollups mapped from backend-calculated stats endpoint
+  const totalApps = stats?.totalApps ?? 0;
+  const appsToday = stats?.appsToday ?? 0;
+  const inReview = stats?.statuses?.inReview ?? 0;
+  const interviewsCount = stats?.statuses?.interviews ?? 0;
+  const offersCount = stats?.statuses?.offers ?? 0;
 
-    // Day of week label (e.g. "M", "T", "W")
+  // Build the trendData matching the last 7 days dates
+  const trendData = last7Days.map((date) => {
+    const y = date.getFullYear();
+    const m = date.getMonth();
+    const d = date.getDate();
+    // 8 PM IST = UTC 14:30 — reliably within the shift window
+    const at8pmIST = new Date(Date.UTC(y, m, d, 14, 30, 0));
+    const dateStr = getCurrentBusinessDate(at8pmIST);
+
+    // Look up count in backend-returned trend map
+    const match = stats?.trend?.find((t) => t.businessDate === dateStr);
+    const count = match ? match.count : 0;
+
     const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'narrow' });
     return { day: dayOfWeek, val: count };
   });
 
   const weekTotal = trendData.reduce((sum, d) => sum + d.val, 0);
-
-  // Count of applications submitted today
-  const todayStr = new Date().toISOString().split('T')[0];
-  const appsToday = allApplications.filter((app) => {
-    if (!app.appliedAt) return false;
-    return app.appliedAt.split('T')[0] === todayStr;
-  }).length;
 
   // Fetch client updates
   const [updates, setUpdates] = useState<any[]>([]);
@@ -386,6 +394,21 @@ export default function ClientDashboardPage() {
         {/* OVERVIEW PANEL */}
         {activeTab === 'overview' && (
           <div className="space-y-6 animate-fadeIn">
+            {/* Header Action Row */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white uppercase">Overview Dashboard</h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="h-8 text-xs font-bold rounded-lg border-indigo-500/30 text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshed...' : 'Refresh Stats'}
+              </Button>
+            </div>
+
             {/* Placement Progress Stepper Card */}
             <Card className="border-slate-200/60 dark:border-slate-800 shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
               <CardHeader className="border-b border-slate-100 dark:border-slate-800 px-6 py-4 flex flex-row items-center gap-3">
@@ -870,7 +893,7 @@ export default function ClientDashboardPage() {
                             <TableHead className="font-semibold text-xs">Portal</TableHead>
                             <TableHead className="font-semibold text-xs">Date Applied</TableHead>
                             <TableHead className="font-semibold text-xs">Status</TableHead>
-                            {/* <TableHead className="font-semibold text-xs pr-6">Job Link</TableHead> */}
+                            <TableHead className="font-semibold text-xs pr-6">Job Link</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -896,7 +919,7 @@ export default function ClientDashboardPage() {
                                   {formatEnumLabel(app.status)}
                                 </Badge>
                               </TableCell>
-                              {/* <TableCell className="pr-6">
+                              <TableCell className="pr-6">
                                 {app.jobLink ? (
                                   <a 
                                     href={app.jobLink} 
@@ -909,7 +932,7 @@ export default function ClientDashboardPage() {
                                 ) : (
                                   <span className="text-slate-400">—</span>
                                 )}
-                              </TableCell> */}
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>

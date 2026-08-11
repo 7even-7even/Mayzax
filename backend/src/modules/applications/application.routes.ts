@@ -15,6 +15,7 @@ router.use(requireAuth);
 
 router.get('/', validate({ query: listApplicationsQuerySchema }), applicationController.listApplications);
 router.get('/check-duplicate', applicationController.checkDuplicate);
+router.get('/client-stats', applicationController.getClientStats);
 router.get('/:id', validate({ params: idParamSchema }), applicationController.getApplication);
 router.post('/', validate({ body: createApplicationSchema }), applicationController.createApplication);
 router.patch('/:id', validate({ params: idParamSchema, body: updateApplicationSchema }), applicationController.updateApplication);

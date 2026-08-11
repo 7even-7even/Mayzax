@@ -63,7 +63,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     // Insert Onboarding Requests right after Team Management (index 3)
     rawNav.splice(3, 0, {
       to: '/admin/onboarding',
-      label: 'Onboarding',
+      label: 'Onboarding & Requests',
       icon: ShieldCheck,
       gradient: 'from-indigo-500 to-indigo-700',
       desc: 'Verify registrations',

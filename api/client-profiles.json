@@ -1,0 +1,159 @@
+{
+    "apis": [
+        {
+            "api-name": "get-profiles",
+            "method": "GET",
+            "url": "http://localhost:4000/api/v1/profiles?page=1&pageSize=24&sortBy=createdAt&sortOrder=desc",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            }
+        },
+        {
+            "api-name": "get-profiles-count",
+            "method": "GET",
+            "url": "http://localhost:4000/api/v1/profiles/count",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            }
+        },
+        {
+            "api-name": "get-profile-by-id",
+            "method": "GET",
+            "url": "http://localhost:4000/api/v1/profiles/{{get-profiles.response.body.data[0]._id}}",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            }
+        },
+        {
+            "api-name": "get-profiles-by-recruiter",
+            "method": "GET",
+            "url": "http://localhost:4000/api/v1/profiles?assignedRecruiterId={{login.body.token}}&page=1&pageSize=24&sortBy=createdAt&sortOrder=desc",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            }
+        },
+        {
+            "api-name": "search-profiles",
+            "method": "GET",
+            "url": "http://localhost:4000/api/v1/profiles/search?query=john",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            }
+        },
+        {
+            "api-name": "filter-profiles",
+            "method": "GET",
+            "url": "http://localhost:4000/api/v1/profiles/filter?role=TEAM_LEADER",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            }
+        },
+        {
+            "api-name": "get-profiles-count",
+            "method": "GET",
+            "url": "http://localhost:4000/api/v1/profiles/count",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            }
+        },
+        {
+            "api-name": "search-profiles",
+            "method": "GET",
+            "url": "http://localhost:4000/api/v1/profiles/search?query=Rahul&page=1&pageSize=24&sortBy=createdAt&sortOrder=desc",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            }
+        },
+        {
+            "api-name": "filter-profiles-by-recruiter",
+            "method": "GET",
+            "url": "http://localhost:4000/api/v1/profiles/filter?recruiterId={{login.body.token}}&page=1&pageSize=24&sortBy=createdAt&sortOrder=desc",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            }
+        },
+        {
+            "api-name": "search-profiles-by-recruiter",
+            "method": "GET",
+            "url": "http://localhost:4000/api/v1/profiles/search?recruiterId={{login.body.token}}&query=john&page=1&pageSize=24&sortBy=createdAt&sortOrder=desc",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            }
+        },
+        {
+            "api-name": "create-profile",
+            "method": "POST",
+            "url": "http://localhost:4000/api/v1/profiles",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            },
+            "body": {
+                "candidateName": "Test Candidate",
+                "email": "test@example.com",
+                "phone": "9999999999",
+                "technology": "AI",
+                "certifications": "",
+                "currentLocation": "",
+                "dateOfBirth": "",
+                "entryToUS": "",
+                "experienceDetails": "",
+                "gender": "",
+                "paymentRef": "",
+                "planSelected": "",
+                "skills": "",
+                "visaStatus": "",
+                "amountPaid": null,
+                "assignedRecruiterId": null,
+                "assignedRecruiterIds": [],
+                "assignedResumeAssistId": null
+            }
+        },
+        {
+            "api-name": "edit-profile",
+            "method": "PATCH",
+            "url": "http://localhost:4000/api/v1/profiles/{{get-profiles.response.body.data[0]._id}}",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            },
+            "body": {
+                "candidateName": "Alex Kumar",
+                "email": "aaa@gmail.com",
+                "phone": "00000000071",
+                "technology": "Python Developer",
+                "certifications": "",
+                "currentLocation": "Pune, India",
+                "dateOfBirth": "",
+                "entryToUS": "01/07/2023",
+                "experienceDetails": "2 years of Python development experience",
+                "gender": "",
+                "paymentRef": "",
+                "planSelected": "",
+                "skills": "Python, Django, FastAPI, PostgreSQL",
+                "visaStatus": "Initial OPT",
+                "amountPaid": null,
+                "assignedRecruiterId": "288b93a5-9cb8-4f03-a32b-607a952c5580",
+                "assignedRecruiterIds": [
+                    "288b93a5-9cb8-4f03-a32b-607a952c5580"
+                ],
+                "assignedResumeAssistId": "e9d95c70-e4da-4298-a1d6-12c546b67309",
+                "education": [
+                    {
+                        "honors": "sfb fs",
+                        "endDate": "2026-08",
+                        "startDate": "2026-01",
+                        "fieldOfStudy": "Computer Science"
+                    }
+                ],
+                "addressHistory": []
+            }
+        },
+        {
+            "api-name": "delete-client",
+            "method": "DELETE",
+            "url": "http://localhost:4000/api/v1/profiles/{{clientId}}",
+            "header": {
+                "Authorization": "{{login.body.token}}"
+            }
+        }
+    ]
+}

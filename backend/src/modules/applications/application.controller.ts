@@ -40,3 +40,8 @@ export const checkDuplicate = asyncHandler(async (req: Request, res: Response) =
   const result = await applicationService.checkDuplicate(profileId, jobLink, actor(req));
   res.status(200).json({ success: true, data: result });
 });
+
+export const getClientStats = asyncHandler(async (req: Request, res: Response) => {
+  const result = await applicationService.getClientStats(actor(req));
+  res.status(200).json({ success: true, data: result });
+});

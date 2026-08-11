@@ -99,7 +99,7 @@ export const listApplicationsQuerySchema = z.object({
   businessDateFrom: z.string().optional(), // YYYY-MM-DD
   businessDateTo: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  pageSize: z.coerce.number().int().min(1).max(1000).default(20),
   sortBy: z.enum(['appliedAt', 'businessDate', 'companyName', 'jobTitle', 'createdAt']).default('appliedAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });

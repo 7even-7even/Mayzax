@@ -26,6 +26,8 @@ import OnboardPage from '@/pages/onboard/onboard-page';
 import AdminOnboardingPage from '@/pages/onboard/admin-onboarding-page';
 import TermsPage from '@/pages/legal/terms-page';
 import PrivacyPage from '@/pages/legal/privacy-page';
+import { apiClient } from '@/lib/api-client';
+import { initializeShiftConfig } from '@/lib/businessDate';
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(() => {
@@ -33,6 +35,19 @@ export default function App() {
     return !window.sessionStorage.getItem('mayzax-intro-seen');
   });
   const hideTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Load shift config from backend env
+  useEffect(() => {
+    apiClient.get('/shifts/config')
+      .then(({ data }) => {
+        if (data.success && data.data) {
+          initializeShiftConfig(data.data);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load business shift configuration from backend:', err);
+      });
+  }, []);
 
   useEffect(() => {
     if (!showIntro) return;
