@@ -26,6 +26,9 @@ export const createProfileSchema = z.object({
   resumeUrl: z.string().max(1000).optional().nullable(),
   resumeFileName: z.string().max(200).optional().nullable(),
   skills: z.string().max(5000).optional().nullable(),
+  planSelected: z.string().max(50).optional().nullable(),
+  amountPaid: z.number().optional().nullable(),
+  paymentRef: z.string().max(100).optional().nullable(),
 });
 
 export const updateProfileSchema = createProfileSchema.partial();

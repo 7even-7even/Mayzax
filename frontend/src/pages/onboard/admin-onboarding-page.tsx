@@ -298,7 +298,29 @@ export default function AdminOnboardingPage() {
                             </Badge>
                           ) : (
                             <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0">
-                              Profile Fields Update ({Object.keys(req.changes).length} fields)
+                              Profile Fields Update ({
+                                (() => {
+                                  if (!req.changes || !req.profile) return 0;
+                                  let count = 0;
+                                  for (const key of Object.keys(req.changes)) {
+                                    if (key === '_type') continue;
+                                    const changesVal = req.changes[key];
+                                    const profileVal = (req.profile as any)[key];
+                                    if (typeof changesVal === 'object' && changesVal !== null && typeof profileVal === 'object' && profileVal !== null) {
+                                      if (JSON.stringify(changesVal) !== JSON.stringify(profileVal)) {
+                                        count++;
+                                      }
+                                    } else {
+                                      const v1 = changesVal === '' ? null : (changesVal ?? null);
+                                      const v2 = profileVal === '' ? null : (profileVal ?? null);
+                                      if (v1 !== v2) {
+                                        count++;
+                                      }
+                                    }
+                                  }
+                                  return count;
+                                })()
+                              } fields)
                             </Badge>
                           )}
                         </TableCell>

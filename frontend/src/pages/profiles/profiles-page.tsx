@@ -58,6 +58,32 @@ export default function ProfilesPage() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedProfileForPayment, setSelectedProfileForPayment] = useState<ClientProfile | null>(null);
+  const [selectedProfileForInterview, setSelectedProfileForInterview] = useState<ClientProfile | null>(null);
+
+  const [interviews, setInterviews] = useState<any[]>([]);
+  const [isLoadingInterviews, setIsLoadingInterviews] = useState(false);
+  const [interviewFormOpen, setInterviewFormOpen] = useState(false);
+  const [editingInterview, setEditingInterview] = useState<any | null>(null);
+
+  const fetchInterviews = async (profileId: string) => {
+    setIsLoadingInterviews(true);
+    try {
+      const { data } = await apiClient.get(`/profiles/${profileId}/interviews`);
+      setInterviews(data.data || []);
+    } catch (err) {
+      console.error('Failed to load interviews', err);
+    } finally {
+      setIsLoadingInterviews(false);
+    }
+  };
+
+  useEffect(() => {
+    if (viewingProfile?.id) {
+      fetchInterviews(viewingProfile.id);
+    } else {
+      setInterviews([]);
+    }
+  }, [viewingProfile?.id]);
 
   const { data: recruitersData } = useRecruiters({
     isActive: true,
@@ -167,9 +193,8 @@ export default function ProfilesPage() {
       const isSelected = selectedProfileIds.includes(profile.id);
       return (
         <Card
-          className={`group relative h-full overflow-hidden rounded-2xl border-slate-200/60 bg-white shadow-sm cursor-pointer select-none transition-all duration-300 hover:shadow-xl hover:-translate-y-1 dark:border-slate-700/60 dark:bg-slate-900 ${
-            isSelected ? 'ring-2 ring-mayzax-blue-500 shadow-lg shadow-mayzax-blue-200/30 dark:ring-mayzax-blue-400' : 'hover:border-mayzax-blue-200 dark:hover:border-mayzax-blue-800'
-          }`}
+          className={`group relative h-full overflow-hidden rounded-2xl border-slate-200/60 bg-white shadow-sm cursor-pointer select-none transition-all duration-300 hover:shadow-xl hover:-translate-y-1 dark:border-slate-700/60 dark:bg-slate-900 ${isSelected ? 'ring-2 ring-mayzax-blue-500 shadow-lg shadow-mayzax-blue-200/30 dark:ring-mayzax-blue-400' : 'hover:border-mayzax-blue-200 dark:hover:border-mayzax-blue-800'
+            }`}
           onDoubleClick={() => navigate(`/applications?profileId=${profile.id}`)}
         >
           <div className="absolute top-0 left-0 right-0 h-1 bg-mayzax-gradient opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -213,22 +238,34 @@ export default function ProfilesPage() {
                   {user?.role !== 'RESUME_ASSIST' && (
                     <DropdownMenuItem onClick={() => { setEditingProfile(profile); setFormOpen(true); }} className="gap-2"><Pencil className="h-4 w-4" /> {isManager ? 'Edit / Reassign' : 'Edit'}</DropdownMenuItem>
                   )}
-                    {isAdmin && (
-                     <DropdownMenuItem onClick={() => handleResetPassword(profile.id)} className="gap-2 text-amber-600 focus:text-amber-600">
-                       <Key className="h-4 w-4" /> Reset Password
-                     </DropdownMenuItem>
-                   )}
-                   {(isAdmin || user?.role === 'TEAM_LEADER') && (
-                      <DropdownMenuItem onClick={() => { setSelectedProfileForPayment(profile); setPaymentDialogOpen(true); }} className="gap-2 text-indigo-650 focus:text-indigo-700">
-                        <CreditCard className="h-4 w-4" /> Record Payment
-                      </DropdownMenuItem>
-                   )}
-                   {(isAdmin || user?.role === 'TEAM_LEADER') && profile.paymentBlocked && (
-                     <DropdownMenuItem onClick={() => handleReactivateAccount(profile.id)} className="gap-2 text-emerald-600 focus:text-emerald-600">
-                       <CheckCircle className="h-4 w-4" /> Reactivate Account
-                     </DropdownMenuItem>
-                   )}
-                   {canDeleteProfile && <DropdownMenuItem onClick={() => setDeleteTarget(profile)} className="text-red-600 focus:text-red-600 gap-2"><Trash2 className="h-4 w-4" /> Delete</DropdownMenuItem>}
+                  {isAdmin && (
+                    <DropdownMenuItem onClick={() => handleResetPassword(profile.id)} className="gap-2 text-amber-600 focus:text-amber-600">
+                      <Key className="h-4 w-4" /> Reset Password
+                    </DropdownMenuItem>
+                  )}
+                  {(isAdmin || user?.role === 'TEAM_LEADER') && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedProfileForInterview(profile);
+                        setEditingInterview(null);
+                        setInterviewFormOpen(true);
+                      }}
+                      className="gap-2 text-indigo-700 focus:text-indigo-700"
+                    >
+                      <Calendar className="h-4 w-4" /> Add Interview
+                    </DropdownMenuItem>
+                  )}
+                  {(isAdmin || user?.role === 'TEAM_LEADER') && (
+                    <DropdownMenuItem onClick={() => { setSelectedProfileForPayment(profile); setPaymentDialogOpen(true); }} className="gap-2 text-emerald-700 focus:text-indigo-700">
+                      <CreditCard className="h-4 w-4" /> Record Payment
+                    </DropdownMenuItem>
+                  )}
+                  {(isAdmin || user?.role === 'TEAM_LEADER') && profile.paymentBlocked && (
+                    <DropdownMenuItem onClick={() => handleReactivateAccount(profile.id)} className="gap-2 text-emerald-600 focus:text-emerald-600">
+                      <CheckCircle className="h-4 w-4" /> Reactivate Account
+                    </DropdownMenuItem>
+                  )}
+                  {canDeleteProfile && <DropdownMenuItem onClick={() => setDeleteTarget(profile)} className="text-red-600 focus:text-red-600 gap-2"><Trash2 className="h-4 w-4" /> Delete</DropdownMenuItem>}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -254,10 +291,10 @@ export default function ProfilesPage() {
                   ))}
                 </div>
                 <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate" title={profile.assignedRecruiterAssignments?.length ? profile.assignedRecruiterAssignments.map((a: any) => a.recruiter?.name || a.name || '?').join(', ') : profile.assignedRecruiter?.name || 'Unassigned'}>
-                  {profile.assignedRecruiterAssignments?.length 
-                    ? profile.assignedRecruiterAssignments.map((a: any) => a.recruiter?.name || a.name || '?').join(', ') 
-                    : profile.assignedRecruiter?.name 
-                      ? profile.assignedRecruiter.name 
+                  {profile.assignedRecruiterAssignments?.length
+                    ? profile.assignedRecruiterAssignments.map((a: any) => a.recruiter?.name || a.name || '?').join(', ')
+                    : profile.assignedRecruiter?.name
+                      ? profile.assignedRecruiter.name
                       : 'Unassigned'}
                 </span>
               </div>
@@ -283,7 +320,7 @@ export default function ProfilesPage() {
         pills={[
           { label: 'Updated ', icon: Activity },
           ...(isManager ? [{ label: `${recruiters.length} recruiters`, icon: Users } as const] : []),
-        ]}  
+        ]}
         actions={
           canCreateProfile ? (
             <Button variant="brand" onClick={() => { setEditingProfile(null); setFormOpen(true); }} className="gap-2 shadow-md shadow-mayzax-blue-200/30 bg-mayzax-gradient border-0 text-white hover:opacity-90 rounded-full px-5">
@@ -681,6 +718,112 @@ export default function ProfilesPage() {
                 </div>
               </div>
 
+              {/* Interviews & Rounds */}
+              <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50">
+                <div className="flex items-center justify-between border-b pb-2 mb-3">
+                  <h3 className="text-sm font-semibold text-slate-950 dark:text-white flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-indigo-650" /> Interviews & Rounds
+                  </h3>
+                  {(isAdmin || isTeamLeader) && (
+                    <Button
+                      onClick={() => {
+                        setEditingInterview(null);
+                        setInterviewFormOpen(true);
+                      }}
+                      size="sm"
+                      className="h-8 rounded-lg bg-indigo-650 text-black font-bold hover:bg-indigo-700 hover:text-white text-xs gap-1"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add Interview
+                    </Button>
+                  )}
+                </div>
+
+                {isLoadingInterviews ? (
+                  <div className="py-4 text-center text-xs text-slate-400">Loading interviews...</div>
+                ) : interviews.length > 0 ? (
+                  <div className="space-y-3.5 mt-2">
+                    {interviews.map((item: any, idx: number) => (
+                      <div key={idx} className="p-4 border rounded-xl bg-white dark:bg-slate-800 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="font-extrabold text-sm text-slate-800 dark:text-slate-200">{item.roundName}</div>
+                          <Badge className={`${item.status === 'Completed'
+                            ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/10'
+                            : item.status === 'Cancelled'
+                              ? 'bg-rose-500/10 text-rose-500 hover:bg-rose-500/10'
+                              : 'bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/10'
+                            } text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full`}>
+                            {item.status}
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs pt-1">
+                          <div>
+                            <span className="text-slate-400">Schedule:</span>
+                            <p className="font-bold text-slate-700 dark:text-slate-350">{item.date}</p>
+                            <p className="text-[10px] text-slate-400">{item.startTime} – {item.endTime} ({item.timezone})</p>
+                          </div>
+                          <div>
+                            <span className="text-slate-400">Interviewer:</span>
+                            <p className="font-semibold text-slate-700 dark:text-slate-300">{item.interviewer || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-slate-400">Mode:</span>
+                            <p className="font-semibold text-slate-700 dark:text-slate-300">{item.mode || 'N/A'}</p>
+                            {item.meetingLink && (
+                              <a href={item.meetingLink} target="_blank" rel="noreferrer" className="text-[10px] text-indigo-650 hover:underline truncate block max-w-full">Link</a>
+                            )}
+                          </div>
+                        </div>
+
+                        {item.notes && (
+                          <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-lg text-xs text-slate-550 dark:text-slate-400 whitespace-pre-wrap mt-1">
+                            {item.notes}
+                          </div>
+                        )}
+
+                        {(isAdmin || isTeamLeader) && (
+                          <div className="flex gap-2 justify-end pt-1 border-t dark:border-slate-700 mt-2">
+                            <Button
+                              onClick={() => {
+                                setEditingInterview(item);
+                                setInterviewFormOpen(true);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-[10px] font-bold text-slate-650"
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              onClick={async () => {
+                                if (window.confirm("Are you sure you want to delete this interview round?")) {
+                                  try {
+                                    await apiClient.delete(`/profiles/${viewingProfile.id}/interviews/${item.id}`);
+                                    toast.success('Interview round deleted');
+                                    fetchInterviews(viewingProfile.id);
+                                  } catch (e) {
+                                    toast.error('Failed to delete interview');
+                                  }
+                                }
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-[10px] font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50/50"
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-xs text-slate-400 space-y-2">
+                    <p>No interviews scheduled yet.</p>
+                  </div>
+                )}
+              </div>
+
               {/* Legacy Notes (Fallback) */}
               {viewingProfile.notes && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50/20 p-4 dark:border-amber-900/30 dark:bg-amber-950/10">
@@ -699,6 +842,23 @@ export default function ProfilesPage() {
         </DialogContent>
       </Dialog>
 
+      {(viewingProfile || selectedProfileForInterview) && (
+        <InterviewFormDialog
+          open={interviewFormOpen}
+          onClose={() => {
+            setInterviewFormOpen(false);
+            setSelectedProfileForInterview(null);
+          }}
+          profileId={viewingProfile?.id || selectedProfileForInterview?.id || ''}
+          interview={editingInterview}
+          onSuccess={() => {
+            if (viewingProfile?.id) {
+              fetchInterviews(viewingProfile.id);
+            }
+          }}
+        />
+      )}
+
       {/* RECORD PAYMENT DIALOG */}
       <Dialog open={paymentDialogOpen} onOpenChange={(open) => { setPaymentDialogOpen(open); if (!open) setSelectedProfileForPayment(null); }}>
         <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6">
@@ -712,9 +872,9 @@ export default function ProfilesPage() {
           </DialogHeader>
 
           {selectedProfileForPayment && (
-            <PaymentRecordForm 
-              profile={selectedProfileForPayment} 
-              onClose={() => { setPaymentDialogOpen(false); setSelectedProfileForPayment(null); refetch(); }} 
+            <PaymentRecordForm
+              profile={selectedProfileForPayment}
+              onClose={() => { setPaymentDialogOpen(false); setSelectedProfileForPayment(null); refetch(); }}
             />
           )}
         </DialogContent>
@@ -762,7 +922,7 @@ function PaymentRecordForm({ profile, onClose }: { profile: any; onClose: () => 
     try {
       const prices: Record<string, number> = { Basic: 1500, Gold: 2500, Premium: 3500 };
       const fullPrice = prices[plan] || 1500;
-      
+
       const paymentsPayload = [];
       if (isFull) {
         paymentsPayload.push({
@@ -834,11 +994,11 @@ function PaymentRecordForm({ profile, onClose }: { profile: any; onClose: () => 
 
         <div className="space-y-1.5">
           <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Amount Paid ($)</Label>
-          <Input 
-            type="number" 
-            value={amount} 
-            onChange={(e) => setAmount(Number(e.target.value))} 
-            className="rounded-xl border-slate-200 dark:border-slate-800" 
+          <Input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(Number(e.target.value))}
+            className="rounded-xl border-slate-200 dark:border-slate-800"
             min={500}
             readOnly={isFull}
           />
@@ -846,20 +1006,20 @@ function PaymentRecordForm({ profile, onClose }: { profile: any; onClose: () => 
 
         <div className="space-y-1.5">
           <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Payment Date</Label>
-          <Input 
-            type="date" 
-            value={paidAt} 
-            onChange={(e) => setPaidAt(e.target.value)} 
+          <Input
+            type="date"
+            value={paidAt}
+            onChange={(e) => setPaidAt(e.target.value)}
             className="rounded-xl border-slate-200 dark:border-slate-800 cursor-pointer"
           />
         </div>
 
         <div className="space-y-1.5 col-span-2">
           <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Payment Reference Code</Label>
-          <Input 
-            value={ref} 
-            onChange={(e) => setRef(e.target.value)} 
-            placeholder="e.g. CHQ-9382 or TXN-8372" 
+          <Input
+            value={ref}
+            onChange={(e) => setRef(e.target.value)}
+            placeholder="e.g. CHQ-9382 or TXN-8372"
             className="rounded-xl border-slate-200 dark:border-slate-800 font-mono"
           />
         </div>
@@ -867,10 +1027,10 @@ function PaymentRecordForm({ profile, onClose }: { profile: any; onClose: () => 
         {!isFull && (
           <div className="space-y-1.5 col-span-2">
             <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Remaining Balance Due Date</Label>
-            <Input 
-              type="date" 
-              value={dueDate} 
-              onChange={(e) => setDueDate(e.target.value)} 
+            <Input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
               className="rounded-xl border-slate-200 dark:border-slate-800 cursor-pointer"
             />
           </div>
@@ -879,11 +1039,244 @@ function PaymentRecordForm({ profile, onClose }: { profile: any; onClose: () => 
 
       <div className="flex justify-end gap-2 pt-2 border-t dark:border-slate-800">
         <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">Cancel</Button>
-        <Button type="submit" variant="brand" className="rounded-xl bg-indigo-650 hover:bg-indigo-700 text-white font-bold" disabled={isSubmitting}>
+        <Button type="submit" variant="brand" className="rounded-xl bg-indigo-650 text-black hover:bg-indigo-700 hover:text-white font-bold" disabled={isSubmitting}>
           {isSubmitting ? 'Recording...' : 'Record Payment'}
         </Button>
       </div>
     </form>
+  );
+}
+
+function InterviewFormDialog({
+  open,
+  onClose,
+  profileId,
+  interview,
+  onSuccess
+}: {
+  open: boolean;
+  onClose: () => void;
+  profileId: string;
+  interview: any | null;
+  onSuccess: () => void;
+}) {
+  const [roundName, setRoundName] = useState('');
+  const [status, setStatus] = useState('Scheduled');
+  const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [timezone, setTimezone] = useState('EST');
+  const [interviewer, setInterviewer] = useState('');
+  const [mode, setMode] = useState('Google Meet');
+  const [meetingLink, setMeetingLink] = useState('');
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (interview) {
+      setRoundName(interview.roundName || '');
+      setStatus(interview.status || 'Scheduled');
+      setDate(interview.date || '');
+      setStartTime(interview.startTime || '');
+      setEndTime(interview.endTime || '');
+      setTimezone(interview.timezone || 'EST');
+      setInterviewer(interview.interviewer || '');
+      setMode(interview.mode || 'Google Meet');
+      setMeetingLink(interview.meetingLink || '');
+      setNotes(interview.notes || '');
+    } else {
+      setRoundName('');
+      setStatus('Scheduled');
+      setDate(new Date().toISOString().slice(0, 10));
+      setStartTime('10:00 AM');
+      setEndTime('11:00 AM');
+      setTimezone('EST');
+      setInterviewer('');
+      setMode('Google Meet');
+      setMeetingLink('');
+      setNotes('');
+    }
+  }, [interview, open]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!roundName || !status || !date || !startTime || !endTime) {
+      toast.error('Required fields are missing');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        roundName,
+        status,
+        date,
+        startTime,
+        endTime,
+        timezone,
+        interviewer,
+        mode,
+        meetingLink,
+        notes,
+      };
+
+      if (interview) {
+        await apiClient.put(`/profiles/${profileId}/interviews/${interview.id}`, payload);
+        toast.success('Interview updated successfully');
+      } else {
+        await apiClient.post(`/profiles/${profileId}/interviews`, payload);
+        toast.success('Interview added successfully');
+      }
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error?.message || 'Failed to save interview');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
+      <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6">
+        <DialogHeader className="pb-2 border-b">
+          <DialogTitle className="text-lg font-black text-slate-900 dark:text-white">
+            {interview ? 'Edit Interview Round' : 'Add Interview Round'}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-400">
+            Schedule or update interview details for this candidate.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4 pt-3">
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-500 uppercase">Round Name *</Label>
+            <Input
+              value={roundName}
+              onChange={(e) => setRoundName(e.target.value)}
+              placeholder="e.g. Technical Round 1"
+              className="rounded-xl border-slate-200 bg-white dark:text-black"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-slate-500 uppercase">Status *</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="rounded-xl border-slate-200 dark:text-black">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Scheduled">Scheduled</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-slate-500 uppercase">Timezone</Label>
+              <Input
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                placeholder="e.g. EST"
+                className="rounded-xl border-slate-200 bg-white dark:text-black"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-500 uppercase">Date *</Label>
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="rounded-xl border-slate-200 bg-white dark:text-black cursor-pointer"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-slate-500 uppercase">Start Time *</Label>
+              <Input
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                placeholder="e.g. 10:30 AM"
+                className="rounded-xl border-slate-200 bg-white dark:text-black"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-slate-500 uppercase">End Time *</Label>
+              <Input
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                placeholder="e.g. 11:30 AM"
+                className="rounded-xl border-slate-200 bg-white dark:text-black"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-500 uppercase">Interviewer Name</Label>
+            <Input
+              value={interviewer}
+              onChange={(e) => setInterviewer(e.target.value)}
+              placeholder="e.g. John Doe"
+              className="rounded-xl border-slate-200 bg-white dark:text-black"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-slate-500 uppercase">Mode</Label>
+              <Select value={mode} onValueChange={setMode}>
+                <SelectTrigger className="rounded-xl border-slate-200 dark:text-black">
+                  <SelectValue placeholder="Mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Google Meet">Google Meet</SelectItem>
+                  <SelectItem value="Zoom">Zoom</SelectItem>
+                  <SelectItem value="Teams">Teams</SelectItem>
+                  <SelectItem value="In Person">In Person</SelectItem>
+                  <SelectItem value="Phone">Phone</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-bold text-slate-500 uppercase">Meeting Link</Label>
+              <Input
+                value={meetingLink}
+                onChange={(e) => setMeetingLink(e.target.value)}
+                placeholder="e.g. https://meet.google.com/..."
+                className="rounded-xl border-slate-200 bg-white dark:text-black"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-500 uppercase">Notes</Label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Provide interview agenda or panel instructions..."
+              rows={2}
+              className="flex min-h-[60px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300 resize-none dark:text-black"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">Cancel</Button>
+            <Button type="submit" disabled={isSubmitting} className="rounded-xl bg-indigo-650 text-black hover:text-white font-bold hover:bg-indigo-700">
+              {isSubmitting ? 'Saving...' : 'Save Round'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

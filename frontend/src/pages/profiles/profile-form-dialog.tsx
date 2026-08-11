@@ -25,6 +25,35 @@ const profileSchema = z.object({
   assignedRecruiterId: z.string().nullable().optional(),
   assignedRecruiterIds: z.array(z.string().uuid()).min(1, 'Assign at least 1 recruiter').max(5, 'You can assign up to 5 recruiters').optional(),
   assignedResumeAssistId: z.string().nullable().optional(),
+  dateOfBirth: z.string().optional().nullable(),
+  gender: z.string().optional().nullable(),
+  visaStatus: z.string().optional().nullable(),
+  entryToUS: z.string().optional().nullable(),
+  currentLocation: z.string().optional().nullable(),
+  skills: z.string().optional().nullable(),
+  experienceDetails: z.string().optional().nullable(),
+  certifications: z.string().optional().nullable(),
+  planSelected: z.string().optional().nullable(),
+  amountPaid: z.preprocess((val) => (val === '' || val === undefined || val === null ? null : Number(val)), z.number().nullable().optional()),
+  paymentRef: z.string().optional().nullable(),
+  education: z.string().refine((val) => {
+    if (!val) return true;
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed);
+    } catch (_) {
+      return false;
+    }
+  }, 'Must be a valid JSON array of education history').optional().nullable(),
+  addressHistory: z.string().refine((val) => {
+    if (!val) return true;
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed);
+    } catch (_) {
+      return false;
+    }
+  }, 'Must be a valid JSON array of address history').optional().nullable(),
 });
 
 type ProfileForm = z.infer<typeof profileSchema>;
@@ -48,7 +77,29 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { candidateName: '', email: '', phone: '', technology: '', notes: '', assignedRecruiterId: null, assignedRecruiterIds: [], assignedResumeAssistId: null },
+    defaultValues: {
+      candidateName: '',
+      email: '',
+      phone: '',
+      technology: '',
+      notes: '',
+      assignedRecruiterId: null,
+      assignedRecruiterIds: [],
+      assignedResumeAssistId: null,
+      dateOfBirth: '',
+      gender: '',
+      visaStatus: '',
+      entryToUS: '',
+      currentLocation: '',
+      skills: '',
+      experienceDetails: '',
+      certifications: '',
+      planSelected: '',
+      amountPaid: null,
+      paymentRef: '',
+      education: '',
+      addressHistory: ''
+    },
   });
 
   const selectedRecruiterIds = form.watch('assignedRecruiterIds') ?? [];
@@ -66,6 +117,19 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
               assignedRecruiterId: profile.assignedRecruiterId,
               assignedRecruiterIds: profile.assignedRecruiterAssignments?.map((a) => a.recruiterId) ?? (profile.assignedRecruiterId ? [profile.assignedRecruiterId] : []),
               assignedResumeAssistId: profile.assignedResumeAssistId ?? null,
+              dateOfBirth: profile.dateOfBirth ?? '',
+              gender: profile.gender ?? '',
+              visaStatus: profile.visaStatus ?? '',
+              entryToUS: profile.entryToUS ?? '',
+              currentLocation: profile.currentLocation ?? '',
+              skills: profile.skills ?? '',
+              experienceDetails: profile.experienceDetails ?? '',
+              certifications: profile.certifications ?? '',
+              planSelected: profile.planSelected ?? '',
+              amountPaid: profile.amountPaid ?? null,
+              paymentRef: profile.paymentRef ?? '',
+              education: profile.education ? JSON.stringify(profile.education, null, 2) : '',
+              addressHistory: profile.addressHistory ? JSON.stringify(profile.addressHistory, null, 2) : '',
             }
           : {
               candidateName: '',
@@ -76,6 +140,19 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
               assignedRecruiterId: user?.role === 'RECRUITER' ? user.id : null,
               assignedRecruiterIds: user?.role === 'RECRUITER' ? [user.id] : [],
               assignedResumeAssistId: null,
+              dateOfBirth: '',
+              gender: '',
+              visaStatus: '',
+              entryToUS: '',
+              currentLocation: '',
+              skills: '',
+              experienceDetails: '',
+              certifications: '',
+              planSelected: '',
+              amountPaid: null,
+              paymentRef: '',
+              education: '',
+              addressHistory: '',
             }
       );
     }
@@ -90,7 +167,9 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
       const payload = {
         ...values,
         notes: values.notes || undefined,
-        assignedResumeAssistId: values.assignedResumeAssistId === '' ? null : values.assignedResumeAssistId
+        assignedResumeAssistId: values.assignedResumeAssistId === '' ? null : values.assignedResumeAssistId,
+        education: values.education ? JSON.parse(values.education) : undefined,
+        addressHistory: values.addressHistory ? JSON.parse(values.addressHistory) : undefined,
       };
       if (isEdit && profile) {
         const { assignedRecruiterId, assignedRecruiterIds, ...rest } = payload;
@@ -231,6 +310,91 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
                     ))}
                   </select>
                 </div>
+              )}
+
+              {isAdmin && (
+                <>
+                  <div className="col-span-2 border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
+                    <h4 className="text-xs font-bold text-mayzax-blue-600 uppercase tracking-widest mb-3">Onboarding & Personal Details</h4>
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider">Date of Birth</Label>
+                    <Input type="text" placeholder="DD/MM/YYYY" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('dateOfBirth')} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider">Gender</Label>
+                    <Input type="text" placeholder="e.g. Male, Female" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('gender')} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider">Visa Status</Label>
+                    <Input type="text" placeholder="e.g. H1B, OPT" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('visaStatus')} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider">US Entry Date</Label>
+                    <Input type="text" placeholder="e.g. 08/2026" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('entryToUS')} />
+                  </div>
+
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider">Current Location</Label>
+                    <Input type="text" placeholder="e.g. Aubrey, Texas" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('currentLocation')} />
+                  </div>
+
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider">Skills</Label>
+                    <Input type="text" placeholder="e.g. React, Node.js, Python" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('skills')} />
+                  </div>
+
+                  {/* <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider">Experience Info</Label>
+                    <Textarea placeholder="Experience details..." rows={3} className="rounded-xl bg-white border-slate-200 resize-none dark:text-black" {...form.register('experienceDetails')} />
+                  </div> */}
+
+                  {/* <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider">Certifications</Label>
+                    <Textarea placeholder="Certifications details..." rows={3} className="rounded-xl bg-white border-slate-200 resize-none dark:text-black" {...form.register('certifications')} />
+                  </div> */}
+
+                  {/* <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider flex items-center justify-between">
+                      <span>Education History (JSON)</span>
+                      <span className="text-[10px] text-slate-400 normal-case font-normal">Must be a valid JSON array</span>
+                    </Label>
+                    <Textarea placeholder="[ { 'qualification': '...', 'fieldOfStudy': '...' } ]" rows={4} className="rounded-xl bg-white border-slate-200 font-mono text-xs dark:text-black" {...form.register('education')} />
+                    {form.formState.errors.education && <p className="text-xs text-red-600">{form.formState.errors.education.message}</p>}
+                  </div> */}
+
+                  {/* <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider flex items-center justify-between">
+                      <span>Address History (JSON)</span>
+                      <span className="text-[10px] text-slate-400 normal-case font-normal">Must be a valid JSON array</span>
+                    </Label>
+                    <Textarea placeholder="[ { 'state': '...', 'country': '...' } ]" rows={4} className="rounded-xl bg-white border-slate-200 font-mono text-xs dark:text-black" {...form.register('addressHistory')} />
+                    {form.formState.errors.addressHistory && <p className="text-xs text-red-600">{form.formState.errors.addressHistory.message}</p>}
+                  </div> */}
+
+                  {/* <div className="col-span-2 border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
+                    <h4 className="text-xs font-bold text-mayzax-blue-600 uppercase tracking-widest mb-3">Enrollment & Payment Details (Admin Only)</h4>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider">Plan Selected</Label>
+                    <Input type="text" placeholder="e.g. Basic" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('planSelected')} />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider">Amount Paid ($)</Label>
+                    <Input type="number" placeholder="e.g. 1000" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('amountPaid')} />
+                  </div>
+
+                  <div className="col-span-2 space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider">Transaction Reference</Label>
+                    <Input type="text" placeholder="e.g. MOCK_GATEWAY" className="rounded-xl h-10 bg-white border-slate-200 dark:text-black" {...form.register('paymentRef')} />
+                  </div> */}
+                </>
               )}
 
               <div className="col-span-2 space-y-1.5">

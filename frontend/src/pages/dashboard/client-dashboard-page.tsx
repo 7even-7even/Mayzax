@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import {
   Briefcase, Clock, Award, Zap, Calendar, FileText, User, Settings,
   ShieldCheck, Mail, Phone, Upload, CheckCircle2, ChevronLeft, ChevronRight,
-  LogOut, Sparkles, MessageSquare, ArrowRight, Loader2, Key, HelpCircle, CreditCard, ShieldAlert, Download
+  LogOut, Sparkles, MessageSquare, ArrowRight, Loader2, Key, HelpCircle, CreditCard, ShieldAlert, Download, Plus, Trash2
 } from 'lucide-react';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
@@ -37,6 +37,46 @@ export default function ClientDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const clientProfile = user?.clientProfile;
+
+  const [educationList, setEducationList] = useState<any[]>([]);
+  const [addressHistoryList, setAddressHistoryList] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (clientProfile) {
+      setEducationList(clientProfile.education || []);
+      setAddressHistoryList(clientProfile.addressHistory || []);
+    }
+  }, [clientProfile]);
+
+  const addEducation = () => {
+    setEducationList([
+      ...educationList,
+      { qualification: "Bachelor's Degree", fieldOfStudy: "Computer Science", specialization: '', instituteName: '', honors: '', startDate: '', endDate: '', currentlyOngoing: false }
+    ]);
+  };
+
+  const removeEducation = (index: number) => {
+    setEducationList(educationList.filter((_, i) => i !== index));
+  };
+
+  const updateEducation = (index: number, field: string, value: any) => {
+    setEducationList(educationList.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  };
+
+  const addAddress = () => {
+    setAddressHistoryList([
+      ...addressHistoryList,
+      { state: '', country: '', fromDate: '', toDate: '' }
+    ]);
+  };
+
+  const removeAddress = (index: number) => {
+    setAddressHistoryList(addressHistoryList.filter((_, i) => i !== index));
+  };
+
+  const updateAddress = (index: number, field: string, value: any) => {
+    setAddressHistoryList(addressHistoryList.map((item, i) => i === index ? { ...item, [field]: value } : item));
+  };
 
   const [pendingRequest, setPendingRequest] = useState<any>(null);
   const [paymentsList, setPaymentsList] = useState<any[]>([]);
@@ -74,6 +114,28 @@ export default function ClientDashboardPage() {
   useEffect(() => {
     if (activeTab === 'payments') {
       fetchPayments();
+    }
+  }, [activeTab, clientProfile?.id]);
+
+  const [interviewsList, setInterviewsList] = useState<any[]>([]);
+  const [isLoadingInterviews, setIsLoadingInterviews] = useState(false);
+
+  const fetchInterviews = async () => {
+    if (!clientProfile?.id) return;
+    setIsLoadingInterviews(true);
+    try {
+      const { data } = await apiClient.get(`/profiles/${clientProfile.id}/interviews`);
+      setInterviewsList(data.data || []);
+    } catch (err) {
+      console.error('Error fetching interviews', err);
+    } finally {
+      setIsLoadingInterviews(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'interviews') {
+      fetchInterviews();
     }
   }, [activeTab, clientProfile?.id]);
 
@@ -121,11 +183,54 @@ export default function ClientDashboardPage() {
   const applications = appResponse?.data ?? [];
   const pagination = appResponse?.pagination;
 
+  // Fetch all applications for stats and charts (max 1000)
+  const { data: allAppsResponse } = useApplications({
+    pageSize: 1000,
+    profileId: clientProfile?.id || undefined,
+  });
+
+  const allApplications = allAppsResponse?.data ?? [];
+
   // Stats rollups
-  const totalApps = pagination?.total ?? 0;
-  const inReview = applications.filter((a) => a.status === 'IN_REVIEW' || a.status === 'APPLIED').length;
-  const interviewsCount = applications.filter((a) => a.status === 'INTERVIEW_SCHEDULED' || a.status === 'INTERVIEWED').length;
-  const offersCount = applications.filter((a) => a.status === 'OFFERED').length;
+  const totalApps = allAppsResponse?.pagination?.total ?? 0;
+  const inReview = allApplications.filter((a) => a.status === 'IN_REVIEW' || a.status === 'APPLIED').length;
+  const interviewsCount = allApplications.filter((a) => a.status === 'INTERVIEW_SCHEDULED' || a.status === 'INTERVIEWED').length;
+  const offersCount = allApplications.filter((a) => a.status === 'OFFERED').length;
+
+  // Get date strings for the last 7 days (YYYY-MM-DD)
+  const getLast7Days = () => {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d);
+    }
+    return days;
+  };
+
+  const last7Days = getLast7Days();
+
+  // For each day in last7Days, count applications matching that day
+  const trendData = last7Days.map((date) => {
+    const dateString = date.toISOString().split('T')[0]; // "YYYY-MM-DD"
+    const count = allApplications.filter((app) => {
+      if (!app.appliedAt) return false;
+      return app.appliedAt.split('T')[0] === dateString;
+    }).length;
+
+    // Day of week label (e.g. "M", "T", "W")
+    const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'narrow' });
+    return { day: dayOfWeek, val: count };
+  });
+
+  const weekTotal = trendData.reduce((sum, d) => sum + d.val, 0);
+
+  // Count of applications submitted today
+  const todayStr = new Date().toISOString().split('T')[0];
+  const appsToday = allApplications.filter((app) => {
+    if (!app.appliedAt) return false;
+    return app.appliedAt.split('T')[0] === todayStr;
+  }).length;
 
   // Fetch client updates
   const [updates, setUpdates] = useState<any[]>([]);
@@ -168,7 +273,7 @@ export default function ClientDashboardPage() {
         <div className="max-w-md w-full text-center space-y-6 bg-slate-900 border border-slate-800 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
           <div className="absolute -top-24 -left-24 h-48 w-48 rounded-full bg-rose-500/10 blur-[60px] pointer-events-none" />
           <div className="absolute -bottom-24 -right-24 h-48 w-48 rounded-full bg-amber-500/10 blur-[60px] pointer-events-none" />
-          
+
           <div className="h-16 w-16 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-center justify-center mx-auto text-rose-500 shadow-inner">
             <ShieldAlert className="h-8 w-8 animate-pulse" />
           </div>
@@ -186,9 +291,9 @@ export default function ClientDashboardPage() {
             <p>2. Contact your Recruiter or Admin for verification and reactivation.</p>
           </div>
 
-          <Button 
-            onClick={logout} 
-            variant="outline" 
+          <Button
+            onClick={logout}
+            variant="outline"
             className="w-full rounded-full border-slate-800 hover:bg-slate-800 text-white font-bold"
           >
             Log Out
@@ -200,7 +305,7 @@ export default function ClientDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-955 text-slate-800 dark:text-slate-100 flex flex-col font-sans transition-colors duration-300">
-      
+
       {/* 1. TOP PORTAL HEADER */}
       <header className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-6 py-3.5 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2.5">
@@ -219,8 +324,8 @@ export default function ClientDashboardPage() {
           <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-sm font-black shadow-sm ring-2 ring-indigo-500/20">
             {user?.name?.charAt(0)?.toUpperCase()}
           </div>
-          <button 
-            onClick={logout} 
+          <button
+            onClick={logout}
             className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-500/10 text-slate-500 hover:text-rose-500 transition duration-200"
             title="Log out"
           >
@@ -252,20 +357,19 @@ export default function ClientDashboardPage() {
               { id: 'resumes', label: 'My Resumes', icon: FileText },
               { id: 'interviews', label: 'Interviews', icon: Calendar },
               { id: 'applications', label: 'Applications', icon: Briefcase },
-              { id: 'profile', label: 'Profile Settings', icon: User },
               { id: 'payments', label: 'Payment History', icon: CreditCard },
-              { id: 'updates', label: 'Updates', icon: MessageSquare }
+              { id: 'updates', label: 'Updates', icon: MessageSquare },
+              { id: 'profile', label: 'Profile Settings', icon: User },
             ] as const).map((t) => {
               const Icon = t.icon;
               return (
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
-                  className={`flex items-center gap-2 rounded-t-2xl px-5 py-3 text-xs sm:text-sm font-bold transition-all whitespace-nowrap border-b-2 ${
-                    activeTab === t.id
-                      ? 'bg-[#f8fafc] text-black dark:bg-slate-950 text-indigo-750 dark:text-white border-indigo-500 font-extrabold shadow-sm'
-                      : 'text-slate-300 hover:text-white border-transparent hover:bg-white/5'
-                  }`}
+                  className={`flex items-center gap-2 rounded-t-2xl px-5 py-3 text-xs sm:text-sm font-bold transition-all whitespace-nowrap border-b-2 ${activeTab === t.id
+                    ? 'bg-[#f8fafc] text-black dark:bg-slate-950 text-indigo-750 dark:text-white border-indigo-500 font-extrabold shadow-sm'
+                    : 'text-slate-300 hover:text-white border-transparent hover:bg-white/5'
+                    }`}
                 >
                   <Icon className={`h-4 w-4 ${activeTab === t.id ? 'text-indigo-650 dark:text-indigo-400' : 'text-slate-400'}`} />
                   {t.label}
@@ -278,7 +382,7 @@ export default function ClientDashboardPage() {
 
       {/* 3. CORE CONTENT BODY */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
-        
+
         {/* OVERVIEW PANEL */}
         {activeTab === 'overview' && (
           <div className="space-y-6 animate-fadeIn">
@@ -298,20 +402,19 @@ export default function ClientDashboardPage() {
                 <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-4">
                   {/* Step Connector Line */}
                   <div className="absolute left-[15px] top-0 bottom-0 md:left-0 md:right-0 md:top-[15px] md:h-[3px] bg-slate-100 dark:bg-slate-800 pointer-events-none" />
-                  
+
                   {stepNames.map((step, idx) => {
                     const stepNum = idx + 1;
                     const isCompleted = currentStep > stepNum;
                     const isActive = currentStep === stepNum;
                     return (
                       <div key={idx} className="relative flex md:flex-col items-center gap-4 md:gap-2 z-10 md:flex-1 text-left md:text-center group">
-                        <div className={`h-8.5 w-8.5 rounded-full flex items-center justify-center text-xs font-bold transition-all border ${
-                          isCompleted
-                            ? 'bg-indigo-600 border-indigo-600 text-white'
-                            : isActive
+                        <div className={`h-8.5 w-8.5 rounded-full flex items-center justify-center text-xs font-bold transition-all border ${isCompleted
+                          ? 'bg-indigo-600 border-indigo-600 text-white'
+                          : isActive
                             ? 'bg-white dark:bg-slate-900 border-indigo-500 text-indigo-600 ring-4 ring-indigo-500/20'
                             : 'bg-slate-50 dark:bg-slate-955 border-slate-200 dark:border-slate-800 text-slate-400'
-                        }`}>
+                          }`}>
                           {isCompleted ? <CheckCircle2 className="h-4.5 w-4.5" /> : stepNum}
                         </div>
                         <div className="flex flex-col md:items-center md:px-2">
@@ -365,7 +468,7 @@ export default function ClientDashboardPage() {
             </Card>
 
             {/* Applications & 7-Day Trend Grid */}
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {/* Applications Card */}
               <Card className="border-slate-200/60 dark:border-slate-800 shadow-sm rounded-2xl bg-white dark:bg-slate-900 overflow-hidden flex flex-col justify-between">
                 <CardHeader className="border-b border-slate-100 dark:border-slate-800 px-6 py-4 flex flex-row items-center gap-3">
@@ -380,14 +483,40 @@ export default function ClientDashboardPage() {
                 <CardContent className="p-6 flex-1 flex flex-col justify-center items-start space-y-4">
                   <div className="flex items-baseline gap-3">
                     <span className="text-6xl font-black tracking-tight text-slate-900 dark:text-white">
-                      {totalApps}
+                      {appsToday}
                     </span>
                     <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
-                    Applications submitted on your behalf. Marketing tier is set to <span className="font-bold text-indigo-600 dark:text-indigo-400">{clientProfile?.planSelected || 'Gold Plan'}</span> (Target: {clientProfile?.planSelected === 'Gold Plan' ? '100-150' : clientProfile?.planSelected === 'Premium Plan' ? '150-200' : '50-100'} applications).
+                    Applications submitted on your behalf today. Marketing tier is set to <span className="font-bold text-indigo-600 dark:text-indigo-400">{clientProfile?.planSelected || 'Gold Plan'}</span>.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Total Applications Card */}
+              <Card className="border-slate-200/60 dark:border-slate-800 shadow-sm rounded-2xl bg-white dark:bg-slate-900 overflow-hidden flex flex-col justify-between">
+                <CardHeader className="border-b border-slate-100 dark:border-slate-800 px-6 py-4 flex flex-row items-center gap-3">
+                  <div className="h-8 w-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650 flex items-center justify-center">
+                    <FileText className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm font-bold text-slate-900 dark:text-white">Total Applications</CardTitle>
+                    <CardDescription className="text-xs">Cumulative submissions since onboarded</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6 flex-1 flex flex-col justify-center items-start space-y-4">
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-6xl font-black tracking-tight text-slate-900 dark:text-white">
+                      {totalApps}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-indigo-500 bg-indigo-50 dark:bg-indigo-950/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                      All Time
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed max-w-sm">
+                    Total job applications submitted on your behalf since your profile was created.
                   </p>
                 </CardContent>
               </Card>
@@ -406,21 +535,14 @@ export default function ClientDashboardPage() {
                 <CardContent className="p-6 space-y-4">
                   {/* Trend chart bars */}
                   <div className="h-28 flex items-end justify-between gap-2.5 pt-4 px-2">
-                    {[
-                      { day: 'F', val: 107 },
-                      { day: 'S', val: 99 },
-                      { day: 'S', val: 122 },
-                      { day: 'M', val: 125 },
-                      { day: 'T', val: 132 },
-                      { day: 'W', val: 149 },
-                      { day: 'T', val: totalApps || 106 }
-                    ].map((d, i) => {
-                      const maxVal = 160;
+                    {trendData.map((d, i) => {
+                      // Find max value in trendData to scale graph, defaulting to 10 to avoid divide-by-zero
+                      const maxVal = Math.max(...trendData.map((td) => td.val), 10);
                       const pct = Math.min((d.val / maxVal) * 100, 100);
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-2 group cursor-default">
                           <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-lg h-24 flex items-end relative overflow-hidden">
-                            <div 
+                            <div
                               style={{ height: `${pct}%` }}
                               className="w-full bg-gradient-to-t from-emerald-500 to-indigo-500 rounded-t-lg group-hover:opacity-90 transition-all duration-300"
                             />
@@ -437,7 +559,7 @@ export default function ClientDashboardPage() {
                   </div>
                   <div className="flex justify-between items-center text-xs font-semibold text-slate-400 border-t border-slate-100 dark:border-slate-850 pt-2.5">
                     <span>WEEK TOTAL</span>
-                    <span className="text-sm font-black text-slate-900 dark:text-white">840</span>
+                    <span className="text-sm font-black text-slate-900 dark:text-white">{weekTotal}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -516,9 +638,9 @@ export default function ClientDashboardPage() {
                           <p className="text-[10px] opacity-70">Active resume in marketing pipeline</p>
                         </div>
                       </div>
-                      <a 
-                        href={`${import.meta.env.VITE_API_URL}/${clientProfile.resumeUrl}`} 
-                        target="_blank" 
+                      <a
+                        href={`${import.meta.env.VITE_API_URL}/${clientProfile.resumeUrl}`}
+                        target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 px-3.5 py-2 rounded-xl transition shadow-sm"
                       >
@@ -530,9 +652,9 @@ export default function ClientDashboardPage() {
                       <div className="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-500">
                         LIVE RESUME INLINE PREVIEW
                       </div>
-                      <iframe 
-                        src={`${import.meta.env.VITE_API_URL}/${clientProfile.resumeUrl}`} 
-                        title="Resume Preview" 
+                      <iframe
+                        src={`${import.meta.env.VITE_API_URL}/${clientProfile.resumeUrl}`}
+                        title="Resume Preview"
                         className="w-full h-[500px] bg-white"
                       />
                     </div>
@@ -549,10 +671,10 @@ export default function ClientDashboardPage() {
                 <div className="space-y-3">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Replace / Update Resume</h3>
                   <div className="border-2 border-dashed border-slate-200 dark:border-slate-855 hover:border-indigo-500/50 rounded-2xl p-8 text-center relative group transition cursor-pointer bg-slate-50/50 dark:bg-slate-955/20">
-                    <input 
-                      type="file" 
-                      accept=".pdf,.docx,.doc" 
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                    <input
+                      type="file"
+                      accept=".pdf,.docx,.doc"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
@@ -565,7 +687,7 @@ export default function ClientDashboardPage() {
                           const uploadRes = await apiClient.post('/onboarding/upload-resume', fd, {
                             headers: { 'Content-Type': 'multipart/form-data' }
                           });
-                          
+
                           // Save the URL to client profile
                           await apiClient.patch(`/profiles/${clientProfile.id}`, {
                             resumeUrl: uploadRes.data.url,
@@ -607,12 +729,13 @@ export default function ClientDashboardPage() {
                 </div>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
-                
                 {/* Google Calendar Style Month Grid */}
                 <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-slate-950/10">
                   {/* Calendar Header */}
                   <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-5 py-3 flex items-center justify-between text-sm">
-                    <span className="font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">August 2026</span>
+                    <span className="font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
+                      {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    </span>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><ChevronLeft className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><ChevronRight className="h-4 w-4" /></Button>
@@ -626,26 +749,24 @@ export default function ClientDashboardPage() {
                     {/* Month cells with events */}
                     {Array.from({ length: 31 }, (_, i) => {
                       const day = i + 1;
-                      const hasEvent1 = day === 12; // Mock technical interview
-                      const hasEvent2 = day === 20; // Mock HR interview
+                      const dayInterviews = interviewsList.filter((item) => {
+                        if (!item.date) return false;
+                        const itemDate = new Date(item.date);
+                        return itemDate.getDate() === day && itemDate.getMonth() === new Date().getMonth();
+                      });
                       return (
                         <div key={i} className="min-h-[75px] border-r border-b border-slate-150 dark:border-slate-850 p-1 flex flex-col justify-between bg-white dark:bg-slate-900 hover:bg-slate-50/60 transition">
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit ${
-                            day === 6 ? 'bg-indigo-650 text-white font-extrabold' : 'text-slate-400'
-                          }`}>{day}</span>
-                          
-                          {hasEvent1 && (
-                            <div className="bg-emerald-500/10 border-l-2 border-emerald-500 p-1 rounded text-[9px] text-emerald-650 dark:text-emerald-450 leading-tight">
-                              <p className="font-extrabold truncate">Google</p>
-                              <p className="opacity-90 truncate">Technical R1</p>
-                            </div>
-                          )}
-                          {hasEvent2 && (
-                            <div className="bg-indigo-500/10 border-l-2 border-indigo-500 p-1 rounded text-[9px] text-indigo-650 dark:text-indigo-400 leading-tight">
-                              <p className="font-extrabold truncate">Microsoft</p>
-                              <p className="opacity-90 truncate">HR Screening</p>
-                            </div>
-                          )}
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit ${day === new Date().getDate() ? 'bg-indigo-650 text-white font-extrabold' : 'text-slate-400'
+                            }`}>{day}</span>
+
+                          <div className="space-y-1">
+                            {dayInterviews.map((item, idx) => (
+                              <div key={idx} className="bg-emerald-500/10 border-l-2 border-emerald-500 p-1 rounded text-[9px] text-emerald-650 dark:text-emerald-450 leading-tight">
+                                <p className="font-extrabold truncate">{item.roundName}</p>
+                                <p className="opacity-90 truncate">{item.startTime}</p>
+                              </div>
+                            ))}
+                          </div>
                           <div />
                         </div>
                       );
@@ -657,44 +778,50 @@ export default function ClientDashboardPage() {
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Scheduled Stages</h3>
                   <div className="relative border-l border-slate-200 dark:border-slate-800 pl-5 ml-2.5 space-y-5">
-                    
-                    {/* Mock Interview 1 */}
-                    <div className="relative">
-                      <div className="absolute -left-[27px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-emerald-500 bg-white dark:bg-slate-900" />
-                      <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-855 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                        <div>
-                          <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">Technical Round 1</span>
-                          <h4 className="text-sm font-extrabold text-slate-950 dark:text-white mt-1.5">Google LLC — Software Engineer</h4>
-                          <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
-                            <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Wednesday, August 12 • 10:00 AM - 10:45 AM EST
-                          </p>
-                        </div>
-                        <a href="https://meet.google.com" target="_blank" rel="noreferrer" className="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-xl transition w-fit shadow-sm">
-                          Join Meeting
-                        </a>
-                      </div>
-                    </div>
+                    {isLoadingInterviews ? (
+                      <div className="text-xs text-slate-400">Loading scheduled stages...</div>
+                    ) : interviewsList.length > 0 ? (
+                      interviewsList.map((item: any, idx: number) => {
+                        const borderCol = idx % 2 === 0 ? 'border-emerald-500' : 'border-indigo-500';
+                        const badgeCol = item.status === 'Completed'
+                          ? 'text-emerald-500 bg-emerald-500/10'
+                          : item.status === 'Cancelled'
+                            ? 'text-rose-500 bg-rose-500/10'
+                            : 'text-indigo-650 bg-indigo-500/10';
 
-                    {/* Mock Interview 2 */}
-                    <div className="relative">
-                      <div className="absolute -left-[27px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-indigo-500 bg-white dark:bg-slate-900" />
-                      <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-855 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                        <div>
-                          <span className="text-[9px] font-black text-indigo-600 bg-indigo-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">HR Screening</span>
-                          <h4 className="text-sm font-extrabold text-slate-950 dark:text-white mt-1.5">Microsoft Corporation — Technical Consultant</h4>
-                          <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1.5">
-                            <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Thursday, August 20 • 2:30 PM - 3:00 PM EST
-                          </p>
-                        </div>
-                        <a href="https://teams.microsoft.com" target="_blank" rel="noreferrer" className="text-xs font-bold text-white bg-indigo-650 hover:bg-indigo-755 px-4 py-2 rounded-xl transition w-fit shadow-sm">
-                          Join Teams
-                        </a>
-                      </div>
-                    </div>
+                        const btnCol = idx % 2 === 0 ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-650 hover:bg-indigo-755';
 
+                        // Parse readable date
+                        const readableDate = item.date ? new Date(item.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
+
+                        return (
+                          <div key={idx} className="relative">
+                            <div className={`absolute -left-[27px] top-1.5 h-3.5 w-3.5 rounded-full border-2 ${borderCol} bg-white dark:bg-slate-900`} />
+                            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-855 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                              <div>
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${badgeCol}`}>
+                                  {item.status}
+                                </span>
+                                <h4 className="text-sm font-extrabold text-slate-950 dark:text-white mt-1.5">{item.roundName}</h4>
+                                <p className="text-xs text-slate-500 mt-1">Interviewer: <span className="font-semibold">{item.interviewer || 'N/A'}</span> • Mode: <span className="font-semibold">{item.mode || 'N/A'}</span></p>
+                                <p className="text-xs text-slate-450 mt-0.5 flex items-center gap-1.5">
+                                  <Calendar className="h-3.5 w-3.5 text-indigo-500" /> {readableDate} • {item.startTime} - {item.endTime} ({item.timezone})
+                                </p>
+                              </div>
+                              {item.meetingLink && (
+                                <a href={item.meetingLink} target="_blank" rel="noreferrer" className={`text-xs font-bold text-white px-4 py-2 rounded-xl transition w-fit shadow-sm ${btnCol}`}>
+                                  Join Meeting
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-sm text-slate-400 py-4">No interviews scheduled yet.</div>
+                    )}
                   </div>
                 </div>
-
               </CardContent>
             </Card>
           </div>
@@ -715,8 +842,8 @@ export default function ClientDashboardPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Input 
-                    placeholder="Search company or title..." 
+                  <Input
+                    placeholder="Search company or title..."
                     className="max-w-[220px] h-9 text-xs rounded-xl bg-slate-55 focus:bg-white border-slate-200"
                     value={searchQuery}
                     onChange={(e) => {
@@ -739,38 +866,37 @@ export default function ClientDashboardPage() {
                         <TableHeader className="bg-slate-50/60 dark:bg-slate-900">
                           <TableRow>
                             <TableHead className="font-semibold text-xs pl-6">Company</TableHead>
-                            <TableHead className="font-semibold text-xs">Job Title</TableHead>
+                            {/* <TableHead className="font-semibold text-xs">Job Title</TableHead> */}
                             <TableHead className="font-semibold text-xs">Portal</TableHead>
                             <TableHead className="font-semibold text-xs">Date Applied</TableHead>
                             <TableHead className="font-semibold text-xs">Status</TableHead>
-                            <TableHead className="font-semibold text-xs pr-6">Job Link</TableHead>
+                            {/* <TableHead className="font-semibold text-xs pr-6">Job Link</TableHead> */}
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {applications.map((app) => (
                             <TableRow key={app.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/30">
                               <TableCell className="font-bold text-slate-900 dark:text-white pl-6">{app.companyName}</TableCell>
-                              <TableCell className="text-xs font-semibold">{app.jobTitle}</TableCell>
+                              {/* <TableCell className="text-xs font-semibold">{app.jobTitle}</TableCell> */}
                               <TableCell>
                                 <Badge variant="outline" className="text-[10px] tracking-wide font-bold">{formatEnumLabel(app.jobPortal)}</Badge>
                               </TableCell>
                               <TableCell className="text-xs text-slate-500">{formatDateTime(app.appliedAt)}</TableCell>
                               <TableCell>
                                 <Badge
-                                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${
-                                    app.status === 'OFFERED'
-                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-450'
-                                      : app.status === 'REJECTED'
+                                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ${app.status === 'OFFERED'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-450'
+                                    : app.status === 'REJECTED'
                                       ? 'bg-red-50 text-red-750 border-red-250 dark:bg-red-950/20 dark:text-red-400'
                                       : app.status.startsWith('INTERVIEW')
-                                      ? 'bg-indigo-50 text-indigo-700 border-indigo-250 dark:bg-indigo-950/20 dark:text-indigo-400'
-                                      : 'bg-slate-50 text-slate-655 border-slate-200 dark:bg-slate-800 dark:text-slate-350'
-                                  }`}
+                                        ? 'bg-indigo-50 text-indigo-700 border-indigo-250 dark:bg-indigo-950/20 dark:text-indigo-400'
+                                        : 'bg-slate-50 text-slate-655 border-slate-200 dark:bg-slate-800 dark:text-slate-350'
+                                    }`}
                                 >
                                   {formatEnumLabel(app.status)}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="pr-6">
+                              {/* <TableCell className="pr-6">
                                 {app.jobLink ? (
                                   <a 
                                     href={app.jobLink} 
@@ -783,7 +909,7 @@ export default function ClientDashboardPage() {
                                 ) : (
                                   <span className="text-slate-400">—</span>
                                 )}
-                              </TableCell>
+                              </TableCell> */}
                             </TableRow>
                           ))}
                         </TableBody>
@@ -842,23 +968,43 @@ export default function ClientDashboardPage() {
                           }
                           const fd = new FormData(e.currentTarget);
                           const data = Object.fromEntries(fd.entries());
-                          
+
+                          const changesPayload: Record<string, any> = {};
+                          const addFieldIfChanged = (key: string, newValue: any, oldValue: any) => {
+                            const v1 = newValue === '' ? null : (newValue ?? null);
+                            const v2 = oldValue === '' ? null : (oldValue ?? null);
+                            if (typeof v1 === 'object' && v1 !== null && typeof v2 === 'object' && v2 !== null) {
+                              if (JSON.stringify(v1) !== JSON.stringify(v2)) {
+                                changesPayload[key] = v1;
+                              }
+                            } else if (v1 !== v2) {
+                              changesPayload[key] = v1;
+                            }
+                          };
+
+                          addFieldIfChanged('candidateName', data.candidateName, clientProfile.candidateName);
+                          addFieldIfChanged('phone', data.phone, clientProfile.phone);
+                          addFieldIfChanged('currentLocation', data.currentLocation, clientProfile.currentLocation);
+                          addFieldIfChanged('visaStatus', data.visaStatus, clientProfile.visaStatus);
+                          addFieldIfChanged('entryToUS', data.entryToUS || null, clientProfile.entryToUS);
+                          addFieldIfChanged('dateOfBirth', toDbDate(data.dateOfBirth as string) || null, clientProfile.dateOfBirth);
+                          addFieldIfChanged('gender', data.gender || null, clientProfile.gender);
+                          addFieldIfChanged('technology', data.technology, clientProfile.technology);
+                          addFieldIfChanged('skills', data.skills || null, clientProfile.skills);
+                          addFieldIfChanged('experienceDetails', data.experienceDetails || null, clientProfile.experienceDetails);
+                          addFieldIfChanged('certifications', data.certifications || null, clientProfile.certifications);
+                          addFieldIfChanged('education', educationList, clientProfile.education);
+                          addFieldIfChanged('addressHistory', addressHistoryList, clientProfile.addressHistory);
+
+                          if (Object.keys(changesPayload).length === 0) {
+                            toast.error('No changes were made to your profile details.');
+                            return;
+                          }
+
                           const loadToast = toast.loading('Submitting profile changes for admin approval...');
                           try {
                             await apiClient.post(`/profile-changes/profiles/${clientProfile.id}`, {
-                              changes: {
-                                candidateName: data.candidateName,
-                                phone: data.phone,
-                                currentLocation: data.currentLocation,
-                                visaStatus: data.visaStatus,
-                                entryToUS: data.entryToUS || null,
-                                dateOfBirth: toDbDate(data.dateOfBirth as string) || null,
-                                gender: data.gender || null,
-                                technology: data.technology,
-                                skills: data.skills || null,
-                                experienceDetails: data.experienceDetails || null,
-                                certifications: data.certifications || null,
-                              }
+                              changes: changesPayload
                             });
                             toast.dismiss(loadToast);
                             toast.success('Changes submitted successfully for Admin review!');
@@ -953,47 +1099,231 @@ export default function ClientDashboardPage() {
                               <Textarea name="certifications" defaultValue={clientProfile.certifications ?? ''} className="rounded-xl border-slate-200 text-xs min-h-[80px]" />
                             </div>
                           </div>
-
                           {/* Section 4: Academic History */}
                           <div className="space-y-3">
-                            <h3 className="text-xs font-black uppercase tracking-wider text-indigo-650 dark:text-indigo-400 flex items-center gap-1.5 border-b pb-1.5">
-                              <Award className="h-4 w-4 text-indigo-500" /> Academic Background
-                            </h3>
-                            <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-150 dark:border-slate-850 space-y-2">
-                              {Array.isArray(clientProfile.education) && clientProfile.education.length > 0 ? (
-                                (clientProfile.education as any[]).map((edu, idx) => (
-                                  <div key={idx} className="text-xs space-y-1 border-b last:border-0 pb-2 last:pb-0">
-                                    <p className="font-extrabold text-slate-900 dark:text-white">
-                                      {edu.qualification} in {edu.fieldOfStudy} {edu.specialization ? `(${edu.specialization})` : ''}
-                                    </p>
-                                    <p className="text-slate-500 font-medium">
-                                      {edu.instituteName} • {edu.startDate} to {edu.currentlyOngoing ? 'Present' : edu.endDate}
-                                    </p>
-                                    {edu.honors && <p className="text-[10px] text-indigo-650 dark:text-indigo-400">Honors: {edu.honors}</p>}
-                                  </div>
-                                ))
-                              ) : (
-                                <p className="text-xs text-slate-400 italic">No academic data on file.</p>
-                              )}
+                            <div className="flex items-center justify-between border-b pb-1.5">
+                              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-650 dark:text-indigo-400 flex items-center gap-1.5">
+                                <Award className="h-4 w-4 text-indigo-500" /> Academic Background
+                              </h3>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={addEducation}
+                                className="h-7 text-[10px] font-bold rounded-lg border-indigo-500/30 text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50"
+                              >
+                                <Plus className="h-3.5 w-3.5 mr-1" /> Add Education
+                              </Button>
                             </div>
+                            
+                            {educationList.length === 0 ? (
+                              <p className="text-xs text-slate-400 italic py-2">No education entries added. Click above to add one.</p>
+                            ) : (
+                              <div className="space-y-4">
+                                {educationList.map((edu, idx) => (
+                                  <div key={idx} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 space-y-3 relative group">
+                                    <div className="flex justify-between items-center">
+                                      <Badge className="bg-indigo-50 text-indigo-700 dark:bg-slate-800 dark:text-slate-350 text-[10px] font-extrabold uppercase">Education #{idx + 1}</Badge>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => removeEducation(idx)}
+                                        className="h-7 w-7 text-rose-500 hover:bg-rose-500/10 rounded-full"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-slate-550 uppercase">Qualification *</Label>
+                                        <select
+                                          value={edu.qualification || ''}
+                                          onChange={(e) => updateEducation(idx, 'qualification', e.target.value)}
+                                          className="flex h-9.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 dark:text-black focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition"
+                                        >
+                                          <option value="">Select Qualification...</option>
+                                          <option value="High School Diploma">High School Diploma</option>
+                                          <option value="Associate Degree">Associate Degree</option>
+                                          <option value="Bachelor's Degree">Bachelor's Degree</option>
+                                          <option value="Post Graduate Diploma">Post Graduate Diploma</option>
+                                          <option value="Master's Degree">Master's Degree</option>
+                                          <option value="PhD">PhD</option>
+                                          <option value="Diploma">Diploma</option>
+                                          <option value="Certificate">Certificate</option>
+                                        </select>
+                                      </div>
+
+                                      <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-slate-550 uppercase">Field of Study *</Label>
+                                        <Input
+                                          value={edu.fieldOfStudy || ''}
+                                          onChange={(e) => updateEducation(idx, 'fieldOfStudy', e.target.value)}
+                                          placeholder="e.g. Computer Science"
+                                          className="rounded-xl border-slate-200 text-xs h-9.5 dark:text-black"
+                                        />
+                                      </div>
+
+                                      <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-slate-555 uppercase">Specialization</Label>
+                                        <Input
+                                          value={edu.specialization || ''}
+                                          onChange={(e) => updateEducation(idx, 'specialization', e.target.value)}
+                                          placeholder="e.g. Software Engineering"
+                                          className="rounded-xl border-slate-200 text-xs h-9.5 dark:text-black"
+                                        />
+                                      </div>
+
+                                      <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-slate-550 uppercase">Institute / University Name *</Label>
+                                        <Input
+                                          value={edu.instituteName || ''}
+                                          onChange={(e) => updateEducation(idx, 'instituteName', e.target.value)}
+                                          placeholder="e.g. Stanford University"
+                                          className="rounded-xl border-slate-200 text-xs h-9.5 dark:text-black"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <Label className="text-[10px] font-bold text-slate-550 uppercase">Honors / Distinction (optional)</Label>
+                                      <Input
+                                        value={edu.honors || ''}
+                                        onChange={(e) => updateEducation(idx, 'honors', e.target.value)}
+                                        placeholder="e.g. First Class with Distinction, Gold Medalist"
+                                        className="rounded-xl border-slate-200 text-xs h-9.5 dark:text-black"
+                                      />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-slate-550 uppercase">Start Date *</Label>
+                                        <input
+                                          type="month"
+                                          value={edu.startDate || ''}
+                                          onChange={(e) => updateEducation(idx, 'startDate', e.target.value)}
+                                          className="flex h-9.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 dark:text-black focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                                        />
+                                      </div>
+
+                                      <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-slate-550 uppercase">End Date</Label>
+                                        <input
+                                          type="month"
+                                          disabled={edu.currentlyOngoing}
+                                          value={edu.currentlyOngoing ? '' : (edu.endDate || '')}
+                                          onChange={(e) => updateEducation(idx, 'endDate', e.target.value)}
+                                          className="flex h-9.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 dark:text-black focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:bg-slate-100 disabled:text-slate-400"
+                                        />
+                                        <label className="flex items-center gap-1.5 mt-1 cursor-pointer w-fit">
+                                          <input
+                                            type="checkbox"
+                                            checked={!!edu.currentlyOngoing}
+                                            onChange={(e) => updateEducation(idx, 'currentlyOngoing', e.target.checked)}
+                                            className="h-3.5 w-3.5 rounded border-slate-350 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                          />
+                                          <span className="text-[10px] text-slate-500 font-medium">Currently ongoing / not yet graduated</span>
+                                        </label>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
 
                           {/* Section 5: Address History */}
                           <div className="space-y-3">
-                            <h3 className="text-xs font-black uppercase tracking-wider text-indigo-650 dark:text-indigo-400 flex items-center gap-1.5 border-b pb-1.5">
-                              <FileText className="h-4 w-4 text-indigo-500" /> Physical Address History
-                            </h3>
-                            <div className="bg-slate-50 dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-150 dark:border-slate-850 space-y-2">
-                              {Array.isArray(clientProfile.addressHistory) && clientProfile.addressHistory.length > 0 ? (
-                                (clientProfile.addressHistory as any[]).map((addr, idx) => (
-                                  <div key={idx} className="text-xs text-slate-500 font-medium">
-                                    <span className="font-black text-slate-700 dark:text-slate-300">Address #{idx + 1}:</span> {addr.state}, {addr.country} ({addr.fromDate} to {addr.toDate})
-                                  </div>
-                                ))
-                              ) : (
-                                <p className="text-xs text-slate-400 italic">No address history on file.</p>
-                              )}
+                            <div className="flex items-center justify-between border-b pb-1.5">
+                              <h3 className="text-xs font-black uppercase tracking-wider text-indigo-650 dark:text-indigo-400 flex items-center gap-1.5">
+                                <FileText className="h-4 w-4 text-indigo-500" /> Physical Address History
+                              </h3>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={addAddress}
+                                className="h-7 text-[10px] font-bold rounded-lg border-indigo-500/30 text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50"
+                              >
+                                <Plus className="h-3.5 w-3.5 mr-1" /> Add Address
+                              </Button>
                             </div>
+
+                            {addressHistoryList.length === 0 ? (
+                              <p className="text-xs text-slate-400 italic py-2">No addresses added. Click above to add one.</p>
+                            ) : (
+                              <div className="space-y-4">
+                                {addressHistoryList.map((addr, idx) => (
+                                  <div key={idx} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 space-y-3 relative group">
+                                    <div className="flex justify-between items-center">
+                                      <Badge className="bg-indigo-50 text-indigo-700 dark:bg-slate-800 dark:text-slate-350 text-[10px] font-extrabold uppercase">Address #{idx + 1}</Badge>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => removeAddress(idx)}
+                                        className="h-7 w-7 text-rose-500 hover:bg-rose-500/10 rounded-full"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-slate-550 uppercase">State *</Label>
+                                        <Input
+                                          value={addr.state || ''}
+                                          onChange={(e) => updateAddress(idx, 'state', e.target.value)}
+                                          placeholder="e.g. California"
+                                          className="rounded-xl border-slate-200 text-xs h-9.5 dark:text-black"
+                                        />
+                                      </div>
+
+                                      <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-slate-550 uppercase">Country *</Label>
+                                        <Input
+                                          value={addr.country || ''}
+                                          onChange={(e) => updateAddress(idx, 'country', e.target.value)}
+                                          placeholder="e.g. United States"
+                                          className="rounded-xl border-slate-200 text-xs h-9.5 dark:text-black"
+                                        />
+                                      </div>
+
+                                      <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-slate-555 uppercase">From Date *</Label>
+                                        <input
+                                          type="month"
+                                          value={addr.fromDate || ''}
+                                          onChange={(e) => updateAddress(idx, 'fromDate', e.target.value)}
+                                          className="flex h-9.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 dark:text-black focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                                        />
+                                      </div>
+
+                                      <div className="space-y-1">
+                                        <Label className="text-[10px] font-bold text-slate-555 uppercase">To Date *</Label>
+                                        <input
+                                          type="month"
+                                          disabled={addr.toDate === 'Present'}
+                                          value={addr.toDate === 'Present' ? '' : (addr.toDate || '')}
+                                          onChange={(e) => updateAddress(idx, 'toDate', e.target.value)}
+                                          className="flex h-9.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 dark:text-black focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:bg-slate-100 disabled:text-slate-400"
+                                        />
+                                        <label className="flex items-center gap-1.5 mt-1 cursor-pointer w-fit">
+                                          <input
+                                            type="checkbox"
+                                            checked={addr.toDate === 'Present'}
+                                            onChange={(e) => updateAddress(idx, 'toDate', e.target.checked ? 'Present' : '')}
+                                            className="h-3.5 w-3.5 rounded border-slate-350 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                          />
+                                          <span className="text-[10px] text-slate-500 font-medium">Currently living here</span>
+                                        </label>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </fieldset>
 
@@ -1038,7 +1368,7 @@ export default function ClientDashboardPage() {
                     {clientProfile?.planSelected !== 'Premium' && (
                       <Button
                         onClick={() => setIsUpgradeModalOpen(true)}
-                        className="w-full rounded-full h-10 font-bold bg-indigo-650 hover:bg-indigo-700 text-white text-xs mt-2"
+                        className="w-full rounded-full h-10 font-bold text-black bg-indigo-650 hover:bg-indigo-700 hover:text-white text-xs mt-2"
                       >
                         Upgrade Plan
                       </Button>

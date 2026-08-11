@@ -441,6 +441,7 @@ model ClientProfile {
   clientUser   User?           @relation("ClientUser")
   changeRequests ClientProfileChangeRequest[]
   payments     ClientPayment[]
+  interviews   Interview[]
 
   @@index([assignedRecruiterId])
   @@index([assignedResumeAssistId])
@@ -719,4 +720,29 @@ model ClientPayment {
 
   @@index([profileId])
   @@map("client_payments")
+}
+
+model Interview {
+  id          String   @id @default(uuid())
+  profileId   String
+  profile     ClientProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  
+  roundName   String   // e.g. "Technical Round 1", "HR Screening"
+  status      String   // e.g. "Scheduled", "Completed", "Cancelled"
+  
+  date        String   // e.g. "2026-08-12"
+  startTime   String   // e.g. "10:30 AM"
+  endTime     String   // e.g. "11:30 AM"
+  timezone    String   @default("EST") // e.g. "EST", "IST"
+  
+  interviewer String?  // e.g. "John Doe"
+  mode        String?  // e.g. "Google Meet", "Zoom", "In Person", "Phone"
+  meetingLink String?  // e.g. "https://meet.google.com/..."
+  notes       String?  @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([profileId])
+  @@map("interviews")
 }

@@ -146,6 +146,12 @@ export async function login(input: LoginInput, meta: SessionMeta) {
     throw ApiError.unauthorized('Invalid email or password');
   }
 
+  if (user.role === Role.CLIENT) {
+    if (!user.clientProfile || user.clientProfile.deletedAt || !user.clientProfile.isActive) {
+      throw ApiError.forbidden('Your candidate account has been deactivated. Please contact an administrator.');
+    }
+  }
+
   if (!user.isActive) {
     throw ApiError.forbidden('Your account has been deactivated. Please contact an administrator.');
   }

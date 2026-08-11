@@ -84,5 +84,28 @@ router.post(
   profileController.postPaymentDetails,
 );
 
+// Interviews & Rounds Management
+router.get(
+  '/:id/interviews',
+  validate({ params: idParamSchema }),
+  profileController.getInterviews,
+);
+router.post(
+  '/:id/interviews',
+  requireRole(Role.ADMIN, Role.TEAM_LEADER),
+  validate({ params: idParamSchema }),
+  profileController.createInterview,
+);
+router.put(
+  '/:id/interviews/:interviewId',
+  requireRole(Role.ADMIN, Role.TEAM_LEADER),
+  profileController.updateInterview,
+);
+router.delete(
+  '/:id/interviews/:interviewId',
+  requireRole(Role.ADMIN, Role.TEAM_LEADER),
+  profileController.deleteInterview,
+);
+
 export default router;
 

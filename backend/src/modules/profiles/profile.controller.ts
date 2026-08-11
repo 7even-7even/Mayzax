@@ -1,4 +1,6 @@
 import { Request, Response } from 'express';
+import fs from 'fs';
+import path from 'path';
 import { asyncHandler } from '@/utils/asyncHandler';
 import * as profileService from './profile.service';
 import { prisma } from '@/lib/prisma';
@@ -83,13 +85,29 @@ export const downloadPaymentReceipt = asyncHandler(async (req: Request, res: Res
   };
   const color = PLAN_COLORS[profile.planSelected ?? ''] ?? '#6366f1';
   const paidDate = payment.paidAt ? new Date(payment.paidAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
-  const typeLabel = `Installment #${payment.installmentNo}`;
+  const typeLabel = payments.length > 1 ? ` (Installment #${payment.installmentNo})` : '';
+
+  let logoBase64 = '';
+  try {
+    const logoPath = path.resolve(__dirname, '../../../../frontend/src/assets/mayzax-logo.png');
+    if (fs.existsSync(logoPath)) {
+      const fileBuffer = fs.readFileSync(logoPath);
+      logoBase64 = `data:image/png;base64,${fileBuffer.toString('base64')}`;
+    }
+  } catch (err) {
+    console.error('Failed to read logo file', err);
+  }
+
+  const clientPrefix = profile.candidateName ? profile.candidateName.replace(/\s+/g, '').slice(0, 4).toUpperCase() : 'CAND';
+  const refSuffix = payment.paymentRef ? payment.paymentRef.replace(/\s+/g, '').slice(0, 4).toUpperCase() : 'RCPT';
+  const receiptNo = `MZ-${clientPrefix}${refSuffix}`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <title>Mayzax Solutions - Payment Receipt</title>
+${logoBase64 ? `<link rel="icon" type="image/png" href="${logoBase64}" />` : ''}
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -237,12 +255,12 @@ export const downloadPaymentReceipt = asyncHandler(async (req: Request, res: Res
   <div class="watermark">MAYZAX SOLUTIONS</div>
   <div class="header">
     <div class="logo-area">
-      <div class="logo-m">M</div>
+      ${logoBase64 ? `<img src="${logoBase64}" alt="Mayzax Solutions" style="height: 28px; width: 28px; object-fit: contain; border-radius: 8px; background: white;" />` : `<div class="logo-m">M</div>`}
       <div class="logo-text">MAYZAX SOLUTIONS</div>
     </div>
     <div class="status-area">
       <div class="badge">PAYMENT COMPLETED</div>
-      <div class="receipt-id">Receipt: MZ-${payment.paymentRef ? payment.paymentRef.slice(0, 8).toUpperCase() : 'RECEIPT'}</div>
+      <div class="receipt-id">Receipt: ${receiptNo}</div>
     </div>
   </div>
   <div class="details-grid">
@@ -266,7 +284,7 @@ export const downloadPaymentReceipt = asyncHandler(async (req: Request, res: Res
       <div class="text-right">Total</div>
     </div>
     <div class="table-row">
-      <div>Onboarding &amp; Profile Setup Fee (${typeLabel})</div>
+      <div>Onboarding &amp; Profile Setup Fee${typeLabel}</div>
       <div class="text-center" style="color: #475569;">${profile.planSelected || 'Basic'}</div>
       <div class="text-right" style="color: #4f46e5;">$${(payment.amount ?? 0).toLocaleString()}.00</div>
     </div>
@@ -311,6 +329,65 @@ export const postPaymentDetails = asyncHandler(async (req: Request, res: Respons
   }
   const result = await profileService.postPaymentDetails(req.params.id, planSelected, payments, actor(req));
   res.status(200).json({ success: true, data: result });
+});
+
+export const getInterviews = asyncHandler(async (req: Request, res: Response) => {
+  const interviews = await (prisma as any).interview.findMany({
+    where: { profileId: req.params.id },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.status(200).json({ success: true, data: interviews });
+});
+
+export const createInterview = asyncHandler(async (req: Request, res: Response) => {
+  const { roundName, status, date, startTime, endTime, timezone, interviewer, mode, meetingLink, notes } = req.body;
+  if (!roundName || !status || !date || !startTime || !endTime) {
+    res.status(400).json({ success: false, error: 'roundName, status, date, startTime, and endTime are required' });
+    return;
+  }
+  const interview = await (prisma as any).interview.create({
+    data: {
+      profileId: req.params.id,
+      roundName,
+      status,
+      date,
+      startTime,
+      endTime,
+      timezone: timezone || 'EST',
+      interviewer,
+      mode,
+      meetingLink,
+      notes,
+    },
+  });
+  res.status(201).json({ success: true, data: interview });
+});
+
+export const updateInterview = asyncHandler(async (req: Request, res: Response) => {
+  const { roundName, status, date, startTime, endTime, timezone, interviewer, mode, meetingLink, notes } = req.body;
+  const interview = await (prisma as any).interview.update({
+    where: { id: req.params.interviewId },
+    data: {
+      roundName,
+      status,
+      date,
+      startTime,
+      endTime,
+      timezone,
+      interviewer,
+      mode,
+      meetingLink,
+      notes,
+    },
+  });
+  res.status(200).json({ success: true, data: interview });
+});
+
+export const deleteInterview = asyncHandler(async (req: Request, res: Response) => {
+  await (prisma as any).interview.delete({
+    where: { id: req.params.interviewId },
+  });
+  res.status(200).json({ success: true, data: { message: 'Interview deleted successfully' } });
 });
 
 

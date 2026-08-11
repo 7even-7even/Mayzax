@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { FloatingCube } from '@/components/shared/floating-cube';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -175,9 +175,21 @@ function ParticleField() {
 
 export default function OnboardPage() {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(0);
+  
+  // Load initial step from sessionStorage
+  const [currentStep, setCurrentStep] = useState(() => {
+    const saved = sessionStorage.getItem('onboard_current_step');
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [uploadedResume, setUploadedResume] = useState<{ url: string; fileName: string } | null>(null);
+  
+  // Load initial uploaded resume from sessionStorage
+  const [uploadedResume, setUploadedResume] = useState<{ url: string; fileName: string } | null>(() => {
+    const saved = sessionStorage.getItem('onboard_uploaded_resume');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   // Local, auth-free preview URL generated directly from the selected File.
   // This is what we use to PREVIEW the document "right then and there"
   // (instead of the server uploads-folder URL which returns 401/unauthorised).
@@ -185,6 +197,20 @@ export default function OnboardPage() {
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isFinished, setIsFinished] = useState(false);
+
+  // Sync currentStep to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('onboard_current_step', currentStep.toString());
+  }, [currentStep]);
+
+  // Sync uploadedResume to sessionStorage
+  useEffect(() => {
+    if (uploadedResume) {
+      sessionStorage.setItem('onboard_uploaded_resume', JSON.stringify(uploadedResume));
+    } else {
+      sessionStorage.removeItem('onboard_uploaded_resume');
+    }
+  }, [uploadedResume]);
 
   // Revoke the object URL whenever it is replaced, and on unmount, to avoid memory leaks
   useEffect(() => {
@@ -201,7 +227,7 @@ export default function OnboardPage() {
   const createMutation = useCreateOnboarding();
   const uploadMutation = useUploadResume();
 
-  const { register, control, handleSubmit, setValue, watch, trigger, formState: { errors } } = useForm<OnboardingFormData>({
+  const { register, control, handleSubmit, setValue, watch, trigger, reset, formState: { errors } } = useForm<OnboardingFormData>({
     resolver: zodResolver(onboardingFormSchema),
     defaultValues: {
       fullName: '',
@@ -232,6 +258,25 @@ export default function OnboardPage() {
       paymentRef: 'MOCK_GATEWAY'
     }
   });
+
+  // Load saved form data on mount
+  useEffect(() => {
+    const saved = sessionStorage.getItem('onboard_form_data');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        reset(parsed);
+      } catch (e) {
+        console.error('Failed to parse saved onboard form data', e);
+      }
+    }
+  }, [reset]);
+
+  // Watch form values and sync to sessionStorage
+  const formValues = watch();
+  useEffect(() => {
+    sessionStorage.setItem('onboard_form_data', JSON.stringify(formValues));
+  }, [formValues]);
 
   const { fields: eduFields, append: appendEdu, remove: removeEdu } = useFieldArray({ control, name: 'education' });
   const { fields: addrFields, append: appendAddr, remove: removeAddr } = useFieldArray({ control, name: 'addressHistory' });
@@ -406,6 +451,10 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
       setCreatedId(res.id);
       toast.success('Onboarding details submitted successfully!');
       setIsFinished(true);
+      // Clear saved onboarding state from sessionStorage
+      sessionStorage.removeItem('onboard_current_step');
+      sessionStorage.removeItem('onboard_uploaded_resume');
+      sessionStorage.removeItem('onboard_form_data');
     } catch (err: any) {
       toast.error(err?.message || 'Submission failed.');
     }
@@ -429,8 +478,8 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
         <ParticleField />
         <FloatingCube size={120} top="10%" left="10%" variant="blue" duration={12} />
         <FloatingCube size={80} bottom="15%" right="12%" variant="green" duration={10} delay={1} />
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/60 dark:border-slate-800 p-8 text-center shadow-2xl relative z-10 overflow-hidden"
@@ -445,8 +494,8 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
           <p className="text-sm text-slate-500 dark:text-slate-450 leading-relaxed mb-6">
             Our team will verify your onboarding information and contact you back within 24 business hours.
           </p>
-          <Button 
-            variant="brand" 
+          <Button
+            variant="brand"
             className="w-full rounded-full bg-mayzax-gradient border-0 text-white font-bold h-11 shadow-lg shadow-indigo-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
             onClick={() => navigate('/client-login')}
           >
@@ -496,987 +545,1015 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
         }
       `}</style>
 
-    <div id="onboarding-app" className="relative flex min-h-screen w-full lg:flex-row flex-col overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
+      <div id="onboarding-app" className="relative flex min-h-screen w-full lg:flex-row flex-col overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
 
-      {/* Left Sidebar Column - Stepper Timeline */}
-      <div
-        className="relative lg:w-[35%] xl:w-[20%] w-full bg-mayzax-gradient text-slate-100 p-6 lg:py-6 lg:px-5 flex flex-col justify-between overflow-y-auto lg:overflow-y-hidden border-b lg:border-b-0 lg:border-r border-slate-200/10 lg:h-screen shrink-0 scrollbar-none"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        onMouseMove={handleMouseMove}
-      >
-        {/* Interactive spotlight following mouse */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div
-            className="absolute h-[600px] w-[600px] rounded-full blur-[80px] transition-all duration-700 ease-out pointer-events-none"
-            style={{
-              left: mousePos.x - 300,
-              top: mousePos.y - 300,
-              background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 30%, transparent 70%)',
-            }}
-          />
-        </div>
-
-        {/* Subtle overlay for depth */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/30 via-transparent to-black/20 pointer-events-none" />
-
-        <ParticleField />
-
-        {/* Ambient glow */}
-        <div className="absolute -top-20 -left-20 h-96 w-96 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-white/5 blur-3xl pointer-events-none" />
-
-        {/* Floating cubes */}
-        <FloatingCube size={90} top="12%" left="15%" variant="blue" duration={10} />
-        <FloatingCube size={50} top="25%" right="18%" variant="white" duration={7} delay={0.5} />
-        <FloatingCube size={65} bottom="20%" left="10%" variant="green" duration={9} delay={1} />
-        <FloatingCube size={40} bottom="30%" right="22%" variant="white" duration={8} delay={1.5} opacity={0.7} />
-
-        <div className="flex flex-col h-full relative z-10">
-          {/* Branding */}
-          <div className="relative z-10 mb-3">
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
-              <div className="relative">
-                <img src={mayzaxLogo} alt="Mayzax Solutions" className="h-9 w-9 rounded-xl bg-white p-2 shadow-lg shadow-black/10 ring-1 ring-white/20" />
-                <div className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
-              </div>
-              <span className="text-xl font-bold tracking-wider text-white/90 uppercase">Mayzax Solutions</span>
-            </motion.div>
-          </div>
-
-          {/* Circular progress summary widget */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="my-3 relative z-10"
-          >
-            <div className="bg-white/8 backdrop-blur-sm rounded-2xl border border-white/10 p-3 flex items-center gap-4">
-              {/* SVG progress ring */}
-              <div className="relative shrink-0">
-                <svg viewBox="0 0 48 48" className="h-14 w-14 -rotate-90">
-                  <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="4" />
-                  <motion.circle
-                    cx="24" cy="24" r="20"
-                    fill="none"
-                    stroke="rgba(52,211,153,1)"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 20}
-                    initial={{ strokeDashoffset: 2 * Math.PI * 20 }}
-                    animate={{ strokeDashoffset: 2 * Math.PI * 20 * (1 - (currentStep / (STEPS.length - 1))) }}
-                    transition={{ duration: 0.6, ease: 'easeOut' }}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center rotate-90">
-                  <span className="text-white font-black text-xs leading-none">{Math.round((currentStep / (STEPS.length - 1)) * 100)}%</span>
-                </div>
-              </div>
-              <div className="min-w-0">
-                <p className="text-white font-bold text-sm leading-tight">Registration Progress</p>
-                <p className="text-white/60 text-[11px] mt-0.5">
-                  {currentStep === 0 ? 'Just getting started' : currentStep < 5 ? 'Keep going!' : currentStep < 9 ? 'Almost there...' : currentStep === 11 ? 'Complete!' : 'Final step ahead!'}
-                </p>
-                <div className="mt-1.5 flex gap-1">
-                  {STEPS.map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-1 rounded-full transition-all duration-300 ${
-                        i < currentStep ? 'bg-emerald-400 flex-1' : i === currentStep ? 'bg-white flex-[1.5]' : 'bg-white/20 flex-1'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Vertical Stepper Timeline */}
-          <div className="space-y-0.5 relative z-10">
-            {STEPS.map((step, idx) => {
-              const Icon = step.icon;
-              const isCompleted = idx < currentStep;
-              const isActive = idx === currentStep;
-
-              return (
-                <div
-                  key={step.name}
-                  className={`relative flex items-center gap-3 cursor-pointer rounded-xl px-2 py-1.5 transition-all duration-200 group ${
-                    isActive ? 'bg-white/10 shadow-inner' : 'hover:bg-white/5'
-                  }`}
-                  onClick={() => setCurrentStep(idx)}
-                >
-                  {/* Connecting Line */}
-                  {idx < STEPS.length - 1 && (
-                    <div
-                      className={`absolute left-[22px] top-[calc(50%+14px)] h-[calc(100%-14px+6px)] w-[1.5px] pointer-events-none transition-colors duration-300 ${
-                        idx < currentStep ? 'bg-emerald-400' : 'bg-white/15'
-                      }`}
-                    />
-                  )}
-
-                  {/* Circle Node */}
-                  <div className={`relative z-10 h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${
-                    isCompleted
-                      ? 'bg-emerald-500 text-white shadow-[0_0_12px_rgba(52,211,153,0.5)]'
-                      : isActive
-                        ? 'bg-white text-slate-900 ring-[3px] ring-white/30 shadow-[0_0_16px_rgba(255,255,255,0.3)]'
-                        : 'bg-white/10 border border-white/15 text-white/50'
-                  }`}>
-                    {isCompleted
-                      ? <svg viewBox="0 0 12 12" fill="currentColor" className="h-3 w-3"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      : <Icon className="h-3 w-3" />
-                    }
-                  </div>
-
-                  {/* Text Stack */}
-                  <div className="min-w-0 flex-1">
-                    <p className={`text-sm font-bold leading-tight text-white transition-all ${isActive ? '' : 'opacity-80 group-hover:opacity-100'}`}>
-                      {step.name}
-                    </p>
-                    <p className={`text-[11px] leading-tight text-white/60 truncate max-w-[180px] transition-all ${isActive ? 'opacity-90' : 'opacity-60 group-hover:opacity-70'}`}>
-                      {step.desc}
-                    </p>
-                  </div>
-
-                  {/* Active arrow indicator */}
-                  {isActive && (
-                    <div className="shrink-0 h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
-                      <svg viewBox="0 0 8 8" fill="white" className="h-2 w-2"><polygon points="2,1 6,4 2,7" /></svg>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Sidebar Footer */}
-        <div className="pt-4 border-t border-white/10 mt-4 relative z-10 text-[10px] text-white/40 flex justify-between items-center shrink-0">
-          <span>All rights reserved @Mayzax Solutions </span>
-          <span className="font-mono">2026</span>
-        </div>
-      </div>
-
-      {/* Right Content Column - Active Form */}
-      <div className="lg:w-[65%] xl:w-[70%] w-full bg-white dark:bg-slate-900 overflow-y-auto lg:h-screen p-6 sm:p-10 md:p-12 flex flex-col justify-between relative">
-        {/* Decorative shapes */}
-        <div className="absolute top-1/4 right-0 w-32 h-64 bg-slate-100/40 dark:bg-slate-800/10 rounded-l-full pointer-events-none border border-slate-200/20 dark:border-slate-800/10 border-r-0" />
-        <div className="absolute bottom-12 right-12 w-24 h-24 rounded-full border border-slate-100 dark:border-slate-800/30 pointer-events-none" />
-
-        <div className="relative z-10 flex-1 flex flex-col">
-          {/* Header bar within Content */}
-          <div className="flex justify-between items-center mb-5">
-            <div className="flex items-center gap-3">
-              <div className="text-xs font-bold text-indigo-700 dark:text-indigo-400 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/40 dark:to-violet-950/20 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-900/30 shadow-sm">
-                Step {currentStep + 1} <span className="text-indigo-400 dark:text-indigo-600">/ {STEPS.length}</span>
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="rounded-full text-xs font-semibold text-slate-500 hover:text-indigo-650 dark:text-slate-400 dark:hover:text-indigo-400 gap-1.5 border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm"
-              onClick={() => navigate('/client-login')}
-            >
-              <LogIn className="h-3.5 w-3.5" /> Back to Login
-            </Button>
-          </div>
-
-          {/* Animated progress bar */}
-          <div className="mb-5 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-            <motion.div
-              className="h-full rounded-full bg-mayzax-gradient"
-              initial={{ width: 0 }}
-              animate={{ width: `${Math.round(((currentStep + 1) / STEPS.length) * 100)}%` }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
+        {/* Left Sidebar Column - Stepper Timeline */}
+        <div
+          className="relative lg:w-[35%] xl:w-[20%] w-full bg-mayzax-gradient text-slate-100 p-6 lg:py-6 lg:px-5 flex flex-col justify-between overflow-y-auto lg:overflow-y-hidden border-b lg:border-b-0 lg:border-r border-slate-200/10 lg:h-screen shrink-0 scrollbar-none"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          onMouseMove={handleMouseMove}
+        >
+          {/* Interactive spotlight following mouse */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div
+              className="absolute h-[600px] w-[600px] rounded-full blur-[80px] transition-all duration-700 ease-out pointer-events-none"
+              style={{
+                left: mousePos.x - 300,
+                top: mousePos.y - 300,
+                background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 30%, transparent 70%)',
+              }}
             />
           </div>
 
-          {/* Uniform step headers (only for the data-entry steps) */}
-          {currentStep < 10 && (
-            <div className="mb-6 border-l-4 border-indigo-500 pl-4 py-1">
-              <div className="flex items-center gap-2 mb-1">
-                {(() => { const Icon = STEPS[currentStep].icon; return <Icon className="h-5 w-5 text-indigo-500 shrink-0" />; })()}
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{STEP_HEADERS[currentStep].title}</h2>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{STEP_HEADERS[currentStep].desc}</p>
+          {/* Subtle overlay for depth */}
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-900/30 via-transparent to-black/20 pointer-events-none" />
+
+          <ParticleField />
+
+          {/* Ambient glow */}
+          <div className="absolute -top-20 -left-20 h-96 w-96 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+
+          {/* Floating cubes */}
+          <FloatingCube size={90} top="12%" left="15%" variant="blue" duration={10} />
+          <FloatingCube size={50} top="25%" right="18%" variant="white" duration={7} delay={0.5} />
+          <FloatingCube size={65} bottom="20%" left="10%" variant="green" duration={9} delay={1} />
+          <FloatingCube size={40} bottom="30%" right="22%" variant="white" duration={8} delay={1.5} opacity={0.7} />
+
+          <div className="flex flex-col h-full relative z-10">
+            {/* Branding */}
+            <div className="relative z-10 mb-3">
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3">
+                <div className="relative">
+                  <img src={mayzaxLogo} alt="Mayzax Solutions" className="h-9 w-9 rounded-xl bg-white p-2 shadow-lg shadow-black/10 ring-1 ring-white/20" />
+                  <div className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-white animate-pulse" />
+                </div>
+                <span className="text-xl font-bold tracking-wider text-white/90 uppercase">Mayzax Solutions</span>
+              </motion.div>
             </div>
-          )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col justify-between">
-            <div className="flex-grow">
-              <AnimatePresence mode="wait">
-                {/* Step 1: Personal Info */}
-                {currentStep === 0 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Full Name *</Label>
-                        <Input placeholder="e.g. John Doe" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register('fullName')} />
-                        {errors.fullName && <p className="text-xs text-rose-500">{errors.fullName.message}</p>}
+            {/* Circular progress summary widget */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="my-3 relative z-10"
+            >
+              <div className="bg-white/8 backdrop-blur-sm rounded-2xl border border-white/10 p-3 flex items-center gap-4">
+                {/* SVG progress ring */}
+                <div className="relative shrink-0">
+                  <svg viewBox="0 0 48 48" className="h-14 w-14 -rotate-90">
+                    <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="4" />
+                    <motion.circle
+                      cx="24" cy="24" r="20"
+                      fill="none"
+                      stroke="rgba(52,211,153,1)"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeDasharray={2 * Math.PI * 20}
+                      initial={{ strokeDashoffset: 2 * Math.PI * 20 }}
+                      animate={{ strokeDashoffset: 2 * Math.PI * 20 * (1 - (currentStep / (STEPS.length - 1))) }}
+                      transition={{ duration: 0.6, ease: 'easeOut' }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center rotate-90">
+                    <span className="text-white font-black text-xs leading-none">{Math.round((currentStep / (STEPS.length - 1)) * 100)}%</span>
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-white font-bold text-sm leading-tight">Registration Progress</p>
+                  <p className="text-white/60 text-[11px] mt-0.5">
+                    {currentStep === 0 ? 'Just getting started' : currentStep < 5 ? 'Keep going!' : currentStep < 9 ? 'Almost there...' : currentStep === 11 ? 'Complete!' : 'Final step ahead!'}
+                  </p>
+                  <div className="mt-1.5 flex gap-1">
+                    {STEPS.map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-1 rounded-full transition-all duration-300 ${i < currentStep ? 'bg-emerald-400 flex-1' : i === currentStep ? 'bg-white flex-[1.5]' : 'bg-white/20 flex-1'
+                          }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Vertical Stepper Timeline */}
+            <div className="space-y-0.5 relative z-10">
+              {STEPS.map((step, idx) => {
+                const Icon = step.icon;
+                const isCompleted = idx < currentStep;
+                const isActive = idx === currentStep;
+
+                return (
+                  <div
+                    key={step.name}
+                    className={`relative flex items-center gap-3 cursor-pointer rounded-xl px-3 py-2 transition-all duration-200 group border ${
+                      isActive
+                        ? 'bg-black/15 border-white/10 text-white shadow-inner'
+                        : 'bg-white border-transparent hover:bg-white/95 text-slate-800'
+                    }`}
+                    onClick={() => setCurrentStep(idx)}
+                  >
+                    {/* Connecting Line */}
+                    {idx < STEPS.length - 1 && (
+                      <div
+                        className={`absolute left-[24px] top-[calc(50%+14px)] h-[calc(100%-14px+6px)] w-[1.5px] pointer-events-none transition-colors duration-300 ${
+                          idx < currentStep ? 'bg-emerald-400' : 'bg-white/15'
+                        }`}
+                      />
+                    )}
+
+                    {/* Circle Node */}
+                    <div className={`relative z-10 h-7 w-7 shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${
+                      isCompleted
+                        ? 'bg-emerald-500 text-white shadow-[0_0_12px_rgba(52,211,153,0.5)]'
+                        : isActive
+                          ? 'bg-white text-slate-900 ring-[3px] ring-white/30 shadow-[0_0_12px_rgba(255,255,255,0.3)]'
+                          : 'bg-indigo-50 border border-indigo-100 text-indigo-600'
+                    }`}>
+                      {isCompleted
+                        ? <svg viewBox="0 0 12 12" fill="currentColor" className="h-3 w-3"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        : <Icon className="h-3 w-3" />
+                      }
+                    </div>
+
+                    {/* Text Stack */}
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-sm font-bold leading-tight transition-all ${
+                        isActive ? 'text-white' : 'text-slate-800 group-hover:text-slate-900'
+                      }`}>
+                        {step.name}
+                      </p>
+                      <p className={`text-[11px] leading-tight truncate max-w-[180px] transition-all ${
+                        isActive ? 'text-white/60' : 'text-slate-500 group-hover:text-slate-600'
+                      }`}>
+                        {step.desc}
+                      </p>
+                    </div>
+
+                    {/* Active arrow indicator */}
+                    {isActive && (
+                      <div className="shrink-0 h-4 w-4 rounded-full bg-white/20 flex items-center justify-center">
+                        <svg viewBox="0 0 8 8" fill="white" className="h-2 w-2"><polygon points="2,1 6,4 2,7" /></svg>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Email Address *</Label>
-                        <Input type="email" placeholder="john@example.com" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register('email')} />
-                        {errors.email && <p className="text-xs text-rose-500">{errors.email.message}</p>}
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Phone Number *</Label>
-                        <Input placeholder="+1 940-843-1358" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register('phone')} />
-                        {errors.phone && <p className="text-xs text-rose-500">{errors.phone.message}</p>}
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Gender *</Label>
-                        <select className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition" {...register('gender')}>
-                          <option value="">Select gender...</option>
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                          <option value="Non-binary">Non-binary</option>
-                          <option value="Prefer not to say">Prefer not to say</option>
-                        </select>
-                        {errors.gender && <p className="text-xs text-rose-500">{errors.gender.message}</p>}
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5 text-indigo-500" />
-                          Date of Birth *
-                        </Label>
-                        <div className="relative">
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Sidebar Footer */}
+          <div className="pt-4 border-t border-white/10 mt-4 relative z-10 text-[10px] text-white/40 flex justify-between items-center shrink-0">
+            <span>All rights reserved @Mayzax Solutions </span>
+            <span className="font-mono">2026</span>
+          </div>
+        </div>
+
+        {/* Right Content Column - Active Form */}
+        <div className="lg:w-[65%] xl:w-[70%] w-full bg-white dark:bg-slate-900 overflow-y-auto lg:h-screen p-6 sm:p-10 md:p-12 flex flex-col justify-between relative">
+          {/* Decorative shapes */}
+          <div className="absolute top-1/4 right-0 w-32 h-64 bg-slate-100/40 dark:bg-slate-800/10 rounded-l-full pointer-events-none border border-slate-200/20 dark:border-slate-800/10 border-r-0" />
+          <div className="absolute bottom-12 right-12 w-24 h-24 rounded-full border border-slate-100 dark:border-slate-800/30 pointer-events-none" />
+
+          <div className="relative z-10 flex-1 flex flex-col">
+            {/* Header bar within Content */}
+            <div className="flex justify-between items-center mb-5">
+              <div className="flex items-center gap-3">
+                <div className="text-xs font-bold text-indigo-700 dark:text-indigo-400 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-950/40 dark:to-violet-950/20 px-3 py-1 rounded-full border border-indigo-100 dark:border-indigo-900/30 shadow-sm">
+                  Step {currentStep + 1} <span className="text-indigo-400 dark:text-indigo-600">/ {STEPS.length}</span>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="rounded-full text-xs font-semibold text-slate-500 hover:text-indigo-650 dark:text-slate-400 dark:hover:text-indigo-400 gap-1.5 border border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 shadow-sm"
+                onClick={() => navigate('/client-login')}
+              >
+                <LogIn className="h-3.5 w-3.5" /> Back to Login
+              </Button>
+            </div>
+
+            {/* Animated progress bar */}
+            <div className="mb-5 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-mayzax-gradient"
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.round(((currentStep + 1) / STEPS.length) * 100)}%` }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+              />
+            </div>
+
+            {/* Uniform step headers (only for the data-entry steps) */}
+            {currentStep < 10 && (
+              <div className="mb-6 border-l-4 border-indigo-500 pl-4 py-1">
+                <div className="flex items-center gap-2 mb-1">
+                  {(() => { const Icon = STEPS[currentStep].icon; return <Icon className="h-5 w-5 text-indigo-500 shrink-0" />; })()}
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{STEP_HEADERS[currentStep].title}</h2>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{STEP_HEADERS[currentStep].desc}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col justify-between">
+              <div className="flex-grow">
+                <AnimatePresence mode="wait">
+                  {/* Step 1: Personal Info */}
+                  {currentStep === 0 && (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Full Name *</Label>
+                          <Input placeholder="e.g. John Doe" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register('fullName')} />
+                          {errors.fullName && <p className="text-xs text-rose-500">{errors.fullName.message}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Email Address *</Label>
+                          <Input type="email" placeholder="john@example.com" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register('email')} />
+                          {errors.email && <p className="text-xs text-rose-500">{errors.email.message}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Phone Number *</Label>
+                          <Input placeholder="+1 940-843-1358" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register('phone')} />
+                          {errors.phone && <p className="text-xs text-rose-500">{errors.phone.message}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Gender *</Label>
                           <input
-                            type="date"
-                            value={dobInputValue}
-                            max={new Date(new Date().setFullYear(new Date().getFullYear() - 16)).toISOString().split('T')[0]}
-                            className={dateInputClass}
-                            onChange={(e) => {
-                              const raw = e.target.value; // YYYY-MM-DD
-                              if (raw) {
-                                const [Y, M, D] = raw.split('-');
-                                setValue('dateOfBirth', `${D}/${M}/${Y}`, { shouldValidate: true });
-                              } else {
-                                setValue('dateOfBirth', '', { shouldValidate: true });
-                              }
-                            }}
+                            list="gender-options"
+                            placeholder="Select or type gender..."
+                            className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition"
+                            {...register('gender')}
                           />
+                          <datalist id="gender-options">
+                            <option value="Male" />
+                            <option value="Female" />
+                            <option value="Non-binary" />
+                            <option value="Prefer not to say" />
+                          </datalist>
+                          {errors.gender && <p className="text-xs text-rose-500">{errors.gender.message}</p>}
                         </div>
-                        {dateOfBirth && <p className="text-[11px] text-slate-400">Saved as {dateOfBirth}</p>}
-                        {errors.dateOfBirth && <p className="text-xs text-rose-500">{errors.dateOfBirth.message}</p>}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Step 2: Educational Details */}
-                {currentStep === 1 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                    <div className="flex justify-end pb-1">
-                      <Button type="button" variant="outline" size="sm" className="rounded-full border-indigo-500/30 text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20" onClick={() => appendEdu({ qualification: '', fieldOfStudy: '', specialization: '', instituteName: '', honors: '', startDate: '', endDate: '', currentlyOngoing: false })}>
-                        <Plus className="h-4 w-4 mr-1" />Add Education Block
-                      </Button>
-                    </div>
-                    {eduFields.map((field, idx) => {
-                      const isOngoing = watch(`education.${idx}.currentlyOngoing`);
-                      return (
-                        <div key={field.id} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 space-y-4">
-                          {/* Block header */}
-                          <div className="flex justify-between items-center">
-                            <Badge variant="secondary" className="bg-indigo-100 dark:bg-indigo-950/40 text-indigo-750 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50">Block #{idx + 1}</Badge>
-                            {eduFields.length > 1 && (
-                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-full" onClick={() => removeEdu(idx)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5 text-indigo-500" />
+                            Date of Birth *
+                          </Label>
+                          <div className="relative">
+                            <input
+                              type="date"
+                              value={dobInputValue}
+                              max={new Date(new Date().setFullYear(new Date().getFullYear() - 16)).toISOString().split('T')[0]}
+                              className={dateInputClass}
+                              onChange={(e) => {
+                                const raw = e.target.value; // YYYY-MM-DD
+                                if (raw) {
+                                  const [Y, M, D] = raw.split('-');
+                                  setValue('dateOfBirth', `${D}/${M}/${Y}`, { shouldValidate: true });
+                                } else {
+                                  setValue('dateOfBirth', '', { shouldValidate: true });
+                                }
+                              }}
+                            />
                           </div>
-                          {/* Row 1: Qualification + Field of Study */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Qualification *</Label>
-                              <select className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition" {...register(`education.${idx}.qualification`)}>
-                                <option value="">Select qualification...</option>
-                                <option value="High School Diploma">High School Diploma</option>
-                                <option value="Associate Degree">Associate Degree (A.S. / A.A.)</option>
-                                <option value="Bachelor's Degree">Bachelor's Degree (B.S. / B.A. / B.E.)</option>
-                                <option value="Post Graduate Diploma">Post Graduate Diploma (PGD)</option>
-                                <option value="Master's Degree">Master's Degree (M.S. / M.A. / M.E. / MBA)</option>
-                                <option value="M.Phil">M.Phil</option>
-                                <option value="PhD">Doctor of Philosophy (PhD)</option>
-                                <option value="Doctorate">Professional Doctorate (DBA / EdD / MD / JD)</option>
-                                <option value="Post-Doctoral">Post-Doctoral Research</option>
-                                <option value="Certificate">Professional Certificate</option>
-                                <option value="Diploma">Diploma</option>
-                              </select>
-                              {errors.education?.[idx]?.qualification && <p className="text-xs text-rose-500">{(errors.education[idx] as any).qualification?.message}</p>}
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Field of Study *</Label>
-                              <select className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition" {...register(`education.${idx}.fieldOfStudy`)}>
-                                <option value="">Select field...</option>
-                                <option value="Engineering">Engineering & Technology</option>
-                                <option value="Computer Science">Computer Science & IT</option>
-                                <option value="Natural Sciences">Natural Sciences (Physics, Chemistry, Biology)</option>
-                                <option value="Mathematics">Mathematics & Statistics</option>
-                                <option value="Business">Business & Management</option>
-                                <option value="Finance & Economics">Finance & Economics</option>
-                                <option value="Medicine & Health">Medicine & Health Sciences</option>
-                                <option value="Law">Law & Legal Studies</option>
-                                <option value="Arts & Humanities">Arts & Humanities</option>
-                                <option value="Social Sciences">Social Sciences</option>
-                                <option value="Education">Education & Teaching</option>
-                                <option value="Architecture">Architecture & Urban Planning</option>
-                                <option value="Agriculture">Agriculture & Environmental Sciences</option>
-                                <option value="Other">Other</option>
-                              </select>
-                              {errors.education?.[idx]?.fieldOfStudy && <p className="text-xs text-rose-500">{(errors.education[idx] as any).fieldOfStudy?.message}</p>}
-                            </div>
-                          </div>
-                          {/* Row 2: Specialization + Institute Name */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Specialization *</Label>
-                              <select className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition" {...register(`education.${idx}.specialization`)}>
-                                <option value="">Select specialization...</option>
-                                <optgroup label="Computer Science / IT">
-                                  <option value="Computer Science">Computer Science (CS)</option>
-                                  <option value="Information Technology">Information Technology (IT)</option>
-                                  <option value="Software Engineering">Software Engineering</option>
-                                  <option value="Data Science">Data Science & Analytics</option>
-                                  <option value="Artificial Intelligence">Artificial Intelligence / ML</option>
-                                  <option value="Cybersecurity">Cybersecurity</option>
-                                  <option value="Cloud Computing">Cloud Computing & DevOps</option>
-                                  <option value="Network Engineering">Network Engineering</option>
-                                </optgroup>
-                                <optgroup label="Engineering">
-                                  <option value="Civil Engineering">Civil Engineering</option>
-                                  <option value="Mechanical Engineering">Mechanical Engineering</option>
-                                  <option value="Electrical Engineering">Electrical Engineering</option>
-                                  <option value="Electronics">Electronics & Communication</option>
-                                  <option value="Chemical Engineering">Chemical Engineering</option>
-                                  <option value="Aerospace">Aerospace Engineering</option>
-                                  <option value="Industrial Engineering">Industrial & Systems Engineering</option>
-                                </optgroup>
-                                <optgroup label="Business / Finance">
-                                  <option value="Finance">Finance</option>
-                                  <option value="Accounting">Accounting</option>
-                                  <option value="Marketing">Marketing</option>
-                                  <option value="Human Resources">Human Resources (HR)</option>
-                                  <option value="Operations Management">Operations Management</option>
-                                  <option value="Quantitative Finance">Quantitative Finance</option>
-                                </optgroup>
-                                <optgroup label="Sciences">
-                                  <option value="Physics">Physics</option>
-                                  <option value="Chemistry">Chemistry</option>
-                                  <option value="Biology">Biology / Life Sciences</option>
-                                  <option value="Environmental Science">Environmental Science</option>
-                                  <option value="Statistics">Statistics</option>
-                                  <option value="Applied Mathematics">Applied Mathematics</option>
-                                </optgroup>
-                                <option value="Other">Other / Not Listed</option>
-                              </select>
-                              {errors.education?.[idx]?.specialization && <p className="text-xs text-rose-500">{(errors.education[idx] as any).specialization?.message}</p>}
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Institute / University Name *</Label>
-                              <Input placeholder="e.g. University of Texas at Dallas" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`education.${idx}.instituteName`)} />
-                              {errors.education?.[idx]?.instituteName && <p className="text-xs text-rose-500">{(errors.education[idx] as any).instituteName?.message}</p>}
-                            </div>
-                          </div>
-                          {/* Row 3: Honors */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Honors / Distinction (optional)</Label>
-                            <Input placeholder="e.g. Summa Cum Laude, Dean's List, Gold Medalist, First Class with Distinction" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`education.${idx}.honors`)} />
-                          </div>
-                          {/* Row 4: Start Date + End Date + Ongoing */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Start Date *
-                              </Label>
-                              <input type="month" className={dateInputClass} {...register(`education.${idx}.startDate`)} />
-                              {errors.education?.[idx]?.startDate && <p className="text-xs text-rose-500">{(errors.education[idx] as any).startDate?.message}</p>}
-                            </div>
-                            <div className="space-y-1.5">
-                              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5 text-indigo-500" /> End Date
-                                {isOngoing && <span className="ml-1 text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded-full">Ongoing</span>}
-                              </Label>
-                              <input type="month" disabled={isOngoing} className={dateInputClass} {...register(`education.${idx}.endDate`)} />
-                              <label className="flex items-center gap-2 mt-1.5 cursor-pointer w-fit">
-                                <input type="checkbox" className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer" {...register(`education.${idx}.currentlyOngoing`)} />
-                                <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Currently ongoing / not yet graduated</span>
-                              </label>
-                            </div>
-                          </div>
+                          {dateOfBirth && <p className="text-[11px] text-slate-400">Saved as {dateOfBirth}</p>}
+                          {errors.dateOfBirth && <p className="text-xs text-rose-500">{errors.dateOfBirth.message}</p>}
                         </div>
-                      );
-                    })}
-                  </motion.div>
-                )}
+                      </div>
+                    </motion.div>
+                  )}
 
-                {/* Step 3: Technical Details */}
-                {currentStep === 2 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                    <div className="space-y-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Target Technology *</Label>
-                        <select className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-650 transition animate-none" {...register('technology')}>
-                          <option value="" className="text-slate-500">Select Technology Track...</option>
-                          <option value="Java Full Stack">Java Full Stack</option>
-                          <option value="Python Developer">Python Developer</option>
-                          <option value="React/Node Web Developer">React/Node Web Developer</option>
-                          <option value="DevOps / Cloud Engineer">DevOps / Cloud Engineer</option>
-                          <option value="Salesforce Developer">Salesforce Developer</option>
-                          <option value="Data Science / AI Engineer">Data Science / AI Engineer</option>
-                          <option value="Business Analyst / PM">Business Analyst / PM</option>
-                          <option value="Financial Quantitative Analyst">Financial Quantitative Analyst</option>
-                        </select>
-                        {errors.technology && <p className="text-xs text-rose-500">{errors.technology.message}</p>}
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Skills *</Label>
-                        <Textarea rows={4} placeholder="e.g. Xero, Python, React, SQL, Excel Modeling (comma separated)" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 resize-none" {...register('skills')} />
-                        {errors.skills && <p className="text-xs text-rose-500">{errors.skills.message}</p>}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Step 4: Visa Status */}
-                {currentStep === 3 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Current Visa Status *</Label>
-                        <select className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-650" {...register('visaStatus')}>
-                          <option value="">Select Visa...</option>
-                          <option value="Initial OPT">Initial OPT</option>
-                          <option value="Stem OPT">Stem OPT</option>
-                          <option value="H1B">H1B</option>
-                          <option value="CPT">CPT</option>
-                          <option value="F1 Student">F1 Student</option>
-                          <option value="L1/L2">L1/L2</option>
-                          <option value="Green Card / Citizen">Green Card / Citizen</option>
-                        </select>
-                        {errors.visaStatus && <p className="text-xs text-rose-500">{errors.visaStatus.message}</p>}
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                          <Calendar className="h-3.5 w-3.5 text-indigo-500" />
-                          Entry Into the USA (Date)
-                        </Label>
-                        <input
-                          type="month"
-                          value={entryInputValue}
-                          className={dateInputClass}
-                          onChange={(e) => {
-                            const raw = e.target.value; // YYYY-MM
-                            if (raw) {
-                              setValue('entryToUS', raw, { shouldValidate: true });
-                            } else {
-                              setValue('entryToUS', '', { shouldValidate: true });
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="col-span-2 space-y-1.5">
-                        <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Current Location * (City, State, Zip)</Label>
-                        <Input placeholder="e.g. Seattle, Washington, USA - 98133" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register('currentLocation')} />
-                        {errors.currentLocation && <p className="text-xs text-rose-500">{errors.currentLocation.message}</p>}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Step 5: Address Details/History */}
-                {currentStep === 4 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                    <div className="flex justify-end pb-2">
-                      {addrFields.length < 5 && (
-                        <Button type="button" variant="outline" size="sm" className="rounded-full border-indigo-500/30 text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20" onClick={() => appendAddr({ state: '', country: '', fromDate: '', toDate: '' })}>
-                          <Plus className="h-4 w-4 mr-1" /> Add Address
+                  {/* Step 2: Educational Details */}
+                  {currentStep === 1 && (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                      <div className="flex justify-end pb-1">
+                        <Button type="button" variant="outline" size="sm" className="rounded-full border-indigo-500/30 text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20" onClick={() => appendEdu({ qualification: '', fieldOfStudy: '', specialization: '', instituteName: '', honors: '', startDate: '', endDate: '', currentlyOngoing: false })}>
+                          <Plus className="h-4 w-4 mr-1" />Add Education Block
                         </Button>
-                      )}
-                    </div>
-                    {addrFields.length === 0 ? (
-                      <div className="py-8 text-center text-slate-450 border border-dashed border-slate-250 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-950/20">
-                        <MapPin className="h-8 w-8 mx-auto mb-2 text-slate-400" />
-                        <p className="text-sm font-semibold">No address history added</p>
-                        <p className="text-xs text-slate-400 mt-1">If applicable, you can add up to 5 past addresses</p>
                       </div>
-                    ) : (
-                      addrFields.map((field, idx) => {
-                        const toDateVal = watch(`addressHistory.${idx}.toDate`);
+                      {eduFields.map((field, idx) => {
+                        const isOngoing = watch(`education.${idx}.currentlyOngoing`);
                         return (
-                          <div key={field.id} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 relative space-y-4">
+                          <div key={field.id} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 space-y-4">
+                            {/* Block header */}
                             <div className="flex justify-between items-center">
-                              <Badge variant="secondary" className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-0">Address #{idx + 1}</Badge>
-                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-full" onClick={() => removeAddr(idx)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <Badge variant="secondary" className="bg-indigo-100 dark:bg-indigo-950/40 text-indigo-750 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50">Block #{idx + 1}</Badge>
+                              {eduFields.length > 1 && (
+                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-full" onClick={() => removeEdu(idx)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
+                            {/* Row 1: Qualification + Field of Study */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-1.5">
-                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">State *</Label>
-                                <Input placeholder="e.g. Texas" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`addressHistory.${idx}.state`)} />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Country *</Label>
-                                <Input placeholder="e.g. United States" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`addressHistory.${idx}.country`)} />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                                  <Calendar className="h-3.5 w-3.5 text-indigo-500" /> From Date *
-                                </Label>
-                                <input type="month" className={dateInputClass} {...register(`addressHistory.${idx}.fromDate`)} />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                                  <Calendar className="h-3.5 w-3.5 text-indigo-500" /> To Date
-                                </Label>
+                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Qualification *</Label>
                                 <input
-                                  type="month"
-                                  disabled={toDateVal === 'Present'}
-                                  className={dateInputClass}
-                                  value={toDateVal === 'Present' ? '' : toDateVal || ''}
-                                  onChange={(e) => setValue(`addressHistory.${idx}.toDate`, e.target.value, { shouldValidate: true })}
+                                  list="qualification-options"
+                                  placeholder="Select or type qualification..."
+                                  className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition"
+                                  {...register(`education.${idx}.qualification`)}
                                 />
+                                <datalist id="qualification-options">
+                                  <option value="High School Diploma" />
+                                  <option value="Associate Degree" />
+                                  <option value="Bachelor's Degree" />
+                                  <option value="Post Graduate Diploma" />
+                                  <option value="Master's Degree" />
+                                  <option value="M.Phil" />
+                                  <option value="PhD" />
+                                  <option value="Doctorate" />
+                                  <option value="Post-Doctoral" />
+                                  <option value="Certificate" />
+                                  <option value="Diploma" />
+                                </datalist>
+                                {errors.education?.[idx]?.qualification && <p className="text-xs text-rose-500">{(errors.education[idx] as any).qualification?.message}</p>}
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Field of Study *</Label>
+                                <input
+                                  list="field-of-study-options"
+                                  placeholder="Select or type field of study..."
+                                  className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition"
+                                  {...register(`education.${idx}.fieldOfStudy`)}
+                                />
+                                <datalist id="field-of-study-options">
+                                  <option value="Engineering" />
+                                  <option value="Computer Science" />
+                                  <option value="Natural Sciences" />
+                                  <option value="Mathematics" />
+                                  <option value="Business" />
+                                  <option value="Finance & Economics" />
+                                  <option value="Medicine & Health" />
+                                  <option value="Law" />
+                                  <option value="Arts & Humanities" />
+                                  <option value="Social Sciences" />
+                                  <option value="Education" />
+                                  <option value="Architecture" />
+                                  <option value="Agriculture" />
+                                  <option value="Other" />
+                                </datalist>
+                                {errors.education?.[idx]?.fieldOfStudy && <p className="text-xs text-rose-500">{(errors.education[idx] as any).fieldOfStudy?.message}</p>}
+                              </div>
+                            </div>
+                            {/* Row 2: Specialization + Institute Name */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Specialization *</Label>
+                                <input
+                                  list="specialization-options"
+                                  placeholder="Select or type specialization..."
+                                  className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition"
+                                  {...register(`education.${idx}.specialization`)}
+                                />
+                                <datalist id="specialization-options">
+                                  <option value="Computer Science" />
+                                  <option value="Information Technology" />
+                                  <option value="Software Engineering" />
+                                  <option value="Data Science" />
+                                  <option value="Artificial Intelligence" />
+                                  <option value="Cybersecurity" />
+                                  <option value="Cloud Computing" />
+                                  <option value="Network Engineering" />
+                                  <option value="Civil Engineering" />
+                                  <option value="Mechanical Engineering" />
+                                  <option value="Electrical Engineering" />
+                                  <option value="Electronics" />
+                                  <option value="Chemical Engineering" />
+                                  <option value="Aerospace" />
+                                  <option value="Industrial Engineering" />
+                                  <option value="Finance" />
+                                  <option value="Accounting" />
+                                  <option value="Marketing" />
+                                  <option value="Human Resources" />
+                                  <option value="Operations Management" />
+                                  <option value="Quantitative Finance" />
+                                  <option value="Physics" />
+                                  <option value="Chemistry" />
+                                  <option value="Biology" />
+                                  <option value="Environmental Science" />
+                                  <option value="Statistics" />
+                                  <option value="Applied Mathematics" />
+                                  <option value="Other" />
+                                </datalist>
+                                {errors.education?.[idx]?.specialization && <p className="text-xs text-rose-500">{(errors.education[idx] as any).specialization?.message}</p>}
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Institute / University Name *</Label>
+                                <Input placeholder="e.g. University of Texas at Dallas" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`education.${idx}.instituteName`)} />
+                                {errors.education?.[idx]?.instituteName && <p className="text-xs text-rose-500">{(errors.education[idx] as any).instituteName?.message}</p>}
+                              </div>
+                            </div>
+                            {/* Row 3: Honors */}
+                            <div className="space-y-1.5">
+                              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Honors / Distinction (optional)</Label>
+                              <Input placeholder="e.g. Summa Cum Laude, Dean's List, Gold Medalist, First Class with Distinction" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`education.${idx}.honors`)} />
+                            </div>
+                            {/* Row 4: Start Date + End Date + Ongoing */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                  <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Start Date *
+                                </Label>
+                                <input type="month" className={dateInputClass} {...register(`education.${idx}.startDate`)} />
+                                {errors.education?.[idx]?.startDate && <p className="text-xs text-rose-500">{(errors.education[idx] as any).startDate?.message}</p>}
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                  <Calendar className="h-3.5 w-3.5 text-indigo-500" /> End Date
+                                  {isOngoing && <span className="ml-1 text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded-full">Ongoing</span>}
+                                </Label>
+                                <input type="month" disabled={isOngoing} className={dateInputClass} {...register(`education.${idx}.endDate`)} />
                                 <label className="flex items-center gap-2 mt-1.5 cursor-pointer w-fit">
-                                  <input
-                                    type="checkbox"
-                                    className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-650 focus:ring-indigo-500 cursor-pointer"
-                                    checked={toDateVal === 'Present'}
-                                    onChange={(e) => {
-                                      setValue(`addressHistory.${idx}.toDate`, e.target.checked ? 'Present' : '', { shouldValidate: true });
-                                    }}
-                                  />
-                                  <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Currently residing here</span>
+                                  <input type="checkbox" className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-600 focus:ring-indigo-500 cursor-pointer" {...register(`education.${idx}.currentlyOngoing`)} />
+                                  <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Currently ongoing / not yet graduated</span>
                                 </label>
                               </div>
                             </div>
                           </div>
                         );
-                      })
-                    )}
-                  </motion.div>
-                )}
+                      })}
+                    </motion.div>
+                  )}
 
-                {/* Step 6: Experience Details */}
-                {currentStep === 5 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 bg-slate-50/60 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl">
-                        <input type="checkbox" id="hasExperience" className="h-5 w-5 rounded border-slate-250 dark:border-slate-800 text-indigo-650 bg-white dark:bg-slate-955 focus:ring-indigo-600 cursor-pointer animate-none" {...register('hasExperience')} />
-                        <label htmlFor="hasExperience" className="text-sm font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
-                          I already have work experience in this field and want to retain it on my resume
-                        </label>
+                  {/* Step 3: Technical Details */}
+                  {currentStep === 2 && (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Target Technology *</Label>
+                          <input
+                            list="technology-options"
+                            placeholder="Select or type technology stack..."
+                            className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-650 transition"
+                            {...register('technology')}
+                          />
+                          <datalist id="technology-options">
+                            <option value="Java Full Stack" />
+                            <option value="Python Developer" />
+                            <option value="React/Node Web Developer" />
+                            <option value="DevOps / Cloud Engineer" />
+                            <option value="Salesforce Developer" />
+                            <option value="Data Science / AI Engineer" />
+                            <option value="Business Analyst / PM" />
+                            <option value="Financial Quantitative Analyst" />
+                          </datalist>
+                          {errors.technology && <p className="text-xs text-rose-500">{errors.technology.message}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Skills *</Label>
+                          <Textarea rows={4} placeholder="e.g. Xero, Python, React, SQL, Excel Modeling (comma separated)" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 resize-none" {...register('skills')} />
+                          {errors.skills && <p className="text-xs text-rose-500">{errors.skills.message}</p>}
+                        </div>
                       </div>
-                      {hasExperience && (
-                        <div className="space-y-4 animate-fadeIn">
-                          <div className="flex justify-end pb-1">
-                            <Button type="button" variant="outline" size="sm" className="rounded-full border-indigo-500/30 text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20" onClick={() => appendExp({ companyName: '', post: '', startDate: '', endDate: '', currentlyWorking: false, roles: '', achievements: '' })}>
-                              <Plus className="h-4 w-4 mr-1" />Add Experience Block
-                            </Button>
-                          </div>
-                          {expFields.map((field, idx) => {
-                            const isWorking = watch(`experiences.${idx}.currentlyWorking`);
-                            return (
-                              <div key={field.id} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 space-y-4">
-                                {/* Block header */}
-                                <div className="flex justify-between items-center">
-                                  <Badge variant="secondary" className="bg-indigo-100 dark:bg-indigo-950/40 text-indigo-750 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50">Experience Block #{idx + 1}</Badge>
-                                  {expFields.length > 1 && (
-                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-full" onClick={() => removeExp(idx)}>
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  )}
+                    </motion.div>
+                  )}
+
+                  {/* Step 4: Visa Status */}
+                  {currentStep === 3 && (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Current Visa Status *</Label>
+                          <input
+                            list="visa-status-options"
+                            placeholder="Select or type Visa status..."
+                            className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-3 py-2 text-sm text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-650 transition"
+                            {...register('visaStatus')}
+                          />
+                          <datalist id="visa-status-options">
+                            <option value="Initial OPT" />
+                            <option value="Stem OPT" />
+                            <option value="H1B" />
+                            <option value="CPT" />
+                            <option value="F1 Student" />
+                            <option value="L1/L2" />
+                            <option value="Green Card / Citizen" />
+                          </datalist>
+                          {errors.visaStatus && <p className="text-xs text-rose-500">{errors.visaStatus.message}</p>}
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5 text-indigo-500" />
+                            Entry Into the USA (Date)
+                          </Label>
+                          <input
+                            type="month"
+                            value={entryInputValue}
+                            className={dateInputClass}
+                            onChange={(e) => {
+                              const raw = e.target.value; // YYYY-MM
+                              if (raw) {
+                                setValue('entryToUS', raw, { shouldValidate: true });
+                              } else {
+                                setValue('entryToUS', '', { shouldValidate: true });
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="col-span-2 space-y-1.5">
+                          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Current Location * (City, State, Zip)</Label>
+                          <Input placeholder="e.g. Seattle, Washington, USA - 90000" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register('currentLocation')} />
+                          {errors.currentLocation && <p className="text-xs text-rose-500">{errors.currentLocation.message}</p>}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 5: Address Details/History */}
+                  {currentStep === 4 && (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                      <div className="flex justify-end pb-2">
+                        {addrFields.length < 5 && (
+                          <Button type="button" variant="outline" size="sm" className="rounded-full border-indigo-500/30 text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20" onClick={() => appendAddr({ state: '', country: '', fromDate: '', toDate: '' })}>
+                            <Plus className="h-4 w-4 mr-1" /> Add Address
+                          </Button>
+                        )}
+                      </div>
+                      {addrFields.length === 0 ? (
+                        <div className="py-8 text-center text-slate-450 border border-dashed border-slate-250 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-950/20">
+                          <MapPin className="h-8 w-8 mx-auto mb-2 text-slate-400" />
+                          <p className="text-sm font-semibold">No address history added</p>
+                          <p className="text-xs text-slate-400 mt-1">If applicable, you can add up to 5 past addresses</p>
+                        </div>
+                      ) : (
+                        addrFields.map((field, idx) => {
+                          const toDateVal = watch(`addressHistory.${idx}.toDate`);
+                          return (
+                            <div key={field.id} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 relative space-y-4">
+                              <div className="flex justify-between items-center">
+                                <Badge variant="secondary" className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-0">Address #{idx + 1}</Badge>
+                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-full" onClick={() => removeAddr(idx)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                  <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">State *</Label>
+                                  <Input placeholder="e.g. Texas" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`addressHistory.${idx}.state`)} />
                                 </div>
-                                {/* Row 1: Company Name + Post */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Company Name *</Label>
-                                    <Input placeholder="e.g. Google LLC" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955" {...register(`experiences.${idx}.companyName`)} />
-                                    {errors.experiences?.[idx]?.companyName && <p className="text-xs text-rose-500">{(errors.experiences[idx] as any).companyName?.message}</p>}
-                                  </div>
-                                  <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Post / Job Title *</Label>
-                                    <Input placeholder="e.g. Senior Software Engineer" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955" {...register(`experiences.${idx}.post`)} />
-                                    {errors.experiences?.[idx]?.post && <p className="text-xs text-rose-500">{(errors.experiences[idx] as any).post?.message}</p>}
-                                  </div>
+                                <div className="space-y-1.5">
+                                  <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Country *</Label>
+                                  <Input placeholder="e.g. United States" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`addressHistory.${idx}.country`)} />
                                 </div>
-                                {/* Row 2: Start Date + End Date */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                                      <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Start Date *
-                                    </Label>
-                                    <input type="month" className={dateInputClass} {...register(`experiences.${idx}.startDate`)} />
-                                    {errors.experiences?.[idx]?.startDate && <p className="text-xs text-rose-500">{(errors.experiences[idx] as any).startDate?.message}</p>}
-                                  </div>
-                                  <div className="space-y-1.5">
-                                    <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                                      <Calendar className="h-3.5 w-3.5 text-indigo-500" /> End Date
-                                      {isWorking && <span className="ml-1 text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded-full">Present</span>}
-                                    </Label>
+                                <div className="space-y-1.5">
+                                  <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                    <Calendar className="h-3.5 w-3.5 text-indigo-500" /> From Date *
+                                  </Label>
+                                  <input type="month" className={dateInputClass} {...register(`addressHistory.${idx}.fromDate`)} />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                    <Calendar className="h-3.5 w-3.5 text-indigo-500" /> To Date
+                                  </Label>
+                                  <input
+                                    type="month"
+                                    disabled={toDateVal === 'Present'}
+                                    className={dateInputClass}
+                                    value={toDateVal === 'Present' ? '' : toDateVal || ''}
+                                    onChange={(e) => setValue(`addressHistory.${idx}.toDate`, e.target.value, { shouldValidate: true })}
+                                  />
+                                  <label className="flex items-center gap-2 mt-1.5 cursor-pointer w-fit">
                                     <input
-                                      type="month"
-                                      disabled={isWorking}
-                                      className={dateInputClass}
-                                      value={isWorking ? '' : (watch(`experiences.${idx}.endDate`) || '')}
-                                      onChange={(e) => setValue(`experiences.${idx}.endDate`, e.target.value)}
+                                      type="checkbox"
+                                      className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-650 focus:ring-indigo-500 cursor-pointer"
+                                      checked={toDateVal === 'Present'}
+                                      onChange={(e) => {
+                                        setValue(`addressHistory.${idx}.toDate`, e.target.checked ? 'Present' : '', { shouldValidate: true });
+                                      }}
                                     />
-                                    <label className="flex items-center gap-2 mt-1.5 cursor-pointer w-fit">
-                                      <input
-                                        type="checkbox"
-                                        className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-650 focus:ring-indigo-500 cursor-pointer"
-                                        checked={isWorking}
-                                        onChange={(e) => {
-                                          setValue(`experiences.${idx}.currentlyWorking`, e.target.checked);
-                                          if (e.target.checked) {
-                                            setValue(`experiences.${idx}.endDate`, 'Present');
-                                          } else {
-                                            setValue(`experiences.${idx}.endDate`, '');
-                                          }
-                                        }}
-                                      />
-                                      <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Currently working here</span>
-                                    </label>
-                                  </div>
-                                </div>
-                                {/* Row 3: Roles & Responsibilities */}
-                                <div className="space-y-1.5">
-                                  <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Roles &amp; Responsibilities *</Label>
-                                  <Textarea rows={4} placeholder="Describe your day-to-day duties, technologies used, and core responsibilities..." className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 resize-none" {...register(`experiences.${idx}.roles`)} />
-                                  {errors.experiences?.[idx]?.roles && <p className="text-xs text-rose-500">{(errors.experiences[idx] as any).roles?.message}</p>}
-                                </div>
-                                {/* Row 4: Achievements */}
-                                <div className="space-y-1.5">
-                                  <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Key Achievements (optional)</Label>
-                                  <Textarea rows={3} placeholder="Describe any awards, project completions, metric improvements, or special achievements..." className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 resize-none" {...register(`experiences.${idx}.achievements`)} />
+                                    <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Currently residing here</span>
+                                  </label>
                                 </div>
                               </div>
-                            );
-                          })}
-                        </div>
+                            </div>
+                          );
+                        })
                       )}
-                    </div>
-                  </motion.div>
-                )}
+                    </motion.div>
+                  )}
 
-                {/* Step 7: Certifications */}
-                {currentStep === 6 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                    <div className="flex justify-end pb-1">
-                      <Button type="button" variant="outline" size="sm" className="rounded-full border-indigo-500/30 text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20" onClick={() => appendCert({ name: '', startDate: '', endDate: '', credentialId: '' })}>
-                        <Plus className="h-4 w-4 mr-1" />Add Certification
-                      </Button>
-                    </div>
-                    {certFields.length === 0 ? (
-                      <div className="py-8 text-center text-slate-450 border border-dashed border-slate-250 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-950/20">
-                        <Shield className="h-8 w-8 mx-auto mb-2 text-slate-400" />
-                        <p className="text-sm font-semibold">No certifications added</p>
-                        <p className="text-xs text-slate-400 mt-1">This step is optional. Click "Add Certification" if you have any.</p>
+                  {/* Step 6: Experience Details */}
+                  {currentStep === 5 && (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 bg-slate-50/60 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl">
+                          <input type="checkbox" id="hasExperience" className="h-5 w-5 rounded border-slate-250 dark:border-slate-800 text-indigo-650 bg-white dark:bg-slate-955 focus:ring-indigo-600 cursor-pointer animate-none" {...register('hasExperience')} />
+                          <label htmlFor="hasExperience" className="text-sm font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                            I already have work experience in this field and want to retain it on my resume
+                          </label>
+                        </div>
+                        {hasExperience && (
+                          <div className="space-y-4 animate-fadeIn">
+                            <div className="flex justify-end pb-1">
+                              <Button type="button" variant="outline" size="sm" className="rounded-full border-indigo-500/30 text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20" onClick={() => appendExp({ companyName: '', post: '', startDate: '', endDate: '', currentlyWorking: false, roles: '', achievements: '' })}>
+                                <Plus className="h-4 w-4 mr-1" />Add Experience Block
+                              </Button>
+                            </div>
+                            {expFields.map((field, idx) => {
+                              const isWorking = watch(`experiences.${idx}.currentlyWorking`);
+                              return (
+                                <div key={field.id} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 space-y-4">
+                                  {/* Block header */}
+                                  <div className="flex justify-between items-center">
+                                    <Badge variant="secondary" className="bg-indigo-100 dark:bg-indigo-950/40 text-indigo-750 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50">Experience Block #{idx + 1}</Badge>
+                                    {expFields.length > 1 && (
+                                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-full" onClick={() => removeExp(idx)}>
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                  {/* Row 1: Company Name + Post */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                      <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Company Name *</Label>
+                                      <Input placeholder="e.g. Google LLC" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955" {...register(`experiences.${idx}.companyName`)} />
+                                      {errors.experiences?.[idx]?.companyName && <p className="text-xs text-rose-500">{(errors.experiences[idx] as any).companyName?.message}</p>}
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Post / Job Title *</Label>
+                                      <Input placeholder="e.g. Senior Software Engineer" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955" {...register(`experiences.${idx}.post`)} />
+                                      {errors.experiences?.[idx]?.post && <p className="text-xs text-rose-500">{(errors.experiences[idx] as any).post?.message}</p>}
+                                    </div>
+                                  </div>
+                                  {/* Row 2: Start Date + End Date */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                      <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Start Date *
+                                      </Label>
+                                      <input type="month" className={dateInputClass} {...register(`experiences.${idx}.startDate`)} />
+                                      {errors.experiences?.[idx]?.startDate && <p className="text-xs text-rose-500">{(errors.experiences[idx] as any).startDate?.message}</p>}
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                        <Calendar className="h-3.5 w-3.5 text-indigo-500" /> End Date
+                                        {isWorking && <span className="ml-1 text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-950/20 px-1.5 py-0.5 rounded-full">Present</span>}
+                                      </Label>
+                                      <input
+                                        type="month"
+                                        disabled={isWorking}
+                                        className={dateInputClass}
+                                        value={isWorking ? '' : (watch(`experiences.${idx}.endDate`) || '')}
+                                        onChange={(e) => setValue(`experiences.${idx}.endDate`, e.target.value)}
+                                      />
+                                      <label className="flex items-center gap-2 mt-1.5 cursor-pointer w-fit">
+                                        <input
+                                          type="checkbox"
+                                          className="h-4 w-4 rounded border-slate-300 dark:border-slate-700 text-indigo-650 focus:ring-indigo-500 cursor-pointer"
+                                          checked={isWorking}
+                                          onChange={(e) => {
+                                            setValue(`experiences.${idx}.currentlyWorking`, e.target.checked);
+                                            if (e.target.checked) {
+                                              setValue(`experiences.${idx}.endDate`, 'Present');
+                                            } else {
+                                              setValue(`experiences.${idx}.endDate`, '');
+                                            }
+                                          }}
+                                        />
+                                        <span className="text-xs text-slate-600 dark:text-slate-400 font-medium">Currently working here</span>
+                                      </label>
+                                    </div>
+                                  </div>
+                                  {/* Row 3: Roles & Responsibilities */}
+                                  <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Roles &amp; Responsibilities *</Label>
+                                    <Textarea rows={4} placeholder="Describe your day-to-day duties, technologies used, and core responsibilities..." className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 resize-none" {...register(`experiences.${idx}.roles`)} />
+                                    {errors.experiences?.[idx]?.roles && <p className="text-xs text-rose-500">{(errors.experiences[idx] as any).roles?.message}</p>}
+                                  </div>
+                                  {/* Row 4: Achievements */}
+                                  <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Key Achievements (optional)</Label>
+                                    <Textarea rows={3} placeholder="Describe any awards, project completions, metric improvements, or special achievements..." className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 resize-none" {...register(`experiences.${idx}.achievements`)} />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      certFields.map((field, idx) => (
-                        <div key={field.id} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-955/40 border border-slate-150 dark:border-slate-800 space-y-4">
-                          {/* Block Header */}
-                          <div className="flex justify-between items-center">
-                            <Badge variant="secondary" className="bg-indigo-100 dark:bg-indigo-950/40 text-indigo-750 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50">Certification #{idx + 1}</Badge>
-                            <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-full" onClick={() => removeCert(idx)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                    </motion.div>
+                  )}
 
-                          {/* Certification Name */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Certification / Course Name *</Label>
-                            <Input placeholder="e.g. AWS Certified Solutions Architect - Associate" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`certificationBlocks.${idx}.name`)} />
-                            {errors.certificationBlocks?.[idx]?.name && <p className="text-xs text-rose-500">{(errors.certificationBlocks[idx] as any).name?.message}</p>}
-                          </div>
+                  {/* Step 7: Certifications */}
+                  {currentStep === 6 && (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                      <div className="flex justify-end pb-1">
+                        <Button type="button" variant="outline" size="sm" className="rounded-full border-indigo-500/30 text-indigo-650 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20" onClick={() => appendCert({ name: '', startDate: '', endDate: '', credentialId: '' })}>
+                          <Plus className="h-4 w-4 mr-1" />Add Certification
+                        </Button>
+                      </div>
+                      {certFields.length === 0 ? (
+                        <div className="py-8 text-center text-slate-450 border border-dashed border-slate-250 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-950/20">
+                          <Shield className="h-8 w-8 mx-auto mb-2 text-slate-400" />
+                          <p className="text-sm font-semibold">No certifications added</p>
+                          <p className="text-xs text-slate-400 mt-1">This step is optional. Click "Add Certification" if you have any.</p>
+                        </div>
+                      ) : (
+                        certFields.map((field, idx) => (
+                          <div key={field.id} className="p-4 rounded-2xl bg-slate-50/50 dark:bg-slate-955/40 border border-slate-150 dark:border-slate-800 space-y-4">
+                            {/* Block Header */}
+                            <div className="flex justify-between items-center">
+                              <Badge variant="secondary" className="bg-indigo-100 dark:bg-indigo-950/40 text-indigo-750 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-900/50">Certification #{idx + 1}</Badge>
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-full" onClick={() => removeCert(idx)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
 
-                          {/* Dates row */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Certification Name */}
                             <div className="space-y-1.5">
-                              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Start / Issue Date *
-                              </Label>
-                              <input type="month" className={dateInputClass} {...register(`certificationBlocks.${idx}.startDate`)} />
-                              {errors.certificationBlocks?.[idx]?.startDate && <p className="text-xs text-rose-500">{(errors.certificationBlocks[idx] as any).startDate?.message}</p>}
+                              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Certification / Course Name *</Label>
+                              <Input placeholder="e.g. AWS Certified Solutions Architect - Associate" className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`certificationBlocks.${idx}.name`)} />
+                              {errors.certificationBlocks?.[idx]?.name && <p className="text-xs text-rose-500">{(errors.certificationBlocks[idx] as any).name?.message}</p>}
                             </div>
+
+                            {/* Dates row */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                  <Calendar className="h-3.5 w-3.5 text-indigo-500" /> Start / Issue Date *
+                                </Label>
+                                <input type="month" className={dateInputClass} {...register(`certificationBlocks.${idx}.startDate`)} />
+                                {errors.certificationBlocks?.[idx]?.startDate && <p className="text-xs text-rose-500">{(errors.certificationBlocks[idx] as any).startDate?.message}</p>}
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                  <Calendar className="h-3.5 w-3.5 text-indigo-500" /> End / Expiration Date (if applicable)
+                                </Label>
+                                <input type="month" className={dateInputClass} {...register(`certificationBlocks.${idx}.endDate`)} />
+                              </div>
+                            </div>
+
+                            {/* Credential ID / Link */}
                             <div className="space-y-1.5">
-                              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                                <Calendar className="h-3.5 w-3.5 text-indigo-500" /> End / Expiration Date (if applicable)
-                              </Label>
-                              <input type="month" className={dateInputClass} {...register(`certificationBlocks.${idx}.endDate`)} />
+                              <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Credential ID / Verification URL</Label>
+                              <Input placeholder="e.g. https://www.credly.com/earner/earned/badge/..." className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`certificationBlocks.${idx}.credentialId`)} />
                             </div>
                           </div>
+                        ))
+                      )}
+                    </motion.div>
+                  )}
 
-                          {/* Credential ID / Link */}
-                          <div className="space-y-1.5">
-                            <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Credential ID / Verification URL</Label>
-                            <Input placeholder="e.g. https://www.credly.com/earner/earned/badge/..." className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950" {...register(`certificationBlocks.${idx}.credentialId`)} />
+                  {/* Step 8: Resume Upload */}
+                  {currentStep === 7 && (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                      <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-8 bg-slate-50/50 dark:bg-slate-950/30 text-center relative group hover:border-indigo-500/50 transition">
+                        <input type="file" accept=".pdf,.docx,.doc" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileUpload} />
+                        <div className="h-14 w-14 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 mb-4 group-hover:scale-110 transition duration-300">
+                          <Upload className="h-6 w-6" />
+                        </div>
+                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Drag &amp; drop your resume file here</p>
+                        <p className="text-xs text-slate-450 mt-1">Accepts PDF, DOCX or DOC formats (Max 10MB)</p>
+
+                        {uploadMutation.isPending && (
+                          <div className="mt-4 flex items-center gap-2 text-xs text-indigo-650 dark:text-indigo-400">
+                            <Loader2 className="h-4 w-4 animate-spin" /> Uploading resume...
                           </div>
-                        </div>
-                      ))
-                    )}
-                  </motion.div>
-                )}
-
-                {/* Step 8: Resume Upload */}
-                {currentStep === 7 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                    <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-8 bg-slate-50/50 dark:bg-slate-950/30 text-center relative group hover:border-indigo-500/50 transition">
-                      <input type="file" accept=".pdf,.docx,.doc" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileUpload} />
-                      <div className="h-14 w-14 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 mb-4 group-hover:scale-110 transition duration-300">
-                        <Upload className="h-6 w-6" />
+                        )}
+                        {uploadedResume && (
+                          <div className="mt-5 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 rounded-full text-emerald-650 dark:text-emerald-450 text-xs font-semibold">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            <span>Uploaded: {uploadedResume.fileName}</span>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm font-bold text-slate-700 dark:text-slate-200">Drag &amp; drop your resume file here</p>
-                      <p className="text-xs text-slate-450 mt-1">Accepts PDF, DOCX or DOC formats (Max 10MB)</p>
 
-                      {uploadMutation.isPending && (
-                        <div className="mt-4 flex items-center gap-2 text-xs text-indigo-650 dark:text-indigo-400">
-                          <Loader2 className="h-4 w-4 animate-spin" /> Uploading resume...
+                      {/* Live, local preview — rendered straight from the File (no server / no auth) */}
+                      {resumePreviewUrl && (
+                        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                          <div className="flex items-center justify-between px-4 py-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                              <FileText className="h-3.5 w-3.5 text-indigo-500" /> Live Preview
+                            </span>
+                            <button type="button" onClick={() => window.open(resumePreviewUrl, '_blank')} className="text-xs text-indigo-600 dark:text-indigo-400 underline">
+                              Open in new tab
+                            </button>
+                          </div>
+                          <iframe src={resumePreviewUrl} title="Resume preview" className="w-full h-[420px] bg-white" />
+                          <p className="px-4 py-1.5 text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                            PDF files render inline here. DOC/DOCX may need to be opened in a new tab.
+                          </p>
                         </div>
                       )}
-                      {uploadedResume && (
-                        <div className="mt-5 flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 rounded-full text-emerald-650 dark:text-emerald-450 text-xs font-semibold">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                          <span>Uploaded: {uploadedResume.fileName}</span>
-                        </div>
-                      )}
-                    </div>
+                    </motion.div>
+                  )}
 
-                    {/* Live, local preview — rendered straight from the File (no server / no auth) */}
-                    {resumePreviewUrl && (
-                      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                        <div className="flex items-center justify-between px-4 py-2 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-                          <span className="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                            <FileText className="h-3.5 w-3.5 text-indigo-500" /> Live Preview
-                          </span>
-                          <button type="button" onClick={() => window.open(resumePreviewUrl, '_blank')} className="text-xs text-indigo-600 dark:text-indigo-400 underline">
-                            Open in new tab
-                          </button>
-                        </div>
-                        <iframe src={resumePreviewUrl} title="Resume preview" className="w-full h-[420px] bg-white" />
-                        <p className="px-4 py-1.5 text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-                          PDF files render inline here. DOC/DOCX may need to be opened in a new tab.
-                        </p>
+                  {/* Step 9: Self Declaration */}
+                  {currentStep === 8 && (
+                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
+                      <div className="space-y-4 text-slate-600 dark:text-slate-350 text-xs leading-relaxed max-h-60 overflow-y-auto bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-850 p-4 rounded-2xl">
+                        {/* <p className="font-bold text-slate-800 dark:text-slate-200">Please read and confirm the following terms:</p> */}
+                        <p>1. I declare that the details and information provided by me in this onboarding checklist are true, complete and accurate to the best of my knowledge.</p>
+                        <p>2. I understand that the creation of my resume and candidate profile will be based entirely on the information provided herein, and any inaccurate/misleading information may impact my job search placement results.</p>
+                        <p>3. I acknowledge that document verification will take approximately 24 hours, after which my profile in the CMS will be generated upon approval by the Administration team.</p>
+                        <p>4. I authorize Mayzax Solutions and its assigned recruitment team leaders/recruiters to represent my profile and submit job applications on my behalf in accordance with the marketing plan I select.</p>
+                        <p>5. I agree to the <Link to="/terms" className="text-indigo-650 dark:text-indigo-400 hover:underline font-semibold">Terms &amp; Conditions</Link> and <Link to="/privacy" className="text-indigo-650 dark:text-indigo-400 hover:underline font-semibold">Privacy Policy</Link> of Mayzax Solutions.</p>
                       </div>
-                    )}
-                  </motion.div>
-                )}
+                      <div className="flex items-start gap-3 bg-slate-50/60 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl">
+                        <input type="checkbox" id="declared" className="mt-1 h-5 w-5 rounded border-slate-250 dark:border-slate-800 text-indigo-650 bg-white dark:bg-slate-950 focus:ring-indigo-600 cursor-pointer animate-none" {...register('declared')} />
+                        <label htmlFor="declared" className="text-sm font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
+                          I hereby declare and agree to all the points above. *
+                        </label>
+                      </div>
+                      {errors.declared && <p className="text-xs text-rose-500">{errors.declared.message}</p>}
+                    </motion.div>
+                  )}
 
-                {/* Step 9: Self Declaration */}
-                {currentStep === 8 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
-                    <div className="space-y-4 text-slate-600 dark:text-slate-350 text-xs leading-relaxed max-h-60 overflow-y-auto bg-slate-50 dark:bg-slate-950 border border-slate-150 dark:border-slate-850 p-4 rounded-2xl">
-                      <p className="font-bold text-slate-800 dark:text-slate-200">Please read and confirm the following terms:</p>
-                      <p>1. I declare that the details and information provided by me in this onboarding checklist are true, complete and accurate to the best of my knowledge.</p>
-                      <p>2. I understand that the creation of my resume and candidate profile will be based entirely on the information provided herein, and any inaccurate/misleading information may impact my job search placement results.</p>
-                      <p>3. I acknowledge that document verification will take approximately 24 hours, after which my profile in the CMS will be generated upon approval by the Administration team.</p>
-                      <p>4. I authorize Mayzax Solutions and its assigned recruitment team leaders/recruiters to represent my profile and submit job applications on my behalf in accordance with the marketing plan I select.</p>
-                    </div>
-                    <div className="flex items-start gap-3 bg-slate-50/60 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-800 p-4 rounded-2xl">
-                      <input type="checkbox" id="declared" className="mt-1 h-5 w-5 rounded border-slate-250 dark:border-slate-800 text-indigo-650 bg-white dark:bg-slate-950 focus:ring-indigo-600 cursor-pointer animate-none" {...register('declared')} />
-                      <label htmlFor="declared" className="text-sm font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">
-                        I hereby declare and agree to the terms and conditions outlined above. *
-                      </label>
-                    </div>
-                    {errors.declared && <p className="text-xs text-rose-500">{errors.declared.message}</p>}
-                  </motion.div>
-                )}
+                  {/* Step 9: Preview & Confirm (FINAL STEP) */}
+                  {currentStep === 9 && (
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
+                      <div className="text-center space-y-2">
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100">Preview Your Submission</h2>
+                        <p className="text-xs text-slate-500 dark:text-slate-450">Review all provided details, payment, and attached documents below. You can print or save as PDF.</p>
+                      </div>
 
-                {/* Step 9: Preview & Confirm (FINAL STEP) */}
-                {currentStep === 9 && (
-                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
-                    <div className="text-center space-y-2">
-                      <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100">Preview Your Submission</h2>
-                      <p className="text-xs text-slate-500 dark:text-slate-450">Review all provided details, payment, and attached documents below. You can print or save as PDF.</p>
-                    </div>
+                      <div id="form-preview" className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 md:p-6 space-y-5">
+                        {/* Personal Information */}
+                        <PreviewSection title="Personal Information" icon={User2}>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <PreviewField label="Full Name" value={fullName} />
+                            <PreviewField label="Gender" value={gender} />
+                            <PreviewField label="Date of Birth" value={dateOfBirth} />
+                            <PreviewField label="Email" value={email} />
+                            <PreviewField label="Phone" value={phone} />
+                          </div>
+                        </PreviewSection>
 
-                    <div id="form-preview" className="bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 md:p-6 space-y-5">
-                      {/* Personal Information */}
-                      <PreviewSection title="Personal Information" icon={User2}>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          <PreviewField label="Full Name" value={fullName} />
-                          <PreviewField label="Gender" value={gender} />
-                          <PreviewField label="Date of Birth" value={dateOfBirth} />
-                          <PreviewField label="Email" value={email} />
-                          <PreviewField label="Phone" value={phone} />
-                        </div>
-                      </PreviewSection>
+                        {/* Education */}
+                        <PreviewSection title="Education" icon={GraduationCap}>
+                          <div className="space-y-2">
+                            {eduFields.map((ed, i) => (
+                              <div key={ed.id} className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                                <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{watch(`education.${i}.qualification`) || '—'} <span className="text-slate-400 font-normal">in</span> {watch(`education.${i}.fieldOfStudy`) || '—'}</div>
+                                <div className="text-xs text-slate-500 mt-1">Specialization: {watch(`education.${i}.specialization`) || '—'}</div>
+                                <div className="text-xs text-slate-500">Institute: {watch(`education.${i}.instituteName`) || '—'}</div>
+                                <div className="text-xs text-slate-500">{formatMonthYear(watch(`education.${i}.startDate`))} → {watch(`education.${i}.currentlyOngoing`) ? 'Ongoing' : (formatMonthYear(watch(`education.${i}.endDate`)))}{watch(`education.${i}.honors`) ? ` • Honors: ${watch(`education.${i}.honors`)}` : ''}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </PreviewSection>
 
-                      {/* Education */}
-                      <PreviewSection title="Education" icon={GraduationCap}>
-                        <div className="space-y-2">
-                          {eduFields.map((ed, i) => (
-                            <div key={ed.id} className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                              <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{watch(`education.${i}.qualification`) || '—'} <span className="text-slate-400 font-normal">in</span> {watch(`education.${i}.fieldOfStudy`) || '—'}</div>
-                              <div className="text-xs text-slate-500 mt-1">Specialization: {watch(`education.${i}.specialization`) || '—'}</div>
-                              <div className="text-xs text-slate-500">Institute: {watch(`education.${i}.instituteName`) || '—'}</div>
-                              <div className="text-xs text-slate-500">{formatMonthYear(watch(`education.${i}.startDate`))} → {watch(`education.${i}.currentlyOngoing`) ? 'Ongoing' : (formatMonthYear(watch(`education.${i}.endDate`)))}{watch(`education.${i}.honors`) ? ` • Honors: ${watch(`education.${i}.honors`)}` : ''}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </PreviewSection>
-                      
-                      {/* Technical Profile */}
-                      <PreviewSection title="Technical Profile" icon={Code2}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <PreviewField label="Target Technology" value={technology} />
-                        </div>
-                        <div className="mt-3">
-                          <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-1.5">Skills</p>
-                          {skillsList.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
-                              {skillsList.map((s, i) => (
-                                <Badge key={i} variant="secondary" className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/40 font-normal">{s}</Badge>
+                        {/* Technical Profile */}
+                        <PreviewSection title="Technical Profile" icon={Code2}>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <PreviewField label="Target Technology" value={technology} />
+                          </div>
+                          <div className="mt-3">
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-1.5">Skills</p>
+                            {skillsList.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5">
+                                {skillsList.map((s, i) => (
+                                  <Badge key={i} variant="secondary" className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/40 font-normal">{s}</Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-slate-400">—</span>
+                            )}
+                          </div>
+                        </PreviewSection>
+
+                        {/* Visa & Location */}
+                        <PreviewSection title="Visa & Location" icon={ShieldCheck}>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            <PreviewField label="Visa Status" value={visaStatus} />
+                            <PreviewField label="Entry to USA" value={formatMonthYear(entryToUS)} />
+                            <PreviewField label="Current Location" value={currentLocation} />
+                          </div>
+                        </PreviewSection>
+
+                        {/* Address History */}
+                        <PreviewSection title="Address History" icon={MapPin}>
+                          {addrFields.length > 0 ? (
+                            <div className="space-y-2">
+                              {addrFields.map((a, i) => (
+                                <div key={a.id} className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-sm">
+                                  <span className="font-semibold">{watch(`addressHistory.${i}.state`) || '—'}, {watch(`addressHistory.${i}.country`) || '—'}</span>
+                                  <span className="text-slate-500"> — {formatMonthYear(watch(`addressHistory.${i}.fromDate`))} → {watch(`addressHistory.${i}.toDate`) === 'Present' ? 'Present' : formatMonthYear(watch(`addressHistory.${i}.toDate`))}</span>
+                                </div>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-sm text-slate-400">—</span>
+                            <p className="text-sm text-slate-400">No address history added.</p>
                           )}
-                        </div>
-                      </PreviewSection>
+                        </PreviewSection>
 
-                      {/* Visa & Location */}
-                      <PreviewSection title="Visa & Location" icon={ShieldCheck}>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          <PreviewField label="Visa Status" value={visaStatus} />
-                          <PreviewField label="Entry to USA" value={formatMonthYear(entryToUS)} />
-                          <PreviewField label="Current Location" value={currentLocation} />
-                        </div>
-                      </PreviewSection>
-
-                      {/* Address History */}
-                      <PreviewSection title="Address History" icon={MapPin}>
-                        {addrFields.length > 0 ? (
-                          <div className="space-y-2">
-                            {addrFields.map((a, i) => (
-                              <div key={a.id} className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800 text-sm">
-                                <span className="font-semibold">{watch(`addressHistory.${i}.state`) || '—'}, {watch(`addressHistory.${i}.country`) || '—'}</span>
-                                <span className="text-slate-500"> — {formatMonthYear(watch(`addressHistory.${i}.fromDate`))} → {watch(`addressHistory.${i}.toDate`) === 'Present' ? 'Present' : formatMonthYear(watch(`addressHistory.${i}.toDate`))}</span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-slate-400">No address history added.</p>
-                        )}
-                      </PreviewSection>
-
-                      {/* Experience */}
-                      <PreviewSection title="Experience" icon={FileText}>
-                        {hasExperience && expFields.length > 0 ? (
-                          <div className="space-y-2">
-                            {expFields.map((ex, i) => (
-                              <div key={ex.id} className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                                <div className="text-sm font-semibold">{watch(`experiences.${i}.post`) || '—'} <span className="text-slate-400 font-normal">@</span> {watch(`experiences.${i}.companyName`) || '—'}</div>
-                                <div className="text-xs text-slate-500">{formatMonthYear(watch(`experiences.${i}.startDate`))} → {watch(`experiences.${i}.currentlyWorking`) ? 'Present' : (formatMonthYear(watch(`experiences.${i}.endDate`)) || '—')}</div>
-                                {watch(`experiences.${i}.roles`) ? <div className="text-xs text-slate-600 dark:text-slate-300 mt-1 whitespace-pre-wrap">{watch(`experiences.${i}.roles`)}</div> : null}
-                                {watch(`experiences.${i}.achievements`) ? <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap"><span className="font-semibold">Achievements:</span> {watch(`experiences.${i}.achievements`)}</div> : null}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-slate-400">No experience provided.</p>
-                        )}
-                      </PreviewSection>
-
-                      {/* Certifications */}
-                      <PreviewSection title="Certifications" icon={Shield}>
-                        {certFields.length > 0 ? (
-                          <div className="space-y-2">
-                            {certFields.map((c, i) => (
-                              <div key={c.id} className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                                <div className="text-sm font-semibold">{watch(`certificationBlocks.${i}.name`) || '—'}</div>
-                                <div className="text-xs text-slate-500">Valid: {formatMonthYear(watch(`certificationBlocks.${i}.startDate`))} → {watch(`certificationBlocks.${i}.endDate`) ? formatMonthYear(watch(`certificationBlocks.${i}.endDate`)) : 'No Expiration'}</div>
-                                {watch(`certificationBlocks.${i}.credentialId`) ? <div className="text-xs text-slate-500 break-all">Credential: {watch(`certificationBlocks.${i}.credentialId`)}</div> : null}
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-slate-400">No certifications added.</p>
-                        )}
-                      </PreviewSection>
-
-                      {/* Uploaded Documents */}
-                      <PreviewSection title="Uploaded Documents" icon={Upload}>
-                        <div className="space-y-2">
-                          {uploadedResume ? (
-                            <>
-                              <div className="flex flex-wrap items-center gap-3">
-                                <span className="text-sm font-medium flex items-center gap-1.5">
-                                  <FileText className="h-4 w-4 text-indigo-500" /> {uploadedResume.fileName}
-                                </span>
-                                {resumePreviewUrl && (
-                                  <button type="button" onClick={() => window.open(resumePreviewUrl, '_blank')} className="text-xs text-indigo-600 dark:text-indigo-400 underline">
-                                    Open in new tab
-                                  </button>
-                                )}
-                              </div>
-                              {resumePreviewUrl && (
-                                <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                                  <iframe src={resumePreviewUrl} title="Resume preview" className="w-full h-[420px] bg-white" />
+                        {/* Experience */}
+                        <PreviewSection title="Experience" icon={FileText}>
+                          {hasExperience && expFields.length > 0 ? (
+                            <div className="space-y-2">
+                              {expFields.map((ex, i) => (
+                                <div key={ex.id} className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                                  <div className="text-sm font-semibold">{watch(`experiences.${i}.post`) || '—'} <span className="text-slate-400 font-normal">@</span> {watch(`experiences.${i}.companyName`) || '—'}</div>
+                                  <div className="text-xs text-slate-500">{formatMonthYear(watch(`experiences.${i}.startDate`))} → {watch(`experiences.${i}.currentlyWorking`) ? 'Present' : (formatMonthYear(watch(`experiences.${i}.endDate`)) || '—')}</div>
+                                  {watch(`experiences.${i}.roles`) ? <div className="text-xs text-slate-600 dark:text-slate-300 mt-1 whitespace-pre-wrap">{watch(`experiences.${i}.roles`)}</div> : null}
+                                  {watch(`experiences.${i}.achievements`) ? <div className="text-xs text-slate-500 mt-1 whitespace-pre-wrap"><span className="font-semibold">Achievements:</span> {watch(`experiences.${i}.achievements`)}</div> : null}
                                 </div>
-                              )}
-                            </>
+                              ))}
+                            </div>
                           ) : (
-                            <p className="text-sm text-slate-400">No documents uploaded</p>
+                            <p className="text-sm text-slate-400">No experience provided.</p>
                           )}
+                        </PreviewSection>
+
+                        {/* Certifications */}
+                        <PreviewSection title="Certifications" icon={Shield}>
+                          {certFields.length > 0 ? (
+                            <div className="space-y-2">
+                              {certFields.map((c, i) => (
+                                <div key={c.id} className="p-3 rounded-lg bg-white dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
+                                  <div className="text-sm font-semibold">{watch(`certificationBlocks.${i}.name`) || '—'}</div>
+                                  <div className="text-xs text-slate-500">Valid: {formatMonthYear(watch(`certificationBlocks.${i}.startDate`))} → {watch(`certificationBlocks.${i}.endDate`) ? formatMonthYear(watch(`certificationBlocks.${i}.endDate`)) : 'No Expiration'}</div>
+                                  {watch(`certificationBlocks.${i}.credentialId`) ? <div className="text-xs text-slate-500 break-all">Credential: {watch(`certificationBlocks.${i}.credentialId`)}</div> : null}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-slate-400">No certifications added.</p>
+                          )}
+                        </PreviewSection>
+
+                        {/* Uploaded Documents */}
+                        <PreviewSection title="Uploaded Documents" icon={Upload}>
+                          <div className="space-y-2">
+                            {uploadedResume ? (
+                              <>
+                                <div className="flex flex-wrap items-center gap-3">
+                                  <span className="text-sm font-medium flex items-center gap-1.5">
+                                    <FileText className="h-4 w-4 text-indigo-500" /> {uploadedResume.fileName}
+                                  </span>
+                                  {resumePreviewUrl && (
+                                    <button type="button" onClick={() => window.open(resumePreviewUrl, '_blank')} className="text-xs text-indigo-600 dark:text-indigo-400 underline">
+                                      Open in new tab
+                                    </button>
+                                  )}
+                                </div>
+                                {resumePreviewUrl && (
+                                  <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                                    <iframe src={resumePreviewUrl} title="Resume preview" className="w-full h-[420px] bg-white" />
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <p className="text-sm text-slate-400">No documents uploaded</p>
+                            )}
+                          </div>
+                        </PreviewSection>
+
+                        {/* Declaration */}
+                        <PreviewSection title="Declaration" icon={CheckCircle2}>
+                          <PreviewField label="Self-Declaration" value={declared ? 'Agreed & confirmed' : 'Not agreed'} />
+                        </PreviewSection>
+
+                        <div className="flex flex-wrap gap-2 justify-end pt-1">
+                          <Button type="button" variant="outline" onClick={() => window.print()}>Print / Save as PDF</Button>
+                          <Button type="submit" variant="brand" className="bg-mayzax-gradient border-0 text-white shadow-lg" disabled={createMutation.isPending}>
+                            {createMutation.isPending ? (
+                              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Submitting...</>
+                            ) : (
+                              <><Sparkles className="h-3.5 w-3.5" /> Submit Onboarding</>
+                            )}
+                          </Button>
                         </div>
-                      </PreviewSection>
-
-                      {/* Declaration */}
-                      <PreviewSection title="Declaration" icon={CheckCircle2}>
-                        <PreviewField label="Self-Declaration" value={declared ? 'Agreed & confirmed' : 'Not agreed'} />
-                      </PreviewSection>
-
-                      <div className="flex flex-wrap gap-2 justify-end pt-1">
-                        <Button type="button" variant="outline" onClick={() => window.print()}>Print / Save as PDF</Button>
-                        <Button type="submit" variant="brand" className="bg-mayzax-gradient border-0 text-white shadow-lg" disabled={createMutation.isPending}>
-                          {createMutation.isPending ? (
-                            <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Submitting...</>
-                          ) : (
-                            <><Sparkles className="h-3.5 w-3.5" /> Submit Onboarding</>
-                          )}
-                        </Button>
                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Navigation Action Buttons (only for data-entry steps) */}
-            {currentStep < 9 && (
-              <div className="flex justify-between items-center mt-8 border-t border-slate-100 dark:border-slate-800 pt-5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-full border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100 gap-1.5 transition-all"
-                  disabled={currentStep === 0}
-                  onClick={handlePrev}
-                >
-                  ← Back
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="brand"
-                  className="rounded-full bg-mayzax-gradient border-0 text-white gap-1.5 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-                  disabled={createMutation.isPending}
-                  onClick={handleNext}
-                >
-                  {createMutation.isPending ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
-                  ) : (
-                    <>Continue <span className="opacity-70">→</span></>
+                    </motion.div>
                   )}
-                </Button>
+                </AnimatePresence>
               </div>
-            )}
-          </form>
+
+              {/* Navigation Action Buttons (only for data-entry steps) */}
+              {currentStep < 9 && (
+                <div className="flex justify-between items-center mt-8 border-t border-slate-100 dark:border-slate-800 pt-5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-full border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-100 gap-1.5 transition-all"
+                    disabled={currentStep === 0}
+                    onClick={handlePrev}
+                  >
+                    ← Back
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="brand"
+                    className="rounded-full bg-mayzax-gradient border-0 text-white gap-1.5 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+                    disabled={createMutation.isPending}
+                    onClick={handleNext}
+                  >
+                    {createMutation.isPending ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
+                    ) : (
+                      <>Continue <span className="opacity-70">→</span></>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </form>
+          </div>
         </div>
       </div>
-    </div>
 
       {/* ============================================================
           PRINT-ONLY BRANDED DOCUMENT
@@ -1590,7 +1667,7 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
                 </div>
               </PrintSection>
 
-                      <PrintSection title="Visa & Location">
+              <PrintSection title="Visa & Location">
                 <PrintRow label="Visa Status" value={visaStatus} />
                 <PrintRow label="Entry to USA" value={formatMonthYear(entryToUS)} />
                 <PrintRow label="Current Location" value={currentLocation} />
@@ -1609,7 +1686,7 @@ Credential ID/Link: ${cert.credentialId || 'N/A'}`;
                 )}
               </PrintSection>
 
-                      <PrintSection title="Experience">
+              <PrintSection title="Experience">
                 {hasExperience && expFields.length > 0 ? (
                   expFields.map((ex, i) => (
                     <div key={ex.id} className="py-1">
