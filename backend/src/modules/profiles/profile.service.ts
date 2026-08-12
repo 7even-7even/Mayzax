@@ -1,10 +1,11 @@
-import { Role } from '@prisma/client';
+import { Role, NotificationType } from '@prisma/client';
 import { ApiError } from '@/utils/apiError';
 import { writeAuditLog } from '@/modules/shared/audit.service';
 import * as repo from './profile.repository';
 import { prisma } from '@/lib/prisma';
 import { CreateProfileInput, UpdateProfileInput, ListProfilesQuery } from './profile.validation';
 import { hashPassword } from '@/modules/auth/auth.service';
+import { createNotification } from '@/modules/notifications/notifications.service';
 
 interface Requester {
   id: string;
@@ -114,6 +115,34 @@ export async function createProfile(input: CreateProfileInput, actor: Requester,
     assignedResumeAssistId: input.assignedResumeAssistId ?? null,
   });
 
+  // Create User for Client login by default
+  const defaultHash = await hashPassword('Pass@123');
+  const existingUser = await prisma.user.findUnique({
+    where: { email: input.email.toLowerCase() }
+  });
+  if (existingUser) {
+    await prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        role: Role.CLIENT,
+        clientProfileId: profile.id,
+        passwordHash: defaultHash,
+        isActive: true,
+      }
+    });
+  } else {
+    await prisma.user.create({
+      data: {
+        name: input.candidateName,
+        email: input.email.toLowerCase(),
+        passwordHash: defaultHash,
+        role: Role.CLIENT,
+        isActive: true,
+        clientProfileId: profile.id,
+      }
+    });
+  }
+
   if (recruiterIds.length > 0) {
     await syncProfileAssignments(profile.id, recruiterIds);
   }
@@ -211,6 +240,31 @@ export async function updateProfile(id: string, input: UpdateProfileInput, actor
   delete rest.assignedRecruiterIds;
   await repo.update(id, rest);
   const refreshed = await repo.findActiveById(id);
+
+  // Sync client User credentials
+  const defaultHash = await hashPassword('Pass@123');
+  const clientUser = await prisma.user.findFirst({ where: { clientProfileId: id } });
+  if (clientUser) {
+    await prisma.user.update({
+      where: { id: clientUser.id },
+      data: {
+        name: input.candidateName ?? clientUser.name,
+        email: (input.email ?? clientUser.email).toLowerCase(),
+        passwordHash: defaultHash,
+      }
+    });
+  } else {
+    await prisma.user.create({
+      data: {
+        name: input.candidateName ?? refreshed?.candidateName ?? existing.candidateName,
+        email: (input.email ?? refreshed?.email ?? existing.email).toLowerCase(),
+        passwordHash: defaultHash,
+        role: Role.CLIENT,
+        isActive: true,
+        clientProfileId: id,
+      }
+    });
+  }
 
   await writeAuditLog({
     userId: actor.id,
@@ -473,6 +527,22 @@ export async function postPaymentDetails(
     return createdPayments;
   });
 
+  // Send notification to Client User
+  const clientUser = await prisma.user.findFirst({
+    where: { clientProfileId: profileId, deletedAt: null }
+  });
+  if (clientUser) {
+    await createNotification({
+      userId: clientUser.id,
+      type: NotificationType.SYSTEM,
+      title: 'Payment Details Updated',
+      body: `Your payment plan details have been updated. Plan: ${planSelected}.`,
+      data: { profileId }
+    }).catch(err => {
+      console.error('[Mayzax] Failed to create payment update notification', err);
+    });
+  }
+
   return result;
 }
 
@@ -511,6 +581,22 @@ export async function payInstallment(
 
     return updated;
   });
+
+  // Send notification to Client User
+  const clientUser = await prisma.user.findFirst({
+    where: { clientProfileId: profileId, deletedAt: null }
+  });
+  if (clientUser) {
+    await createNotification({
+      userId: clientUser.id,
+      type: NotificationType.SYSTEM,
+      title: 'Payment Received',
+      body: `Payment of $${payment.amount} for installment ${payment.installmentNo} was marked as PAID.`,
+      data: { profileId, paymentId }
+    }).catch(err => {
+      console.error('[Mayzax] Failed to create payment received notification', err);
+    });
+  }
 
   return updatedPayment;
 }

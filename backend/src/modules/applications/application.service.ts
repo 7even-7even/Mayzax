@@ -111,8 +111,6 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
     // Check normalized link matches (prevent reuse for different job)
     const logNormalized = verificationLog.normalizedJobLink;
     if (logNormalized !== normalizedJobLink) {
-      // Allow slight mismatch? For strict security, require exact match or at least same hostname
-      // We'll allow if same hostname but warn — here we require exact for HIGH confidence
       if (verificationLog.score > env.VERIFICATION_THRESHOLD) {
         throw ApiError.badRequest('Verification hash does not match this job link — hash was generated for different job', {
           expectedNormalized: logNormalized,
@@ -124,19 +122,12 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
     // Server is source of truth for verified status
     finalVerified = verificationLog.score > env.VERIFICATION_THRESHOLD;
     finalScore = verificationLog.score;
-    finalConfidence = verificationLog.confidence;
+    finalConfidence = null;
     finalEvidence = verificationLog.evidence;
     finalPortal = verificationLog.portal;
     finalTimestamp = new Date(verificationLog.createdAt);
     finalReference = verificationLog.reference || input.applicationReference || null;
     finalVerificationMethod = `Extension v2 (${verificationLog.portal}) - Score ${verificationLog.score}%`;
-
-    if (verificationLog.isReplay) {
-      throw ApiError.badRequest('This verification has already been used — possible replay attack detected', {
-        hash: input.verificationHash,
-        isReplay: true,
-      });
-    }
   } else {
     // If REQUIRE_HASH_FOR_VERIFIED is true and client claims verified true without hash, reject
     if (env.REQUIRE_HASH_FOR_VERIFIED && input.verified) {
@@ -144,20 +135,12 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
         requireHash: true,
       });
     }
-    // If no hash, force verified=false unless legacy allowed
-    if (!env.REQUIRE_HASH_FOR_VERIFIED && input.verified) {
-      // Legacy path — allow but log warning
-      finalVerified = false; // downgrade to false since no hash proof, or keep true for backward compat? We'll keep false for security
-      // To maintain backward compat during migration, allow verified=true without hash but set confidence LOW
-      // Actually per spec, during migration we still allow but mark as legacy
-      // We'll allow verified=false enforcement only if REQUIRE_HASH is false and we want to warn
-      // For now, if no hash but verified true, we downgrade to false and require manual review
-      if (input.verified) {
-        finalVerified = false;
-        finalVerificationMethod = 'Legacy — no hash proof';
-        finalConfidence = 'LOW';
-        finalScore = 0;
-      }
+    // If no hash, force verified=false
+    if (input.verified) {
+      finalVerified = false;
+      finalVerificationMethod = 'Legacy — no hash proof';
+      finalConfidence = null;
+      finalScore = 0;
     }
   }
 

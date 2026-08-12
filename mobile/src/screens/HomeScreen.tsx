@@ -484,19 +484,19 @@ export function HomeScreen() {
                       {clientInterviews.map((item: any) => (
                         <Card key={item.id} style={{ padding: spacing.md }}>
                           <Text style={{ fontSize: 15, fontWeight: '800', color: dark ? colors.textDark : colors.text }}>
-                            {item.jobTitle || 'Interview'}
+                            {item.roundName || 'Interview'}
                           </Text>
                           <Text style={{ fontSize: 13, color: dark ? colors.textMutedDark : colors.textMuted, marginTop: 2 }}>
-                            {item.companyName || 'Company'}
+                            Status: {item.status || 'Scheduled'}
                           </Text>
                           <View style={{ gap: 4, marginTop: spacing.sm }}>
-                            <DetailRow label="Date/Time" value={dayjs(item.interviewDate).format('MMM DD, YYYY h:mm A')} dark={dark} />
-                            <DetailRow label="Interviewer" value={item.interviewerName || '—'} dark={dark} />
-                            <DetailRow label="Mode" value={item.interviewMode || 'Online'} dark={dark} />
+                            <DetailRow label="Date/Time" value={`${item.date} • ${item.startTime} - ${item.endTime} (${item.timezone})`} dark={dark} />
+                            <DetailRow label="Interviewer" value={item.interviewer || '—'} dark={dark} />
+                            <DetailRow label="Mode" value={item.mode || '-'} dark={dark} />
                           </View>
-                          {item.interviewLink ? (
+                          {item.meetingLink ? (
                             <TouchableOpacity
-                              onPress={() => Linking.openURL(item.interviewLink)}
+                              onPress={() => Linking.openURL(item.meetingLink)}
                               style={{
                                 marginTop: spacing.md,
                                 backgroundColor: colors.accent + '20',

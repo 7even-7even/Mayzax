@@ -136,10 +136,9 @@ export default function RecruitersPage() {
                 <SelectItem value="RECRUITER">Recruiters</SelectItem>
                 <SelectItem value="TEAM_LEADER">Team Leaders</SelectItem>
                 <SelectItem value="CLIENT">Clients</SelectItem>
-                {/* <SelectItem value="ADMIN">Admins</SelectItem> */}
+                <SelectItem value="ADMIN">Admins</SelectItem>
                 <SelectItem value="RESUME_ASSIST">Resume Assistants</SelectItem>
                 <SelectItem value="SALES_EXEC">Sales Executives</SelectItem>
-                <SelectItem value="CLIENT">Clients</SelectItem>
                 <SelectItem value={ALL_ROLES}>All Roles</SelectItem>
               </SelectContent>
             </Select>
@@ -220,14 +219,18 @@ export default function RecruitersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="rounded-xl">
-                          <DropdownMenuItem onClick={() => setStatsRecruiterId(recruiter.id)} className="gap-2">
-                            <BarChart3 className="h-4 w-4" /> View Stats
-                          </DropdownMenuItem>
+                          {recruiter.role !== 'CLIENT' && (
+                            <DropdownMenuItem onClick={() => setStatsRecruiterId(recruiter.id)} className="gap-2">
+                              <BarChart3 className="h-4 w-4" /> View Stats
+                            </DropdownMenuItem>
+                          )}
                           {isAdmin && (
                             <>
-                              <DropdownMenuItem onClick={() => { setEditingRecruiter(recruiter); setFormOpen(true); }} className="gap-2">
-                                <Pencil className="h-4 w-4" /> Edit User
-                              </DropdownMenuItem>
+                              {recruiter.role !== 'CLIENT' && (
+                                <DropdownMenuItem onClick={() => { setEditingRecruiter(recruiter); setFormOpen(true); }} className="gap-2">
+                                  <Pencil className="h-4 w-4" /> Edit User
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem onClick={() => setResetTarget(recruiter)} className="gap-2">
                                 <Shield className="h-4 w-4 text-amber-500" /> Reset Password
                               </DropdownMenuItem>
@@ -281,14 +284,18 @@ export default function RecruitersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                            <DropdownMenuContent align="end" className="rounded-xl">
-                            <DropdownMenuItem onClick={() => setStatsRecruiterId(recruiter.id)} className="gap-2">
-                              <BarChart3 className="h-4 w-4" /> View Stats
-                            </DropdownMenuItem>
+                            {recruiter.role !== 'CLIENT' && (
+                              <DropdownMenuItem onClick={() => setStatsRecruiterId(recruiter.id)} className="gap-2">
+                                <BarChart3 className="h-4 w-4" /> View Stats
+                              </DropdownMenuItem>
+                            )}
                             {isAdmin && (
                               <>
-                                <DropdownMenuItem onClick={() => { setEditingRecruiter(recruiter); setFormOpen(true); }} className="gap-2">
-                                  <Pencil className="h-4 w-4" /> Edit User
-                                </DropdownMenuItem>
+                                {recruiter.role !== 'CLIENT' && (
+                                  <DropdownMenuItem onClick={() => { setEditingRecruiter(recruiter); setFormOpen(true); }} className="gap-2">
+                                    <Pencil className="h-4 w-4" /> Edit User
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem onClick={() => setResetTarget(recruiter)} className="gap-2">
                                   <Shield className="h-4 w-4 text-amber-500" /> Reset Password
                                 </DropdownMenuItem>

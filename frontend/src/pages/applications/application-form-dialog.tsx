@@ -152,7 +152,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
       form.setValue('verificationMethod', `Extension v2 (${verificationResult.portal}) - Score ${verificationResult.score}%`);
       form.setValue('verificationHash', verificationHash || verificationResult.verificationHash || null);
       form.setValue('verificationScore', verificationResult.score || null);
-      form.setValue('verificationConfidence', verificationResult.confidence || null);
+      form.setValue('verificationConfidence', null);
       form.setValue('applicationReference', verificationResult.applicationReference || verificationResult.evidence?.applicationReference || null);
       if (verificationResult.company) form.setValue('companyName', verificationResult.company, { shouldDirty: true });
       if (verificationResult.jobTitle) form.setValue('jobTitle', verificationResult.jobTitle, { shouldDirty: true });
@@ -185,7 +185,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
   const onSubmit = async (values: ApplicationForm) => {
     try {
       await createMutation.mutateAsync(values);
-      toast.success(`Application submitted • ${values.verified ? `Verified v2 ${values.verificationConfidence} ${values.verificationScore}%` : 'Legacy mode'} • HMAC secured`);
+      toast.success(`Application submitted • ${values.verified ? `Verified v2 ${values.verificationScore}%` : 'Legacy mode'} • HMAC secured`);
       form.reset({
         profileId: profiles.length === 1 ? profiles[0].id : (defaultProfileId ?? ''),
         jobLink: '',

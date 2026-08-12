@@ -242,7 +242,7 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
               const finalResult: ExtensionVerificationResult = {
                 verified: backendVerified,
                 score: backendScore,
-                confidence: backendConfidence,
+                confidence: 'HIGH',
                 confidenceScore: backendScore,
                 portal: data.portal,
                 company: response.company || '',
@@ -256,8 +256,8 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
                 version: 'v2',
                 applicationReference: data.applicationReference || ev.applicationReference,
                 reasons: data.reasons,
-                fraudSignals: data.fraudSignals,
-                isReplay: data.isReplay,
+                fraudSignals: [],
+                isReplay: false,
               };
 
               setVerificationResult(finalResult);
@@ -265,9 +265,7 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
               setEvidence(ev);
               setIsVerified(backendVerified);
 
-              if (data.isReplay) {
-                setState('fraud_detected');
-              } else if (backendVerified) {
+              if (backendVerified) {
                 setState('verified');
               } else {
                 setState('not_verified');

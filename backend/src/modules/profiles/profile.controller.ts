@@ -4,6 +4,9 @@ import path from 'path';
 import { asyncHandler } from '@/utils/asyncHandler';
 import * as profileService from './profile.service';
 import { prisma } from '@/lib/prisma';
+import { createNotification } from '@/modules/notifications/notifications.service';
+import { NotificationType } from '@prisma/client';
+import { logger } from '@/lib/logger';
 
 function actor(req: Request) {
   return { id: req.user!.sub, role: req.user!.role };
@@ -360,6 +363,26 @@ export const createInterview = asyncHandler(async (req: Request, res: Response) 
       notes,
     },
   });
+
+  // Send notification to Client User
+  const clientUser = await prisma.user.findFirst({
+    where: { clientProfileId: req.params.id, deletedAt: null }
+  });
+  if (clientUser) {
+    await createNotification({
+      userId: clientUser.id,
+      type: NotificationType.SYSTEM,
+      title: 'New Interview Scheduled',
+      body: `A new interview round "${roundName}" has been scheduled for you on ${date} at ${startTime}.`,
+      data: {
+        interviewId: interview.id,
+        profileId: req.params.id,
+      }
+    }).catch(err => {
+      logger.error({ err, userId: clientUser.id }, 'Failed to create interview notification');
+    });
+  }
+
   res.status(201).json({ success: true, data: interview });
 });
 
