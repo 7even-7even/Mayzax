@@ -199,7 +199,7 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
             // We have extension evidence — now request backend hash for proof
             const ev = response.evidence as VerificationEvidence | undefined;
             const threshold = Number(import.meta.env.VITE_VERIFICATION_THRESHOLD || 60);
-            const confidence = response.confidence || (score > threshold ? 'HIGH' : 'LOW');
+            const confidence = response.confidence || (response.score > threshold ? 'HIGH' : 'LOW');
 
 
 
@@ -290,8 +290,8 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
                 setVerificationResult({
                   ...response,
                   verified: response.verified,
-                  score,
-                  confidenceScore: score,
+                  score: response.score,
+                  confidenceScore: response.score,
                   confidence,
                 });
                 setIsVerified(response.verified);
