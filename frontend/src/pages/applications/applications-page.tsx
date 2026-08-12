@@ -121,8 +121,11 @@ export default function ApplicationsPage() {
   const { data: recruitersData } = useRecruiters({ pageSize: 100, isActive: true });
   const rawRecruiters = recruitersData?.data ?? [];
   const recruiters = useMemo(() => {
+    const allowedRoles = ['RECRUITER', 'ADMIN', 'TEAM_LEADER'];
+    const filteredRaw = rawRecruiters.filter((r) => allowedRoles.includes(r.role));
+
     if (isTeamLeader && user) {
-      const exists = rawRecruiters.some((r) => r.id === user.id);
+      const exists = filteredRaw.some((r) => r.id === user.id);
       if (!exists) {
         return [
           {
@@ -133,11 +136,11 @@ export default function ApplicationsPage() {
             isActive: true,
             createdAt: user.createdAt,
           } as any,
-          ...rawRecruiters,
+          ...filteredRaw,
         ];
       }
     }
-    return rawRecruiters;
+    return filteredRaw;
   }, [rawRecruiters, isTeamLeader, user]);
 
   useEffect(() => {

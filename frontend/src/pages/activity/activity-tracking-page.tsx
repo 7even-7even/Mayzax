@@ -1058,7 +1058,7 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
       )}
 
       {/* Admin Productivity Overview - Premium */}
-      {/* {isAdmin && productivityData && (
+       {isAdmin && productivityData && (
         <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StaggerItem>
             <PremiumMetricCard
@@ -1104,7 +1104,7 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
             />
           </StaggerItem>
         </StaggerContainer>
-      )} */}
+      )}
 
       {/* Productivity Chart */}
       {productivityChartData.length > 0 && (
