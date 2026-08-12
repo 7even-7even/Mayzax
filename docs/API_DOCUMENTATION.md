@@ -21,6 +21,8 @@ Complete reference for the Mayzax ATS backend REST API. Every request/response e
    - [Client Profiles](#client-profiles-apiv1profiles)
    - [Job Applications](#job-applications-apiv1applications)
    - [Analytics](#analytics-apiv1analytics)
+   - [Enterprise Verification](#enterprise-verification-v2-apiv1verifications)
+   - [Profile Change Requests](#profile-change-requests-apiv1profile-changes)
 8. [Business Date Logic](#business-date-logic)
 9. [Duplicate Application Detection](#duplicate-application-detection)
 
@@ -73,37 +75,7 @@ Complete reference for the Mayzax ATS backend REST API. Every request/response e
 
 Mayzax ATS uses **JWT access tokens + rotating refresh tokens**, delivered two ways simultaneously so both cookie-based web clients and header-based API clients work:
 
-1. **HttpOnly cookies** — `access_token` and `refresh_token` are set automatically by ` [2026-08-12 01:32:34.034 +0530] INFO: request completed
-[API]     service: "mayzax-ats-api"
-[API]     req: {
-[API]       "method": "GET",
-[API]       "url": "/api/v1/applications?pageSize=1000&sortBy=appliedAt&sortOrder=desc"
-[API]     }
-[API]     res: {
-[API]       "statusCode": 304
-[API]     }
-[API]     responseTime: 685
-[API] [2026-08-12 01:32:38.766 +0530] INFO: request completed
-[API]     service: "mayzax-ats-api"
-[API]     req: {
-[API]       "method": "GET",
-[API]       "url": "/api/v1/applications?page=1&pageSize=10&sortBy=appliedAt&sortOrder=desc"
-[API]     }
-[API]     res: {
-[API]       "statusCode": 304
-[API]     }
-[API]     responseTime: 412
-[API] [2026-08-12 01:32:38.768 +0530] INFO: request completed
-[API]     service: "mayzax-ats-api"
-[API]     req: {
-[API]       "method": "GET",
-[API]       "url": "/api/v1/applications?pageSize=1000&sortBy=appliedAt&sortOrder=desc"
-[API]     }
-[API]     res: {
-[API]       "statusCode": 304
-[API]     }
-[API]     responseTime: 411
-` and `/auth/refresh`. Browser clients using `credentials: 'include'` never need to touch tokens manually.
+1. **HttpOnly cookies** — `access_token` and `refresh_token` are set automatically by `/auth/login`, `/auth/signup`, and `/auth/refresh`. Browser clients using `credentials: 'include'` never need to touch tokens manually.
 2. **Authorization header** — the access token is also returned in the JSON body (`data.accessToken`) for clients that prefer `Authorization: Bearer <token>`.
 
 | Token | Lifetime (default) | Where it lives | Purpose |
@@ -1229,6 +1201,211 @@ Application counts grouped by **business date** (not calendar date) — powers t
 
 ---
 
+### Enterprise Verification v2 (`/api/v1/verifications`)
+
+All verifications endpoints require an authenticated user (`ADMIN`, `TEAM_LEADER`, or `RECRUITER`).
+
+#### `POST /verifications/verify-evidence`
+
+Submits client-side collected application evidence from the extension to perform server-side verification, score the verification, detect fraud, and generate a secure HMAC verification hash.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `evidence` | object | Required. VerificationEvidence shape containing page hostname, title, pathname, body text length, evidence list, etc. |
+| `profileId` | UUID | Optional. Client profile associated with this verification |
+| `jobLink` | string | Optional. Original URL as submitted |
+
+**Response `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "verified": true,
+    "score": 62,
+    "confidence": "HIGH",
+    "portal": "LINKEDIN",
+    "reasons": [],
+    "evidence": { ... },
+    "verificationHash": "d5f2a1b3...",
+    "verificationTimestamp": "2026-08-12T14:33:00.000Z",
+    "version": "v2",
+    "applicationReference": "ref-123456",
+    "fraudSignals": [],
+    "isReplay": false
+  }
+}
+```
+
+#### `GET /verifications/hash/:hash`
+
+Fetches details of a completed verification using its secure 64-character hex hash.
+
+**Response `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "verification-log-uuid",
+    "verificationHash": "d5f2a1b3...",
+    "score": 62,
+    "confidence": "HIGH",
+    "portal": "LINKEDIN",
+    "evidence": { ... },
+    "expired": false,
+    "ageMs": 354000
+  }
+}
+```
+
+#### `GET /verifications`
+
+Lists the verification logs created by the authenticated recruiter (capped at 20).
+
+**Response `200`**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "log-uuid",
+      "verificationHash": "d5f2a1b3...",
+      "score": 62,
+      "confidence": "HIGH",
+      "portal": "LINKEDIN",
+      "createdAt": "2026-08-12T14:33:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### Profile Change Requests (`/api/v1/profile-changes`)
+
+All routes require authentication.
+
+#### `POST /profile-changes/profiles/:profileId`
+
+Submitted by a Client to request updates to their profile (subject to Admin approval).
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `changes` | record | Required. Key-value map of requested field updates (e.g., technology, candidateName). |
+
+**Response `201`**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "change-request-uuid",
+    "profileId": "profile-uuid",
+    "status": "PENDING",
+    "changes": { "technology": "Next.js" },
+    "createdAt": "2026-08-12T14:33:00.000Z"
+  }
+}
+```
+
+#### `POST /profile-changes/profiles/:profileId/upgrade-plan`
+
+Submitted by a Client to request a plan upgrade (e.g., to "Basic", "Gold", or "Premium").
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `targetPlan` | string | Required. Must be one of `Basic`, `Gold`, `Premium`. |
+
+**Response `201`**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "change-request-uuid",
+    "profileId": "profile-uuid",
+    "status": "PENDING",
+    "changes": { "plan": "Gold" }
+  }
+}
+```
+
+#### `GET /profile-changes/my-profile/:profileId/pending`
+
+Checks if there is a pending change/upgrade request for a specific client profile.
+
+**Response `200`**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "change-request-uuid",
+    "profileId": "profile-uuid",
+    "status": "PENDING",
+    "changes": { "technology": "Next.js" }
+  }
+}
+```
+
+#### `GET /profile-changes` (`ADMIN` only)
+
+Lists all change requests with pagination and status filters.
+
+**Query params**
+| Param | Type | Default |
+|---|---|---|
+| `status` | `PENDING` \| `APPROVED` \| `REJECTED` | Optional |
+| `profileId` | UUID | Optional |
+| `page` | int ≥ 1 | 1 |
+| `pageSize` | int 1–50 | 10 |
+
+**Response `200`**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "change-request-uuid",
+      "profileId": "profile-uuid",
+      "status": "PENDING",
+      "changes": { "technology": "Next.js" }
+    }
+  ],
+  "pagination": { "page": 1, "pageSize": 10, "total": 1, "totalPages": 1 }
+}
+```
+
+#### `POST /profile-changes/:id/approve` (`ADMIN` only)
+
+Approves the change request, applying the changes directly to the client profile.
+
+**Response `200`**
+```json
+{
+  "success": true,
+  "message": "Change request approved and profile updated successfully"
+}
+```
+
+#### `POST /profile-changes/:id/reject` (`ADMIN` only)
+
+Rejects the change request, with an optional note.
+
+**Body**
+| Field | Type | Rules |
+|---|---|---|
+| `rejectionNote` | string | Optional, max 500 characters |
+
+**Response `200`**
+```json
+{
+  "success": true,
+  "message": "Change request rejected"
+}
+```
+
+---
+
 ## Business Date Logic
 
 Mayzax runs a night shift from **7:30 PM IST to 7:30 AM IST** (configurable via `BUSINESS_SHIFT_START_HOUR/MINUTE` and `BUSINESS_SHIFT_END_HOUR/MINUTE`). Because the shift spans midnight, every `JobApplication.businessDate` is computed — not just copied from the calendar date — so that "today" in reporting always means "this shift," even at 2 AM.
@@ -1307,7 +1484,16 @@ Use `GET /applications/check-duplicate` to check before submitting, for instant 
 | GET | `/analytics/dashboard` | Yes | Admin |
 | GET | `/analytics/dashboard/:id/breakdown` | Yes | Admin |
 | GET | `/analytics/daily-counts` | Yes | Admin |
+| POST | `/verifications/verify-evidence` | Yes | Admin, Recruiter |
+| GET | `/verifications/hash/:hash` | Yes | Admin, Recruiter |
+| GET | `/verifications` | Yes | Admin, Recruiter |
+| POST | `/profile-changes/profiles/:profileId` | Yes | Client |
+| POST | `/profile-changes/profiles/:profileId/upgrade-plan` | Yes | Client |
+| GET | `/profile-changes/my-profile/:profileId/pending` | Yes | Client, Admin |
+| GET | `/profile-changes` | Yes | Admin |
+| POST | `/profile-changes/:id/approve` | Yes | Admin |
+| POST | `/profile-changes/:id/reject` | Yes | Admin |
 
 ---
 
-*Updated for the current Mayzax ATS API on 2026-07-08. Some examples are illustrative snapshots of the documented response shapes.*
+*Updated for the current Mayzax ATS API on 2026-08-12. Some examples are illustrative snapshots of the documented response shapes.*
