@@ -2,11 +2,29 @@
 
 Production-ready Chrome Extension (Manifest V3) with **enterprise-grade fraud-resistant verification**.
 
-This is a complete redesign from v1 (keyword matching) to v2 (modular weighted scoring, portal fingerprints, evidence collection, HMAC proof).
+This is a complete redesign from v1 (keyword matching) to v2 (modular weighted scoring, portal fingerprints, evidence collection, HMAC proof) and features a **Robust Post-Submission Evidence Capture** system.
+
+---
+
+## ⚡ Key Updates in v1.2.0+
+
+### 1. Robust Post-Submission Evidence Capture
+An event-aware mechanism designed to catch successful job applications *before* transient evidence disappears from the DOM or redirects occur:
+- **Submission Tracking**: Hooks form submits and clicks on action buttons (e.g. submit, apply, send).
+- **Page Context Network Interceptor**: Registers a listener that intercepts `window.fetch` and `window.XMLHttpRequest` in the `MAIN` world (solving CSP limits) to capture successful network response metadata.
+- **DOM Observation**: Implements a `MutationObserver` that scans for success modals/toasts and reference codes before they disappear.
+- **Form Reset Detection**: Automatically tracks input states and alerts if fields are cleared/reset after a submission attempt.
+- **Dashboard Redirect Matching**: Tracks URL changes to recruiter dashboards. Captures a lightweight pre-submission dashboard snapshot and compares it post-submission to match new entries or status updates (e.g. Draft → Applied).
+
+### 2. Configurable Environment Thresholds
+Allows managing score verification limits dynamically instead of using hardcoded values:
+- **Backend Configuration**: Validated via Zod (`VERIFICATION_THRESHOLD` defaulting to `60`).
+- **Client Configuration**: Evaluates `import.meta.env.VITE_VERIFICATION_THRESHOLD || 60` for local scoring, UI badge displays, and validation hooks.
 
 ---
 
 ## 🛡️ Security Highlights (v2 vs v1)
+
 
 | Threat | v1 (Vulnerable) | v2 (Mitigated) |
 |---|---|---|
@@ -112,7 +130,7 @@ backend/src/modules/verification/
      "detectedButtons": [],
      "domFingerprint": { "hasConfirmationCard": true, "expectedContainersFound": 2 },
      "verificationTimestamp": 1710000000000,
-     "extensionVersion": "2.0.0",
+     "extensionVersion": "1.2.0",
      "https": true,
      "timeOnPageMs": 4500,
      "userInteractionDetected": true
@@ -204,6 +222,6 @@ backend/src/modules/verification/__tests__/hash.service.test.ts
 ## 👤 Author
 
 Siddharth Ohal (7even-7even) <sidxohal9049@gmail.com>
-Branch: `arena/019fc8fc-mayzax` -> PR to `extension`
-Version: v2.0.0
+Branch: `extension`
+Version: v1.2.0
 

@@ -79,12 +79,12 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
   let verificationLog: any = null;
   let finalVerified = input.verified ?? false;
   let finalVerificationMethod = input.verificationMethod ?? null;
-  let finalScore: number | null = null;
-  let finalConfidence: string | null = null;
+  let finalScore: number | null = input.verificationScore ?? null;
+  let finalConfidence: string | null = input.verificationConfidence ?? null;
   let finalEvidence: any = null;
   let finalPortal: string | null = null;
   let finalTimestamp: Date | null = null;
-  let finalReference: string | null = null;
+  let finalReference: string | null = input.applicationReference ?? null;
   let finalHash: string | null = input.verificationHash || null;
 
   if (input.verificationHash) {
