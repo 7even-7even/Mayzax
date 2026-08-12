@@ -104,7 +104,7 @@ export async function buildApiClient(): Promise<AxiosInstance> {
       const status = error.response.status;
       const data = error.response.data;
       const message = data?.error?.message ?? data?.message ?? error.message ?? 'Request failed';
-      if (status === 401 && !originalRequest?._retry && !originalRequest?._skipAuth) {
+      if (status === 401 && !originalRequest?._retry && !originalRequest?._skipAuth && originalRequest?.url !== '/auth/login') {
         if (isRefreshing) {
           // Queue concurrent requests
           try {

@@ -23,6 +23,7 @@ import calendar from 'dayjs/plugin/calendar';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '@/hooks/useAuth';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@/navigation/RootNavigator';
 
@@ -44,6 +45,8 @@ const TYPE_CONFIG: Record<string, { icon: string; color: string; bg: string }> =
   COMPANY_NOTICE:       { icon: 'bullhorn-variant', color: colors.accent, bg: '#D1FAE5' },
   PENALTY_NOTICE:       { icon: 'alert-octagon', color: '#EF4444', bg: '#FEE2E2' },
   SYSTEM:               { icon: 'bell-ring', color: colors.primary, bg: '#E0E7FF' },
+  INTERVIEW_POSTED:     { icon: 'calendar-check', color: '#8B5CF6', bg: '#EDE9FE' },
+  PAYMENT_POSTED:       { icon: 'credit-card-outline', color: '#10B981', bg: '#D1FAE5' },
 };
 
 function NotificationsHeader({ unreadCount, onMarkAllRead, markAllDisabled, dark }: {
@@ -107,6 +110,8 @@ export function NotificationsScreen() {
   const dark = useResolvedTheme() === 'dark';
   const nav = useNavigation<Nav>();
   const qc = useQueryClient();
+  const { user: authUser } = useAuth();
+  const isClient = authUser?.role === 'CLIENT';
   const [refreshing, setRefreshing] = useState(false);
 
   const { data, fetchNextPage, hasNextPage, isLoading, refetch, isFetchingNextPage } = useInfiniteQuery({
@@ -200,11 +205,18 @@ export function NotificationsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
           ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
           ListEmptyComponent={
-            <EmptyState
-              title="You're all caught up!"
-              description="No notifications yet. We'll alert you about breaks, reminders, and company news."
-              icon="🔔"
-            />
+            isClient ? (
+              <EmptyState
+                title="No new updates"
+                icon="🔔"
+              />
+            ) : (
+              <EmptyState
+                title="You're all caught up!"
+                description="No notifications yet. We'll alert you about reminders and company news."
+                icon="🔔"
+              />
+            )
           }
           onEndReached={() => {
             if (hasNextPage && !isFetchingNextPage) fetchNextPage();

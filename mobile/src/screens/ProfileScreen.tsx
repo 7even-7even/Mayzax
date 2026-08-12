@@ -30,6 +30,7 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Administrator',
   TEAM_LEADER: 'Team Leader',
   RECRUITER: 'Recruiter',
+  CLIENT: 'Candidate',
 };
 
 export function ProfileScreen() {
@@ -63,6 +64,7 @@ export function ProfileScreen() {
   }
   const u = data!;
   const roleLabel = ROLE_LABELS[u.role] ?? u.role;
+  const isClient = u.role === 'CLIENT';
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: dark ? '#0B1220' : colors.background }}>
@@ -96,26 +98,28 @@ export function ProfileScreen() {
             <View style={styles.rolePill}>
               <Text style={styles.rolePillText}>{roleLabel}</Text>
             </View>
-            {u.designation ? (
+            {u.designation && !isClient ? (
               <View style={[styles.rolePill, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
                 <Text style={styles.rolePillText}>{u.designation}</Text>
               </View>
             ) : null}
           </View>
 
-          {u.employeeId ? (
+          {u.employeeId && !isClient ? (
             <Text style={styles.empId}>{u.employeeId}</Text>
           ) : null}
         </LinearGradient>
 
         {/* ─── Quick stats row ─── */}
-        <View style={[styles.statsRow, { backgroundColor: dark ? colors.surfaceDark : colors.surface }]}>
-          <StatPill icon="domain" label="Dept" value={u.department ?? '—'} dark={dark} />
-          <View style={styles.statsDivider} />
-          <StatPill icon="map-marker-outline" label="Location" value={u.location ?? '—'} dark={dark} />
-          <View style={styles.statsDivider} />
-          <StatPill icon="account-group-outline" label="Team" value={u.teamName ?? '—'} dark={dark} />
-        </View>
+        {!isClient && (
+          <View style={[styles.statsRow, { backgroundColor: dark ? colors.surfaceDark : colors.surface }]}>
+            <StatPill icon="domain" label="Dept" value={u.department ?? '—'} dark={dark} />
+            <View style={styles.statsDivider} />
+            <StatPill icon="map-marker-outline" label="Location" value={u.location ?? '—'} dark={dark} />
+            <View style={styles.statsDivider} />
+            <StatPill icon="account-group-outline" label="Team" value={u.teamName ?? '—'} dark={dark} />
+          </View>
+        )}
 
         <View style={{ padding: spacing.lg, gap: spacing.lg }}>
           {/* ─── Contact info ─── */}
@@ -123,24 +127,26 @@ export function ProfileScreen() {
             <SectionLabel label="Contact Information" dark={dark} />
             <Card style={{ padding: 0 }}>
               <InfoRow icon="email-outline" label="Email" value={u.email} dark={dark} />
-              <InfoRow icon="phone-outline" label="Phone" value={u.phone ?? '—'} dark={dark} last />
+              <InfoRow icon="phone-outline" label="Phone" value={isClient ? (u.clientProfile?.phone ?? u.phone ?? '—') : (u.phone ?? '—')} dark={dark} last />
             </Card>
           </View>
 
           {/* ─── Work info ─── */}
-          <View>
-            <SectionLabel label="Work Details" dark={dark} />
-            <Card style={{ padding: 0 }}>
-              <InfoRow icon="badge-account-horizontal-outline" label="Designation" value={u.designation ?? '—'} dark={dark} />
-              <InfoRow icon="domain" label="Department" value={u.department ?? '—'} dark={dark} />
-              <InfoRow icon="account-group-outline" label="Role" value={roleLabel} dark={dark} />
-              {u.teamName ? <InfoRow icon="account-supervisor-outline" label="Team" value={u.teamName} dark={dark} /> : null}
-              {u.reportingManager ? (
-                <InfoRow icon="account-tie-outline" label="Reporting Manager" value={u.reportingManager.name} dark={dark} />
-              ) : null}
-              <InfoRow icon="shield-account-outline" label="Status" value={u.isActive ? 'Active' : 'Inactive'} dark={dark} last />
-            </Card>
-          </View>
+          {!isClient && (
+            <View>
+              <SectionLabel label="Work Details" dark={dark} />
+              <Card style={{ padding: 0 }}>
+                <InfoRow icon="badge-account-horizontal-outline" label="Designation" value={u.designation ?? '—'} dark={dark} />
+                <InfoRow icon="domain" label="Department" value={u.department ?? '—'} dark={dark} />
+                <InfoRow icon="account-group-outline" label="Role" value={roleLabel} dark={dark} />
+                {u.teamName ? <InfoRow icon="account-supervisor-outline" label="Team" value={u.teamName} dark={dark} /> : null}
+                {u.reportingManager ? (
+                  <InfoRow icon="account-tie-outline" label="Reporting Manager" value={u.reportingManager.name} dark={dark} />
+                ) : null}
+                <InfoRow icon="shield-account-outline" label="Status" value={u.isActive ? 'Active' : 'Inactive'} dark={dark} last />
+              </Card>
+            </View>
+          )}
 
           {/* ─── Actions ─── */}
           <View>

@@ -33,6 +33,7 @@ import {
 
 export default function ClientDashboardPage() {
   const { user, logout } = useAuth();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'resumes' | 'interviews' | 'applications' | 'profile' | 'payments' | 'updates'>('overview');
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -329,9 +330,13 @@ export default function ClientDashboardPage() {
             <p className="text-sm font-bold text-slate-900 dark:text-white">{user?.name}</p>
             <p className="text-[10px] font-bold text-indigo-650 dark:text-indigo-400 uppercase tracking-widest">{clientProfile?.planSelected ? `${clientProfile.planSelected} Tier` : 'BASIC TIER'}</p>
           </div>
-          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-sm font-black shadow-sm ring-2 ring-indigo-500/20">
+          <button
+            onClick={() => setIsProfileModalOpen(true)}
+            className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-sm font-black shadow-sm ring-2 ring-indigo-500/20 hover:scale-105 transition-transform duration-200"
+            title="View Profile Info"
+          >
             {user?.name?.charAt(0)?.toUpperCase()}
-          </div>
+          </button>
           <button
             onClick={logout}
             className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-500/10 text-slate-500 hover:text-rose-500 transition duration-200"
@@ -1603,6 +1608,78 @@ export default function ClientDashboardPage() {
             </Card>
           </div>
         )}
+
+        {/* Candidate Profile Info Modal */}
+        <Dialog open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen}>
+          <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden font-sans">
+            <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 to-violet-600 absolute top-0 left-0" />
+            
+            <DialogHeader className="pt-2">
+              <DialogTitle className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <User className="h-5 w-5 text-indigo-500" />
+                Candidate Profile
+              </DialogTitle>
+              <DialogDescription className="text-slate-500 dark:text-slate-400">
+                Your registered candidate credentials.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="my-4 space-y-4">
+              <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-800/80">
+                <div className="h-14 w-14 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xl font-black shadow-md ring-4 ring-indigo-500/10">
+                  {user?.name?.charAt(0)?.toUpperCase()}
+                </div>
+                <div>
+                  <h4 className="text-base font-extrabold text-slate-900 dark:text-white">{user?.name}</h4>
+                  <p className="text-xs font-bold text-indigo-650 dark:text-indigo-400 uppercase tracking-widest">{clientProfile?.planSelected ? `${clientProfile.planSelected} Tier` : 'BASIC TIER'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 px-1">
+                <div className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                  <div className="h-8 w-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 flex items-center justify-center text-indigo-650 dark:text-indigo-400">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Email Address</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.email}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                  <div className="h-8 w-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 flex items-center justify-center text-indigo-650 dark:text-indigo-400">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Mobile Number</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{clientProfile?.phone ?? user?.phone ?? '—'}</p>
+                  </div>
+                </div>
+
+                {clientProfile?.technology && (
+                  <div className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                    <div className="h-8 w-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 flex items-center justify-center text-indigo-650 dark:text-indigo-400">
+                      <Briefcase className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Technology Focus</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{clientProfile.technology}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter className="mt-6">
+              <Button
+                onClick={() => setIsProfileModalOpen(false)}
+                className="w-full rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold"
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
       </main>
     </div>

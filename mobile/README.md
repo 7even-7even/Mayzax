@@ -2,7 +2,30 @@
 
 A read-only employee companion app for Mayzax CMS/CRM, built with **Expo**, **React Native (TypeScript)**, **React Navigation**, **React Query**, **Axios**, **React Native Paper + NativeWind**, **React Hook Form + Zod**, **expo-secure-store**, **AsyncStorage**, and **Firebase Cloud Messaging (via expo-notifications)**.
 
-The app lets employees view their current shift status, today's activity timeline, monthly attendance history, company notifications, and their profile. It **never** mutates attendance — all write operations (login/logout/break start/end/heartbeat) remain desktop-only.
+The app lets employees and candidates view their respective shift statuses, today's activity timelines, monthly attendance histories, company notifications, and their profiles. It **never** mutates attendance — all write operations (login/logout/break start/end/heartbeat) remain desktop-only.
+
+---
+
+## ⚡ Key Updates in v1.2.0+
+
+### 1. Client/Candidate Login & Tabbed Dashboard
+Fully implemented mobile screens for Candidate/Client (`CLIENT` role) logins. It features a tabbed navigation panel including:
+- **Overview**: Displays technology tags, location info, visa status details, and stats counts (Applications, Interviews, Verified status).
+- **Applications**: Displays logged applications, status badges, and post-submission verification check scores.
+- **Interviews**: Shows dates, modes, interviewers, and deep-links to launch online interview meeting links.
+- **Payments**: Transaction history logs showing payment references, dates, and amounts paid.
+
+### 2. Multi-Role UI Labeling
+Expanded the dashboard greeting headers to map all core roles explicitly:
+- `CLIENT` → Candidate
+- `ADMIN` → Administrator
+- `TEAM_LEADER` → Team Leader
+- `SALES_EXEC` → Sales Executive
+- `RESUME_ASSIST` → Resume Assistant
+- `RECRUITER` → Recruiter / designation
+
+### 3. EAS Cloud Project Linking
+Configured EAS project metadata (`projectId: d731acec-24fb-4cd7-baa3-185e60299a30`) within `app.json` for seamless Expo cloud builds and credential signing.
 
 ---
 

@@ -12,12 +12,16 @@
       "resizeMode": "contain",
       "backgroundColor": "#0B2545"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mayzax.companion",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -26,7 +30,12 @@
         "backgroundColor": "#0B2545"
       },
       "package": "com.mayzax.companion",
-      "permissions": ["NOTIFICATIONS", "VIBRATE", "WAKE_LOCK"]
+      "permissions": [
+        "NOTIFICATIONS",
+        "VIBRATE",
+        "WAKE_LOCK"
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -43,8 +52,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "mayzax-companion"
+        "projectId": "d731acec-24fb-4cd7-baa3-185e60299a30"
       }
-    }
+    },
+    "owner": "i_7even"
   }
 }

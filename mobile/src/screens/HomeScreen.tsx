@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Image,
   Dimensions,
+  Linking,
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
@@ -24,9 +25,11 @@ import { StatTile } from '@/components/StatTile';
 import { CircularProgress } from '@/components/CircularProgress';
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/ErrorState';
+import { EmptyState } from '@/components/EmptyState';
 import { Timeline } from '@/components/Timeline';
 import { colors, spacing, typography } from '@/theme';
 import { fetchToday, fetchAnalyticsSummary } from '@/services/attendance';
+import { fetchClientStats, fetchClientApplications, fetchClientInterviews, fetchClientPayments } from '@/services/client';
 import { formatDuration, formatDurationDigital, formatTime } from '@/utils/format';
 import { useCountdown } from '@/hooks/useCountdown';
 import type { RootStackParamList } from '@/navigation/RootNavigator';
@@ -172,11 +175,14 @@ export function HomeScreen() {
 
   const isAdmin = authUser?.role === 'ADMIN';
   const isTeamLeader = authUser?.role === 'TEAM_LEADER';
+  const isClient = authUser?.role === 'CLIENT';
+  const clientProfile = authUser?.clientProfile;
+  const [clientTab, setClientTab] = useState<'overview' | 'applications' | 'interviews' | 'payments'>('overview');
 
   const { data, isLoading, isError, error, refetch, dataUpdatedAt } = useQuery({
     queryKey: ['attendance', 'today'],
     queryFn: fetchToday,
-    enabled: !isAdmin,
+    enabled: !isAdmin && !isClient,
     refetchInterval: 30 * 1000,
     staleTime: 10 * 1000,
   });
@@ -189,12 +195,48 @@ export function HomeScreen() {
     staleTime: 10 * 1000,
   });
 
+  const { data: clientStats, isLoading: clientStatsLoading, isError: clientStatsIsError, refetch: refetchClientStats } = useQuery({
+    queryKey: ['client-stats'],
+    queryFn: fetchClientStats,
+    enabled: isClient,
+  });
+
+  const { data: clientAppsData, isLoading: clientAppsLoading, isError: clientAppsIsError, refetch: refetchClientApps } = useQuery({
+    queryKey: ['client-apps'],
+    queryFn: () => fetchClientApplications({ page: 1, pageSize: 15 }),
+    enabled: isClient,
+  });
+
+  const { data: clientInterviews, isLoading: clientInterviewsLoading, isError: clientInterviewsIsError, refetch: refetchClientInterviews } = useQuery({
+    queryKey: ['client-interviews', clientProfile?.id],
+    queryFn: () => fetchClientInterviews(clientProfile!.id),
+    enabled: isClient && !!clientProfile?.id,
+  });
+
+  const { data: clientPayments, isLoading: clientPaymentsLoading, isError: clientPaymentsIsError, refetch: refetchClientPayments } = useQuery({
+    queryKey: ['client-payments', clientProfile?.id],
+    queryFn: () => fetchClientPayments(clientProfile!.id),
+    enabled: isClient && !!clientProfile?.id,
+  });
+
   useFocusEffect(
     useCallback(() => {
-      if (isAdmin) refetchAnalytics();
-      else if (isTeamLeader) { refetch(); refetchAnalytics(); }
-      else refetch();
-    }, [refetch, refetchAnalytics, isAdmin, isTeamLeader]),
+      if (isClient) {
+        refetchClientStats();
+        refetchClientApps();
+        if (clientProfile?.id) {
+          refetchClientInterviews();
+          refetchClientPayments();
+        }
+      } else if (isAdmin) {
+        refetchAnalytics();
+      } else if (isTeamLeader) {
+        refetch();
+        refetchAnalytics();
+      } else {
+        refetch();
+      }
+    }, [refetch, refetchAnalytics, refetchClientStats, refetchClientApps, refetchClientInterviews, refetchClientPayments, isAdmin, isTeamLeader, isClient, clientProfile?.id]),
   );
 
   const breakInfo = data?.today.currentBreak;
@@ -214,11 +256,13 @@ export function HomeScreen() {
       : 0
     : 0;
 
-  const mainLoading = isAdmin
-    ? (analyticsLoading && !analytics)
-    : isTeamLeader
-      ? ((isLoading && !data) || (analyticsLoading && !analytics))
-      : (isLoading && !data);
+  const mainLoading = isClient
+    ? (clientStatsLoading || clientAppsLoading || (!!clientProfile?.id && (clientInterviewsLoading || clientPaymentsLoading)))
+    : isAdmin
+      ? (analyticsLoading && !analytics)
+      : isTeamLeader
+        ? ((isLoading && !data) || (analyticsLoading && !analytics))
+        : (isLoading && !data);
 
   if (mainLoading) {
     return (
@@ -239,26 +283,46 @@ export function HomeScreen() {
     );
   }
 
-  const mainError = isAdmin
-    ? (analyticsIsError && !analytics)
-    : isTeamLeader
-      ? ((isError && !data) || (analyticsIsError && !analytics))
-      : (isError && !data);
+  const mainError = isClient
+    ? (clientStatsIsError || clientAppsIsError || clientInterviewsIsError || clientPaymentsIsError)
+    : isAdmin
+      ? (analyticsIsError && !analytics)
+      : isTeamLeader
+        ? ((isError && !data) || (analyticsIsError && !analytics))
+        : (isError && !data);
 
   if (mainError) {
-    const errObj = isAdmin ? analyticsError : isTeamLeader ? (error ?? analyticsError) : error;
+    const errObj = isClient
+      ? new Error('Failed to load candidate dashboard metrics')
+      : isAdmin
+        ? analyticsError
+        : isTeamLeader
+          ? (error ?? analyticsError)
+          : error;
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: dark ? '#0B1220' : colors.background, justifyContent: 'center' }}>
         <ErrorState message={(errObj as any)?.message} onRetry={() => {
-          if (isAdmin) refetchAnalytics();
-          else if (isTeamLeader) { refetch(); refetchAnalytics(); }
-          else refetch();
+          if (isClient) {
+            refetchClientStats();
+            refetchClientApps();
+            if (clientProfile?.id) {
+              refetchClientInterviews();
+              refetchClientPayments();
+            }
+          } else if (isAdmin) {
+            refetchAnalytics();
+          } else if (isTeamLeader) {
+            refetch();
+            refetchAnalytics();
+          } else {
+            refetch();
+          }
         }} />
       </SafeAreaView>
     );
   }
 
-  const user = isAdmin ? authUser! : (data?.user ?? authUser!);
+  const user = isAdmin || isClient ? authUser! : (data?.user ?? authUser!);
   const today = data?.today;
   const shift = data?.shift;
   const timeline = data?.timeline ?? [];
@@ -266,12 +330,34 @@ export function HomeScreen() {
   const shortBreaksTaken = timeline.filter(t => t.status === 'SHORT_BREAK').length;
   const dinnerBreaksTaken = timeline.filter(t => t.status === 'DINNER_BREAK').length;
 
-  const roleLabel = isAdmin ? 'Administrator' : isTeamLeader ? 'Team Leader' : (user.designation ?? 'Recruiter');
+  const roleLabel = isClient
+    ? 'Candidate'
+    : isAdmin
+      ? 'Administrator'
+      : isTeamLeader
+        ? 'Team Leader'
+        : authUser?.role === 'SALES_EXEC'
+          ? 'Sales Executive'
+          : authUser?.role === 'RESUME_ASSIST'
+            ? 'Resume Assistant'
+            : (user.designation ?? 'Recruiter');
 
   const onRefresh = () => {
-    if (isAdmin) refetchAnalytics();
-    else if (isTeamLeader) { refetch(); refetchAnalytics(); }
-    else refetch();
+    if (isClient) {
+      refetchClientStats();
+      refetchClientApps();
+      if (clientProfile?.id) {
+        refetchClientInterviews();
+        refetchClientPayments();
+      }
+    } else if (isAdmin) {
+      refetchAnalytics();
+    } else if (isTeamLeader) {
+      refetch();
+      refetchAnalytics();
+    } else {
+      refetch();
+    }
   };
 
   return (
@@ -285,7 +371,7 @@ export function HomeScreen() {
           greeting={greeting}
           name={user.name}
           role={roleLabel}
-          department={user.department}
+          department={isClient ? null : user.department}
           avatarName={user.name}
           avatarUrl={(user as any).avatarUrl ?? null}
           dark={dark}
@@ -293,8 +379,178 @@ export function HomeScreen() {
         />
 
         <View style={{ padding: spacing.lg }}>
-          {/* ─────────────── ADMIN VIEW ─────────────── */}
-          {isAdmin ? (
+          {/* ─────────────── CLIENT VIEW ─────────────── */}
+          {isClient ? (
+            <>
+              {/* Tab Selector */}
+              <View style={{ flexDirection: 'row', backgroundColor: dark ? '#1e293b' : '#f1f5f9', borderRadius: 12, padding: 4, marginBottom: spacing.md }}>
+                {(['overview', 'applications', 'interviews', 'payments'] as const).map((tab) => (
+                  <TouchableOpacity
+                    key={tab}
+                    onPress={() => setClientTab(tab)}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 8,
+                      alignItems: 'center',
+                      borderRadius: 8,
+                      backgroundColor: clientTab === tab ? (dark ? '#334155' : '#ffffff') : 'transparent',
+                    }}
+                  >
+                    <Text style={{
+                      fontSize: 12,
+                      fontWeight: '700',
+                      color: clientTab === tab ? colors.accent : (dark ? colors.textMutedDark : colors.textMuted),
+                      textTransform: 'capitalize',
+                    }}>
+                      {tab}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* OVERVIEW TAB */}
+              {clientTab === 'overview' && (
+                <>
+                  <SectionHead title="Overview" sub="Summary of your candidate profile" dark={dark} />
+                  <View style={styles.tileRow}>
+                    <DashTile icon="briefcase-outline" label="Total Apps" value={clientStats?.totalApps ?? 0} accent={colors.primary} dark={dark} />
+                    <DashTile icon="shield-check-outline" label="Current Apps" value={clientStats?.appsToday ?? 0} accent={colors.success} dark={dark} />
+                  </View>
+                  <View style={styles.tileRow}>
+                    <DashTile icon="calendar-clock" label="Interviews" value={clientStats?.statuses?.interviews ?? 0} accent={colors.warning} dark={dark} />
+                    <DashTile icon="account-cog" label="Status" value={clientProfile?.isActive ? 'Active' : 'Inactive'} accent={colors.accent} dark={dark} />
+                  </View>
+
+                  {/* Profile info card */}
+                  <Card style={{ marginTop: spacing.md, padding: spacing.md }}>
+                    <Text style={{ fontSize: 16, fontWeight: '800', color: dark ? colors.textDark : colors.text, marginBottom: spacing.sm }}>
+                      Candidate Details
+                    </Text>
+                    <View style={{ gap: spacing.sm }}>
+                      <DetailRow label="Technology" value={clientProfile?.technology ?? '—'} dark={dark} />
+                      <DetailRow label="Location" value={clientProfile?.currentLocation ?? '—'} dark={dark} />
+                      <DetailRow label="Visa Status" value={clientProfile?.visaStatus ?? '—'} dark={dark} />
+                      <DetailRow label="Email" value={clientProfile?.email ?? authUser?.email ?? '—'} dark={dark} />
+                      <DetailRow label="Phone" value={clientProfile?.phone ?? '—'} dark={dark} />
+                    </View>
+                  </Card>
+                </>
+              )}
+
+              {/* APPLICATIONS TAB */}
+              {clientTab === 'applications' && (
+                <>
+                  <SectionHead title="Job Applications" sub="List of your job submissions" dark={dark} />
+                  {(!clientAppsData || clientAppsData.items?.length === 0) ? (
+                    <EmptyState title="No job applications found." />
+                  ) : (
+                    <View style={{ gap: spacing.sm }}>
+                      {clientAppsData.items.map((app: any) => (
+                        <Card key={app.id} style={{ padding: spacing.md }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ fontSize: 15, fontWeight: '800', color: dark ? colors.textDark : colors.text }} numberOfLines={1}>
+                                {app.companyName}
+                              </Text>
+                              <Text style={{ fontSize: 13, color: dark ? colors.textMutedDark : colors.textMuted, marginTop: 2 }}>
+                                {app.jobTitle}
+                              </Text>
+                            </View>
+                            <StatusBadge status={app.status} label={app.status.replace(/_/g, ' ')} />
+                          </View>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.sm, paddingTop: spacing.xs, borderTopWidth: 1, borderTopColor: dark ? colors.borderDark : colors.border }}>
+                            {/* <Text style={{ fontSize: 11, color: dark ? colors.textMutedDark : colors.textMuted }}>
+                              {app.verified ? `✓ Verified (${app.verificationScore}%)` : 'Unverified'}
+                            </Text> */}
+                            <Text style={{ fontSize: 11, color: dark ? colors.textMutedDark : colors.textMuted }}>
+                              {dayjs(app.appliedAt).format('MMM DD, YYYY')}
+                            </Text>
+                          </View>
+                        </Card>
+                      ))}
+                    </View>
+                  )}
+                </>
+              )}
+
+              {/* INTERVIEWS TAB */}
+              {clientTab === 'interviews' && (
+                <>
+                  <SectionHead title="Interviews" sub="Scheduled rounds and discussions" dark={dark} />
+                  {(!clientInterviews || clientInterviews.length === 0) ? (
+                    <EmptyState title="No scheduled interviews found." />
+                  ) : (
+                    <View style={{ gap: spacing.sm }}>
+                      {clientInterviews.map((item: any) => (
+                        <Card key={item.id} style={{ padding: spacing.md }}>
+                          <Text style={{ fontSize: 15, fontWeight: '800', color: dark ? colors.textDark : colors.text }}>
+                            {item.jobTitle || 'Interview'}
+                          </Text>
+                          <Text style={{ fontSize: 13, color: dark ? colors.textMutedDark : colors.textMuted, marginTop: 2 }}>
+                            {item.companyName || 'Company'}
+                          </Text>
+                          <View style={{ gap: 4, marginTop: spacing.sm }}>
+                            <DetailRow label="Date/Time" value={dayjs(item.interviewDate).format('MMM DD, YYYY h:mm A')} dark={dark} />
+                            <DetailRow label="Interviewer" value={item.interviewerName || '—'} dark={dark} />
+                            <DetailRow label="Mode" value={item.interviewMode || 'Online'} dark={dark} />
+                          </View>
+                          {item.interviewLink ? (
+                            <TouchableOpacity
+                              onPress={() => Linking.openURL(item.interviewLink)}
+                              style={{
+                                marginTop: spacing.md,
+                                backgroundColor: colors.accent + '20',
+                                paddingVertical: 8,
+                                borderRadius: 8,
+                                alignItems: 'center',
+                              }}
+                            >
+                              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.accent }}>
+                                Join Interview Meeting
+                              </Text>
+                            </TouchableOpacity>
+                          ) : null}
+                        </Card>
+                      ))}
+                    </View>
+                  )}
+                </>
+              )}
+
+              {/* PAYMENTS TAB */}
+              {clientTab === 'payments' && (
+                <>
+                  <SectionHead title="Payments History" sub="Your invoices and transaction logs" dark={dark} />
+                  {(!clientPayments || clientPayments.length === 0) ? (
+                    <EmptyState title="No payment records found." />
+                  ) : (
+                    <View style={{ gap: spacing.sm }}>
+                      {clientPayments.map((item: any) => (
+                        <Card key={item.id} style={{ padding: spacing.md, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <View>
+                            <Text style={{ fontSize: 14, fontWeight: '800', color: dark ? colors.textDark : colors.text }}>
+                              Ref: {item.paymentRef || 'N/A'}
+                            </Text>
+                            <Text style={{ fontSize: 12, color: dark ? colors.textMutedDark : colors.textMuted, marginTop: 2 }}>
+                              {dayjs(item.paymentDate || item.createdAt).format('MMM DD, YYYY')}
+                            </Text>
+                          </View>
+                          <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={{ fontSize: 16, fontWeight: '800', color: colors.success }}>
+                              ${item.amountPaid || item.amount || 0}
+                            </Text>
+                            <Text style={{ fontSize: 11, color: colors.success, fontWeight: '700', marginTop: 2 }}>
+                              Paid
+                            </Text>
+                          </View>
+                        </Card>
+                      ))}
+                    </View>
+                  )}
+                </>
+              )}
+            </>
+          ) : isAdmin ? (
             <>
               {/* Live status row */}
               <SectionHead title="Live Status" sub="Who's clocked in right now" dark={dark} />
@@ -474,6 +730,19 @@ function QuickLink({ label, icon, onPress, dark, accent }: {
         <Ionicons name="chevron-forward" size={16} color={dark ? colors.textMutedDark : colors.textMuted} />
       </Card>
     </TouchableOpacity>
+  );
+}
+
+function DetailRow({ label, value, dark }: { label: string; value: string; dark: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+      <Text style={{ fontSize: 13, color: dark ? colors.textMutedDark : colors.textMuted, fontWeight: '600' }}>
+        {label}
+      </Text>
+      <Text style={{ fontSize: 13, color: dark ? colors.textDark : colors.text, fontWeight: '700', textAlign: 'right', flex: 1, marginLeft: 20 }}>
+        {value}
+      </Text>
+    </View>
   );
 }
 

@@ -17,7 +17,7 @@ export type AttendanceStatus =
   | 'NOT_STARTED'
   | 'ON_BREAK';
 
-export type Role = 'ADMIN' | 'TEAM_LEADER' | 'RECRUITER';
+export type Role = 'ADMIN' | 'TEAM_LEADER' | 'RECRUITER' | 'CLIENT' | 'SALES_EXEC' | 'RESUME_ASSIST';
 
 export interface PublicUser {
   id: string;
@@ -44,6 +44,8 @@ export interface MeUser {
   reportingManager: PublicUser | null;
   lastActiveAt: string | null;
   isActive: boolean;
+  clientProfileId?: string | null;
+  clientProfile?: any;
 }
 
 export interface AuthResponse {

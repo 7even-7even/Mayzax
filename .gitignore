@@ -24,6 +24,4 @@ GAP.MD
 *.docx
 .expo/
 backend/secrets/
-mobile/android/
-mobile/ios/
 google-services.json

@@ -21,6 +21,8 @@ import { ProfileScreen } from '@/screens/ProfileScreen';
 import { AttendanceDetailScreen } from '@/screens/AttendanceDetailScreen';
 import { SettingsScreen } from '@/screens/SettingsScreen';
 import { HelpScreen } from '@/screens/HelpScreen';
+import { TermsScreen } from '@/screens/TermsScreen';
+import { PrivacyScreen } from '@/screens/PrivacyScreen';
 import { setNavigateHandler } from '@/features/notifications/push';
 
 export type RootStackParamList = {
@@ -31,6 +33,8 @@ export type RootStackParamList = {
   Settings: undefined;
   Help: undefined;
   Home: undefined;
+  Terms: undefined;
+  Privacy: undefined;
 };
 
 export type AuthStackParamList = {
@@ -68,6 +72,7 @@ function TabsNavigator() {
   const dark = useResolvedTheme() === 'dark';
   const { user: authUser } = useAuth();
   const isAdmin = authUser?.role === 'ADMIN';
+  const isClient = authUser?.role === 'CLIENT';
   return (
     <Tab.Navigator
       screenOptions={{
@@ -95,16 +100,18 @@ function TabsNavigator() {
           tabBarIcon: ({ color, size }) => <TabIcon name="view-dashboard" color={color} size={size} />,
         }}
       />
-      <Tab.Screen
-        name="ActivityTab"
-        component={ActivityScreen}
-        options={{
-          title: isAdmin ? 'Analytics' : 'Today',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name={isAdmin ? 'chart-areaspline' : 'timeline-clock'} color={color} size={size} />
-          ),
-        }}
-      />
+      {!isClient && (
+        <Tab.Screen
+          name="ActivityTab"
+          component={ActivityScreen}
+          options={{
+            title: isAdmin ? 'Analytics' : 'Today',
+            tabBarIcon: ({ color, size }) => (
+              <TabIcon name={isAdmin ? 'chart-areaspline' : 'timeline-clock'} color={color} size={size} />
+            ),
+          }}
+        />
+      )}
       <Tab.Screen
         name="NotificationsTab"
         component={NotificationsScreen}
@@ -209,14 +216,20 @@ export function RootNavigator() {
       >
         {status === 'loading' ? (
           <RootStack.Screen name="Splash" component={SplashScreen} options={{ headerShown: false }} />
-        ) : status === 'unauthenticated' ? (
-          <RootStack.Screen name="Auth" component={AuthNavigator} options={{ headerShown: false }} />
         ) : (
           <>
-            <RootStack.Screen name="Tabs" component={TabsNavigator} options={{ headerShown: false }} />
-            <RootStack.Screen name="AttendanceDetail" component={AttendanceDetailScreen} options={{ title: 'Attendance Details' }} />
-            <RootStack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false, presentation: 'modal' }} />
-            <RootStack.Screen name="Help" component={HelpScreen} options={{ headerShown: false, presentation: 'modal' }} />
+            {status === 'unauthenticated' ? (
+              <RootStack.Screen name="Auth" component={AuthNavigator} options={{ headerShown: false }} />
+            ) : (
+              <>
+                <RootStack.Screen name="Tabs" component={TabsNavigator} options={{ headerShown: false }} />
+                <RootStack.Screen name="AttendanceDetail" component={AttendanceDetailScreen} options={{ title: 'Attendance Details' }} />
+                <RootStack.Screen name="Settings" component={SettingsScreen} options={{ headerShown: false, presentation: 'modal' }} />
+                <RootStack.Screen name="Help" component={HelpScreen} options={{ headerShown: false, presentation: 'modal' }} />
+              </>
+            )}
+            <RootStack.Screen name="Terms" component={TermsScreen} options={{ headerShown: false, presentation: 'modal' }} />
+            <RootStack.Screen name="Privacy" component={PrivacyScreen} options={{ headerShown: false, presentation: 'modal' }} />
           </>
         )}
       </RootStack.Navigator>
