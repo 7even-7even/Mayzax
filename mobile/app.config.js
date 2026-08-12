@@ -14,6 +14,14 @@ module.exports = ({ config }) => {
     console.log('google-services.json not found in mobile/ root, skipping android.googleServicesFile configuration.');
   }
 
+  if (!config.extra) {
+    config.extra = {};
+  }
+  if (!config.extra.eas) {
+    config.extra.eas = {};
+  }
+  config.extra.eas.projectId = 'd731acec-24fb-4cd7-baa3-185e60299a30';
+
   return {
     ...config,
   };
