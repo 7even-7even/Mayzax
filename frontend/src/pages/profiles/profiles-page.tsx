@@ -243,7 +243,7 @@ export default function ProfilesPage() {
                       <Key className="h-4 w-4" /> Reset Password
                     </DropdownMenuItem>
                   )}
-                  {(isAdmin || user?.role === 'TEAM_LEADER') && (
+                  {/* {(isAdmin || user?.role === 'TEAM_LEADER') && (
                     <DropdownMenuItem
                       onClick={() => {
                         setSelectedProfileForInterview(profile);
@@ -255,11 +255,11 @@ export default function ProfilesPage() {
                       <Calendar className="h-4 w-4" /> Add Interview
                     </DropdownMenuItem>
                   )}
-                  {(isAdmin || user?.role === 'TEAM_LEADER') && (
+                  {isAdmin && (
                     <DropdownMenuItem onClick={() => { setSelectedProfileForPayment(profile); setPaymentDialogOpen(true); }} className="gap-2 text-emerald-700 focus:text-indigo-700">
                       <CreditCard className="h-4 w-4" /> Record Payment
                     </DropdownMenuItem>
-                  )}
+                  )} */}
                   {(isAdmin || user?.role === 'TEAM_LEADER') && profile.paymentBlocked && (
                     <DropdownMenuItem onClick={() => handleReactivateAccount(profile.id)} className="gap-2 text-emerald-600 focus:text-emerald-600">
                       <CheckCircle className="h-4 w-4" /> Reactivate Account
