@@ -231,18 +231,7 @@ export class VerificationScorer {
       }
     }
 
-    // Boost if reference present + moderate score — reference is strongest positive
-    if (evidence.applicationReference && totalScore >= 30 && totalScore < 50) {
-      totalScore = Math.max(totalScore, 45);
-      reasons.push('Boosted due to reference ID + positive signals');
-    }
 
-    // If many positive signals (≥4) even with moderate score, keep verified to avoid false negatives
-    const totalPositive = positiveEvidence.length;
-    if (totalPositive >= 4 && totalScore >= 25 && totalScore < 40) {
-      totalScore = Math.max(totalScore, 40);
-      reasons.push(`Boosted due to ${totalPositive} positive signals (minimize false negatives)`);
-    }
 
     return {
       score: totalScore,

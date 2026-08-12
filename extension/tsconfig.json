@@ -7,7 +7,8 @@
       "DOM.Iterable"
     ],
     "types": [
-      "chrome"
+      "chrome",
+      "vite/client"
     ],
     "module": "ESNext",
     "moduleResolution": "bundler",

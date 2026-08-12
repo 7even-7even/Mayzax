@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test": "node run-tests.js"
+    "test": "node run-tests.js",
+    "test:apps": "node apps.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

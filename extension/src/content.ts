@@ -17,6 +17,8 @@ import { VerificationStoreV2 } from './storage/VerificationStoreV2';
 import { PortalRegistryV2 } from './verification/portals';
 import { ENGINE_VERSION_NAME } from './verification/engine/EngineConfig';
 import { RecruitmentPageDetector } from './detectors/RecruitmentPageDetector';
+import { SubmissionObserver } from './verification/evidence/SubmissionObserver';
+import { SubmissionEvidence } from './verification/types';
 
 // Legacy fallback imports
 import { PortalRegistry } from './detectors/PortalRegistry';
@@ -25,6 +27,7 @@ import { isConfirmationUrl } from './verification/utils/dom';
 
 const engine = new VerificationEngine();
 const portalRegistryV2 = PortalRegistryV2.getInstance();
+const submissionObserver = new SubmissionObserver();
 
 // ── State ────────────────────────────────────────────────────────────────────
 
@@ -39,19 +42,19 @@ let lastUrl = window.location.href;
 
 // ── Core verification logic ──────────────────────────────────────────────────
 
-async function runDetectionV2(): Promise<void> {
+async function runDetectionV2(capturedEvidence?: SubmissionEvidence): Promise<void> {
   const currentUrl = window.location.href;
   console.debug(`[Mayzax] Starting verification for ${currentUrl}`);
 
   try {
-    const result = await engine.verify(document, currentUrl, ENGINE_VERSION_NAME);
+    const result = await engine.verify(document, currentUrl, ENGINE_VERSION_NAME, capturedEvidence);
 
     console.log(
       `[Mayzax] Verification result: score=${result.score} confidence=${result.confidence} verified=${result.verified}`,
       result.reasons,
     );
 
-    if (result.score >= 50) {
+    if (result.score >= 0) {
       const plugin = portalRegistryV2.getPluginForHostname(new URL(currentUrl).hostname);
       let company = '';
       let jobTitle = '';
@@ -267,8 +270,13 @@ async function main(): Promise<void> {
   // Wire up SPA observer only for confirmed recruitment pages
   setupSpaObserver();
 
+  // Start submission observer to track live inputs and lifecycle events
+  submissionObserver.start((evidence) => {
+    runDetectionV2(evidence);
+  });
+
   // Slight delay to let the SPA settle before running verification
-  setTimeout(runDetectionV2, 1500);
+  setTimeout(() => runDetectionV2(), 1500);
 }
 
 // ── Bootstrap ────────────────────────────────────────────────────────────────

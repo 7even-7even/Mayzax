@@ -198,25 +198,10 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
 
             // We have extension evidence — now request backend hash for proof
             const ev = response.evidence as VerificationEvidence | undefined;
-            const score = response.score || response.confidenceScore || 0;
-            const confidence = response.confidence || (score >= 80 ? 'HIGH' : score >= 50 ? 'MEDIUM' : 'LOW');
+            const threshold = Number(import.meta.env.VITE_VERIFICATION_THRESHOLD || 60);
+            const confidence = response.confidence || (score > threshold ? 'HIGH' : 'LOW');
 
-            // If score <80, don't auto-verify, mark suspicious
-            if (score < 80) {
-              setVerificationResult({
-                ...response,
-                confidenceScore: score,
-                confidence,
-                score,
-              });
-              if (score >= 50) {
-                setState('suspicious');
-              } else {
-                setState('not_verified');
-              }
-              setEvidence(ev || null);
-              return;
-            }
+
 
             // Fraud signals from extension
             if (response.fraudSignals && response.fraudSignals.length > 0) {
@@ -248,7 +233,7 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
 
               const data = backendRes.data.data;
               const hash = data.verificationHash;
-              const backendVerified = data.verified && data.confidence === 'HIGH';
+              const backendVerified = data.verified;
               const backendScore = data.score;
               const backendConfidence = data.confidence;
 
@@ -284,8 +269,6 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
                 setState('fraud_detected');
               } else if (backendVerified) {
                 setState('verified');
-              } else if (backendScore >= 50) {
-                setState('suspicious');
               } else {
                 setState('not_verified');
               }
@@ -312,7 +295,7 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
                   confidence,
                 });
                 setIsVerified(response.verified);
-                setState(response.verified ? 'verified' : 'suspicious');
+                setState(response.verified ? 'verified' : 'not_verified');
                 setEvidence(ev);
               }
             }

@@ -160,6 +160,8 @@ export interface JobApplication {
   updatedAt: string;
   verified?: boolean;
   verificationMethod?: string | null;
+  verificationScore?: number | null;
+  verificationTimestamp?: string | null;
   profile?: { id: string; candidateName: string; technology: string };
   recruiter?: { id: string; name: string; email: string };
 }

@@ -1,7 +1,7 @@
 {
   "name": "mayzax-crm-extension",
-  "version": "1.1.0",
-  "description": "Mayzax CRM — Universal ATS Intelligence v1.1 (Enterprise Verification Engine, evidence aggregation, 25+ ATS, HMAC secured)",
+  "version": "1.2.0",
+  "description": "Mayzax CRM — Universal ATS Intelligence v1.2 (Enterprise Verification Engine, evidence aggregation, 25+ ATS, HMAC secured)",
   "private": true,
   "type": "module",
   "scripts": {

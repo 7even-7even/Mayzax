@@ -1,4 +1,4 @@
-import { RuleContext, VerificationEvidence, VerificationResultV2, VerificationRule, PortalPlugin, JobPortal } from '../types';
+import { RuleContext, VerificationEvidence, VerificationResultV2, VerificationRule, PortalPlugin, JobPortal, SubmissionEvidence } from '../types';
 import { EvidenceCollector } from '../evidence/EvidenceCollector';
 import { EvidenceNormalizer } from '../evidence/EvidenceNormalizer';
 import { VerificationScorer } from '../scoring/Scorer';
@@ -71,7 +71,7 @@ export class VerificationEngine {
    * Main verification entry point — v1.1 Universal ATS Intelligence
    * Implements new pipeline with evidence aggregation
    */
-  async verify(document: Document, urlString: string, extensionVersion: string = ENGINE_VERSION_NAME): Promise<VerificationResultV2> {
+  async verify(document: Document, urlString: string, extensionVersion: string = ENGINE_VERSION_NAME, submissionEvidence?: SubmissionEvidence): Promise<VerificationResultV2> {
     const url = parseUrlSafe(urlString);
     if (!url) {
       return this.createRejectedResult(urlString, 'Invalid URL', extensionVersion);
@@ -79,14 +79,17 @@ export class VerificationEngine {
 
     // ── 1. Portal Detection ────────────────────────────────────────────────
     const portalPlugin: PortalPlugin = this.portalRegistry.getPluginForHostname(url.hostname);
-    console.debug(`[Mayzax v1.1] Portal detected: ${portalPlugin.displayName} (${portalPlugin.portal}) for hostname ${url.hostname}`);
+    console.debug(`[Mayzax v1.2] Portal detected: ${portalPlugin.displayName} (${portalPlugin.portal}) for hostname ${url.hostname}`);
 
     // ── 2. Evidence Collection ─────────────────────────────────────────────
     // Universal evidence collection — every meaningful source
     let evidence: VerificationEvidence;
     try {
       evidence = this.collector.collect(document, urlString, { extensionVersion });
-      console.debug(`[Mayzax v1.1] Evidence collected: ${evidence.positiveSignals?.length || 0} positive, ${evidence.headings?.length || 0} headings, body length ${evidence.confirmationText?.length || 0}`);
+      if (submissionEvidence) {
+        evidence.submissionEvidence = submissionEvidence;
+      }
+      console.debug(`[Mayzax v1.2] Evidence collected: ${evidence.positiveSignals?.length || 0} positive, ${evidence.headings?.length || 0} headings, body length ${evidence.confirmationText?.length || 0}`);
     } catch (err) {
       return this.createRejectedResult(urlString, `Evidence collection failed: ${err}`, extensionVersion);
     }
@@ -96,9 +99,9 @@ export class VerificationEngine {
     let normalizedEvidence: VerificationEvidence;
     try {
       normalizedEvidence = EvidenceNormalizer.normalize(evidence);
-      console.debug(`[Mayzax v1.1] Evidence normalized`);
+      console.debug(`[Mayzax v1.2] Evidence normalized`);
     } catch (err) {
-      console.warn(`[Mayzax v1.1] Normalization failed, using raw evidence`, err);
+      console.warn(`[Mayzax v1.2] Normalization failed, using raw evidence`, err);
       normalizedEvidence = evidence;
     }
 
@@ -107,9 +110,9 @@ export class VerificationEngine {
     let weightedResult;
     try {
       weightedResult = this.scorerWeighted.score(normalizedEvidence);
-      console.debug(`[Mayzax v1.1] Weighted scoring: ${weightedResult.score}% confidence ${weightedResult.confidence} with ${weightedResult.totalPositiveSignals} positive signals`);
+      console.debug(`[Mayzax v1.2] Weighted scoring: ${weightedResult.score}% confidence ${weightedResult.confidence} with ${weightedResult.totalPositiveSignals} positive signals`);
     } catch (err) {
-      console.warn(`[Mayzax v1.1] Weighted scoring failed, falling back to legacy`, err);
+      console.warn(`[Mayzax v1.2] Weighted scoring failed, falling back to legacy`, err);
       // Fallback to legacy scorer
       const legacyOutcomes = this.evaluateLegacyRules(document, url, portalPlugin, normalizedEvidence);
       const legacyScoring = this.scorerLegacy.score(legacyOutcomes, normalizedEvidence);
@@ -142,10 +145,10 @@ export class VerificationEngine {
       finalConfidence = fraudAdjusted.confidence;
 
       if (fraudAnalysis.fraudScore < 0) {
-        console.debug(`[Mayzax v1.1] Fraud analysis: penalty ${fraudAnalysis.fraudScore}, adjusted ${weightedResult.score} -> ${finalScore}, fraud signals: ${fraudAnalysis.fraudSignals.join(', ')}`);
+        console.debug(`[Mayzax v1.2] Fraud analysis: penalty ${fraudAnalysis.fraudScore}, adjusted ${weightedResult.score} -> ${finalScore}, fraud signals: ${fraudAnalysis.fraudSignals.join(', ')}`);
       }
     } catch (err) {
-      console.warn(`[Mayzax v1.1] Fraud analysis failed`, err);
+      console.warn(`[Mayzax v1.2] Fraud analysis failed`, err);
       fraudAnalysis = {
         fraudScore: 0,
         fraudSignals: [],
@@ -259,7 +262,7 @@ export class VerificationEngine {
   ): string {
     let log = '\n';
     log += '╔════════════════════════════════════════════════════════════╗\n';
-    log += '║  Mayzax v1.1 — Universal ATS Intelligence                 ║\n';
+    log += '║  Mayzax v1.2 — Universal ATS Intelligence                 ║\n';
     log += '╚════════════════════════════════════════════════════════════╝\n';
 
     log += '\n✓ Positive Evidence\n';

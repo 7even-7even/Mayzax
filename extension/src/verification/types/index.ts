@@ -221,8 +221,33 @@ export interface VerificationEvidence {
   evidenceScoreBreakdown?: Record<string, number>;
   totalPositiveSignals?: number;
 
+  submissionEvidence?: SubmissionEvidence;
+
   [key: string]: any;
 }
+
+export interface SubmissionEvidence {
+  submitDetected: boolean;
+  requestObserved: boolean;
+  requestMethod?: string;
+  requestUrl?: string;
+  responseObserved: boolean;
+  responseStatus?: number;
+  redirectDetected: boolean;
+  redirectUrl?: string;
+  confirmationDetected: boolean;
+  confirmationText?: string;
+  applicationReference?: string;
+  formResetDetected: boolean;
+  dashboardDetected: boolean;
+  newApplicationDetected: boolean;
+  updatedApplicationDetected: boolean;
+  matchedJobTitle?: boolean;
+  matchedCompany?: boolean;
+  matchedJobUrl?: boolean;
+  timestamp: number;
+}
+
 
 export interface RuleOutcome {
   ruleId: string;

@@ -34,7 +34,7 @@ export async function verifyEvidence(input: VerifyEvidenceInput, requester: Requ
   // 2. Server-side scoring (defense in depth) — v1.1 evidence aggregation, minimize false negatives
   const scoring = scorer.score(evidence);
   const confidence = getConfidenceFromScore(scoring.score);
-  const verified = scoring.score >= 40; // Lowered from 80 to 40 for v1.1 Universal ATS Intelligence
+  const verified = scoring.score > env.VERIFICATION_THRESHOLD; // Strictly above env.VERIFICATION_THRESHOLD
 
   // Merge fraud signals
   const allFraudSignals = [...new Set([...validation.fraudSignals, ...scoring.fraudSignals])];

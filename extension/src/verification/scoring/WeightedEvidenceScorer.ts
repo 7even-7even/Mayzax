@@ -7,7 +7,7 @@
 
 import { VerificationEvidence } from '../types';
 import { getConfidenceFromScore } from './ConfidenceMapper';
-import { SCORING_WEIGHTS, THRESHOLDS, EVIDENCE_THRESHOLDS } from '../engine/EngineConfig';
+import { SCORING_WEIGHTS, THRESHOLDS, EVIDENCE_THRESHOLDS, VERIFICATION_THRESHOLD } from '../engine/EngineConfig';
 
 export interface EvidenceScoreResult {
   score: number;
@@ -280,37 +280,62 @@ export class WeightedEvidenceScorer {
       breakdown.formDisabled = 0;
     }
 
+    // ── Post-Submission Evidence ─────────────────────────────────────────
+    if (evidence.submissionEvidence) {
+      const sub = evidence.submissionEvidence;
+      let subScore = 0;
+
+      // Strong evidence
+      if (sub.newApplicationDetected || sub.updatedApplicationDetected) {
+        subScore += 40;
+        positiveEvidence.push(`✓ Post-submission dashboard application matched`);
+        reasons.push(`Post-submission dashboard application matched`);
+      } else if (sub.applicationReference) {
+        subScore += 30;
+        positiveEvidence.push(`✓ Post-submission reference ID captured: ${sub.applicationReference}`);
+        reasons.push(`Post-submission reference ID captured`);
+      } else if (sub.responseStatus && sub.responseStatus >= 200 && sub.responseStatus < 300) {
+        subScore += 25;
+        positiveEvidence.push(`✓ Successful post-submission network response observed`);
+        reasons.push(`Successful post-submission network response observed`);
+      }
+
+      // Medium evidence
+      if (sub.confirmationDetected) {
+        subScore += 20;
+        positiveEvidence.push(`✓ Post-submission success message/toast observed`);
+        reasons.push(`Post-submission success message/toast observed`);
+      }
+      if (sub.formResetDetected) {
+        subScore += 15;
+        positiveEvidence.push(`✓ Post-submission form reset detected`);
+        reasons.push(`Post-submission form reset detected`);
+      }
+      if (sub.redirectDetected && sub.dashboardDetected) {
+        subScore += 15;
+        positiveEvidence.push(`✓ Post-submission redirect to dashboard observed`);
+        reasons.push(`Post-submission redirect to dashboard observed`);
+      }
+
+      // Weak evidence
+      if (sub.submitDetected && !sub.responseStatus) {
+        subScore += 5;
+        positiveEvidence.push(`✓ Post-submission submit action detected`);
+      }
+
+      totalScore += subScore;
+      breakdown.submissionEvidence = subScore;
+    }
+
     // Cap at 100
     totalScore = Math.min(totalScore, 100);
 
     // Check minimum positive signals for verified
     const totalPositive = positiveEvidence.length;
 
-    // Confidence mapping — lower thresholds for v1.1 to reduce false negatives
-    const confidence = getConfidenceFromScore(totalScore);
-    const verified = totalScore >= THRESHOLDS.VERIFIED && totalPositive >= EVIDENCE_THRESHOLDS.MIN_FOR_VERIFIED;
-
-    // If we have strong reference, boost to verified even if score slightly below threshold? Reference is strongest.
-    let finalVerified = verified;
-    let finalScore = totalScore;
-    let finalConfidence = confidence;
-
-    if (evidence.referenceEvidence?.hasAnyReference && totalScore >= 30) {
-      // Reference ID present + at least 30 score = likely genuine submission, boost
-      finalVerified = true;
-      finalScore = Math.max(totalScore, 45);
-      finalConfidence = totalScore >= 40 ? 'HIGH' : 'MEDIUM';
-      if (!verified) {
-        reasons.push(`Boosted to verified due to reference ID + positive signals`);
-      }
-    }
-
-    // If we have many positive signals (≥4) even with moderate score, consider verified to avoid false negatives
-    if (totalPositive >= 4 && totalScore >= 30 && !finalVerified) {
-      finalVerified = true;
-      finalConfidence = 'MEDIUM';
-      reasons.push(`Boosted to verified due to ${totalPositive} positive signals (minimize false negatives)`);
-    }
+    const finalScore = totalScore;
+    const finalVerified = finalScore > VERIFICATION_THRESHOLD;
+    const finalConfidence = finalVerified ? 'HIGH' : 'LOW';
 
     return {
       score: finalScore,

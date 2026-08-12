@@ -114,12 +114,13 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
         if (entry) {
           // Only return verified true if score >= 80 (HIGH confidence) for security
           // Previously returned true for >=50, now stricter
-          const verified = entry.verified && (entry.score || entry.confidenceScore || 0) >= 80;
+          const score = entry.score || entry.confidenceScore || 0;
+          const verified = score > 45;
           const response: any = {
             verified,
-            score: entry.score || entry.confidenceScore,
-            confidence: entry.confidence || (entry.confidenceScore >= 80 ? 'HIGH' : entry.confidenceScore >= 50 ? 'MEDIUM' : 'LOW'),
-            confidenceScore: entry.confidenceScore || entry.score,
+            score,
+            confidence: verified ? 'HIGH' : 'LOW',
+            confidenceScore: score,
             portal: entry.portal,
             company: entry.company,
             jobTitle: entry.jobTitle,
@@ -137,8 +138,7 @@ chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => 
 
           // If not verified but has evidence, include reason for debugging
           if (!verified) {
-            response.reason = 'Score below 80 threshold for auto-verified — manual review required';
-            response.suspicious = (entry.score || 0) >= 50;
+            response.reason = 'Score below 45 threshold';
           }
 
           sendResponse(response);

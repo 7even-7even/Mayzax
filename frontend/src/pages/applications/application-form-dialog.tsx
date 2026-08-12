@@ -147,27 +147,15 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
   // Extension verification handler (commented out until deployed)
 
   useEffect(() => {
-    if (isVerified && verificationResult) {
-      form.setValue('verified', true);
-      form.setValue('verificationMethod', `Extension v2 (${verificationResult.portal}) - Score ${verificationResult.score}% ${verificationResult.confidence}`);
+    if (verificationResult) {
+      form.setValue('verified', isVerified);
+      form.setValue('verificationMethod', `Extension v2 (${verificationResult.portal}) - Score ${verificationResult.score}%`);
       form.setValue('verificationHash', verificationHash || verificationResult.verificationHash || null);
       form.setValue('verificationScore', verificationResult.score || null);
       form.setValue('verificationConfidence', verificationResult.confidence || null);
       form.setValue('applicationReference', verificationResult.applicationReference || verificationResult.evidence?.applicationReference || null);
       if (verificationResult.company) form.setValue('companyName', verificationResult.company, { shouldDirty: true });
       if (verificationResult.jobTitle) form.setValue('jobTitle', verificationResult.jobTitle, { shouldDirty: true });
-      if (verificationResult.portal) form.setValue('jobPortal', verificationResult.portal as any, { shouldDirty: true });
-    } else if (verificationResult && verificationResult.score >= 30) {
-      // Suspicious/low — not verified but has evidence, still auto-fill for UX
-      form.setValue('verified', false);
-      form.setValue('verificationMethod', `Suspicious (${verificationResult.confidence} ${verificationResult.score}%) — manual review`);
-      form.setValue('verificationHash', verificationHash || verificationResult.verificationHash || null);
-      form.setValue('verificationScore', verificationResult.score || null);
-      form.setValue('verificationConfidence', verificationResult.confidence || null);
-      form.setValue('applicationReference', verificationResult.applicationReference || verificationResult.evidence?.applicationReference || null);
-      if (verificationResult.company) form.setValue('companyName', verificationResult.company, { shouldDirty: true });
-      if (verificationResult.jobTitle) form.setValue('jobTitle', verificationResult.jobTitle, { shouldDirty: true });
-      if (verificationResult.portal) form.setValue('jobPortal', verificationResult.portal as any, { shouldDirty: true });
       // Even if company/jobTitle empty, try to extract from evidence hostname
       if (!verificationResult.company && verificationResult.evidence?.hostname) {
         const hostPart = verificationResult.evidence.hostname.split('.')[0];

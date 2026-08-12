@@ -68,6 +68,7 @@ const envSchema = z.object({
   MIN_EXTENSION_VERSION: z.string().default('2.0.0'),
   VERIFICATION_TIMESTAMP_TOLERANCE_MS: z.coerce.number().default(5 * 60 * 1000), // 5min
   VERIFICATION_HASH_TTL_MS: z.coerce.number().default(24 * 60 * 60 * 1000), // 24h
+  VERIFICATION_THRESHOLD: z.coerce.number().default(60),
 
   LOG_LEVEL: z.string().default('info'),
   LOGS_DIR: z.string().default('logs'),
@@ -121,6 +122,7 @@ if (!parsed.success) {
       MIN_EXTENSION_VERSION: '2.0.0',
       VERIFICATION_TIMESTAMP_TOLERANCE_MS: 300000,
       VERIFICATION_HASH_TTL_MS: 86400000,
+      VERIFICATION_THRESHOLD: 60,
       LOG_LEVEL: 'info',
       LOGS_DIR: 'logs',
     };

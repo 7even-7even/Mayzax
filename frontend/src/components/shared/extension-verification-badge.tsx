@@ -32,7 +32,7 @@ export function ExtensionVerificationBadge({
     );
   }
 
-  if (isVerified && (state === 'verified' || result?.verified) && result?.confidence === 'HIGH') {
+  if (isVerified && (state === 'verified' || result?.verified)) {
     const score = result?.score ?? result?.confidenceScore ?? 100;
     const portal = result?.portal ?? 'OTHER';
     const ref = result?.applicationReference;
@@ -49,7 +49,7 @@ export function ExtensionVerificationBadge({
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
               Verified v2
               <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
-                {score}% HIGH
+                {score}%
               </span>
               {hash && <span className="ml-1 text-[9px] text-emerald-600/70">• HMAC {hash.slice(0,6)}...</span>}
             </motion.div>
@@ -63,33 +63,8 @@ export function ExtensionVerificationBadge({
               {ref && <p>Ref: {ref}</p>}
               {hash && <p className="text-[10px] font-mono">Hash: {hash.slice(0,16)}...</p>}
               <p className="text-[11px] text-slate-400">Reasons: {result?.reasons?.slice(0,3).join(' • ') || result?.matchedRules?.join(', ')}</p>
-              <p className="text-[10px] text-emerald-600">Score {score}% • Confidence HIGH • Version {result?.version || 'v2'}</p>
+              <p className="text-[10px] text-emerald-600">Score {score}% • Version {result?.version || 'v2'}</p>
             </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
-  if (state === 'suspicious' || (result && result.score >= 50 && result.score < 80)) {
-    const score = result?.score ?? 0;
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 border border-amber-200 shadow-sm cursor-help">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-              Suspicious
-              <span className="ml-1 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">
-                {score}% MEDIUM
-              </span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs text-xs">
-            <p className="font-semibold">Suspicious — Manual Review Required</p>
-            <p>Score {score}% below 80 threshold</p>
-            {result?.reasons && <p className="text-[11px] text-slate-400">Reasons: {result.reasons.slice(0,2).join(', ')}</p>}
-            {result?.fraudSignals && result.fraudSignals.length > 0 && <p className="text-[11px] text-red-400">Fraud signals: {result.fraudSignals.join(', ')}</p>}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -159,18 +134,43 @@ export function ExtensionVerificationBadge({
   }
 
   if (isExtensionInstalled && (state === 'not_verified' || state === 'idle')) {
-    return (
-      <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-200">
+    const score = result?.score ?? result?.confidenceScore ?? 0;
+    
+    const badge = (
+      <div className="flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 cursor-help">
         <XCircle className="h-4 w-4 text-slate-400" />
-        <span>Not verified yet</span>
+        <span>Not verified yet {score > 0 ? `(${score}%)` : ''}</span>
         <span className="text-[10px] text-slate-400">• Apply first, then paste link</span>
         {onRetry && (
-          <button onClick={onRetry} className="ml-1 rounded-full p-1 hover:bg-slate-100">
+          <button onClick={(e) => { e.stopPropagation(); onRetry(); }} className="ml-1 rounded-full p-1 hover:bg-slate-100">
             <RefreshCw className="h-3 w-3" />
           </button>
         )}
       </div>
     );
+
+    if (score > 0) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {badge}
+            </TooltipTrigger>
+            <TooltipContent className="max-w-sm text-xs">
+              <div className="space-y-1">
+                <p className="font-semibold text-slate-700">Unverified Application ({score}%)</p>
+                {result?.reasons && <p className="text-[11px] text-slate-500">Reasons: {result.reasons.slice(0, 3).join(' • ')}</p>}
+                {result?.fraudSignals && result.fraudSignals.length > 0 && (
+                  <p className="text-[11px] text-red-500">Signals: {result.fraudSignals.join(', ')}</p>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return badge;
   }
 
   return (

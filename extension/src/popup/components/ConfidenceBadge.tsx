@@ -27,21 +27,23 @@ export function ConfidenceBadge({ level }: PropsLegacy) {
   );
 }
 
+import { VERIFICATION_THRESHOLD } from '../../verification/engine/EngineConfig';
+
 interface PropsV2 {
   confidence: VerificationConfidence;
   score: number;
 }
 
 export function ConfidenceBadgeV2({ confidence, score }: PropsV2) {
-  const label = confidence === 'HIGH' ? 'Verified' : confidence === 'MEDIUM' ? 'Suspicious' : 'Rejected';
-  const className = confidence === 'HIGH' ? 'verified' : confidence === 'MEDIUM' ? 'possible' : 'not-verified';
+  const isVerified = score > VERIFICATION_THRESHOLD;
+  const label = isVerified ? 'Verified' : 'Not Verified';
+  const className = isVerified ? 'verified' : 'not-verified';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
       <span className={`badge ${className}`}>
         {label} {score}%
       </span>
-      <span style={{ fontSize: '9px', color: '#64748B' }}>{confidence}</span>
     </div>
   );
 }

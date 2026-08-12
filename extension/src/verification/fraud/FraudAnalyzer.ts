@@ -6,7 +6,7 @@
  */
 
 import { VerificationEvidence } from '../types';
-import { FRAUD_PENALTIES, EVIDENCE_THRESHOLDS } from '../engine/EngineConfig';
+import { FRAUD_PENALTIES, EVIDENCE_THRESHOLDS, THRESHOLDS } from '../engine/EngineConfig';
 import { FAILURE_PHRASES } from '../utils/successPhrases';
 
 export interface FraudAnalysisResult {
@@ -138,14 +138,10 @@ export class FraudAnalyzer {
     }
 
     // Otherwise, fraud only slightly reduces, don't drop below thresholds too aggressively
-    // If currentScore was verified (>=40) and fraud penalty is minimal (-1 to -5), keep verified if still >=35
     adjustedScore = Math.max(0, adjustedScore);
 
-    let verified = adjustedScore >= 40;
-    let confidence: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
-    if (adjustedScore >= 40) confidence = 'HIGH';
-    else if (adjustedScore >= 20) confidence = 'MEDIUM';
-    else confidence = 'LOW';
+    const verified = adjustedScore > THRESHOLDS.VERIFIED;
+    const confidence = verified ? 'HIGH' : 'LOW';
 
     return {
       adjustedScore,

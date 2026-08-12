@@ -45,7 +45,23 @@ async function downloadApplicationsExcel(applications: JobApplication[], isAdmin
   workbook.created = new Date();
   const worksheet = workbook.addWorksheet('Applications');
   worksheet.views = [{ state: 'frozen', ySplit: 1 }];
-  const headers = ['Candidate', 'Technology', 'Company Name', 'Job Title', 'Portal', 'Applied By', 'Recruiter Email', 'Status', 'Verified', 'Business Date', 'Applied At', 'Job Link'];
+  const headers = [
+    'Candidate',
+    'Technology',
+    'Company Name',
+    'Job Title',
+    'Portal',
+    'Applied By',
+    'Recruiter Email',
+    'Status',
+    'Verified',
+    'Verification Method',
+    'Verification Score',
+    'Verification Timestamp',
+    'Business Date',
+    'Applied At',
+    'Job Link',
+  ];
   const headerRow = worksheet.addRow(headers);
   headerRow.height = 28;
   headerRow.eachCell((cell) => {
@@ -64,12 +80,15 @@ async function downloadApplicationsExcel(applications: JobApplication[], isAdmin
       app.recruiter?.email ?? '',
       formatEnumLabel(app.status),
       app.verified ? 'Verified' : 'Unverified',
+      app.verificationMethod || '',
+      app.verificationScore !== undefined && app.verificationScore !== null ? `${app.verificationScore}%` : '',
+      app.verificationTimestamp ? formatDateTime(app.verificationTimestamp) : '',
       formatBusinessDateLabel(app.businessDate.slice(0, 10)),
       formatDateTime(app.appliedAt),
       app.jobLink,
     ]);
   });
-  worksheet.autoFilter = 'A1:L1';
+  worksheet.autoFilter = 'A1:O1';
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   saveAs(blob, filename);

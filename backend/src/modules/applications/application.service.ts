@@ -113,7 +113,7 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
     if (logNormalized !== normalizedJobLink) {
       // Allow slight mismatch? For strict security, require exact match or at least same hostname
       // We'll allow if same hostname but warn — here we require exact for HIGH confidence
-      if (verificationLog.confidence === 'HIGH') {
+      if (verificationLog.score > env.VERIFICATION_THRESHOLD) {
         throw ApiError.badRequest('Verification hash does not match this job link — hash was generated for different job', {
           expectedNormalized: logNormalized,
           providedNormalized: normalizedJobLink,
@@ -122,7 +122,7 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
     }
 
     // Server is source of truth for verified status
-    finalVerified = verificationLog.confidence === 'HIGH' && verificationLog.score >= 40;
+    finalVerified = verificationLog.score > env.VERIFICATION_THRESHOLD;
     finalScore = verificationLog.score;
     finalConfidence = verificationLog.confidence;
     finalEvidence = verificationLog.evidence;

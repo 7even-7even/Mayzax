@@ -1,5 +1,5 @@
 export const ENGINE_VERSION = 'v2' as const;
-export const ENGINE_VERSION_NAME = '1.1.0';
+export const ENGINE_VERSION_NAME = '1.2.0';
 
 /**
  * v1.1 Universal ATS Intelligence — Evidence Aggregation Model
@@ -40,9 +40,11 @@ export const SCORING_WEIGHTS = {
   Url: 15,
 };
 
+export const VERIFICATION_THRESHOLD = Number(import.meta.env.VITE_VERIFICATION_THRESHOLD || 60);
+
 export const THRESHOLDS = {
-  VERIFIED: 40,        // HIGH confidence — lowered from 65 to reduce false negatives
-  SUSPICIOUS_MIN: 20,  // MEDIUM — lowered from 45
+  VERIFIED: VERIFICATION_THRESHOLD,
+  SUSPICIOUS_MIN: 20,  // MEDIUM
   REJECTED_MAX: 19,    // LOW
 };
 

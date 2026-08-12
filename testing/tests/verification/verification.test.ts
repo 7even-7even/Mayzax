@@ -9,6 +9,7 @@ vi.mock('../../../backend/src/config/env', () => ({
     VERIFICATION_TIMESTAMP_TOLERANCE_MS: 900000,
     MIN_EXTENSION_VERSION: '1.0.0',
     VERIFICATION_HMAC_SECRET: 'test-secret-key-32chars-minimum-ok',
+    VERIFICATION_THRESHOLD: 40,
   },
 }));
 
