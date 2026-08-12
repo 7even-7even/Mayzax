@@ -706,9 +706,9 @@ export function HomeScreen() {
             {!online ? (
               <Text style={[styles.cacheHint, { color: colors.warning }]}>⚠️ You're offline — showing cached data</Text>
             ) : null}
-            <Text style={[styles.cacheHint, { color: dark ? colors.textMutedDark : colors.textMuted }]}>
+            {/* <Text style={[styles.cacheHint, { color: dark ? colors.textMutedDark : colors.textMuted }]}>
               Last updated {dayjs(isAdmin || isTeamLeader ? analyticsUpdatedAt : dataUpdatedAt).fromNow()}
-            </Text>
+            </Text> */}
           </View>
         </View>
       </ScrollView>
