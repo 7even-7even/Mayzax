@@ -135,18 +135,19 @@ describe('Login Hours & Activity Service', () => {
       activityService.processHeartbeat('user-123', Role.RECRUITER)
     ).rejects.toThrow('Session expired due to inactivity');
 
-    // Verify previous log closed at last heartbeat time (09:00:00)
+    // Verify previous log closed at last heartbeat time + 40 minutes (09:40:00)
+    const expectedCloseTime = new Date(lastHeartbeat.getTime() + 40 * 60 * 1000);
     expect(prisma.activityLog.update).toHaveBeenCalledWith({
       where: { id: 'log-active-id' },
-      data: { endedAt: lastHeartbeat },
+      data: { endedAt: expectedCloseTime },
     });
 
-    // Verify offline log was created starting at last heartbeat time (09:00:00)
+    // Verify offline log was created starting at last heartbeat time + 40 minutes (09:40:00)
     expect(prisma.activityLog.create).toHaveBeenCalledWith({
       data: {
         userId: 'user-123',
         status: UserStatus.OFFLINE,
-        startedAt: lastHeartbeat,
+        startedAt: expectedCloseTime,
         endedAt: staleTime,
         optionalNote: 'Disconnected due to inactivity',
       },

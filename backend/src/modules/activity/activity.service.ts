@@ -219,10 +219,11 @@ export async function processHeartbeat(userId: string, role: Role) {
   ) {
     const timeSinceLastHeartbeat = now.getTime() - lastHeartbeat.getTime();
     if (timeSinceLastHeartbeat > STALE_HEARTBEAT_THRESHOLD_MS) {
-      // Auto-close stale log at last known heartbeat time
+      // Auto-close stale log at last known heartbeat time + threshold (up to now)
+      const adjustedCloseTime = new Date(Math.min(lastHeartbeat.getTime() + STALE_HEARTBEAT_THRESHOLD_MS, now.getTime()));
       await prisma.activityLog.update({
         where: { id: openLog.id },
-        data: { endedAt: lastHeartbeat },
+        data: { endedAt: adjustedCloseTime },
       });
 
       // Transition to OFFLINE
@@ -230,7 +231,7 @@ export async function processHeartbeat(userId: string, role: Role) {
         data: {
           userId,
           status: UserStatus.OFFLINE,
-          startedAt: lastHeartbeat,
+          startedAt: adjustedCloseTime,
           endedAt: now,
           optionalNote: 'Disconnected due to inactivity',
         },
@@ -335,8 +336,8 @@ export async function getTodayActivity(userId: string): Promise<DailyActivitySum
     const logStart = log.startedAt < startOfToday ? startOfToday : log.startedAt;
     let logEnd = log.endedAt;
     if (!logEnd) {
-      if (isStale && log.status === UserStatus.ACTIVE) {
-        logEnd = lastHb;
+      if (isStale && log.status === UserStatus.ACTIVE && lastHb) {
+        logEnd = new Date(Math.min(lastHb.getTime() + STALE_HEARTBEAT_THRESHOLD_MS, now.getTime()));
       } else {
         logEnd = now;
       }
@@ -515,8 +516,8 @@ export async function getLiveStatusMetrics(requester: ActivityRequester): Promis
     if (!end) {
       const lastHb = lastHeartbeatMap.get(log.userId);
       const isStale = lastHb && (now.getTime() - lastHb.getTime() > STALE_HEARTBEAT_THRESHOLD_MS);
-      if (isStale && log.status === UserStatus.ACTIVE) {
-        end = lastHb;
+      if (isStale && log.status === UserStatus.ACTIVE && lastHb) {
+        end = new Date(Math.min(lastHb.getTime() + STALE_HEARTBEAT_THRESHOLD_MS, now.getTime()));
       } else {
         end = now;
       }
