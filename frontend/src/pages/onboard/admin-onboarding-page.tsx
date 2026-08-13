@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePermissions } from '@/hooks/use-permissions';
 import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,13 +15,14 @@ import { useOnboardingList, useApproveOnboarding, useRejectOnboarding, ClientOnb
 import {
   Users, CheckCircle2, XCircle, Clock, Eye, FileText, Download, ShieldCheck,
   CreditCard, GraduationCap, MapPin, Briefcase, Award, Loader2, Code2, ShieldAlert,
-  ArrowRight, Check, X
+  ArrowRight, Check, X, Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
 import { useEffect } from 'react';
 
 export default function AdminOnboardingPage() {
+  const navigate = useNavigate();
   const { isAdmin } = usePermissions();
   const [statusFilter, setStatusFilter] = useState<'PENDING' | 'APPROVED' | 'REJECTED'>('PENDING');
   const [page, setPage] = useState(1);
@@ -118,6 +120,15 @@ export default function AdminOnboardingPage() {
         title="Administrative Controls"
         description="Verify public registrations, review payments, and approve client profile changes in Mayzax ATS"
         badge={requests.length > 0 ? `${requests.length} new requests` : undefined}
+        actions={
+          <Button
+            variant="brand"
+            onClick={() => navigate('/onboard')}
+            className="gap-2 shadow-md shadow-mayzax-blue-200/30 bg-mayzax-gradient border-0 text-white hover:opacity-90 rounded-full px-5"
+          >
+            <Plus className="h-4 w-4" /> Onboard Client
+          </Button>
+        }
         gradient="from-slate-900 to-slate-700"
         bottomGradient="from-indigo-650 via-violet-600 to-indigo-800"
       />

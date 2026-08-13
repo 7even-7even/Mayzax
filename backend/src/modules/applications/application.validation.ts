@@ -33,6 +33,7 @@ export const jobPortalEnum = z.enum([
   'THE_MUSE',
   'Y_COMBINATOR',
   'CAREER_SITE',
+  'ASHBY',
   'OTHER',
 ]);
 

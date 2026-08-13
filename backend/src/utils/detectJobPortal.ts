@@ -29,6 +29,7 @@ export function detectJobPortalFromUrl(url: string): JobPortal {
   if (hostname.includes('monster.com')) return JobPortal.MONSTER;
   if (hostname.includes('themuse.com')) return JobPortal.THE_MUSE;
   if (hostname.includes('ycombinator.com') || hostname.includes('workatastartup.com')) return JobPortal.Y_COMBINATOR;
+  if (hostname.includes('ashbyhq.com')) return 'ASHBY' as JobPortal;
 
   return JobPortal.OTHER;
 }

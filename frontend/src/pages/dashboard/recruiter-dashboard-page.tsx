@@ -93,8 +93,8 @@ export default function RecruiterDashboardPage() {
         title={`Welcome back, ${user?.name?.split(' ')[0] || 'Recruiter'}!`}
         description="Your personal cockpit • Portal performance, profiles & recent activity"
         pills={[
-          { label: `${recruiterStats?.totalApplications ?? 0} total apps`, icon: Zap },
-          { label: `${recruiterStats?.currentShiftApplications ?? 0} today`, icon: Clock }
+          { label: `${recruiterStats?.totalApplications ?? 0} total apps${recruiterStats?.ashbyRemainder ? ` (+${recruiterStats.ashbyRemainder} Ashby)` : ''}`, icon: Zap },
+          { label: `${recruiterStats?.currentShiftApplications ?? 0} today${recruiterStats?.ashbyShiftRemainder ? ` (+${recruiterStats.ashbyShiftRemainder} Ashby)` : ''}`, icon: Clock }
         ]}
         stats={
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1.5 shadow-sm">
@@ -108,7 +108,15 @@ export default function RecruiterDashboardPage() {
 
       <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StaggerItem>
-          <PremiumMiniStat icon={Briefcase} label="Total Applications" value={data?.totalApplications ?? 0} sub="Across all portals" gradient="from-blue-500 to-cyan-600" loading={isLoading} index={0} />
+          <PremiumMiniStat 
+            icon={Briefcase} 
+            label="Total Applications" 
+            value={recruiterStats?.totalApplications ?? data?.totalApplications ?? 0} 
+            sub={recruiterStats?.ashbyRemainder ? `Across portals • ${recruiterStats.ashbyRemainder} Ashby pending` : "Across all portals"} 
+            gradient="from-blue-500 to-cyan-600" 
+            loading={isLoading} 
+            index={0} 
+          />
         </StaggerItem>
         <StaggerItem>
           <PremiumMiniStat

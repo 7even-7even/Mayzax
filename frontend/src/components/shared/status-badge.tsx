@@ -63,6 +63,7 @@ export const ALL_JOB_PORTALS = [
   'THE_MUSE',
   'Y_COMBINATOR',
   'CAREER_SITE',
+  'ASHBY',
   'OTHER',
 ] as const satisfies readonly JobPortal[];
 
@@ -95,6 +96,7 @@ export function JobPortalBadge({ portal }: { portal: JobPortal }) {
     LINKEDIN: 'bg-[#0A66C2] text-white border-0',
     INDEED: 'bg-[#2164A6] text-white border-0',
     GLASSDOOR: 'bg-[#17A2B8] text-white border-0',
+    ASHBY: 'bg-[#FF5A5F] text-white border-0',
     OTHER: 'bg-slate-100 text-slate-700 border-slate-200',
   };
   return <Badge className={cn('rounded-full text-[11px] font-semibold shadow-sm', colors[portal] ?? colors.OTHER)}>{formatEnumLabel(portal)}</Badge>;

@@ -43,7 +43,7 @@ function setAuthCookies(res: Response, tokens: { accessToken: string; refreshTok
   // Set access token cookie
   res.cookie('access_token', tokens.accessToken, {
     ...cookieOptions,
-    maxAge: 15 * 60 * 1000, // 15 mins
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
   });
 
   // Set refresh token cookie

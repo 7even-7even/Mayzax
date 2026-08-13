@@ -267,11 +267,11 @@ export default function ClientLoginPage() {
                   </div>
                   <span className="relative bg-white px-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">New to Mayzax?</span>
                 </div>
-                <div className="mt-4 flex items-center justify-center gap-2 text-sm">
+                {/* <div className="mt-4 flex items-center justify-center gap-2 text-sm">
                   <Link to="/onboard" className="inline-flex items-center gap-1 font-bold text-mayzax-blue-700 hover:text-mayzax-blue-800">
                     Get Onboarded <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
-                </div>
+                </div> */}
               </div>
 
               <div className="mt-6 flex items-center justify-center gap-4 text-[11px] text-slate-400">

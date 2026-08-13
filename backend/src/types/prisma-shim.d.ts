@@ -70,6 +70,7 @@ declare module '@prisma/client' {
     THE_MUSE = 'THE_MUSE',
     Y_COMBINATOR = 'Y_COMBINATOR',
     CAREER_SITE = 'CAREER_SITE',
+    ASHBY = 'ASHBY',
     OTHER = 'OTHER',
   }
   export enum DevicePlatform {

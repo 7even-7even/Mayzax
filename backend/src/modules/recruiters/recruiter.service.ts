@@ -1,8 +1,9 @@
-import { Role } from '@prisma/client';
+import { Role, JobPortal } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/utils/apiError';
 import { hashPassword } from '@/modules/auth/auth.service';
 import { getBusinessDateString } from '@/utils/businessDate';
+import { calculateAdjustedCounts } from '../analytics/analytics.service';
 import * as repo from './recruiter.repository';
 import { CreateRecruiterInput, UpdateRecruiterInput, ListRecruitersQuery, TeamNameInput } from './recruiter.validation';
 import { writeAuditLog } from '@/modules/shared/audit.service';
@@ -197,7 +198,7 @@ export async function getRecruiterStats(id: string, actor: Requester) {
 
   const todayBusinessDate = getBusinessDateString(new Date());
 
-  const [assignedProfiles, totalApplications, currentShiftApplications] = await Promise.all([
+  const [assignedProfiles, totalPortalCounts, shiftPortalCounts] = await Promise.all([
     prisma.clientProfile.findMany({
       where: {
         deletedAt: null,
@@ -209,22 +210,31 @@ export async function getRecruiterStats(id: string, actor: Requester) {
       select: { id: true, candidateName: true, technology: true },
       orderBy: { candidateName: 'asc' },
     }),
-    prisma.jobApplication.count({ where: { recruiterId: id } }),
-    prisma.jobApplication.count({
+    prisma.jobApplication.groupBy({
+      by: ['jobPortal'],
+      where: { recruiterId: id },
+      _count: { _all: true },
+    }),
+    prisma.jobApplication.groupBy({
+      by: ['jobPortal'],
       where: { recruiterId: id, businessDate: new Date(`${todayBusinessDate}T00:00:00.000Z`) },
+      _count: { _all: true },
     }),
   ]);
+
+  const totalStats = calculateAdjustedCounts(totalPortalCounts.map(r => ({ jobPortal: r.jobPortal as JobPortal, count: r._count._all })));
+  const shiftStats = calculateAdjustedCounts(shiftPortalCounts.map(r => ({ jobPortal: r.jobPortal as JobPortal, count: r._count._all })));
 
   const profileIds = assignedProfiles.map((p) => p.id);
   const [applicationsByProfile, currentShiftApplicationsByProfile] = profileIds.length
     ? await Promise.all([
         prisma.jobApplication.groupBy({
-          by: ['profileId'],
+          by: ['profileId', 'jobPortal'],
           where: { recruiterId: id, profileId: { in: profileIds } },
           _count: { _all: true },
         }),
         prisma.jobApplication.groupBy({
-          by: ['profileId'],
+          by: ['profileId', 'jobPortal'],
           where: {
             recruiterId: id,
             profileId: { in: profileIds },
@@ -234,10 +244,20 @@ export async function getRecruiterStats(id: string, actor: Requester) {
         }),
       ])
     : [[], []];
-  const applicationCountMap = new Map(applicationsByProfile.map((row) => [row.profileId, row._count._all]));
-  const currentShiftApplicationCountMap = new Map(
-    currentShiftApplicationsByProfile.map((row) => [row.profileId, row._count._all]),
-  );
+
+  const allTimeProfilePortals = new Map<string, { jobPortal: JobPortal; count: number }[]>();
+  for (const row of applicationsByProfile) {
+    const list = allTimeProfilePortals.get(row.profileId) || [];
+    list.push({ jobPortal: row.jobPortal as JobPortal, count: row._count._all });
+    allTimeProfilePortals.set(row.profileId, list);
+  }
+
+  const shiftProfilePortals = new Map<string, { jobPortal: JobPortal; count: number }[]>();
+  for (const row of currentShiftApplicationsByProfile) {
+    const list = shiftProfilePortals.get(row.profileId) || [];
+    list.push({ jobPortal: row.jobPortal as JobPortal, count: row._count._all });
+    shiftProfilePortals.set(row.profileId, list);
+  }
 
   const membersCount = user.role === Role.TEAM_LEADER
     ? await prisma.user.count({ where: { createdById: id, deletedAt: null } })
@@ -250,18 +270,24 @@ export async function getRecruiterStats(id: string, actor: Requester) {
   return {
     recruiter: sanitizeUser(user),
     assignedProfilesCount: assignedProfiles.length,
-    totalApplications,
-    currentShiftApplications,
+    totalApplications: totalStats.total,
+    ashbyRemainder: totalStats.ashbyRemainder,
+    currentShiftApplications: shiftStats.total,
+    ashbyShiftRemainder: shiftStats.ashbyRemainder,
     currentBusinessDate: todayBusinessDate,
-    profileWiseCounts: assignedProfiles.map((profile) => ({
-      profileId: profile.id,
-      candidateName: profile.candidateName,
-      technology: profile.technology,
-      applicationCount: applicationCountMap.get(profile.id) ?? 0,
-      totalApplications: applicationCountMap.get(profile.id) ?? 0,
-      currentShiftApplicationCount: currentShiftApplicationCountMap.get(profile.id) ?? 0,
-      currentShiftApplications: currentShiftApplicationCountMap.get(profile.id) ?? 0,
-    })),
+    profileWiseCounts: assignedProfiles.map((profile) => {
+      const pTotalStats = calculateAdjustedCounts(allTimeProfilePortals.get(profile.id) || []);
+      const pShiftStats = calculateAdjustedCounts(shiftProfilePortals.get(profile.id) || []);
+      return {
+        profileId: profile.id,
+        candidateName: profile.candidateName,
+        technology: profile.technology,
+        applicationCount: pTotalStats.total,
+        totalApplications: pTotalStats.total,
+        currentShiftApplicationCount: pShiftStats.total,
+        currentShiftApplications: pShiftStats.total,
+      };
+    }),
     lastActiveAt: user.lastActiveAt,
     teamLeader,
     membersCount,

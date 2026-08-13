@@ -54,7 +54,9 @@ export interface RecruiterStats {
   recruiter: Recruiter;
   assignedProfilesCount: number;
   totalApplications: number;
+  ashbyRemainder?: number;
   currentShiftApplications: number;
+  ashbyShiftRemainder?: number;
   currentBusinessDate: string;
   profileWiseCounts: Array<{
     profileId: string;
@@ -142,6 +144,7 @@ export type JobPortal =
   | 'THE_MUSE'
   | 'Y_COMBINATOR'
   | 'CAREER_SITE'
+  | 'ASHBY'
   | 'OTHER';
 
 export interface JobApplication {
@@ -196,7 +199,9 @@ export interface DashboardRow {
   isActive: boolean;
   assignedProfiles: number;
   totalApplications: number;
+  ashbyRemainder?: number;
   currentShiftApplications: number;
+  ashbyShiftRemainder?: number;
   lastActiveAt: string | null;
 }
 

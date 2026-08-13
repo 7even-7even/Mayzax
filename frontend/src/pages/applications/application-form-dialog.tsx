@@ -37,6 +37,7 @@ function detectJobPortal(url: string): (typeof ALL_JOB_PORTALS)[number] | null {
     if (host.includes('speedyapply.com')) return 'SPEEDY_APPLY';
     if (host.includes('themuse.com')) return 'THE_MUSE';
     if (host.includes('ycombinator.com') || host.includes('workatastartup.com')) return 'Y_COMBINATOR';
+    if (host.includes('ashbyhq.com')) return 'ASHBY';
     if (host.includes('careers.') || host.startsWith('jobs.')) return 'CAREER_SITE';
     return 'OTHER';
   } catch {
@@ -102,17 +103,19 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
   });
 
   // Enterprise verification hook v2
-  const { isVerified, isChecking, verificationResult, state: verificationState, isExtensionInstalled, installUrl, extensionId, retry: retryVerification, verificationHash, evidence } = useExtensionVerification(debouncedLink);
+  // const { isVerified, isChecking, verificationResult, state: verificationState, isExtensionInstalled, installUrl, extensionId, retry: retryVerification, verificationHash, evidence } = useExtensionVerification(debouncedLink);
 
   // Extension placeholder states
-  // const isVerified = false;
-  // const isChecking = false;
-  // const verificationResult = null;
-  // const verificationState = 'idle';
-  // const isExtensionInstalled = false;
-  // const installUrl = null;
-  // const extensionId = '';
-  // const retryVerification = () => {};
+  const isVerified = false;
+  const isChecking = false;
+  const verificationResult: any = null;
+  const verificationState = 'idle';
+  const isExtensionInstalled = false;
+  const installUrl = null;
+  const extensionId = '';
+  const retryVerification = () => {};
+  const verificationHash: any = null;
+  const evidence: any = null;
 
   const [duplicateResult, setDuplicateResult] = useState<{ isDuplicate: boolean; appliedByRecruiter?: { name: string } | null } | null>(null);
 
@@ -270,7 +273,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
               {debouncedLink && (
                 <div className="mt-3 space-y-2">
                   {/* ExtensionVerificationBadge commented out until extension is deployed */}
-                  <ExtensionVerificationBadge isVerified={isVerified} isChecking={isChecking} result={verificationResult} state={verificationState} isExtensionInstalled={isExtensionInstalled} installUrl={installUrl} extensionId={extensionId} onRetry={retryVerification} />
+                  {/* <ExtensionVerificationBadge isVerified={isVerified} isChecking={isChecking} result={verificationResult} state={verificationState} isExtensionInstalled={isExtensionInstalled} installUrl={installUrl} extensionId={extensionId} onRetry={retryVerification} /> */}
                   <div className="flex flex-wrap gap-2">
                     {duplicateResult?.isDuplicate ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">

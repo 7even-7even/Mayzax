@@ -19,8 +19,38 @@ const ANALYTICS_JOB_PORTALS = [
   'LEVER',
   'GREENHOUSE',
   'CAREER_SITE',
+  'ASHBY',
   'OTHER',
 ] as JobPortal[];
+
+export function calculateAdjustedCounts(portalCounts: { jobPortal: JobPortal; count: number }[]) {
+  let total = 0;
+  let ashbyRaw = 0;
+  for (const item of portalCounts) {
+    if (item.jobPortal === 'ASHBY') {
+      ashbyRaw += item.count;
+    } else {
+      total += item.count;
+    }
+  }
+  total += Math.floor(ashbyRaw / 10);
+  const ashbyRemainder = ashbyRaw % 10;
+  return { total, ashbyRemainder, ashbyRaw };
+}
+
+export async function getAdjustedApplicationCounts(where: Prisma.JobApplicationWhereInput) {
+  const grouped = await prisma.jobApplication.groupBy({
+    by: ['jobPortal'],
+    where,
+    _count: { _all: true },
+  });
+  const rawCounts = grouped.map((g) => ({
+    jobPortal: g.jobPortal as JobPortal,
+    count: g._count._all,
+  }));
+  return calculateAdjustedCounts(rawCounts).total;
+}
+
 
 /**
  * Admin dashboard: per-recruiter rollups.
@@ -60,12 +90,30 @@ export async function getDashboardOverview(query: DashboardQuery, actor: { id: s
   const todayBusinessDate = getBusinessDateString(new Date());
   const businessDateFilter = new Date(`${todayBusinessDate}T00:00:00.000Z`);
 
-  const currentShiftCounts = await prisma.jobApplication.groupBy({
-    by: ['recruiterId'],
+  const allTimeCountsGrouped = await prisma.jobApplication.groupBy({
+    by: ['recruiterId', 'jobPortal'],
+    _count: { _all: true },
+  });
+
+  const currentShiftCountsGrouped = await prisma.jobApplication.groupBy({
+    by: ['recruiterId', 'jobPortal'],
     where: { businessDate: businessDateFilter },
     _count: { _all: true },
   });
-  const shiftCountMap = new Map(currentShiftCounts.map((r) => [r.recruiterId, r._count._all]));
+
+  const allTimeRecruiterPortals = new Map<string, { jobPortal: JobPortal; count: number }[]>();
+  for (const row of allTimeCountsGrouped) {
+    const list = allTimeRecruiterPortals.get(row.recruiterId) || [];
+    list.push({ jobPortal: row.jobPortal as JobPortal, count: row._count._all });
+    allTimeRecruiterPortals.set(row.recruiterId, list);
+  }
+
+  const shiftRecruiterPortals = new Map<string, { jobPortal: JobPortal; count: number }[]>();
+  for (const row of currentShiftCountsGrouped) {
+    const list = shiftRecruiterPortals.get(row.recruiterId) || [];
+    list.push({ jobPortal: row.jobPortal as JobPortal, count: row._count._all });
+    shiftRecruiterPortals.set(row.recruiterId, list);
+  }
 
   const assignedProfileCounts = await Promise.all(
     recruiters.map((recruiter) =>
@@ -81,16 +129,23 @@ export async function getDashboardOverview(query: DashboardQuery, actor: { id: s
     ),
   );
 
-  let rows = recruiters.map((r, index) => ({
-    id: r.id,
-    name: r.name,
-    email: r.email,
-    isActive: r.isActive,
-    assignedProfiles: assignedProfileCounts[index],
-    totalApplications: r._count.applications,
-    currentShiftApplications: shiftCountMap.get(r.id) ?? 0,
-    lastActiveAt: r.lastActiveAt,
-  }));
+  let rows = recruiters.map((r, index) => {
+    const totalStats = calculateAdjustedCounts(allTimeRecruiterPortals.get(r.id) || []);
+    const shiftStats = calculateAdjustedCounts(shiftRecruiterPortals.get(r.id) || []);
+    return {
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      isActive: r.isActive,
+      assignedProfiles: assignedProfileCounts[index],
+      totalApplications: totalStats.total,
+      ashbyRemainder: totalStats.ashbyRemainder,
+      currentShiftApplications: shiftStats.total,
+      ashbyShiftRemainder: shiftStats.ashbyRemainder,
+      lastActiveAt: r.lastActiveAt,
+    };
+  });
+
 
   // Sort
   rows.sort((a, b) => {
@@ -142,12 +197,12 @@ export async function getRecruiterBreakdown(recruiterId: string, actor: { id: st
       orderBy: { candidateName: 'asc' },
     }),
     prisma.jobApplication.groupBy({
-      by: ['profileId'],
+      by: ['profileId', 'jobPortal'],
       where: { recruiterId },
       _count: { _all: true },
     }),
     prisma.jobApplication.groupBy({
-      by: ['profileId'],
+      by: ['profileId', 'jobPortal'],
       where: { recruiterId, businessDate: businessDateFilter },
       _count: { _all: true },
     }),
@@ -159,19 +214,34 @@ export async function getRecruiterBreakdown(recruiterId: string, actor: { id: st
     }),
   ]);
 
-  const totalCountMap = new Map(totalProfileWise.map((row) => [row.profileId, row._count._all]));
-  const currentShiftCountMap = new Map(currentShiftProfileWise.map((row) => [row.profileId, row._count._all]));
+  const allTimeProfilePortals = new Map<string, { jobPortal: JobPortal; count: number }[]>();
+  for (const row of totalProfileWise) {
+    const list = allTimeProfilePortals.get(row.profileId) || [];
+    list.push({ jobPortal: row.jobPortal as JobPortal, count: row._count._all });
+    allTimeProfilePortals.set(row.profileId, list);
+  }
+
+  const shiftProfilePortals = new Map<string, { jobPortal: JobPortal; count: number }[]>();
+  for (const row of currentShiftProfileWise) {
+    const list = shiftProfilePortals.get(row.profileId) || [];
+    list.push({ jobPortal: row.jobPortal as JobPortal, count: row._count._all });
+    shiftProfilePortals.set(row.profileId, list);
+  }
 
   return {
-    profileWiseCounts: assignedProfiles.map((profile) => ({
-      profileId: profile.id,
-      candidateName: profile.candidateName,
-      technology: profile.technology,
-      applicationCount: totalCountMap.get(profile.id) ?? 0,
-      totalApplications: totalCountMap.get(profile.id) ?? 0,
-      currentShiftApplicationCount: currentShiftCountMap.get(profile.id) ?? 0,
-      currentShiftApplications: currentShiftCountMap.get(profile.id) ?? 0,
-    })),
+    profileWiseCounts: assignedProfiles.map((profile) => {
+      const totalStats = calculateAdjustedCounts(allTimeProfilePortals.get(profile.id) || []);
+      const shiftStats = calculateAdjustedCounts(shiftProfilePortals.get(profile.id) || []);
+      return {
+        profileId: profile.id,
+        candidateName: profile.candidateName,
+        technology: profile.technology,
+        applicationCount: totalStats.total,
+        totalApplications: totalStats.total,
+        currentShiftApplicationCount: shiftStats.total,
+        currentShiftApplications: shiftStats.total,
+      };
+    }),
     recentApplications,
     currentBusinessDate: todayBusinessDate,
   };
@@ -225,18 +295,33 @@ export async function getDailyCounts(query: DailyCountsQuery & { teamId?: string
   }
 
   const rows = (await (prisma as any).$queryRaw(Prisma.sql`
-    SELECT "businessDate", COUNT(*)::bigint as count
+    SELECT "businessDate", "jobPortal", COUNT(*)::bigint as count
     FROM "job_applications"
     WHERE "businessDate" >= ${from} AND "businessDate" <= ${to}
     ${recruiterFilter}
-    GROUP BY "businessDate"
+    GROUP BY "businessDate", "jobPortal"
     ORDER BY "businessDate" ASC
-  `)) as Array<{ businessDate: Date; count: bigint }>;
+  `)) as Array<{ businessDate: Date; jobPortal: JobPortal; count: bigint }>;
 
-  return rows.map((r) => ({
-    businessDate: r.businessDate.toISOString().slice(0, 10),
-    count: Number(r.count),
-  }));
+  const datePortalMap = new Map<string, { jobPortal: JobPortal; count: number }[]>();
+  for (const r of rows) {
+    const dateStr = r.businessDate.toISOString().slice(0, 10);
+    const list = datePortalMap.get(dateStr) || [];
+    list.push({ jobPortal: r.jobPortal, count: Number(r.count) });
+    datePortalMap.set(dateStr, list);
+  }
+
+  const result: Array<{ businessDate: string; count: number }> = [];
+  for (const [dateStr, portals] of datePortalMap.entries()) {
+    const stats = calculateAdjustedCounts(portals);
+    result.push({
+      businessDate: dateStr,
+      count: stats.total,
+    });
+  }
+
+  result.sort((a, b) => a.businessDate.localeCompare(b.businessDate));
+  return result;
 }
 
 export async function getJobPortalAnalytics(actor: { id: string; role: Role }, query: JobPortalAnalyticsQuery & { recruiterId?: string; teamId?: string }) {
@@ -302,7 +387,14 @@ export async function getJobPortalAnalytics(actor: { id: string; role: Role }, q
   });
 
   const countMap = new Map(groupedCounts.map((row) => [row.jobPortal, row._count._all]));
-  const totalApplications = groupedCounts.reduce((sum, row) => sum + row._count._all, 0);
+  
+  const rawPortalCounts = groupedCounts.map((row) => ({
+    jobPortal: row.jobPortal as JobPortal,
+    count: row._count._all,
+  }));
+  const adjustedStats = calculateAdjustedCounts(rawPortalCounts);
+  const totalApplications = adjustedStats.total;
+
   const trackedPortalSet = new Set(ANALYTICS_JOB_PORTALS);
   const legacyOtherCount = groupedCounts
     .filter((row) => !trackedPortalSet.has(row.jobPortal))
@@ -312,10 +404,13 @@ export async function getJobPortalAnalytics(actor: { id: string; role: Role }, q
     totalApplications,
     currentBusinessDate,
     filter: { scope: query.scope, from: query.from ?? null, to: query.to ?? null },
-    portals: ANALYTICS_JOB_PORTALS.map((portal) => ({ 
-      portal,
-      count: (countMap.get(portal) ?? 0) + (portal === JobPortal.OTHER ? legacyOtherCount : 0),
-    })),
+    portals: ANALYTICS_JOB_PORTALS.map((portal) => {
+      let count = (countMap.get(portal) ?? 0) + (portal === JobPortal.OTHER ? legacyOtherCount : 0);
+      if (portal === 'ASHBY') {
+        count = Math.floor(count / 10);
+      }
+      return { portal, count };
+    }),
   };
 }
 
@@ -324,14 +419,10 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
     const todayBusinessDate = getBusinessDateString(new Date());
     const businessDateFilter = new Date(`${todayBusinessDate}T00:00:00.000Z`);
     const [myTotalApplications, myTodayApplications] = await Promise.all([
-      prisma.jobApplication.count({
-        where: { recruiterId: actor.id },
-      }),
-      prisma.jobApplication.count({
-        where: {
-          recruiterId: actor.id,
-          businessDate: businessDateFilter,
-        },
+      getAdjustedApplicationCounts({ recruiterId: actor.id }),
+      getAdjustedApplicationCounts({
+        recruiterId: actor.id,
+        businessDate: businessDateFilter,
       }),
     ]);
 
@@ -397,28 +488,24 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
           : {}),
       },
     }),
-    prisma.jobApplication.count({
-      where: isTeamLeader
+    getAdjustedApplicationCounts(isTeamLeader
+      ? {
+          OR: [
+            { recruiterId: actor.id },
+            { recruiter: { createdById: actor.id } },
+          ],
+        }
+      : {}),
+    getAdjustedApplicationCounts({
+      businessDate: businessDateFilter,
+      ...(isTeamLeader
         ? {
             OR: [
               { recruiterId: actor.id },
               { recruiter: { createdById: actor.id } },
             ],
           }
-        : {},
-    }),
-    prisma.jobApplication.count({
-      where: {
-        businessDate: businessDateFilter,
-        ...(isTeamLeader
-          ? {
-              OR: [
-                { recruiterId: actor.id },
-                { recruiter: { createdById: actor.id } },
-              ],
-            }
-          : {}),
-      },
+        : {}),
     }),
     // Fetch TLs with their member count (Admin only; TL sees just themselves)
     isTeamLeader
@@ -433,14 +520,10 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
           },
           orderBy: { name: 'asc' },
         }),
-    prisma.jobApplication.count({
-      where: { recruiterId: actor.id },
-    }),
-    prisma.jobApplication.count({
-      where: {
-        recruiterId: actor.id,
-        businessDate: businessDateFilter,
-      },
+    getAdjustedApplicationCounts({ recruiterId: actor.id }),
+    getAdjustedApplicationCounts({
+      recruiterId: actor.id,
+      businessDate: businessDateFilter,
     }),
     prisma.activityLog.findMany({
       where: {
@@ -456,7 +539,7 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
       },
     }),
     prisma.jobApplication.groupBy({
-      by: ['recruiterId'],
+      by: ['recruiterId', 'jobPortal'],
       where: {
         businessDate: businessDateFilter,
         recruiter: {
@@ -478,37 +561,47 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
 
   let topPerformer = '-';
   if (teamApplicationsToday.length > 0) {
-    const top = teamApplicationsToday.reduce((prev, current) =>
-      prev._count._all > current._count._all ? prev : current
-    );
-    const topUser = await prisma.user.findUnique({
-      where: { id: top.recruiterId },
-      select: { name: true },
-    });
-    if (topUser) {
-      topPerformer = `${topUser.name} (${top._count._all})`;
+    const recruiterPortalCounts = new Map<string, { jobPortal: JobPortal; count: number }[]>();
+    for (const row of teamApplicationsToday) {
+      const list = recruiterPortalCounts.get(row.recruiterId) || [];
+      list.push({ jobPortal: row.jobPortal as JobPortal, count: row._count._all });
+      recruiterPortalCounts.set(row.recruiterId, list);
+    }
+    let topRecruiterId = '';
+    let topCount = -1;
+    for (const recruiterId of recruiterPortalCounts.keys()) {
+      const stats = calculateAdjustedCounts(recruiterPortalCounts.get(recruiterId)!);
+      if (stats.total > topCount) {
+        topCount = stats.total;
+        topRecruiterId = recruiterId;
+      }
+    }
+    if (topRecruiterId) {
+      const topUser = await prisma.user.findUnique({
+        where: { id: topRecruiterId },
+        select: { name: true },
+      });
+      if (topUser) {
+        topPerformer = `${topUser.name} (${topCount})`;
+      }
     }
   }
 
   const teamStats = await Promise.all(
     teamLeaders.map(async (tl) => {
       const [totalCount, todayCount] = await Promise.all([
-        prisma.jobApplication.count({
-          where: {
-            OR: [
-              { recruiterId: tl.id },
-              { recruiter: { createdById: tl.id } },
-            ],
-          },
+        getAdjustedApplicationCounts({
+          OR: [
+            { recruiterId: tl.id },
+            { recruiter: { createdById: tl.id } },
+          ],
         }),
-        prisma.jobApplication.count({
-          where: {
-            businessDate: businessDateFilter,
-            OR: [
-              { recruiterId: tl.id },
-              { recruiter: { createdById: tl.id } },
-            ],
-          },
+        getAdjustedApplicationCounts({
+          businessDate: businessDateFilter,
+          OR: [
+            { recruiterId: tl.id },
+            { recruiter: { createdById: tl.id } },
+          ],
         }),
       ]);
       return { tlId: tl.id, totalCount, todayCount };
