@@ -15,6 +15,7 @@ import { ForgotPasswordScreen } from '@/screens/ForgotPasswordScreen';
 import { ForgotPasswordResetScreen } from '@/screens/ForgotPasswordResetScreen';
 import { HomeScreen } from '@/screens/HomeScreen';
 import { ActivityScreen } from '@/screens/ActivityScreen';
+import { MonitoringScreen } from '@/screens/MonitoringScreen';
 import { HistoryScreen } from '@/screens/HistoryScreen';
 import { NotificationsScreen } from '@/screens/NotificationsScreen';
 import { ProfileScreen } from '@/screens/ProfileScreen';
@@ -46,6 +47,7 @@ export type AuthStackParamList = {
 export type TabParamList = {
   HomeTab: undefined;
   ActivityTab: undefined;
+  MonitoringTab: undefined;
   NotificationsTab: undefined;
   ProfileTab: undefined;
 };
@@ -112,6 +114,16 @@ function TabsNavigator() {
           }}
         />
       )}
+      {isAdmin && (
+        <Tab.Screen
+          name="MonitoringTab"
+          component={MonitoringScreen}
+          options={{
+            title: 'Monitoring',
+            tabBarIcon: ({ color, size }) => <TabIcon name="monitor-dashboard" color={color} size={size} />,
+          }}
+        />
+      )}
       <Tab.Screen
         name="NotificationsTab"
         component={NotificationsScreen}
@@ -139,6 +151,7 @@ function mapTab(screen: string): keyof TabParamList {
   switch (screen) {
     case 'Today':
     case 'Activity': return 'ActivityTab';
+    case 'Monitoring': return 'MonitoringTab';
     case 'Notifications': return 'NotificationsTab';
     case 'Profile': return 'ProfileTab';
     default: return 'HomeTab';
@@ -159,6 +172,7 @@ function navigateToScreen(screen: string, params?: any) {
         break;
       case 'Today':
       case 'Activity':
+      case 'Monitoring':
       case 'Notifications':
       case 'Profile':
         navigationRef.navigate('Tabs', { screen: mapTab(screen) });

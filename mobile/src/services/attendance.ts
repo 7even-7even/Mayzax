@@ -1,5 +1,5 @@
 import { getApi } from './api';
-import type { TodayDto, ShiftDto, DayDetailDto, MonthSummaryDto, Paginated, AttendanceStatus, AnalyticsSummaryDto, JobPortalAnalyticsDto } from '@/types/api';
+import type { TodayDto, ShiftDto, DayDetailDto, MonthSummaryDto, Paginated, AttendanceStatus, AnalyticsSummaryDto, JobPortalAnalyticsDto, LiveStatusMetricsDto } from '@/types/api';
 
 export interface DailyCountsFilter {
   from?: string;
@@ -23,6 +23,12 @@ export async function fetchAnalyticsSummary(): Promise<AnalyticsSummaryDto> {
   const api = await getApi();
   const res = await api.get('/analytics/summary');
   return res as unknown as AnalyticsSummaryDto;
+}
+
+export async function fetchLiveStatus(): Promise<LiveStatusMetricsDto> {
+  const api = await getApi();
+  const res = await api.get('/activity/live-status');
+  return res as unknown as LiveStatusMetricsDto;
 }
 
 export async function fetchJobPortalAnalytics(scope: 'currentShift' | 'custom' = 'currentShift', from?: string, to?: string): Promise<JobPortalAnalyticsDto> {

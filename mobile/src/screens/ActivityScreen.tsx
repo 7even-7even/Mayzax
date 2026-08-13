@@ -256,7 +256,7 @@ function AdminAnalyticsScreen({ dark }: { dark: boolean }) {
           <BigTile label="On Break" value={summary?.onBreakMemberCount ?? 0} accent={colors.warning} icon="coffee" dark={dark} />
         </View>
         <View style={styles.tileGrid}>
-          <BigTile label="Today's Apps" value={summary?.currentShiftApplications ?? 0} accent="#8b5cf6" icon="briefcase-upload" dark={dark} />
+          <BigTile label="Today's Applications" value={summary?.currentShiftApplications ?? 0} accent="#8b5cf6" icon="briefcase-upload" dark={dark} />
           <BigTile label="Top Performer" value={formatTopPerformer(summary?.topPerformer || '—')} accent={colors.accent} icon="trophy" dark={dark} />
         </View>
 

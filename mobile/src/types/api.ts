@@ -264,3 +264,30 @@ export interface JobPortalAnalyticsDto {
   currentBusinessDate: string;
   portals: JobPortalItem[];
 }
+
+export interface LiveStatusItemDto {
+  userId: string;
+  name: string;
+  email: string;
+  role: Role;
+  createdById: string | null;
+  teamName: string | null;
+  status: UserStatus;
+  startedAt: string;
+  currentDurationSeconds: number;
+  optionalNote: string | null;
+  todayLoggedInSeconds: number;
+  todayProductiveSeconds: number;
+  todayBreakSeconds: number;
+  lastHeartbeatAt: string | null;
+  isOnline: boolean;
+}
+
+export interface LiveStatusMetricsDto {
+  totalActiveCount: number;
+  totalBreakCount: number;
+  totalIssueCount: number;
+  totalOfflineCount: number;
+  members: LiveStatusItemDto[];
+}
+

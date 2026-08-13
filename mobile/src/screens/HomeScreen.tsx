@@ -559,7 +559,7 @@ export function HomeScreen() {
                 <DashTile icon="coffee" label="On Break" value={analytics?.onBreakMemberCount ?? 0} accent={colors.warning} dark={dark} />
               </View>
               <View style={styles.tileRow}>
-                <DashTile icon="briefcase-upload" label="Today's Apps" value={analytics?.currentShiftApplications ?? 0} accent="#8b5cf6" dark={dark} />
+                <DashTile icon="briefcase-upload" label="Today's Applications" value={analytics?.currentShiftApplications ?? 0} accent="#8b5cf6" dark={dark} />
                 {/* <DashTile icon="account" label="Top Performer" value={formatTopPerformer(analytics?.topPerformer || '—')} accent={colors.accent} dark={dark} /> */}
               </View>
 
@@ -682,7 +682,7 @@ export function HomeScreen() {
                     <DashTile icon="account-check" label="Active Now" value={analytics?.activeMemberCount ?? 0} accent={colors.success} dark={dark} />
                   </View>
                   <View style={styles.tileRow}>
-                    <DashTile icon="briefcase-check" label="Team Apps" value={analytics?.totalApplications ?? 0} accent={colors.primaryLight} dark={dark} />
+                    <DashTile icon="briefcase-check" label="Team Applications" value={analytics?.totalApplications ?? 0} accent={colors.primaryLight} dark={dark} />
                     <DashTile icon="chart-line" label="Today's Team" value={analytics?.currentShiftApplications ?? 0} accent="#8b5cf6" dark={dark} />
                   </View>
                   <View style={styles.tileRow}>
