@@ -1,0 +1,66 @@
+{
+  "info": {
+    "_postman_id": "mayzax-shift-collection",
+    "name": "Mayzax - Shift APIs",
+    "description": "Postman collection generated from shift.routes.ts and shift.controller.ts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get Shift Config",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/shifts/config",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "shifts",
+            "config"
+          ]
+        },
+        "description": "Public endpoint. No authentication required. Returns the system-wide business shift configuration."
+      },
+      "response": []
+    },
+    {
+      "name": "Get My Shift",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/shifts/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "shifts",
+            "me"
+          ]
+        },
+        "description": "Authenticated endpoint. Returns the authenticated user's resolved shift configuration and today's business-date shift window."
+      },
+      "response": []
+    }
+  ]
+}

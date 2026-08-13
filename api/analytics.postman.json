@@ -1,0 +1,370 @@
+{
+  "info": {
+    "_postman_id": "mayzax-analytics-api",
+    "name": "Mayzax - Analytics API",
+    "description": "Postman collection generated from the provided analytics.routes.ts, analytics.controller.ts, analytics.service.ts and analytics.validation.ts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "recruiterId",
+      "value": ""
+    },
+    {
+      "key": "teamId",
+      "value": ""
+    },
+    {
+      "key": "applicationId",
+      "value": ""
+    },
+    {
+      "key": "fromDate",
+      "value": "2026-08-01"
+    },
+    {
+      "key": "toDate",
+      "value": "2026-08-13"
+    }
+  ],
+  "item": [
+    {
+      "name": "Job Portal Analytics - All",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/analytics/job-portals?scope=all",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analytics",
+            "job-portals"
+          ],
+          "query": [
+            {
+              "key": "scope",
+              "value": "all"
+            },
+            {
+              "key": "from",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "to",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "recruiterId",
+              "value": "{{recruiterId}}",
+              "disabled": true
+            },
+            {
+              "key": "teamId",
+              "value": "{{teamId}}",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Job Portal Analytics - Current Shift",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/analytics/job-portals?scope=currentShift",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analytics",
+            "job-portals"
+          ],
+          "query": [
+            {
+              "key": "scope",
+              "value": "currentShift"
+            },
+            {
+              "key": "recruiterId",
+              "value": "{{recruiterId}}",
+              "disabled": true
+            },
+            {
+              "key": "teamId",
+              "value": "{{teamId}}",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Job Portal Analytics - Custom Range",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/analytics/job-portals?scope=custom&from={{fromDate}}&to={{toDate}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analytics",
+            "job-portals"
+          ],
+          "query": [
+            {
+              "key": "scope",
+              "value": "custom"
+            },
+            {
+              "key": "from",
+              "value": "{{fromDate}}"
+            },
+            {
+              "key": "to",
+              "value": "{{toDate}}"
+            },
+            {
+              "key": "recruiterId",
+              "value": "{{recruiterId}}",
+              "disabled": true
+            },
+            {
+              "key": "teamId",
+              "value": "{{teamId}}",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Global Summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/analytics/summary",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analytics",
+            "summary"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Dashboard Overview",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/analytics/dashboard?page=1&pageSize=20&sortBy=totalApplications&sortOrder=desc",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analytics",
+            "dashboard"
+          ],
+          "query": [
+            {
+              "key": "search",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "sortBy",
+              "value": "totalApplications"
+            },
+            {
+              "key": "sortOrder",
+              "value": "desc"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Recruiter Dashboard Breakdown",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/analytics/dashboard/{{recruiterId}}/breakdown",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analytics",
+            "dashboard",
+            "{{recruiterId}}",
+            "breakdown"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Daily Counts - Default",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/analytics/daily-counts",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analytics",
+            "daily-counts"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Daily Counts - Custom Range",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/analytics/daily-counts?from={{fromDate}}&to={{toDate}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analytics",
+            "daily-counts"
+          ],
+          "query": [
+            {
+              "key": "recruiterId",
+              "value": "{{recruiterId}}",
+              "disabled": true
+            },
+            {
+              "key": "from",
+              "value": "{{fromDate}}"
+            },
+            {
+              "key": "to",
+              "value": "{{toDate}}"
+            },
+            {
+              "key": "teamId",
+              "value": "{{teamId}}",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Daily Counts - Recruiter",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/analytics/daily-counts?recruiterId={{recruiterId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "analytics",
+            "daily-counts"
+          ],
+          "query": [
+            {
+              "key": "recruiterId",
+              "value": "{{recruiterId}}"
+            },
+            {
+              "key": "from",
+              "value": "{{fromDate}}",
+              "disabled": true
+            },
+            {
+              "key": "to",
+              "value": "{{toDate}}",
+              "disabled": true
+            },
+            {
+              "key": "teamId",
+              "value": "{{teamId}}",
+              "disabled": true
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

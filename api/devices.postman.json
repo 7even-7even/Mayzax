@@ -1,0 +1,125 @@
+{
+  "info": {
+    "_postman_id": "d1e8923b-5544-4f90-a33d-118c7e9903ef",
+    "name": "Device Module API",
+    "description": "Postman collection for registering user devices, listing registered push tokens, deleting devices, and heartbeating/pinging device activity.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/devices",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "YOUR_JWT_ACCESS_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "deviceId",
+      "value": "clx1122334455667788",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Register Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fcmToken\": \"fcm_token_sample_abc123xyz789\",\n  \"platform\": \"ANDROID\",\n  \"deviceName\": \"John's Pixel 7\",\n  \"deviceModel\": \"Pixel 7 Pro\",\n  \"appVersion\": \"1.0.4\",\n  \"osVersion\": \"Android 14\",\n  \"pushToken\": \"apns_or_fcm_push_token_sample\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["register"]
+        },
+        "description": "Registers a new device token or updates an existing device record linked to the authenticated user."
+      },
+      "response": []
+    },
+    {
+      "name": "List User Devices",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": ["{{baseUrl}}"],
+          "path": [""]
+        },
+        "description": "Retrieves all registered active devices for the authenticated user ordered by last seen."
+      },
+      "response": []
+    },
+    {
+      "name": "Ping / Heartbeat Device",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fcmToken\": \"fcm_token_sample_abc123xyz789\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/:id/ping",
+          "host": ["{{baseUrl}}"],
+          "path": [":id", "ping"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "{{deviceId}}",
+              "description": "The unique ID of the registered device"
+            }
+          ]
+        },
+        "description": "Updates the lastSeen timestamp for the given device via background heartbeat or app activity."
+      },
+      "response": []
+    },
+    {
+      "name": "Remove Device",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/:id",
+          "host": ["{{baseUrl}}"],
+          "path": [":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "{{deviceId}}",
+              "description": "The unique ID of the device to remove"
+            }
+          ]
+        },
+        "description": "Unregisters/deletes a registered device token for the authenticated user."
+      },
+      "response": []
+    }
+  ]
+}

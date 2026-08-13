@@ -1,0 +1,180 @@
+{
+  "info": {
+    "_postman_id": "b7c2c7d5-7a5a-4d6f-9a2d-attendance",
+    "name": "Mayzax - Attendance",
+    "description": "Postman collection for the Attendance module. All endpoints require authentication. Set {{baseUrl}} to the API base URL and {{accessToken}} to a valid JWT access token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "date",
+      "value": "2026-08-14"
+    },
+    {
+      "key": "month",
+      "value": "2026-08"
+    },
+    {
+      "key": "fromDate",
+      "value": "2026-08-01"
+    },
+    {
+      "key": "toDate",
+      "value": "2026-08-14"
+    }
+  ],
+  "item": [
+    {
+      "name": "Get Today's Attendance",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/attendance/today",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attendance",
+            "today"
+          ]
+        },
+        "description": "Returns the authenticated user's complete attendance state for today, including shift, breaks, timeline, productivity and server time."
+      }
+    },
+    {
+      "name": "Get Current Break",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/attendance/current-break",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attendance",
+            "current-break"
+          ]
+        },
+        "description": "Returns the authenticated user's active break information, or inBreak=false when the user is not currently on a break."
+      }
+    },
+    {
+      "name": "Get Attendance For Date",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/attendance/{{date}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attendance",
+            "{{date}}"
+          ]
+        },
+        "description": "Returns attendance details for a specific date. Date must be YYYY-MM-DD and cannot be in the future."
+      }
+    },
+    {
+      "name": "Get Month Summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/attendance/month-summary?month={{month}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attendance",
+            "month-summary"
+          ],
+          "query": [
+            {
+              "key": "month",
+              "value": "{{month}}",
+              "description": "Month in YYYY-MM format. If omitted, the current business month is used."
+            }
+          ]
+        },
+        "description": "Returns day-by-day attendance summary for the requested month."
+      }
+    },
+    {
+      "name": "Get Attendance History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/attendance/history?page=1&pageSize=20&fromDate={{fromDate}}&toDate={{toDate}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "attendance",
+            "history"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number, defaults to 1."
+            },
+            {
+              "key": "pageSize",
+              "value": "20",
+              "description": "Number of records per page. Controller clamps this between 1 and 100."
+            },
+            {
+              "key": "fromDate",
+              "value": "{{fromDate}}",
+              "description": "Optional start date in YYYY-MM-DD format."
+            },
+            {
+              "key": "toDate",
+              "value": "{{toDate}}",
+              "description": "Optional end date in YYYY-MM-DD format."
+            }
+          ]
+        },
+        "description": "Returns paginated AttendanceDay rollups for the authenticated user. Results are ordered newest first."
+      }
+    }
+  ]
+}

@@ -1,0 +1,306 @@
+{
+  "info": {
+    "_postman_id": "8c87a526-7e33-4296-a7b3-daf36a6558de",
+    "name": "Mayzax API - Recruiters",
+    "description": "Postman collection generated from recruiter.routes.ts, recruiter.controller.ts and recruiter.service.ts. Validation schemas were not provided, so request bodies/query examples are inferred from the service/controller usage. Set baseUrl to the mounted API base and provide a valid accessToken.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "recruiterId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Recruiter Self-Service",
+      "item": [
+        {
+          "name": "Get My Recruiter Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recruiters/me/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recruiters",
+                "me",
+                "stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update My Team Name",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamName\": \"Team Alpha\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/recruiters/me/team-name",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recruiters",
+                "me",
+                "team-name"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recruiter Listing",
+      "item": [
+        {
+          "name": "List Recruiters",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recruiters?page=1&pageSize=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recruiters"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Accessible to ADMIN, TEAM_LEADER, RECRUITER, RESUME_ASSIST and SALES_EXEC. The service automatically restricts results according to the requester's role."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recruiter Administration",
+      "item": [
+        {
+          "name": "Create Recruiter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Recruiter\",\n  \"email\": \"recruiter@example.com\",\n  \"password\": \"Pass@123\",\n  \"role\": \"RECRUITER\",\n  \"createdById\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/recruiters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recruiters"
+              ]
+            },
+            "description": "ADMIN only. TEAM_LEADER cannot create recruiters according to the service logic."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json?.data?.id) pm.collectionVariables.set('recruiterId', json.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Recruiter Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recruiters/{{recruiterId}}/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recruiters",
+                "{{recruiterId}}",
+                "stats"
+              ]
+            },
+            "description": "ADMIN and TEAM_LEADER. Team leaders can only view their own managed recruiters or themselves."
+          }
+        },
+        {
+          "name": "Update Recruiter",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Recruiter\",\n  \"email\": \"updated.recruiter@example.com\",\n  \"role\": \"RECRUITER\",\n  \"teamName\": \"Team Alpha\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/recruiters/{{recruiterId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recruiters",
+                "{{recruiterId}}"
+              ]
+            },
+            "description": "ADMIN only. If a TEAM_LEADER is demoted to RECRUITER, managed recruiters are unassigned and teamName is cleared."
+          }
+        },
+        {
+          "name": "Activate / Deactivate Recruiter",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/recruiters/{{recruiterId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recruiters",
+                "{{recruiterId}}",
+                "status"
+              ]
+            },
+            "description": "ADMIN only. An admin cannot deactivate their own account."
+          }
+        },
+        {
+          "name": "Reset Recruiter Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recruiters/{{recruiterId}}/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recruiters",
+                "{{recruiterId}}",
+                "reset-password"
+              ]
+            },
+            "description": "ADMIN only. Resets the password to the server-defined default and clears the security question."
+          }
+        },
+        {
+          "name": "Delete Recruiter (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recruiters/{{recruiterId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "recruiters",
+                "{{recruiterId}}"
+              ]
+            },
+            "description": "ADMIN only. Soft-deletes the recruiter and unassigns their client profiles."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,235 @@
+{
+  "info": {
+    "_postman_id": "a8c9032f-4882-4217-bc22-1d12030f81d2",
+    "name": "Onboarding Module API",
+    "description": "Postman collection for managing client onboarding, document uploads, duplication checks, and administrative approval/rejection workflows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/onboarding",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "YOUR_ADMIN_JWT_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "onboardingId",
+      "value": "clx1234567890abcdef",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Public Endpoints",
+      "item": [
+        {
+          "name": "Check Duplicate Email / Phone",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/check-duplicate?email=john.doe@example.com&phone=+1234567890",
+              "host": ["{{baseUrl}}"],
+              "path": ["check-duplicate"],
+              "query": [
+                {
+                  "key": "email",
+                  "value": "john.doe@example.com",
+                  "description": "Email address to check for duplicates"
+                },
+                {
+                  "key": "phone",
+                  "value": "+1234567890",
+                  "description": "Phone number to check for duplicates"
+                }
+              ]
+            },
+            "description": "Checks if a client profile or pending onboarding application already exists with the provided email or phone number."
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Resume",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "resume",
+                  "type": "file",
+                  "src": [],
+                  "description": "Resume PDF/DOC file to upload"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["upload"]
+            },
+            "description": "Uploads a candidate's resume and returns the file path and original file name."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Onboarding Application",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+1234567890\",\n  \"dateOfBirth\": \"1995-05-15\",\n  \"gender\": \"Male\",\n  \"education\": [\n    {\n      \"qualification\": \"Bachelor of Science\",\n      \"fieldOfStudy\": \"Computer Science\",\n      \"specialization\": \"Software Engineering\",\n      \"instituteName\": \"State University\",\n      \"startDate\": \"2013-09-01\",\n      \"endDate\": \"2017-05-20\",\n      \"currentlyOngoing\": false,\n      \"honors\": \"Cum Laude\"\n    }\n  ],\n  \"technology\": \"Full Stack Development\",\n  \"skills\": [\"TypeScript\", \"React\", \"Node.js\", \"PostgreSQL\"],\n  \"visaStatus\": \"H-1B\",\n  \"entryToUS\": \"2018-08-10\",\n  \"currentLocation\": \"New York, NY\",\n  \"addressHistory\": [\n    {\n      \"state\": \"NY\",\n      \"country\": \"USA\",\n      \"fromDate\": \"2018-08-10\",\n      \"toDate\": \"Present\"\n    }\n  ],\n  \"hasExperience\": true,\n  \"experienceDetails\": \"5 years as a Full Stack Engineer at Tech Corp.\",\n  \"certifications\": \"AWS Certified Solutions Architect\",\n  \"resumeUrl\": \"uploads/resumes/john_doe_resume.pdf\",\n  \"resumeFileName\": \"john_doe_resume.pdf\",\n  \"declared\": true,\n  \"planSelected\": \"Gold\",\n  \"amountPaid\": 2500,\n  \"paymentRef\": \"PAY-123456789\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Submits a new client onboarding application."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Onboarding Application by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/:id",
+              "host": ["{{baseUrl}}"],
+              "path": [":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{onboardingId}}",
+                  "description": "Onboarding registration ID"
+                }
+              ]
+            },
+            "description": "Retrieves the onboarding application details for a given ID."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Management",
+      "item": [
+        {
+          "name": "List Onboardings (Paginated & Filtered)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/?status=PENDING&page=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": [" integration"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING",
+                  "description": "Filter by status: PENDING, APPROVED, REJECTED"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10",
+                  "description": "Items per page"
+                }
+              ]
+            },
+            "description": "Admin endpoint to list all onboarding applications with optional status filtering and pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Onboarding Application",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/:id/approve",
+              "host": ["{{baseUrl}}"],
+              "path": [":id", "approve"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{onboardingId}}",
+                  "description": "Onboarding application ID to approve"
+                }
+              ]
+            },
+            "description": "Approves a pending onboarding application. Creates a Client Profile, Client Payment records, and User login credentials."
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Onboarding Application",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/:id/reject",
+              "host": ["{{baseUrl}}"],
+              "path": [":id", "reject"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "{{onboardingId}}",
+                  "description": "Onboarding application ID to reject"
+                }
+              ]
+            },
+            "description": "Rejects a pending onboarding application."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

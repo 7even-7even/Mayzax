@@ -1,0 +1,177 @@
+{
+  "info": {
+    "_postman_id": "a82f8c5b-21d3-4a18-b2a6-updates",
+    "name": "Mayzax - System Updates",
+    "description": "Postman collection for the System Updates module. All endpoints require authentication. Set {{baseUrl}} to the API base URL and {{accessToken}} to a valid JWT access token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "updateId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Get Updates for User",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/updates",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "updates"
+          ]
+        },
+        "description": "Returns all system updates filtered by the authenticated user's role, ordered by creation date (newest first). Includes read status and total unread count."
+      }
+    },
+    {
+      "name": "Mark Update as Read",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/updates/{{updateId}}/read",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "updates",
+            "{{updateId}}",
+            "read"
+          ]
+        },
+        "description": "Marks a specific system update as read for the authenticated user."
+      }
+    },
+    {
+      "name": "Create Update (File Upload)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "title",
+              "value": "v2.0 System Release Notes",
+              "type": "text"
+            },
+            {
+              "key": "version",
+              "value": "v2.0.0",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "Major platform upgrade featuring performance improvements and new UI modules.",
+              "type": "text"
+            },
+            {
+              "key": "roles",
+              "value": "[\"RECRUITER\", \"TEAM_LEADER\"]",
+              "type": "text",
+              "description": "JSON string array or comma-separated roles allowed to see this update"
+            },
+            {
+              "key": "pdfFile",
+              "type": "file",
+              "src": [],
+              "description": "Optional PDF attachment file"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/updates",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "updates"
+          ]
+        },
+        "description": "Admin endpoint to create a new system update with a file attachment using multipart form-data. Automatically marks the update as read for the creator."
+      }
+    },
+    {
+      "name": "Create Update (External Link / JSON)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Updated Company Policy Guidelines\",\n  \"version\": \"1.4\",\n  \"description\": \"Updated policy documentation for all team members.\",\n  \"pdfUrl\": \"https://drive.google.com/file/d/example/view\",\n  \"roles\": [\"RECRUITER\", \"SALES_EXEC\"]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/updates",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "updates"
+          ]
+        },
+        "description": "Admin endpoint to create a system update linking to an external document or Google Drive file."
+      }
+    },
+    {
+      "name": "Delete Update",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/updates/{{updateId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "updates",
+            "{{updateId}}"
+          ]
+        },
+        "description": "Admin endpoint to delete a system update by ID."
+      }
+    }
+  ]
+}

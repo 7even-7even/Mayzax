@@ -1,0 +1,98 @@
+{
+  "info": {
+    "_postman_id": "c1f72a48-31d9-4821-9988-8422bd29e710",
+    "name": "Notifications Module API",
+    "description": "Postman collection for managing user in-app notifications, listing with pagination, and marking notifications as read.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/notifications",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "YOUR_JWT_ACCESS_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "clx9876543210fedcba",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "List User Notifications",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/?page=1&pageSize=20",
+          "host": ["{{baseUrl}}"],
+          "path": [" integration"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number (default: 1)"
+            },
+            {
+              "key": "pageSize",
+              "value": "20",
+              "description": "Items per page (default: 20, max: 100)"
+            }
+          ]
+        },
+        "description": "Retrieves a paginated list of notifications for the authenticated user ordered by priority and creation date, along with the unread count."
+      },
+      "response": []
+    },
+    {
+      "name": "Mark Specific Notification as Read",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/:id/read",
+          "host": ["{{baseUrl}}"],
+          "path": [":id", "read"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "{{notificationId}}",
+              "description": "The unique ID of the notification to mark as read"
+            }
+          ]
+        },
+        "description": "Marks a single unread notification as read for the authenticated user."
+      },
+      "response": []
+    },
+    {
+      "name": "Mark All Notifications as Read",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/read-all",
+          "host": ["{{baseUrl}}"],
+          "path": ["read-all"]
+        },
+        "description": "Marks all unread notifications for the authenticated user as read."
+      },
+      "response": []
+    }
+  ]
+}

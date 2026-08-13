@@ -1,0 +1,123 @@
+{
+  "info": {
+    "_postman_id": "e2f8910a-7711-4d32-90ab-556677889900",
+    "name": "Shared & Audit Module API",
+    "description": "Postman collection for shared internal utilities and administrative audit log tracking.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/audit-logs",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "YOUR_ADMIN_JWT_TOKEN_HERE",
+      "type": "string"
+    },
+    {
+      "key": "auditLogId",
+      "value": "clx1122334455667789",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{adminToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "List Audit Logs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/?page=1&pageSize=20&entity=USER&action=LOGIN",
+          "host": ["{{baseUrl}}"],
+          "path": [" integration"],
+          "query": [
+            {
+              "key": "page",
+              "value": "1",
+              "description": "Page number (default: 1)"
+            },
+            {
+              "key": "pageSize",
+              "value": "20",
+              "description": "Items per page (default: 20)"
+            },
+            {
+              "key": "entity",
+              "value": "USER",
+              "description": "Filter by entity type (e.g., USER, CLIENT_PROFILE, ONBOARDING)"
+            },
+            {
+              "key": "action",
+              "value": "LOGIN",
+              "description": "Filter by action performed (e.g., CREATE, UPDATE, DELETE, LOGIN)"
+            },
+            {
+              "key": "userId",
+              "value": "user_id_sample",
+              "disabled": true,
+              "description": "Filter by specific actor user ID"
+            }
+          ]
+        },
+        "description": "Retrieves a paginated list of system audit logs for administrative tracking and security monitoring."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Audit Log by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/:id",
+          "host": ["{{baseUrl}}"],
+          "path": [":id"],
+          "variable": [
+            {
+              "key": "id",
+              "value": "{{auditLogId}}",
+              "description": "Unique ID of the audit log record"
+            }
+          ]
+        },
+        "description": "Fetches detailed information for a single audit log entry, including metadata, IP address, and user agent."
+      },
+      "response": []
+    },
+    {
+      "name": "Create Audit Log (Manual / Debug)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"usr_123456789\",\n  \"action\": \"UPDATE_PROFILE\",\n  \"entity\": \"ClientProfile\",\n  \"entityId\": \"cpf_987654321\",\n  \"metadata\": {\n    \"fieldChanged\": \"phone\",\n    \"oldValue\": \"+1000000000\",\n    \"newValue\": \"+1234567890\"\n  },\n  \"ip\": \"192.168.1.1\",\n  \"userAgent\": \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": ["{{baseUrl}}"],
+          "path": [""]
+        },
+        "description": "Manually records an audit log entry. Payload structure mirrors the `AuditInput` interface in `shared.service.ts`."
+      },
+      "response": []
+    }
+  ]
+}

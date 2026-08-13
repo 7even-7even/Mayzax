@@ -1,0 +1,200 @@
+{
+  "info": {
+    "_postman_id": "mayzax-profile-changes-module",
+    "name": "Mayzax - Profile Changes",
+    "description": "Postman collection for the Mayzax profile-changes module.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "profileId",
+      "value": ""
+    },
+    {
+      "key": "changeRequestId",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Client - Submit Profile Change Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"changes\": {\n    \"candidateName\": \"John Updated Doe\",\n    \"phone\": \"+1 555 111 2222\",\n    \"currentLocation\": \"Chicago\",\n    \"visaStatus\": \"H1B\",\n    \"entryToUS\": \"2024-01-15\",\n    \"dateOfBirth\": \"1999-05-20\",\n    \"gender\": \"Male\",\n    \"technology\": \"Java\",\n    \"skills\": \"Java, Spring Boot, PostgreSQL, AWS\",\n    \"experienceDetails\": \"4 years of software development experience\",\n    \"certifications\": \"AWS Certified Developer\",\n    \"education\": {\n      \"degree\": \"B.Tech\",\n      \"field\": \"Information Technology\"\n    },\n    \"addressHistory\": [\n      {\n        \"address\": \"Chicago, IL\",\n        \"from\": \"2024-01-15\",\n        \"to\": \"Present\"\n      }\n    ]\n  }\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/profile-changes/profiles/{{profileId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "profile-changes",
+            "profiles",
+            "{{profileId}}"
+          ]
+        },
+        "description": "CLIENT only. Submit a request to change allowed profile fields."
+      }
+    },
+    {
+      "name": "Client - Request Plan Upgrade",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"targetPlan\": \"Gold\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/profile-changes/profiles/{{profileId}}/upgrade-plan",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "profile-changes",
+            "profiles",
+            "{{profileId}}",
+            "upgrade-plan"
+          ]
+        },
+        "description": "CLIENT only. Valid plans are Basic, Gold, and Premium. Target plan must be higher than the current plan."
+      }
+    },
+    {
+      "name": "Get Pending Request For Profile",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/profile-changes/my-profile/{{profileId}}/pending",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "profile-changes",
+            "my-profile",
+            "{{profileId}}",
+            "pending"
+          ]
+        },
+        "description": "Authenticated user can check the pending change request for a profile. Note: the current controller does not explicitly verify that the requester owns the profile."
+      }
+    },
+    {
+      "name": "Admin - List Change Requests",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/profile-changes?status=PENDING&profileId={{profileId}}&page=1&pageSize=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "profile-changes"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "PENDING",
+              "description": "PENDING, APPROVED, or REJECTED"
+            },
+            {
+              "key": "profileId",
+              "value": "{{profileId}}",
+              "description": "Optional profile UUID"
+            },
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "pageSize",
+              "value": "10",
+              "description": "Maximum 50"
+            }
+          ]
+        },
+        "description": "ADMIN only. Lists profile change requests with pagination and optional filters."
+      }
+    },
+    {
+      "name": "Admin - Approve Change Request",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/profile-changes/{{changeRequestId}}/approve",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "profile-changes",
+            "{{changeRequestId}}",
+            "approve"
+          ]
+        },
+        "description": "ADMIN only. Approves a pending profile change request and applies the changes to the client profile."
+      }
+    },
+    {
+      "name": "Admin - Reject Change Request",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"rejectionNote\": \"Please provide valid supporting information.\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/profile-changes/{{changeRequestId}}/reject",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "profile-changes",
+            "{{changeRequestId}}",
+            "reject"
+          ]
+        },
+        "description": "ADMIN only. Rejects a pending request. rejectionNote is optional and has a maximum length of 500 characters."
+      }
+    }
+  ]
+}

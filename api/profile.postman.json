@@ -1,0 +1,508 @@
+{
+  "info": {
+    "_postman_id": "mayzax-profiles-module",
+    "name": "Mayzax - Profiles API",
+    "description": "Postman collection for the Mayzax Client Profiles module.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "profileId",
+      "value": ""
+    },
+    {
+      "key": "interviewId",
+      "value": ""
+    },
+    {
+      "key": "paymentId",
+      "value": ""
+    },
+    {
+      "key": "recruiterId",
+      "value": ""
+    },
+    {
+      "key": "resumeAssistId",
+      "value": ""
+    },
+    {
+      "key": "paymentRef",
+      "value": "PAY-TEST-001"
+    }
+  ],
+  "item": [
+    {
+      "name": "Profiles",
+      "item": [
+        {
+          "name": "List Profiles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles",
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Profiles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles",
+              "query": [
+                {
+                  "key": "search",
+                  "value": "John"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter Profiles by Recruiter",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles",
+              "query": [
+                {
+                  "key": "assignedRecruiterId",
+                  "value": "{{recruiterId}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}"
+            }
+          }
+        },
+        {
+          "name": "Create Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"candidateName\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+1 555 123 4567\",\n  \"technology\": \"Full Stack Development\",\n  \"notes\": \"Test candidate profile\",\n  \"assignedRecruiterId\": \"{{recruiterId}}\",\n  \"assignedResumeAssistId\": \"{{resumeAssistId}}\",\n  \"dateOfBirth\": \"1998-05-15\",\n  \"gender\": \"Male\",\n  \"visaStatus\": \"H1B\",\n  \"entryToUS\": \"2023-08-01\",\n  \"currentLocation\": \"New York, NY\",\n  \"education\": {\n    \"degree\": \"B.E.\",\n    \"field\": \"Information Technology\"\n  },\n  \"addressHistory\": [],\n  \"hasExperience\": true,\n  \"experienceDetails\": \"3 years of software development experience\",\n  \"certifications\": \"AWS Certified Developer\",\n  \"resumeUrl\": \"https://example.com/resume.pdf\",\n  \"resumeFileName\": \"john-doe-resume.pdf\",\n  \"skills\": \"React, Node.js, TypeScript, PostgreSQL\",\n  \"planSelected\": \"Basic\",\n  \"amountPaid\": 0,\n  \"paymentRef\": null\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"candidateName\": \"John Doe\",\n  \"technology\": \"Full Stack Development\",\n  \"notes\": \"Updated profile notes\",\n  \"skills\": \"React, Node.js, TypeScript, PostgreSQL, AWS\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Profile",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}"
+            }
+          }
+        },
+        {
+          "name": "Reset Client Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/reset-password"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recruiter Assignment",
+      "item": [
+        {
+          "name": "Assign Recruiters",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/assign"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignedRecruiterIds\": [\n    \"{{recruiterId}}\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Bulk Assign Profiles",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/bulk-assign"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profileIds\": [\n    \"{{profileId}}\"\n  ],\n  \"assignedRecruiterIds\": [\n    \"{{recruiterId}}\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Bulk Delete Profiles",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/bulk-delete"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profileIds\": [\n    \"{{profileId}}\"\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get Payment History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/payment-history"
+            }
+          }
+        },
+        {
+          "name": "Get Payment Receipt",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/payment-receipt",
+              "query": [
+                {
+                  "key": "ref",
+                  "value": "{{paymentRef}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Post Payment Details",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/post-payment"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planSelected\": \"Basic\",\n  \"payments\": [\n    {\n      \"amount\": 500,\n      \"status\": \"PAID\",\n      \"dueDate\": \"2026-08-15\",\n      \"paidAt\": \"2026-08-14T12:00:00.000Z\",\n      \"paymentRef\": \"{{paymentRef}}\",\n      \"installmentNo\": 1\n    },\n    {\n      \"amount\": 500,\n      \"status\": \"PENDING\",\n      \"dueDate\": \"2026-09-15\",\n      \"paidAt\": null,\n      \"paymentRef\": null,\n      \"installmentNo\": 2\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Pay Installment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/payments/{{paymentId}}/pay"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentRef\": \"{{paymentRef}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Unblock Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/unblock-payment"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Interviews & Rounds",
+      "item": [
+        {
+          "name": "Get Interviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/interviews"
+            }
+          }
+        },
+        {
+          "name": "Create Interview",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/interviews"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roundName\": \"Technical Round 1\",\n  \"status\": \"SCHEDULED\",\n  \"date\": \"2026-08-20\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"11:00\",\n  \"timezone\": \"EST\",\n  \"interviewer\": \"Jane Smith\",\n  \"mode\": \"VIDEO\",\n  \"meetingLink\": \"https://meet.google.com/example\",\n  \"notes\": \"Technical interview focused on React and Node.js\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Interview",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/interviews/{{interviewId}}"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roundName\": \"Technical Round 1 - Updated\",\n  \"status\": \"COMPLETED\",\n  \"date\": \"2026-08-20\",\n  \"startTime\": \"10:00\",\n  \"endTime\": \"11:00\",\n  \"timezone\": \"EST\",\n  \"interviewer\": \"Jane Smith\",\n  \"mode\": \"VIDEO\",\n  \"meetingLink\": \"https://meet.google.com/example\",\n  \"notes\": \"Interview completed successfully\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Interview",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/interviews/{{interviewId}}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
