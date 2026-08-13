@@ -25,3 +25,4 @@ GAP.MD
 .expo/
 backend/secrets/
 
+/mobile/.idea
