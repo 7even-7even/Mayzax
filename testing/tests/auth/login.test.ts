@@ -54,7 +54,6 @@ describe('Authentication - Login Service', () => {
     expect(result).toBeDefined();
     expect(result.user.email).toBe('recruiter@mayzax.com');
     expect(result.tokens.accessToken).toBeDefined();
-    expect(result.tokens.refreshToken).toBeDefined();
     expect(prisma.user.findUnique).toHaveBeenCalledWith({
       where: { email: 'recruiter@mayzax.com' },
       include: expect.any(Object),

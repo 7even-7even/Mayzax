@@ -76,6 +76,9 @@ export function buildWhereClause(
 ): Prisma.ClientProfileWhereInput {
   const conditions: Prisma.ClientProfileWhereInput[] = [{ deletedAt: null }];
 
+  const isArchived = query.isArchived ?? false;
+  conditions.push({ isArchived });
+
   if (query.isActive !== undefined) {
     conditions.push({ isActive: query.isActive });
   }

@@ -237,10 +237,7 @@ export async function processHeartbeat(userId: string, role: Role) {
         },
       });
 
-      // Revoke refresh tokens to prevent silent re-authentication
-      await prisma.refreshToken.deleteMany({
-        where: { userId },
-      });
+
 
       // Throw Unauthorized to trigger immediate logout on the user screen
       throw ApiError.unauthorized('Session expired due to inactivity');

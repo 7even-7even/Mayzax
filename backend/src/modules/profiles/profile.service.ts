@@ -614,3 +614,226 @@ export async function unblockPayment(id: string, actor: { id: string; role: Role
   return profile;
 }
 
+export async function archiveProfile(id: string, actor: { id: string; role: Role }, meta?: Meta) {
+  if (actor.role !== Role.ADMIN) {
+    throw ApiError.forbidden('Only Admins can archive client profiles');
+  }
+
+  const existing = await repo.findActiveById(id);
+  if (!existing) throw ApiError.notFound('Client profile not found');
+
+  const profile = await prisma.clientProfile.update({
+    where: { id },
+    data: { isArchived: true },
+  });
+
+  // Suspend client user login access
+  const clientUser = await prisma.user.findFirst({ where: { clientProfileId: id } });
+  if (clientUser) {
+    await prisma.user.update({
+      where: { id: clientUser.id },
+      data: { isActive: false },
+    });
+  }
+
+  await writeAuditLog({
+    userId: actor.id,
+    action: 'PROFILE_ARCHIVED',
+    entity: 'ClientProfile',
+    entityId: id,
+    ...meta,
+  });
+
+  return profile;
+}
+
+export async function unarchiveProfile(id: string, actor: { id: string; role: Role }, meta?: Meta) {
+  if (actor.role !== Role.ADMIN) {
+    throw ApiError.forbidden('Only Admins can restore archived client profiles');
+  }
+
+  const existing = await repo.findActiveById(id);
+  if (!existing) throw ApiError.notFound('Client profile not found');
+
+  const profile = await prisma.clientProfile.update({
+    where: { id },
+    data: { isArchived: false },
+  });
+
+  // Restore client user login access
+  const clientUser = await prisma.user.findFirst({ where: { clientProfileId: id } });
+  if (clientUser) {
+    await prisma.user.update({
+      where: { id: clientUser.id },
+      data: { isActive: true },
+    });
+  }
+
+  await writeAuditLog({
+    userId: actor.id,
+    action: 'PROFILE_UNARCHIVED',
+    entity: 'ClientProfile',
+    entityId: id,
+    ...meta,
+  });
+
+  return profile;
+}
+
+export async function bulkArchiveProfiles(profileIds: string[], actor: { id: string; role: Role }, meta?: Meta) {
+  if (actor.role !== Role.ADMIN) {
+    throw ApiError.forbidden('Only admins can bulk archive client profiles');
+  }
+
+  for (const id of profileIds) {
+    const profile = await repo.findActiveById(id);
+    if (!profile) continue;
+
+    await prisma.clientProfile.update({
+      where: { id },
+      data: { isArchived: true },
+    });
+
+    const clientUser = await prisma.user.findFirst({ where: { clientProfileId: id } });
+    if (clientUser) {
+      await prisma.user.update({
+        where: { id: clientUser.id },
+        data: { isActive: false },
+      });
+    }
+  }
+
+  await writeAuditLog({
+    userId: actor.id,
+    action: 'PROFILES_BULK_ARCHIVED',
+    entity: 'ClientProfile',
+    metadata: { count: profileIds.length, profileIds },
+    ...meta,
+  });
+
+  return { archivedCount: profileIds.length };
+}
+
+export async function mergeProfiles(
+  targetProfileId: string,
+  sourceProfileIds: string[],
+  actor: { id: string; role: Role },
+  meta?: Meta
+) {
+  if (actor.role !== Role.ADMIN) {
+    throw ApiError.forbidden('Only Admins can merge client profiles');
+  }
+
+  const target = await repo.findActiveById(targetProfileId);
+  if (!target) throw ApiError.notFound('Target client profile not found');
+
+  const sourceProfiles = await prisma.clientProfile.findMany({
+    where: {
+      id: { in: sourceProfileIds },
+      deletedAt: null,
+    },
+    include: {
+      _count: {
+        select: { applications: true },
+      },
+    },
+  });
+
+  if (sourceProfiles.length !== sourceProfileIds.length) {
+    throw ApiError.badRequest('One or more source client profiles were not found or have been deleted');
+  }
+
+  if (sourceProfileIds.includes(targetProfileId)) {
+    throw ApiError.badRequest('Target profile cannot be included in the source profiles to merge');
+  }
+
+  const currentHistory = (target.mergeHistory as any[]) || [];
+  const addedHistory: any[] = [];
+
+  // Transaction for safe database updates
+  await prisma.$transaction(async (tx) => {
+    for (const source of sourceProfiles) {
+      // 1. Migrate job applications.
+      // To prevent duplicate violations (unique constraint on profileId + normalizedJobLink),
+      // we check for existing target applications before updating, or catch/ignore them.
+      const applications = await tx.jobApplication.findMany({
+        where: { profileId: source.id },
+      });
+
+      for (const app of applications) {
+        const hasDuplicate = await tx.jobApplication.findFirst({
+          where: {
+            profileId: targetProfileId,
+            normalizedJobLink: app.normalizedJobLink,
+          },
+        });
+
+        if (!hasDuplicate) {
+          await tx.jobApplication.update({
+            where: { id: app.id },
+            data: { profileId: targetProfileId },
+          });
+        } else {
+          // If duplicate, delete the duplicate source application so the merge doesn't leave orphaned apps
+          await tx.jobApplication.delete({
+            where: { id: app.id },
+          });
+        }
+      }
+
+      // 2. Add history record
+      addedHistory.push({
+        sourceProfileId: source.id,
+        sourceCandidateName: source.candidateName,
+        sourceEmail: source.email,
+        sourcePhone: source.phone,
+        applicationCount: source._count.applications,
+        mergedAt: new Date(),
+        mergedBy: actor.id,
+      });
+
+      // 3. Soft delete source profile
+      await tx.clientProfile.update({
+        where: { id: source.id },
+        data: {
+          deletedAt: new Date(),
+          isActive: false,
+        },
+      });
+
+      // 4. Suspend client login
+      const clientUser = await tx.user.findFirst({ where: { clientProfileId: source.id } });
+      if (clientUser) {
+        await tx.user.update({
+          where: { id: clientUser.id },
+          data: { isActive: false, clientProfileId: null },
+        });
+      }
+    }
+
+    // 5. Update target profile with combined history
+    const mergedHistory = [...currentHistory, ...addedHistory];
+    await tx.clientProfile.update({
+      where: { id: targetProfileId },
+      data: {
+        mergeHistory: mergedHistory,
+      },
+    });
+  });
+
+  await writeAuditLog({
+    userId: actor.id,
+    action: 'PROFILES_MERGED',
+    entity: 'ClientProfile',
+    entityId: targetProfileId,
+    metadata: {
+      targetProfileId,
+      sourceProfileIds,
+      mergedCount: sourceProfileIds.length,
+    },
+    ...meta,
+  });
+
+  return repo.findActiveById(targetProfileId);
+}
+

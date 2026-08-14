@@ -78,12 +78,6 @@ describe('Session Management & Heartbeats', () => {
       newPassword: 'NewPassword123!',
       confirmPassword: 'NewPassword123!',
     });
-
-    // Verify all active refresh tokens for the user were revoked
-    expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith({
-      where: { userId: 'user-123', revokedAt: null },
-      data: { revokedAt: expect.any(Date) },
-    });
   });
 
   it('SESS-HB-003: processHeartbeat should NOT close session on short network blip (< 40 min)', async () => {

@@ -29,7 +29,7 @@ import { ErrorState } from '@/components/shared/error-state';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { ProfileFormDialog } from './profile-form-dialog';
 import { BulkAssignDialog } from './bulk-assign-dialog';
-import { useDeleteProfile, useProfiles, useBulkDeleteProfiles, useResetClientPassword } from '@/hooks/use-profiles';
+import { useDeleteProfile, useProfiles, useBulkDeleteProfiles, useResetClientPassword, useArchiveProfile, useUnarchiveProfile, useMergeProfiles, useBulkArchiveProfiles } from '@/hooks/use-profiles';
 import { useRecruiters } from '@/hooks/use-recruiters';
 import { useDebounce } from '@/hooks/use-debounce';
 import { apiClient, extractErrorMessage } from '@/lib/api-client';
@@ -47,6 +47,7 @@ export default function ProfilesPage() {
   const [search, setSearch] = useState('');
   const [assignedRecruiterFilter, setAssignedRecruiterFilter] = useState<string>('ALL');
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
   const debouncedSearch = useDebounce(search);
 
   const [formOpen, setFormOpen] = useState(false);
@@ -59,6 +60,12 @@ export default function ProfilesPage() {
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [selectedProfileForPayment, setSelectedProfileForPayment] = useState<ClientProfile | null>(null);
   const [selectedProfileForInterview, setSelectedProfileForInterview] = useState<ClientProfile | null>(null);
+  const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
+  const [mergeTargetId, setMergeTargetId] = useState<string>('');
+  const [bulkArchiveOpen, setBulkArchiveOpen] = useState(false);
+
+  const mergeMutation = useMergeProfiles();
+  const bulkArchiveMutation = useBulkArchiveProfiles();
 
   const [interviews, setInterviews] = useState<any[]>([]);
   const [isLoadingInterviews, setIsLoadingInterviews] = useState(false);
@@ -117,13 +124,44 @@ export default function ProfilesPage() {
   const { data, isLoading, isError, refetch } = useProfiles({
     search: debouncedSearch || undefined,
     assignedRecruiterId: assignedRecruiterFilter === 'ALL' ? undefined : assignedRecruiterFilter,
+    isArchived: activeTab === 'archived',
     page,
     pageSize: 24, // increased for virtualization demo, still paginated server-side
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
 
+  const archiveMutation = useArchiveProfile();
+  const unarchiveMutation = useUnarchiveProfile();
   const resetPasswordMutation = useResetClientPassword();
+
+  const handleArchiveProfile = async (profileId: string) => {
+    if (!window.confirm("Are you sure you want to archive this client profile?")) return;
+    const loadToast = toast.loading('Archiving client profile...');
+    try {
+      await archiveMutation.mutateAsync(profileId);
+      toast.dismiss(loadToast);
+      toast.success('Profile archived successfully!');
+      refetch();
+    } catch (err: any) {
+      toast.dismiss(loadToast);
+      toast.error(err?.response?.data?.error?.message || 'Archiving failed.');
+    }
+  };
+
+  const handleRestoreProfile = async (profileId: string) => {
+    if (!window.confirm("Are you sure you want to restore/unarchive this client profile?")) return;
+    const loadToast = toast.loading('Restoring client profile...');
+    try {
+      await unarchiveMutation.mutateAsync(profileId);
+      toast.dismiss(loadToast);
+      toast.success('Profile restored successfully!');
+      refetch();
+    } catch (err: any) {
+      toast.dismiss(loadToast);
+      toast.error(err?.response?.data?.error?.message || 'Restore failed.');
+    }
+  };
 
   const handleResetPassword = async (profileId: string) => {
     const confirmReset = window.confirm("Are you sure you want to reset this client's password to 'Pass@123'?");
@@ -151,6 +189,34 @@ export default function ProfilesPage() {
     } catch (err: any) {
       toast.dismiss(loadToast);
       toast.error(err?.response?.data?.error?.message || 'Failed to reactivate account.');
+    }
+  };
+
+  const handleMergeProfiles = async () => {
+    if (!mergeTargetId) {
+      toast.error('Please select a primary target profile.');
+      return;
+    }
+    const sourceIds = selectedProfileIds.filter((id) => id !== mergeTargetId);
+    if (sourceIds.length === 0) {
+      toast.error('Please select at least 2 profiles to merge.');
+      return;
+    }
+
+    const loadToast = toast.loading('Merging profiles...');
+    try {
+      await mergeMutation.mutateAsync({
+        targetProfileId: mergeTargetId,
+        sourceProfileIds: sourceIds,
+      });
+      toast.dismiss(loadToast);
+      toast.success('Profiles merged successfully!');
+      setSelectedProfileIds([]);
+      setMergeDialogOpen(false);
+      refetch();
+    } catch (err: any) {
+      toast.dismiss(loadToast);
+      toast.error(err?.response?.data?.error?.message || 'Merging profiles failed.');
     }
   };
 
@@ -216,7 +282,9 @@ export default function ProfilesPage() {
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     <Badge className="bg-mayzax-blue-50 text-mayzax-blue-700 border border-mayzax-blue-200 text-[11px] rounded-full px-2 py-0">{profile.technology}</Badge>
-                    {profile.paymentBlocked ? (
+                    {profile.isArchived ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[11px] font-medium text-amber-700">Archived</span>
+                    ) : profile.paymentBlocked ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 border border-rose-200 px-2 py-0.5 text-[11px] font-medium text-rose-700">Payment Blocked</span>
                     ) : (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[11px] font-medium text-emerald-700">Live</span>
@@ -264,6 +332,17 @@ export default function ProfilesPage() {
                     <DropdownMenuItem onClick={() => handleReactivateAccount(profile.id)} className="gap-2 text-emerald-600 focus:text-emerald-600">
                       <CheckCircle className="h-4 w-4" /> Reactivate Account
                     </DropdownMenuItem>
+                  )}
+                  {(isAdmin || user?.role === 'TEAM_LEADER') && (
+                    profile.isArchived ? (
+                      <DropdownMenuItem onClick={() => handleRestoreProfile(profile.id)} className="gap-2 text-emerald-600 focus:text-emerald-600">
+                        <CheckCircle className="h-4 w-4" /> Restore Profile
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem onClick={() => handleArchiveProfile(profile.id)} className="gap-2 text-amber-600 focus:text-amber-600">
+                        <ShieldCheck className="h-4 w-4" /> Archive Profile
+                      </DropdownMenuItem>
+                    )
                   )}
                   {canDeleteProfile && <DropdownMenuItem onClick={() => setDeleteTarget(profile)} className="text-red-600 focus:text-red-600 gap-2"><Trash2 className="h-4 w-4" /> Delete</DropdownMenuItem>}
                 </DropdownMenuContent>
@@ -333,6 +412,30 @@ export default function ProfilesPage() {
       />
 
       <Reveal delay={0.05}>
+        {/* Tab Selection */}
+        <div className="mb-4 flex border-b border-slate-200 dark:border-slate-800">
+          <button
+            onClick={() => { setActiveTab('active'); setPage(1); }}
+            className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-all duration-200 ${
+              activeTab === 'active'
+                ? 'border-mayzax-blue-500 text-mayzax-blue-600 dark:text-mayzax-blue-400'
+                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+            }`}
+          >
+            Active Profiles
+          </button>
+          <button
+            onClick={() => { setActiveTab('archived'); setPage(1); }}
+            className={`px-5 py-2.5 text-sm font-semibold border-b-2 transition-all duration-200 ${
+              activeTab === 'archived'
+                ? 'border-mayzax-blue-500 text-mayzax-blue-600 dark:text-mayzax-blue-400'
+                : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+            }`}
+          >
+            Archived Vault
+          </button>
+        </div>
+
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <div className="relative w-full sm:w-80">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -459,6 +562,30 @@ export default function ProfilesPage() {
                     <User2 className="h-3.5 w-3.5" /> Reassign ({selectedProfileIds.length})
                   </Button>
 
+                  {isAdmin && selectedProfileIds.length >= 2 && (
+                    <Button
+                      variant="brand"
+                      size="sm"
+                      className="h-7 text-xs gap-1 shadow-sm bg-gradient-to-r from-amber-500 to-orange-600 border-0 hover:opacity-90 rounded-md px-3 text-white"
+                      onClick={() => {
+                        setMergeTargetId(selectedProfileIds[0]);
+                        setMergeDialogOpen(true);
+                      }}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" /> Merge ({selectedProfileIds.length})
+                    </Button>
+                  )}
+
+                  {isAdmin && activeTab === 'active' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs gap-1 text-amber-600 border-amber-200 hover:bg-amber-50"
+                      onClick={() => setBulkArchiveOpen(true)}
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5" /> Archive ({selectedProfileIds.length})
+                    </Button>
+                  )}
                   {isAdmin && (
                     <Button
                       variant="outline"
@@ -469,7 +596,6 @@ export default function ProfilesPage() {
                       <Trash2 className="h-3.5 w-3.5" /> Delete ({selectedProfileIds.length})
                     </Button>
                   )}
-
                   <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-400 hover:text-slate-700" onClick={() => setSelectedProfileIds([])}>
                     Clear
                   </Button>
@@ -500,6 +626,73 @@ export default function ProfilesPage() {
 
       <BulkAssignDialog open={bulkAssignOpen} onOpenChange={setBulkAssignOpen} selectedProfileIds={selectedProfileIds} onSuccess={() => setSelectedProfileIds([])} />
 
+      <Dialog open={mergeDialogOpen} onOpenChange={setMergeDialogOpen}>
+        <DialogContent className="max-w-lg rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold">
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              Merge Client Profiles
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Consolidate multiple client profiles into one target primary profile. All application histories will transfer. Source profiles will be deactivated.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 my-2">
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-3.5 text-xs text-amber-800 dark:bg-amber-950/20 dark:border-amber-900/30">
+              <p className="font-semibold mb-1">⚠️ Warning:</p>
+              <p>This action cannot be undone. Source profiles will be deleted, and their credentials will be deactivated.</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Select Target Primary Profile</label>
+              <select
+                className="w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm dark:bg-slate-950 dark:border-slate-800"
+                value={mergeTargetId}
+                onChange={(e) => setMergeTargetId(e.target.value)}
+              >
+                {profiles
+                  .filter((p) => selectedProfileIds.includes(p.id))
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.candidateName} ({p.email}) - Keep details of this profile
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-500 uppercase">Source Profiles to be Merged & Deleted</label>
+              <div className="max-h-36 overflow-y-auto space-y-1.5 border border-slate-100 rounded-xl p-2.5 bg-slate-50/50 dark:bg-slate-900/30 dark:border-slate-800">
+                {profiles
+                  .filter((p) => selectedProfileIds.includes(p.id) && p.id !== mergeTargetId)
+                  .map((p) => (
+                    <div key={p.id} className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0" />
+                      {p.candidateName} ({p.email})
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMergeDialogOpen(false)} className="rounded-xl">
+              Cancel
+            </Button>
+            <Button
+              variant="brand"
+              className="rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 border-0 text-white font-bold hover:opacity-95"
+              disabled={mergeMutation.isPending}
+              onClick={handleMergeProfiles}
+            >
+              {mergeMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
+              Confirm Merge
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -528,6 +721,44 @@ export default function ProfilesPage() {
             >
               {bulkDeleteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
               Delete {selectedProfileIds.length} Profiles
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkArchiveOpen} onOpenChange={setBulkArchiveOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+              <ShieldCheck className="h-5 w-5 text-amber-500" />
+              Archive Selected Profiles
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to archive <span className="font-semibold text-slate-900">{selectedProfileIds.length}</span> client profiles? This will suspend their login credentials but keep application records intact.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkArchiveOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="brand"
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+              disabled={bulkArchiveMutation.isPending}
+              onClick={async () => {
+                try {
+                  await bulkArchiveMutation.mutateAsync(selectedProfileIds);
+                  toast.success(`Successfully archived ${selectedProfileIds.length} profiles.`);
+                  setSelectedProfileIds([]);
+                  setBulkArchiveOpen(false);
+                  refetch();
+                } catch (err) {
+                  toast.error(extractErrorMessage(err));
+                }
+              }}
+            >
+              {bulkArchiveMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-1.5" />}
+              Archive Profiles
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -823,6 +1054,31 @@ export default function ProfilesPage() {
                   </div>
                 )}
               </div>
+
+              {/* Merge History Log */}
+              {Array.isArray(viewingProfile.mergeHistory) && viewingProfile.mergeHistory.length > 0 && (
+                <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50">
+                  <h3 className="text-sm font-semibold text-slate-950 dark:text-white mb-3 flex items-center gap-1.5 border-b pb-1.5">
+                    <Sparkles className="h-4 w-4 text-amber-500" /> Merged Profiles History
+                  </h3>
+                  <div className="space-y-2 mt-2">
+                    {viewingProfile.mergeHistory.map((item: any, idx: number) => (
+                      <div key={idx} className="p-3 border rounded-xl bg-white dark:bg-slate-800 flex justify-between items-center text-xs">
+                        <div>
+                          <p className="font-semibold text-slate-800 dark:text-slate-200">{item.sourceCandidateName}</p>
+                          <p className="text-slate-500">{item.sourceEmail} • {item.sourcePhone}</p>
+                        </div>
+                        <div className="text-right">
+                          <Badge className="bg-mayzax-blue-50 text-mayzax-blue-700 border border-mayzax-blue-200 font-bold px-2 py-0.5 rounded-full">
+                            {item.applicationCount} Applications
+                          </Badge>
+                          <p className="text-[10px] text-slate-400 mt-1">Merged on {new Date(item.mergedAt).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Legacy Notes (Fallback) */}
               {viewingProfile.notes && (

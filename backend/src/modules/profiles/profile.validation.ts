@@ -41,6 +41,10 @@ export const listProfilesQuerySchema = z.object({
     .enum(['true', 'false'])
     .optional()
     .transform((v) => (v === undefined ? undefined : v === 'true')),
+  isArchived: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((v) => (v === undefined ? undefined : v === 'true')),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   sortBy: z.enum(['candidateName', 'technology', 'createdAt', 'updatedAt']).default('createdAt'),
@@ -65,8 +69,19 @@ export const bulkDeleteProfilesSchema = z.object({
   profileIds: z.array(z.string().uuid('Invalid profile ID')).min(1, 'Select at least 1 profile'),
 });
 
+export const bulkArchiveProfilesSchema = z.object({
+  profileIds: z.array(z.string().uuid('Invalid profile ID')).min(1, 'Select at least 1 profile'),
+});
+
+export const mergeProfilesSchema = z.object({
+  targetProfileId: z.string().uuid('Invalid target profile ID'),
+  sourceProfileIds: z.array(z.string().uuid('Invalid source profile ID')).min(1, 'Select at least 1 source profile to merge'),
+});
+
 export type CreateProfileInput = z.infer<typeof createProfileSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ListProfilesQuery = z.infer<typeof listProfilesQuerySchema>;
 export type BulkAssignProfilesInput = z.infer<typeof bulkAssignProfilesSchema>;
 export type BulkDeleteProfilesInput = z.infer<typeof bulkDeleteProfilesSchema>;
+export type BulkArchiveProfilesInput = z.infer<typeof bulkArchiveProfilesSchema>;
+export type MergeProfilesInput = z.infer<typeof mergeProfilesSchema>;

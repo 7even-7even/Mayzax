@@ -416,6 +416,86 @@
               "raw": "{{baseUrl}}/profiles/{{profileId}}/unblock-payment"
             }
           }
+        },
+        {
+          "name": "Archive Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/archive"
+            }
+          }
+        },
+        {
+          "name": "Unarchive Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/{{profileId}}/unarchive"
+            }
+          }
+        },
+        {
+          "name": "Bulk Archive Profiles",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/bulk-archive"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profileIds\": [\n    \"{{profileId}}\"\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Merge Profiles",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/profiles/merge"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetProfileId\": \"{{profileId}}\",\n  \"sourceProfileIds\": [\n    \"some-other-uuid\"\n  ]\n}"
+            }
+          }
         }
       ]
     },

@@ -197,7 +197,6 @@ model User {
   profileAssignments ClientProfileAssignment[] @relation("RecruiterProfileAssignments")
   applications     JobApplication[] @relation("RecruiterApplications")
   verificationLogs VerificationLog[] @relation("RecruiterVerificationLogs")
-  refreshTokens    RefreshToken[]
   deviceTokens     DeviceToken[]
   notifications    Notification[]
   attendanceDays   AttendanceDay[]
@@ -369,29 +368,16 @@ model ActivityLog {
 }
 
 // ---------------------------------------------------------
-// Refresh Tokens (JWT refresh token rotation)
+// Revoked Access Tokens (Blacklist on logout)
 // ---------------------------------------------------------
 
-model RefreshToken {
+model RevokedToken {
   id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   tokenHash String   @unique
-  clientType ClientType @default(WEB)
-  deviceName String?
-  userAgent String?
-  ip        String?
-
   expiresAt DateTime
-  revokedAt DateTime?
-  replacedByTokenHash String?
-
   createdAt DateTime @default(now())
 
-  @@index([userId])
-  @@index([clientType])
-  @@map("refresh_tokens")
+  @@map("revoked_tokens")
 }
 
 // ---------------------------------------------------------
@@ -431,7 +417,9 @@ model ClientProfile {
   assignedRecruiterAssignments ClientProfileAssignment[] @relation("ProfileRecruiterAssignments")
 
   isActive  Boolean   @default(true)
+  isArchived Boolean  @default(false)
   paymentBlocked Boolean @default(false)
+  mergeHistory Json?
   deletedAt DateTime? // soft delete
 
   createdAt DateTime @default(now())
@@ -447,6 +435,7 @@ model ClientProfile {
   @@index([assignedResumeAssistId])
   @@index([technology])
   @@index([email])
+  @@index([isArchived])
   @@map("client_profiles")
 }
 

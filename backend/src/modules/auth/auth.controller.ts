@@ -28,7 +28,7 @@ function extractClientMeta(req: Request) {
     sessionMeta: extractSessionMeta(req),
   };
 }
-function setAuthCookies(res: Response, tokens: { accessToken: string; refreshToken: string }) {
+function setAuthCookies(res: Response, tokens: { accessToken: string }) {
   const isProd = env.NODE_ENV === 'production';
   const cookieOptions: any = {
     httpOnly: true,
@@ -40,16 +40,10 @@ function setAuthCookies(res: Response, tokens: { accessToken: string; refreshTok
     cookieOptions.domain = env.COOKIE_DOMAIN;
   }
 
-  // Set access token cookie
+  // Set access token cookie (long lived for 7 days)
   res.cookie('access_token', tokens.accessToken, {
     ...cookieOptions,
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
-  });
-
-  // Set refresh token cookie
-  res.cookie('refresh_token', tokens.refreshToken, {
-    ...cookieOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }
 
@@ -69,34 +63,16 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   res.status(200).json({ success: true, data: result });
 });
 
-export const refresh = asyncHandler(async (req: Request, res: Response) => {
-  // Refresh token can come from body (mobile-friendly) or cookie (web)
-  const refreshTokenRaw =
-    (typeof req.body?.refreshToken === 'string' && req.body.refreshToken) ||
-    req.cookies?.refresh_token;
-
-  if (!refreshTokenRaw) {
-    return res.status(401).json({ success: false, error: { message: 'Refresh token missing' } });
-  }
-
-  const { clientType, deviceName, sessionMeta } = extractClientMeta(req);
-  const result = await authService.refreshSession(refreshTokenRaw, {
-    ...sessionMeta,
-    clientType,
-    deviceName,
-  });
-  setAuthCookies(res, result.tokens);
-  res.status(200).json({ success: true, data: result });
-});
-
 export const logout = asyncHandler(async (req: Request, res: Response) => {
-  const refreshTokenRaw =
-    (typeof req.body?.refreshToken === 'string' && req.body.refreshToken) ||
-    req.cookies?.refresh_token;
+  const authHeader = req.headers.authorization?.startsWith('Bearer ')
+    ? req.headers.authorization.slice(7)
+    : undefined;
+  const cookieToken = req.cookies?.access_token;
+  const token = authHeader ?? cookieToken;
+
   const clientType = req.user?.clientType ?? resolveClientType(req.headers['x-client-type']);
-  await authService.logout(refreshTokenRaw, clientType);
+  await authService.logout(token, clientType);
   res.clearCookie?.('access_token');
-  res.clearCookie?.('refresh_token');
   res.status(200).json({ success: true, data: { message: 'Logged out' } });
 });
 

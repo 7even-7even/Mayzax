@@ -17,11 +17,6 @@
       "type": "string"
     },
     {
-      "key": "refreshToken",
-      "value": "",
-      "type": "string"
-    },
-    {
       "key": "userId",
       "value": "",
       "type": "string"
@@ -83,7 +78,7 @@
                 "signup"
               ]
             },
-            "description": "Creates a recruiter account and returns access/refresh tokens. Exact required fields depend on signupSchema."
+            "description": "Creates a recruiter account and returns access token. Exact required fields depend on signupSchema."
           },
           "event": [
             {
@@ -95,7 +90,6 @@
                   "    const json = pm.response.json();",
                   "    const data = json?.data;",
                   "    if (data?.tokens?.accessToken) pm.collectionVariables.set('accessToken', data.tokens.accessToken);",
-                  "    if (data?.tokens?.refreshToken) pm.collectionVariables.set('refreshToken', data.tokens.refreshToken);",
                   "    if (data?.user?.id) pm.collectionVariables.set('userId', data.user.id);",
                   "}"
                 ]
@@ -135,7 +129,7 @@
                 "login"
               ]
             },
-            "description": "Logs in and returns access/refresh tokens. The server also sets HTTP-only auth cookies."
+            "description": "Logs in and returns access token. The server also sets HTTP-only auth cookies."
           },
           "event": [
             {
@@ -147,59 +141,7 @@
                   "    const json = pm.response.json();",
                   "    const data = json?.data;",
                   "    if (data?.tokens?.accessToken) pm.collectionVariables.set('accessToken', data.tokens.accessToken);",
-                  "    if (data?.tokens?.refreshToken) pm.collectionVariables.set('refreshToken', data.tokens.refreshToken);",
                   "    if (data?.user?.id) pm.collectionVariables.set('userId', data.user.id);",
-                  "}"
-                ]
-              }
-            }
-          ]
-        },
-        {
-          "name": "Refresh Session",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "X-Client-Type",
-                "value": "{{clientType}}"
-              },
-              {
-                "key": "X-Device-Name",
-                "value": "{{deviceName}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/auth/refresh",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "refresh"
-              ]
-            },
-            "description": "Refresh token can be supplied in the JSON body (mobile-friendly) or omitted when Postman has the refresh_token cookie."
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "    const json = pm.response.json();",
-                  "    const data = json?.data;",
-                  "    if (data?.tokens?.accessToken) pm.collectionVariables.set('accessToken', data.tokens.accessToken);",
-                  "    if (data?.tokens?.refreshToken) pm.collectionVariables.set('refreshToken', data.tokens.refreshToken);",
                   "}"
                 ]
               }
@@ -224,10 +166,6 @@
                 "value": "{{clientType}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
-            },
             "url": {
               "raw": "{{baseUrl}}/auth/logout",
               "host": [

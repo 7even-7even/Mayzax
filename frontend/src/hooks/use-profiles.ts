@@ -7,6 +7,7 @@ export interface ProfileListParams {
   technology?: string;
   assignedRecruiterId?: string;
   isActive?: boolean;
+  isArchived?: boolean;
   page?: number;
   pageSize?: number;
   sortBy?: string;
@@ -122,5 +123,54 @@ export function useResetClientPassword() {
       const { data } = await apiClient.post<ApiSuccess<{ message: string }>>(`/profiles/${id}/reset-password`);
       return data.data;
     },
+  });
+}
+
+export function useArchiveProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await apiClient.post<ApiSuccess<ClientProfile>>(`/profiles/${id}/archive`);
+      return data.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['profiles'] }),
+  });
+}
+
+export function useUnarchiveProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await apiClient.post<ApiSuccess<ClientProfile>>(`/profiles/${id}/unarchive`);
+      return data.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['profiles'] }),
+  });
+}
+
+export function useMergeProfiles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ targetProfileId, sourceProfileIds }: { targetProfileId: string; sourceProfileIds: string[] }) => {
+      const { data } = await apiClient.post<ApiSuccess<ClientProfile>>('/profiles/merge', {
+        targetProfileId,
+        sourceProfileIds,
+      });
+      return data.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['profiles'] }),
+  });
+}
+
+export function useBulkArchiveProfiles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (profileIds: string[]) => {
+      const { data } = await apiClient.post<ApiSuccess<{ archivedCount: number }>>('/profiles/bulk-archive', {
+        profileIds,
+      });
+      return data.data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['profiles'] }),
   });
 }

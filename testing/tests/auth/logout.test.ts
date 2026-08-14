@@ -1,15 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as authService from '../../../backend/src/modules/auth/auth.service';
 import { prisma } from '../../../backend/src/lib/prisma';
-import { ClientType } from '@prisma/client';
+import { ClientType, Role } from '@prisma/client';
 import * as tokenService from '../../../backend/src/modules/auth/token.service';
 
 vi.mock('../../../backend/src/lib/prisma', () => ({
   prisma: {
-    refreshToken: {
-      findUnique: vi.fn(),
-      updateMany: vi.fn(),
+    revokedToken: {
+      create: vi.fn(),
     },
+  },
+}));
+
+vi.mock('../../../backend/src/config/env', () => ({
+  env: {
+    JWT_ACCESS_SECRET: 'test-access-secret-minimum-32-chars-long',
+    JWT_ACCESS_EXPIRES_IN: '7d',
   },
 }));
 
@@ -22,34 +28,29 @@ describe('Authentication - Logout Service', () => {
     vi.clearAllMocks();
   });
 
-  it('AUTH-LOGOUT-001: Should revoke refresh token on logout', async () => {
-    const rawRefreshToken = tokenService.signRefreshToken({ userId: 'user-123', tokenId: 'token-uuid-123' });
-    const tokenHash = tokenService.hashToken(rawRefreshToken);
-
-    const storedToken = {
-      userId: 'user-123',
+  it('AUTH-LOGOUT-001: Should blacklist access token on logout', async () => {
+    const rawAccessToken = tokenService.signAccessToken({
+      id: 'user-123',
+      role: Role.RECRUITER,
+      email: 'recruiter@mayzax.com',
       clientType: ClientType.WEB,
-      user: { role: 'RECRUITER' },
-    };
-
-    (prisma.refreshToken.findUnique as any).mockResolvedValue(storedToken);
-    (prisma.refreshToken.updateMany as any).mockResolvedValue({});
-
-    await authService.logout(rawRefreshToken, ClientType.WEB);
-
-    expect(prisma.refreshToken.findUnique).toHaveBeenCalledWith({
-      where: { tokenHash },
-      select: { userId: true, clientType: true, user: { select: { role: true } } },
     });
+    const tokenHash = tokenService.hashToken(rawAccessToken);
 
-    expect(prisma.refreshToken.updateMany).toHaveBeenCalledWith({
-      where: { tokenHash, revokedAt: null },
-      data: { revokedAt: expect.any(Date) },
+    (prisma.revokedToken.create as any).mockResolvedValue({});
+
+    await authService.logout(rawAccessToken, ClientType.WEB);
+
+    expect(prisma.revokedToken.create).toHaveBeenCalledWith({
+      data: {
+        tokenHash,
+        expiresAt: expect.any(Date),
+      },
     });
   });
 
-  it('AUTH-LOGOUT-002: Should handle logout with no refresh token gracefully', async () => {
+  it('AUTH-LOGOUT-002: Should handle logout with no access token gracefully', async () => {
     await authService.logout(undefined, ClientType.WEB);
-    expect(prisma.refreshToken.findUnique).not.toHaveBeenCalled();
+    expect(prisma.revokedToken.create).not.toHaveBeenCalled();
   });
 });

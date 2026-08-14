@@ -108,6 +108,8 @@ export interface ClientProfile {
     recruiter: { id: string; name: string; email: string };
   }>;
   isActive: boolean;
+  isArchived?: boolean;
+  mergeHistory?: any;
   createdAt: string;
   updatedAt: string;
 }

@@ -45,10 +45,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     hasBootstrappedRef.current = true;
     setIsLoading(true);
     try {
-      // Attempt silent refresh first (cookie based)
-      const { data } = await apiClient.post('/auth/refresh');
-      setAuthToken(data.data.tokens.accessToken);
-      setUser(data.data.user);
+      // Fetch current session profile info using long-lived access cookie
+      const { data } = await apiClient.get('/auth/me');
+      setUser(data.data);
     } catch {
       setAuthToken(null);
       setUser(null);
@@ -59,9 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSession = useCallback(async () => {
     try {
-      const { data } = await apiClient.post('/auth/refresh');
-      setAuthToken(data.data.tokens.accessToken);
-      setUser(data.data.user);
+      const { data } = await apiClient.get('/auth/me');
+      setUser(data.data);
     } catch {
       setAuthToken(null);
       setUser(null);

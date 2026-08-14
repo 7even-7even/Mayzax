@@ -5,8 +5,6 @@ import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/utils/apiError';
 import {
   signAccessToken,
-  signRefreshToken,
-  verifyRefreshToken,
   hashToken,
   parseExpiryToMs,
 } from './token.service';
@@ -103,31 +101,15 @@ interface SessionMeta {
   deviceName?: string | null;
 }
 
-async function issueTokenPair(
+async function issueAccessToken(
   userId: string,
   role: any,
   email: string,
   meta: SessionMeta,
 ) {
-  const tokenId = randomUUID();
   const clientType = meta.clientType ?? ClientType.WEB;
-  const refreshToken = signRefreshToken({ userId, tokenId });
   const accessToken = signAccessToken({ id: userId, role, email, clientType });
-
-  await prisma.refreshToken.create({
-    data: {
-      id: tokenId,
-      userId,
-      tokenHash: hashToken(refreshToken),
-      ip: meta.ip,
-      userAgent: meta.userAgent ?? null,
-      clientType,
-      deviceName: meta.deviceName ?? null,
-      expiresAt: new Date(Date.now() + parseExpiryToMs(env.JWT_REFRESH_EXPIRES_IN)),
-    },
-  });
-
-  return { accessToken, refreshToken };
+  return { accessToken };
 }
 
 export async function login(input: LoginInput, meta: SessionMeta) {
@@ -161,7 +143,7 @@ export async function login(input: LoginInput, meta: SessionMeta) {
     throw ApiError.unauthorized('Invalid email or password');
   }
 
-  const tokens = await issueTokenPair(user.id, user.role, user.email, meta);
+  const tokens = await issueAccessToken(user.id, user.role, user.email, meta);
 
   await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
 
@@ -192,7 +174,7 @@ export async function signupRecruiter(input: SignupInput, meta: SessionMeta) {
     createdById: null,
   });
 
-  const tokens = await issueTokenPair(user.id, user.role, user.email, meta);
+  const tokens = await issueAccessToken(user.id, user.role, user.email, meta);
 
   await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
 
@@ -206,105 +188,35 @@ export async function signupRecruiter(input: SignupInput, meta: SessionMeta) {
   };
 }
 
-export async function refreshSession(refreshTokenRaw: string, meta: SessionMeta) {
+export async function logout(accessTokenRaw: string | undefined, clientType: ClientType = ClientType.WEB) {
+  if (!accessTokenRaw) return;
+  const tokenHash = hashToken(accessTokenRaw);
+  
+  // Try parsing the payload to find expiresAt and user/role info
   let payload;
+  let expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // fallback 7d
   try {
-    payload = verifyRefreshToken(refreshTokenRaw);
-  } catch {
-    throw ApiError.unauthorized('Invalid or expired refresh token');
-  }
-
-  const tokenHash = hashToken(refreshTokenRaw);
-  const stored = await prisma.refreshToken.findUnique({ where: { tokenHash } });
-
-  if (!stored || stored.userId !== payload.sub) {
-    throw ApiError.unauthorized('Refresh token not recognized');
-  }
-
-  if (stored.revokedAt) {
-    const timeSinceRevocation = Date.now() - stored.revokedAt.getTime();
-    if (timeSinceRevocation > 10000) {
-      await prisma.refreshToken.updateMany({
-        where: { userId: stored.userId, revokedAt: null },
-        data: { revokedAt: new Date() },
-      });
-      throw ApiError.unauthorized('Refresh token has already been used. All sessions revoked for security.');
-    }
-  }
-
-  if (stored.expiresAt < new Date()) {
-    throw ApiError.unauthorized('Refresh token expired');
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: stored.userId },
-    include: {
-      clientProfile: {
-        include: {
-          assignedRecruiter: true,
-        }
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.decode(accessTokenRaw) as any;
+    if (decoded) {
+      if (decoded.exp) {
+        expiresAt = new Date(decoded.exp * 1000);
+      }
+      // Trigger attendance logout for desktop/web clients
+      if (decoded.sub && decoded.role && decoded.clientType !== ClientType.MOBILE) {
+        await handleLogoutEvent(decoded.sub, decoded.role);
       }
     }
-  });
-  if (!user || user.deletedAt || !user.isActive) {
-    throw ApiError.unauthorized('Account is no longer active');
+  } catch (err) {
+    console.error('Failed to parse access token for logout events', err);
   }
 
-  // Rotate only if the refresh token is nearing expiration (e.g. less than 24 hours left)
-  const remainingTimeMs = stored.expiresAt.getTime() - Date.now();
-  const oneDayMs = 24 * 60 * 60 * 1000;
-  
-  let newTokens;
-  if (remainingTimeMs < oneDayMs) {
-    // Rotate: revoke old, issue new
-    newTokens = await issueTokenPair(user.id, user.role, user.email, meta);
-    await prisma.refreshToken.update({
-      where: { id: stored.id },
-      data: { revokedAt: new Date(), replacedByTokenHash: hashToken(newTokens.refreshToken) },
-    });
-  } else {
-    // Reuse: keep same refresh token, just sign a new access token
-    const newAccessToken = signAccessToken({ id: user.id, role: user.role, email: user.email, clientType: stored.clientType });
-    newTokens = {
-      accessToken: newAccessToken,
-      refreshToken: refreshTokenRaw,
-    };
-  }
-
-  await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } });
-
-  // Only restore ACTIVE attendance status for web clients.
-  if (stored.clientType !== ClientType.MOBILE) {
-    await handleLoginEvent(user.id, user.role);
-  }
-
-  return {
-    tokens: newTokens,
-    user: sanitizeUser(user),
-  };
-}
-
-export async function logout(refreshTokenRaw: string | undefined, clientType: ClientType = ClientType.WEB) {
-  if (!refreshTokenRaw) return;
-  const tokenHash = hashToken(refreshTokenRaw);
-  const storedToken = await prisma.refreshToken.findUnique({
-    where: { tokenHash },
-    select: { userId: true, clientType: true, user: { select: { role: true } } },
-  });
-
-  if (storedToken?.user) {
-    // Only trigger attendance logout events for web client tokens
-    if (storedToken.clientType !== ClientType.MOBILE) {
-      await handleLogoutEvent(storedToken.userId, storedToken.user.role);
-    }
-  }
-
-  // Also ignore clientType argument if the token is known to be mobile (defense in depth)
-  void clientType;
-
-  await prisma.refreshToken.updateMany({
-    where: { tokenHash, revokedAt: null },
-    data: { revokedAt: new Date() },
+  // Register in blacklist
+  await prisma.revokedToken.create({
+    data: {
+      tokenHash,
+      expiresAt,
+    },
   });
 }
 
@@ -358,9 +270,6 @@ export async function changePassword(userId: string, input: ChangePasswordInput)
 
   const newHash = await hashPassword(input.newPassword);
   await prisma.user.update({ where: { id: userId }, data: { passwordHash: newHash } });
-
-  // Revoke all existing sessions after password change
-  await prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
 }
 
 export async function updateProfile(userId: string, input: UpdateProfileInput) {
@@ -444,5 +353,4 @@ export async function resetPasswordWithSecurityAnswer(input: ForgotPasswordReset
 
   const newHash = await hashPassword(input.newPassword);
   await prisma.user.update({ where: { id: user.id }, data: { passwordHash: newHash } });
-  await prisma.refreshToken.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date() } });
 }

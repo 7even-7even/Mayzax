@@ -8,6 +8,7 @@ export interface AuthPayload {
   role: Role;
   email: string;
   clientType: ClientType;
+  jti: string; // unique token ID
 }
 
 declare global {
@@ -20,7 +21,7 @@ declare global {
 }
 
 /** Requires a valid access token (from Authorization header or cookie). Attaches req.user. */
-export function requireAuth(req: Request, _res: Response, next: NextFunction) {
+export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
   try {
     const headerToken = req.headers.authorization?.startsWith('Bearer ')
       ? req.headers.authorization.slice(7)
@@ -33,10 +34,23 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
     }
 
     const payload = verifyAccessToken(token);
+
+    // Verify token is not in the blacklist/revoked token table
+    const { hashToken } = require('@/modules/auth/token.service');
+    const { prisma } = require('@/lib/prisma');
+    const tokenHash = hashToken(token);
+    const isRevoked = await prisma.revokedToken.findUnique({
+      where: { tokenHash },
+    });
+
+    if (isRevoked) {
+      throw ApiError.unauthorized('Authentication session has been revoked');
+    }
+
     req.user = payload;
     next();
   } catch (err) {
-    next(ApiError.unauthorized('Invalid or expired authentication token'));
+    next(ApiError.unauthorized('Invalid, expired, or revoked authentication token'));
   }
 }
 

@@ -320,6 +320,16 @@ export const unblockPayment = asyncHandler(async (req: Request, res: Response) =
   res.status(200).json({ success: true, data: result });
 });
 
+export const archiveProfile = asyncHandler(async (req: Request, res: Response) => {
+  const result = await profileService.archiveProfile(req.params.id, actor(req), meta(req));
+  res.status(200).json({ success: true, data: result });
+});
+
+export const unarchiveProfile = asyncHandler(async (req: Request, res: Response) => {
+  const result = await profileService.unarchiveProfile(req.params.id, actor(req), meta(req));
+  res.status(200).json({ success: true, data: result });
+});
+
 export const postPaymentDetails = asyncHandler(async (req: Request, res: Response) => {
   const { planSelected, payments } = req.body;
   if (!planSelected) {
@@ -411,6 +421,17 @@ export const deleteInterview = asyncHandler(async (req: Request, res: Response) 
     where: { id: req.params.interviewId },
   });
   res.status(200).json({ success: true, data: { message: 'Interview deleted successfully' } });
+});
+
+export const mergeProfiles = asyncHandler(async (req: Request, res: Response) => {
+  const { targetProfileId, sourceProfileIds } = req.body;
+  const result = await profileService.mergeProfiles(targetProfileId, sourceProfileIds, actor(req), meta(req));
+  res.status(200).json({ success: true, data: result });
+});
+
+export const bulkArchiveProfiles = asyncHandler(async (req: Request, res: Response) => {
+  const result = await profileService.bulkArchiveProfiles(req.body.profileIds, actor(req), meta(req));
+  res.status(200).json({ success: true, data: result });
 });
 
 

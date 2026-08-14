@@ -21,8 +21,9 @@ const consoleStream = isProduction
   : {
       stream: pinoPretty({
         colorize: true,
-        translateTime: 'SYS:standard',
-        ignore: 'pid,hostname',
+        translateTime: 'SYS:yyyy-mm-dd HH:MM:ss.l o',
+        ignore: 'pid,hostname,service,reqId,req,res,responseTime',
+        messageFormat: '{msg}',
       }),
     };
 

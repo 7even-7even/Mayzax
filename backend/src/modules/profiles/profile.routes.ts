@@ -10,6 +10,8 @@ import {
   assignRecruiterSchema,
   bulkAssignProfilesSchema,
   bulkDeleteProfilesSchema,
+  mergeProfilesSchema,
+  bulkArchiveProfilesSchema,
 } from './profile.validation';
 import * as profileController from './profile.controller';
 
@@ -29,6 +31,12 @@ router.post(
   requireRole(Role.ADMIN),
   validate({ body: bulkDeleteProfilesSchema }),
   profileController.bulkDeleteProfiles,
+);
+router.post(
+  '/bulk-archive',
+  requireRole(Role.ADMIN),
+  validate({ body: bulkArchiveProfilesSchema }),
+  profileController.bulkArchiveProfiles,
 );
 router.get('/:id', validate({ params: idParamSchema }), profileController.getProfile);
 router.post('/', requireRole(Role.ADMIN, Role.TEAM_LEADER), validate({ body: createProfileSchema }), profileController.createProfile);
@@ -74,6 +82,30 @@ router.post(
   requireRole(Role.ADMIN, Role.TEAM_LEADER),
   validate({ params: idParamSchema }),
   profileController.unblockPayment,
+);
+
+// Archive client profile
+router.post(
+  '/:id/archive',
+  requireRole(Role.ADMIN),
+  validate({ params: idParamSchema }),
+  profileController.archiveProfile,
+);
+
+// Unarchive/Restore client profile
+router.post(
+  '/:id/unarchive',
+  requireRole(Role.ADMIN),
+  validate({ params: idParamSchema }),
+  profileController.unarchiveProfile,
+);
+
+// Merge client profiles
+router.post(
+  '/merge',
+  requireRole(Role.ADMIN),
+  validate({ body: mergeProfilesSchema }),
+  profileController.mergeProfiles,
 );
 
 // Admin post/update client payment details explicitly
