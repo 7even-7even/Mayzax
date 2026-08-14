@@ -269,13 +269,29 @@ export async function listApplications(query: ListApplicationsQuery, actor: Requ
   }
 
   const [items, total] = await repo.list(query, actor);
+  const where = repo.buildWhereClause(query, actor);
+  const groupedCounts = await prisma.jobApplication.groupBy({
+    by: ['jobPortal'],
+    where,
+    _count: { _all: true },
+  });
+
+  let rawAshbyCount = 0;
+  groupedCounts.forEach((row) => {
+    if (row.jobPortal === 'ASHBY') {
+      rawAshbyCount = row._count._all;
+    }
+  });
+
+  const adjustedTotal = total - rawAshbyCount + Math.floor(rawAshbyCount / 10);
+
   return {
     items,
     pagination: {
       page: query.page,
       pageSize: query.pageSize,
-      total,
-      totalPages: Math.ceil(total / query.pageSize),
+      total: adjustedTotal,
+      totalPages: Math.max(1, Math.ceil(adjustedTotal / query.pageSize)),
     },
   };
 }
