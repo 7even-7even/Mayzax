@@ -104,52 +104,9 @@ export async function buildApiClient(): Promise<AxiosInstance> {
       const status = error.response.status;
       const data = error.response.data;
       const message = data?.error?.message ?? data?.message ?? error.message ?? 'Request failed';
-      if (status === 401 && !originalRequest?._retry && !originalRequest?._skipAuth && originalRequest?.url !== '/auth/login') {
-        if (isRefreshing) {
-          // Queue concurrent requests
-          try {
-            const token = await new Promise<string>((resolve, reject) => {
-              failedQueue.push({ resolve, reject });
-            });
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          } catch (e) {
-            return Promise.reject(e);
-          }
-        }
-        originalRequest._retry = true;
-        isRefreshing = true;
-        refreshPromise = (async () => {
-          try {
-            const refresh = await secureStorage.getRefreshToken();
-            if (!refresh) return null;
-            const response = await api.post<any, any>(
-              '/auth/refresh',
-              { refreshToken: refresh },
-              { _skipAuth: true } as any
-            );
-            const res = (response ?? {}) as any;
-            if (!res?.tokens?.accessToken) return null;
-            await secureStorage.setAccessToken(res.tokens.accessToken);
-            await secureStorage.setRefreshToken(res.tokens.refreshToken);
-            await secureStorage.setUser(res.user);
-            processQueue(null, res.tokens.accessToken);
-            return res.tokens.accessToken;
-          } catch (e) {
-            processQueue(e, null);
-            await secureStorage.clearAll();
-            return null;
-          } finally {
-            isRefreshing = false;
-            refreshPromise = null;
-          }
-        })();
-        const newToken = await refreshPromise;
-        if (!newToken) {
-          return Promise.reject(new ApiError('Session expired. Please log in again.', 401, false, 'SESSION_EXPIRED'));
-        }
-        originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        return api(originalRequest);
+      if (status === 401 && !originalRequest?._skipAuth) {
+        await secureStorage.clearAll();
+        return Promise.reject(new ApiError('Session expired. Please log in again.', 401, false, 'SESSION_EXPIRED'));
       }
       const retryableCodes = [408, 429, 500, 502, 503, 504];
       return Promise.reject(new ApiError(message, status, retryableCodes.includes(status), String(status), data));

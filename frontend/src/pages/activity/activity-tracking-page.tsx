@@ -1063,9 +1063,9 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
           <StaggerItem>
             <PremiumMetricCard
               icon={Clock}
-              label="Total Productive"
-              value={formatHoursLabel(productivityData.totalProductiveHours)}
-              subValue={`${productivityData.totalProductiveHours}h`}
+              label="Avg. Productive"
+              value={formatHoursLabel(productivityData.averageProductiveHoursPerUser)}
+              subValue={`${productivityData.averageProductiveHoursPerUser}h / user`}
               color="text-emerald-700"
               gradient="from-emerald-500 to-teal-600"
               index={0}
@@ -1074,8 +1074,9 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
           <StaggerItem>
             <PremiumMetricCard
               icon={Coffee}
-              label="Total Break"
-              value={formatHoursLabel(productivityData.totalBreakHours)}
+              label="Avg. Break"
+              value={formatHoursLabel(productivityData.activeUsersCount > 0 ? (productivityData.totalBreakHours / productivityData.activeUsersCount) : 0)}
+              subValue={`${productivityData.totalBreakHours}h total`}
               color="text-amber-700"
               gradient="from-amber-500 to-orange-500"
               index={1}
@@ -1084,7 +1085,7 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
           <StaggerItem>
             <PremiumMetricCard
               icon={BarChart3}
-              label="Shift Utilization"
+              label="Avg. Shift Utilization"
               value={`${productivityData.shiftUtilizationPercentage}%`}
               color="text-violet-700"
               gradient="from-violet-500 to-indigo-600"

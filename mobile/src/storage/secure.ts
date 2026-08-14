@@ -33,10 +33,10 @@ export const secureStorage = {
     return setItem(KEYS.accessToken, token);
   },
   async getRefreshToken(): Promise<string | null> {
-    return getItem(KEYS.refreshToken);
+    return null;
   },
   async setRefreshToken(token: string | null) {
-    return setItem(KEYS.refreshToken, token);
+    return;
   },
   async getRememberMe(): Promise<boolean> {
     const v = await getItem(KEYS.rememberMe);

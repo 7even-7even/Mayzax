@@ -51,7 +51,7 @@ export interface MeUser {
 export interface AuthResponse {
   tokens: {
     accessToken: string;
-    refreshToken: string;
+    refreshToken?: string;
   };
   user: MeUser;
 }

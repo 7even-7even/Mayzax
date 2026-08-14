@@ -81,12 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const token = await secureStorage.getAccessToken();
-        const refresh = await secureStorage.getRefreshToken();
-        if (!token && !refresh) {
+        if (!token) {
           setPendingUser(null);
           return;
         }
-        // Attempt to get me to verify the session; if 401, try refresh then retry.
+        // Attempt to get me to verify the session
         try {
           const me = await authService.me();
           if (!mounted) return;
@@ -94,18 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           registerForPushNotificationsAsync().catch(() => {});
           return;
         } catch (inner: any) {
-          if (inner?.status === 401 && refresh) {
-            try {
-              const r = await authService.refreshToken(refresh);
-              const me = await authService.me();
-              if (!mounted) return;
-              doSetUser(me);
-              registerForPushNotificationsAsync().catch(() => {});
-              return;
-            } catch {
-              // fall through to logout
-            }
-          }
+          // fall through to logout
         }
         await authService.logout(false);
         if (mounted) doSetUser(null);

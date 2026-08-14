@@ -24,25 +24,7 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
     throw new Error('Invalid login response');
   }
   await secureStorage.setAccessToken(data.tokens.accessToken);
-  await secureStorage.setRefreshToken(data.tokens.refreshToken);
   await secureStorage.setRememberMe(input.rememberMe);
-  await secureStorage.setUser(data.user);
-  return data;
-}
-
-export async function refreshToken(refreshTokenRaw: string): Promise<AuthResponse> {
-  const api = await getApi();
-  const response = await api.post<any, any>(
-    '/auth/refresh',
-    { refreshToken: refreshTokenRaw },
-    { _skipAuth: true } as any,
-  );
-  const data = (response ?? {}) as AuthResponse;
-  if (!data?.tokens?.accessToken) {
-    throw new Error('Invalid refresh response');
-  }
-  await secureStorage.setAccessToken(data.tokens.accessToken);
-  await secureStorage.setRefreshToken(data.tokens.refreshToken);
   await secureStorage.setUser(data.user);
   return data;
 }
@@ -73,11 +55,8 @@ export async function resetPassword(input: { email: string; securityAnswer: stri
 export async function logout(notifyServer = true): Promise<void> {
   try {
     if (notifyServer) {
-      const refresh = await secureStorage.getRefreshToken();
-      if (refresh) {
-        const api = await getApi();
-        await api.post('/auth/logout', { refreshToken: refresh }).catch(() => { });
-      }
+      const api = await getApi();
+      await api.post('/auth/logout').catch(() => { });
     }
   } finally {
     await secureStorage.clearAll();
