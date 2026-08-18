@@ -3,7 +3,7 @@ export const ENGINE_VERSION_NAME = '1.3.0';
 
 // Stable API key for extension → backend journey sync.
 // Must match EXTENSION_API_KEY in backend/.env
-export const EXTENSION_API_KEY = '2b93c3ca17cab4857a3c12bedf46e609508729dd7d2bb775a80a96fee4b21083';
+export const EXTENSION_API_KEY = import.meta.env.VITE_EXTENSION_API_KEY || '';
 
 /**
  * v1.1 Universal ATS Intelligence — Evidence Aggregation Model
