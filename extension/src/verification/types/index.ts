@@ -228,6 +228,7 @@ export interface VerificationEvidence {
 
 export interface SubmissionEvidence {
   submitDetected: boolean;
+  userClickedSubmit: boolean;
   requestObserved: boolean;
   requestMethod?: string;
   requestUrl?: string;
@@ -367,6 +368,13 @@ export interface PortalPlugin extends PortalDefinition {
   extractApplicationId?(doc: Document): string | null;
   extractCandidateId?(doc: Document): string | null;
   extractAllReferences?(doc: Document): ReferenceEvidence;
+
+  // Journey Adapter Methods
+  detectApplicationStart(context: any): boolean;
+  observeForm(context: any): any;
+  detectSubmission(context: any): any;
+  detectConfirmation(context: any): any;
+  extractApplicationIdentifiers(context: any): any;
 }
 
 // Legacy compatibility

@@ -1,0 +1,145 @@
+{
+  "info": {
+    "_postman_id": "9a0a7512-65a0-4c22-b5f7-64010be141bd",
+    "name": "Mayzax ATS Verification Module",
+    "description": "API collection for Mayzax ATS Application Verification & Session/Journey Monitoring",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"portal\": \"GREENHOUSE\",\n  \"jobUrl\": \"https://boards.greenhouse.io/spacex/jobs/400123\",\n  \"jobId\": \"400123\",\n  \"applicationUrl\": \"https://boards.greenhouse.io/spacex/jobs/400123/apply\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Finalize Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions/{{sessionId}}/finalize",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions",
+                "{{sessionId}}",
+                "finalize"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Report Events",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    {\n      \"eventId\": \"{{eventId}}\",\n      \"sessionId\": \"{{sessionId}}\",\n      \"type\": \"FORM_INTERACTION\",\n      \"timestamp\": \"2026-08-18T20:00:00.000Z\",\n      \"metadata\": {}\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions/{{sessionId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions",
+                "{{sessionId}}",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CRM Verification",
+      "item": [
+        {
+          "name": "Check Application URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationUrl\": \"{{applicationUrl}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/check",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "check"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -28,6 +28,7 @@ export class SubmissionObserver {
   private resetEvidence() {
     this.evidence = {
       submitDetected: false,
+      userClickedSubmit: false,
       requestObserved: false,
       responseObserved: false,
       redirectDetected: false,
@@ -135,6 +136,7 @@ export class SubmissionObserver {
     if (btn) {
       const text = (btn.textContent || (btn as HTMLInputElement).value || '').trim().toLowerCase();
       if (/submit|apply|confirm|send|agree|continue/i.test(text)) {
+        this.evidence.userClickedSubmit = true;
         this.triggerSubmissionAttempt();
       }
     }
@@ -161,10 +163,13 @@ export class SubmissionObserver {
   }
 
   private handleNetworkRequest = (event: CustomEvent<{ url: string; method: string }>) => {
-    if (!this.evidence.submitDetected) {
-      // Auto-trigger submission attempt if network request looks like application submit
+    if (!event.detail) return;
+    // Only auto-trigger on network if the user has already clicked a submit button.
+    // This prevents Ashby/SPA background XHR (autofill, analytics, field validation)
+    // from falsely triggering submitDetected before the user has done anything.
+    if (!this.evidence.submitDetected && this.evidence.userClickedSubmit) {
       if (event.detail.method === 'POST' || event.detail.method === 'PUT') {
-        if (/apply|submit|jobs|applications|register/i.test(event.detail.url)) {
+        if (/\/apply$|\/submit$|\/applications?\/(submit|create|new)|\/job\-applications?\/create/i.test(event.detail.url)) {
           this.triggerSubmissionAttempt();
         }
       }
@@ -178,6 +183,7 @@ export class SubmissionObserver {
   };
 
   private handleNetworkResponse = (event: CustomEvent<{ url: string; status: number; text: string }>) => {
+    if (!event.detail) return;
     if (!this.evidence.submitDetected) return;
 
     this.evidence.responseObserved = true;

@@ -197,6 +197,7 @@ model User {
   profileAssignments ClientProfileAssignment[] @relation("RecruiterProfileAssignments")
   applications     JobApplication[] @relation("RecruiterApplications")
   verificationLogs VerificationLog[] @relation("RecruiterVerificationLogs")
+  verificationSessions VerificationSession[]
   deviceTokens     DeviceToken[]
   notifications    Notification[]
   attendanceDays   AttendanceDay[]
@@ -734,4 +735,47 @@ model Interview {
 
   @@index([profileId])
   @@map("interviews")
+}
+
+model VerificationSession {
+  id             String              @id @default(uuid())
+  sessionId      String              @unique
+  userId         String
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portal         String
+  jobUrl         String?             @db.Text
+  jobId          String?
+  applicationUrl String?             @db.Text
+  applicationId  String?
+  status         String              // "IN_PROGRESS" | "COMPLETED" | "ABANDONED"
+  score          Int?
+  scoreVersion   String?
+  startedAt      DateTime            @default(now())
+  submittedAt    DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  events         VerificationEvent[]
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([portal])
+  @@index([createdAt])
+  @@map("verification_sessions")
+}
+
+model VerificationEvent {
+  id        String              @id @default(uuid())
+  eventId   String              @unique
+  sessionId String
+  session   VerificationSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  type      String              // e.g., "APPLICATION_DETECTED", "APPLICATION_STARTED"
+  timestamp DateTime
+  metadata  Json?
+  createdAt DateTime            @default(now())
+
+  @@index([sessionId])
+  @@index([eventId])
+  @@index([createdAt])
+  @@map("verification_events")
 }

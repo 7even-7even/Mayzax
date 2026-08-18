@@ -70,6 +70,9 @@ const envSchema = z.object({
   VERIFICATION_HASH_TTL_MS: z.coerce.number().default(24 * 60 * 60 * 1000), // 24h
   VERIFICATION_THRESHOLD: z.coerce.number().default(60),
 
+  // Stable API key for Chrome Extension → backend journey sync (never expires, rotate on breach)
+  EXTENSION_API_KEY: z.string().min(16).default('dev-extension-api-key-change-in-production'),
+
   LOG_LEVEL: z.string().default('info'),
   LOGS_DIR: z.string().default('logs'),
 });

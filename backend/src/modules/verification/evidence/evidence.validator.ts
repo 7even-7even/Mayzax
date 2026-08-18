@@ -17,26 +17,13 @@ export class EvidenceValidator {
     const reasons: string[] = [];
     const fraudSignals: string[] = [];
 
-    // 1. Timestamp freshness (5min default)
+    // 1. Timestamp check (Allow any age in the past, but flag future timestamps)
     const now = Date.now();
     const age = now - evidence.verificationTimestamp;
     const tolerance = env.VERIFICATION_TIMESTAMP_TOLERANCE_MS;
-    if (Math.abs(age) > tolerance) {
-      // Allow future slightly? but reject if too old
-      if (age > tolerance) {
-        return {
-          valid: false,
-          reasons: [`Evidence timestamp too old: ${age}ms ago, tolerance ${tolerance}ms`],
-          fraudSignals: ['STALE_TIMESTAMP'],
-          normalizedHostname: evidence.hostname,
-          normalizedPathname: evidence.pathname,
-        };
-      }
-      // Future timestamp — suspicious
-      if (age < -tolerance) {
-        fraudSignals.push('FUTURE_TIMESTAMP');
-        reasons.push(`Future timestamp detected: ${evidence.verificationTimestamp}`);
-      }
+    if (age < -tolerance) {
+      fraudSignals.push('FUTURE_TIMESTAMP');
+      reasons.push(`Future timestamp detected: ${evidence.verificationTimestamp}`);
     }
 
     // 2. HTTPS

@@ -1,4 +1,4 @@
-import { BasePortalPlugin } from './PortalPluginBase';
+import { BasePortalPlugin, PageContext, ApplicationIdentifiers } from './PortalPluginBase';
 import { JobPortal } from '../types';
 import {
   TITLE_SUCCESS_PHRASES,
@@ -99,5 +99,25 @@ export class GreenhouseVerifier extends BasePortalPlugin {
       if (text && !/thank you|application submitted/i.test(text)) return text;
     }
     return super.extractJobTitle(doc, _url);
+  }
+
+  detectApplicationStart(context: PageContext): boolean {
+    const isGreenhouseHost = this.canHandle(context.url.hostname);
+    const hasApplicationForm = !!context.document.querySelector('#application_form, form[action*="/apply"], #main_fields');
+    return isGreenhouseHost && hasApplicationForm;
+  }
+
+  extractApplicationIdentifiers(context: PageContext): ApplicationIdentifiers {
+    const refs = this.extractAllReferences(context.document);
+    let jobId = context.url.searchParams.get('gh_jid') || null;
+    if (!jobId) {
+      const match = context.url.pathname.match(/\/jobs\/(\d+)/);
+      if (match) jobId = match[1];
+    }
+    return {
+      jobId: jobId || undefined,
+      applicationId: refs.applicationId || undefined,
+      referenceId: refs.strongestReference || undefined,
+    };
   }
 }

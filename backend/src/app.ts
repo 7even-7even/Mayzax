@@ -17,6 +17,7 @@ const allowedOrigins = [
 
 function isAllowedOrigin(origin: string) {
   if (allowedOrigins.includes(origin)) return true;
+  if (/^chrome-extension:\/\/[a-z]+$/.test(origin)) return true;
 
   if (env.NODE_ENV === 'development') {
     // Allow any localhost origin including Expo dev server (19000-19006),

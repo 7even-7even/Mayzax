@@ -46,7 +46,7 @@ export class AshbyVerifier extends BasePortalPlugin {
   readonly portal = JobPortal.ASHBY;
   readonly displayName = 'Ashby';
   readonly hostPatterns = [/(?:^|\.)ashbyhq\.com$/];
-  readonly pathPatterns = [/\/application/i, /\/confirmation/i, /\/submitted/i, /\/success/i, ...URL_SUCCESS_PATTERNS];
+  readonly pathPatterns = [/\/application\/submitted/i, /\/application\/confirmation/i, /\/application\/success/i, /\/application\/complete/i, /\/confirmation/i, /\/submitted/i, /\/success/i, ...URL_SUCCESS_PATTERNS];
   readonly titlePatterns = [/application submitted/i, /thank you/i, /applied/i, /success/i];
   readonly headingPatterns = [/thank you/i, /application submitted/i, /you're all set/i, /all done/i];
   readonly confirmationPatterns = [/thank you/i, /application submitted/i, /we have received/i, /you're all set/i];

@@ -41,10 +41,10 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         </div> */}
 
         <div className="lg:hidden">
-          <p className="text-sm font-bold tracking-tight text-slate-900 flex items-center gap-2">
+          <div className="text-sm font-bold tracking-tight text-slate-900 flex items-center gap-2">
             MAYZAX
             <Badge className="bg-mayzax-gradient text-white text-[9px] h-4 px-1.5 border-0">CRM</Badge>
-          </p>
+          </div>
         </div>
       </div>
 

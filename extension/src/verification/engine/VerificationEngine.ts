@@ -262,7 +262,7 @@ export class VerificationEngine {
   ): string {
     let log = '\n';
     log += '╔════════════════════════════════════════════════════════════╗\n';
-    log += '║  Mayzax v1.2 — Universal ATS Intelligence                 ║\n';
+    log += '║  Mayzax v1.3 — Universal ATS Intelligence                 ║\n';
     log += '╚════════════════════════════════════════════════════════════╝\n';
 
     log += '\n✓ Positive Evidence\n';

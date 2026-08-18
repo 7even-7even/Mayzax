@@ -1,0 +1,397 @@
+{
+  "info": {
+    "_postman_id": "8b087019-35a0-4c22-b5f7-64010be141bd",
+    "name": "Mayzax ATS Extension Verification",
+    "description": "API collection for Chrome Extension V2 Application Journey Monitoring & Verification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "API Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Recruiter Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"recruiter@mayzax.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sessions",
+      "item": [
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"portal\": \"GREENHOUSE\",\n  \"jobUrl\": \"https://boards.greenhouse.io/spacex/jobs/400123\",\n  \"jobId\": \"400123\",\n  \"applicationUrl\": \"https://boards.greenhouse.io/spacex/jobs/400123/apply\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Finalize Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions/{{sessionId}}/finalize",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions",
+                "{{sessionId}}",
+                "finalize"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Application Detected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    {\n      \"eventId\": \"{{eventId}}\",\n      \"sessionId\": \"{{sessionId}}\",\n      \"type\": \"APPLICATION_DETECTED\",\n      \"timestamp\": \"2026-08-18T20:00:00.000Z\",\n      \"metadata\": {}\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions/{{sessionId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions",
+                "{{sessionId}}",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Application Started",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    {\n      \"eventId\": \"evt_started_001\",\n      \"sessionId\": \"{{sessionId}}\",\n      \"type\": \"APPLICATION_STARTED\",\n      \"timestamp\": \"2026-08-18T20:01:00.000Z\",\n      \"metadata\": {}\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions/{{sessionId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions",
+                "{{sessionId}}",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Form Interaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    {\n      \"eventId\": \"evt_interact_001\",\n      \"sessionId\": \"{{sessionId}}\",\n      \"type\": \"FORM_INTERACTION\",\n      \"timestamp\": \"2026-08-18T20:02:00.000Z\",\n      \"metadata\": {}\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions/{{sessionId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions",
+                "{{sessionId}}",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resume Uploaded",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    {\n      \"eventId\": \"evt_resume_001\",\n      \"sessionId\": \"{{sessionId}}\",\n      \"type\": \"RESUME_UPLOADED\",\n      \"timestamp\": \"2026-08-18T20:03:00.000Z\",\n      \"metadata\": {}\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions/{{sessionId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions",
+                "{{sessionId}}",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Clicked",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    {\n      \"eventId\": \"evt_submit_001\",\n      \"sessionId\": \"{{sessionId}}\",\n      \"type\": \"SUBMIT_CLICKED\",\n      \"timestamp\": \"2026-08-18T20:04:00.000Z\",\n      \"metadata\": {}\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions/{{sessionId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions",
+                "{{sessionId}}",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submission Confirmed",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    {\n      \"eventId\": \"evt_confirmed_001\",\n      \"sessionId\": \"{{sessionId}}\",\n      \"type\": \"SUBMISSION_CONFIRMED\",\n      \"timestamp\": \"2026-08-18T20:05:00.000Z\",\n      \"metadata\": {\n        \"text\": \"Application submitted successfully\"\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions/{{sessionId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions",
+                "{{sessionId}}",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Application Reference Detected",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"events\": [\n    {\n      \"eventId\": \"evt_reference_001\",\n      \"sessionId\": \"{{sessionId}}\",\n      \"type\": \"APPLICATION_REFERENCE_DETECTED\",\n      \"timestamp\": \"2026-08-18T20:06:00.000Z\",\n      \"metadata\": {\n        \"referenceId\": \"APP-1234567\"\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/sessions/{{sessionId}}/events",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "sessions",
+                "{{sessionId}}",
+                "events"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "CRM Verification",
+      "item": [
+        {
+          "name": "Check Application URL",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"applicationUrl\": \"{{applicationUrl}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/verifications/check",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "verifications",
+                "check"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

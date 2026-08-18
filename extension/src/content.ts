@@ -252,14 +252,142 @@ function setupSpaObserver(): void {
 
 // ── Entry point ──────────────────────────────────────────────────────────────
 
+function setupJourneyTracking(sessionId: string, plugin: any) {
+  // 1. Report APPLICATION_DETECTED
+  try {
+    chrome.runtime.sendMessage({
+      action: 'REPORT_EVENT',
+      payload: { sessionId, type: 'APPLICATION_DETECTED' }
+    });
+  } catch {}
+
+  let hasStarted = false;
+  let hasInteracted = false;
+  let hasCompleted = false;
+  let hasUploaded = false;
+  let hasClickedSubmit = false;
+  let hasConfirmed = false;
+  let hasReference = false;
+
+  const checkFormState = () => {
+    const obs = plugin.observeForm({ document, url: new URL(window.location.href) });
+
+    if (!hasStarted && (obs.formInteraction || obs.resumeUploaded || obs.requiredFieldsCompleted)) {
+      hasStarted = true;
+      try {
+        chrome.runtime.sendMessage({
+          action: 'REPORT_EVENT',
+          payload: { sessionId, type: 'APPLICATION_STARTED' }
+        });
+      } catch {}
+    }
+
+    if (obs.formInteraction && !hasInteracted) {
+      hasInteracted = true;
+      try {
+        chrome.runtime.sendMessage({
+          action: 'REPORT_EVENT',
+          payload: { sessionId, type: 'FORM_INTERACTION' }
+        });
+      } catch {}
+    }
+
+    if (obs.resumeUploaded && !hasUploaded) {
+      hasUploaded = true;
+      try {
+        chrome.runtime.sendMessage({
+          action: 'REPORT_EVENT',
+          payload: { sessionId, type: 'RESUME_UPLOADED' }
+        });
+      } catch {}
+    }
+
+    if (obs.requiredFieldsCompleted && !hasCompleted) {
+      hasCompleted = true;
+      try {
+        chrome.runtime.sendMessage({
+          action: 'REPORT_EVENT',
+          payload: { sessionId, type: 'REQUIRED_FIELDS_COMPLETED' }
+        });
+      } catch {}
+    }
+  };
+
+  document.addEventListener('input', (e) => {
+    hasInteracted = true;
+    checkFormState();
+  }, true);
+
+  document.addEventListener('change', (e) => {
+    checkFormState();
+  }, true);
+
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const btn = target.closest('button, input[type="submit"], input[type="button"], [role="button"]');
+    if (btn) {
+      const text = (btn.textContent || (btn as HTMLInputElement).value || '').trim().toLowerCase();
+      if (/submit|apply|confirm|send|agree|continue/i.test(text)) {
+        if (!hasClickedSubmit) {
+          hasClickedSubmit = true;
+          try {
+            chrome.runtime.sendMessage({
+              action: 'REPORT_EVENT',
+              payload: { sessionId, type: 'SUBMIT_CLICKED' }
+            });
+          } catch {}
+        }
+      }
+    }
+  }, true);
+
+  const checkConfirmationState = () => {
+    const conf = plugin.detectConfirmation({ document, url: new URL(window.location.href) });
+    if (conf.submissionConfirmed && !hasConfirmed) {
+      hasConfirmed = true;
+      try {
+        chrome.runtime.sendMessage({
+          action: 'REPORT_EVENT',
+          payload: { sessionId, type: 'SUBMISSION_CONFIRMED', metadata: { text: conf.confirmationText } }
+        });
+      } catch {}
+
+      const ids = plugin.extractApplicationIdentifiers({ document, url: new URL(window.location.href) });
+      if (ids.referenceId && !hasReference) {
+        hasReference = true;
+        try {
+          chrome.runtime.sendMessage({
+            action: 'REPORT_EVENT',
+            payload: { sessionId, type: 'APPLICATION_REFERENCE_DETECTED', metadata: { referenceId: ids.referenceId } }
+          });
+        } catch {}
+      }
+
+      try {
+        chrome.runtime.sendMessage({
+          action: 'FINALIZE_SESSION',
+          payload: { sessionId }
+        });
+      } catch {}
+    }
+  };
+
+  const observer = new MutationObserver(() => {
+    checkFormState();
+    checkConfirmationState();
+  });
+  observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+
+  checkFormState();
+  checkConfirmationState();
+}
+
 async function main(): Promise<void> {
   const currentUrl = window.location.href;
 
-  // Fast gate — runs synchronously in <1ms for non-recruitment pages
   const detection = RecruitmentPageDetector.detect(document, currentUrl);
 
   if (!detection.isRecruitment) {
-    // Exit immediately — no observers, no engine, no DOM crawling
     console.debug('[Mayzax] Page ignored (not recruitment related)');
     return;
   }
@@ -267,26 +395,44 @@ async function main(): Promise<void> {
   isRecruitmentPage = true;
   console.debug(`[Mayzax] Recruitment page detected (trigger: ${detection.trigger})`);
 
-  // Wire up SPA observer only for confirmed recruitment pages
   setupSpaObserver();
 
-  // Start submission observer to track live inputs and lifecycle events
+  // Initialize verification session
+  const plugin = portalRegistryV2.getPluginForUrl(currentUrl);
+  const portal = plugin.portal;
+  const ids = plugin.extractApplicationIdentifiers({ document, url: new URL(currentUrl) });
+
+  try {
+    chrome.runtime.sendMessage({
+      action: 'START_SESSION',
+      payload: {
+        portal,
+        jobUrl: currentUrl,
+        jobId: ids.jobId,
+        applicationUrl: currentUrl,
+        applicationId: ids.applicationId
+      }
+    }, (response) => {
+      if (response && response.success) {
+        console.log('[Mayzax] Journey session initialized:', response.sessionId);
+        setupJourneyTracking(response.sessionId, plugin);
+      }
+    });
+  } catch {}
+
   submissionObserver.start((evidence) => {
     runDetectionV2(evidence);
   });
 
-  // Slight delay to let the SPA settle before running verification
   setTimeout(() => runDetectionV2(), 1500);
 }
 
-// ── Bootstrap ────────────────────────────────────────────────────────────────
-
 console.log(`[Mayzax] Content script loaded v${ENGINE_VERSION_NAME} — universal mode`);
-
-console.log(`[Mayzax v2] Content script loaded v${ENGINE_VERSION_NAME} on ${window.location.href}`);
+console.log(`[Mayzax] Content script loaded v${ENGINE_VERSION_NAME} on ${window.location.href}`);
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   main();
 } else {
   window.addEventListener('DOMContentLoaded', main);
 }
+

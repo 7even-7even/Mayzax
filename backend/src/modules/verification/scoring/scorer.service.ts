@@ -40,159 +40,286 @@ export class VerificationScorer {
     let totalScore = 0;
     const maxScore = 100;
 
+    // Use synchronized scoring weights matching EngineConfig.ts (v1.3.0)
+    const weights = {
+      UrlSuccessPattern: 20,
+      Domain: 15,
+      PageTitle: 20,
+      Heading: 20,
+      ConfirmationBody: 20,
+      ApplicationReference: 10,
+      DomFingerprint: 20,
+      PortalCompliance: 10,
+      MetaTags: 5,
+      Breadcrumbs: 5,
+      JsonLd: 5,
+      PositiveButtons: 10,
+      CompanyExtracted: 5,
+      JobTitleExtracted: 5,
+      FormDisabled: 10,
+    };
+
     // ── URL Success Pattern — 15 pts ─────────────────────────────────────
-    const urlHasSuccess = /\/applied|\/application-submitted|\/success|\/confirmation|\/thank-you|\/thankyou|\/completed|\/submitted|\/done|\/finish|\/complete|\/receipt|\/reference/i.test(evidence.pathname + (evidence as any).search || '');
-    if (urlHasSuccess || /\/applied|\/confirmation|\/thank-you|\/success/i.test(evidence.pathname)) {
-      totalScore += 15;
-      evidenceBreakdown.url = 15;
-      positiveEvidence.push(`✓ Success path: ${evidence.pathname}`);
-      reasons.push(`URL success pattern in ${evidence.pathname}`);
+    if (evidence.urlEvidence?.hasSuccessPath) {
+      totalScore += weights.UrlSuccessPattern;
+      evidenceBreakdown.url = weights.UrlSuccessPattern;
+      positiveEvidence.push(`✓ Success path: ${evidence.urlEvidence.matchedPattern} in ${evidence.urlEvidence.fullPath}`);
+      reasons.push(`URL success pattern: ${evidence.urlEvidence.matchedPattern}`);
     } else {
       evidenceBreakdown.url = 0;
-      neutralEvidence.push(`• No success path in URL: ${evidence.pathname}`);
+      neutralEvidence.push(`• No success path in URL: ${evidence.urlEvidence?.fullPath || evidence.pathname}`);
     }
 
-    // ── Domain Validation — 10 pts, but missing = 0 not instant reject unless blocked ──
-    const domainOutcome = this.evaluateDomain(evidence);
-    outcomes.push(domainOutcome);
-    if (domainOutcome.passed) {
-      totalScore += domainOutcome.scoreContribution;
-      evidenceBreakdown.domain = domainOutcome.scoreContribution;
-      positiveEvidence.push(...domainOutcome.reasons.filter(r => r.includes('✓')));
-      reasons.push(...domainOutcome.reasons);
-    } else {
-      // Only blocked/insecure is instant 0, generic is neutral
-      if (domainOutcome.fraudSignals?.includes('BLOCKED_HOSTNAME') || domainOutcome.fraudSignals?.includes('INSECURE_PROTOCOL')) {
-        return {
-          score: 0,
-          maxScore,
-          reasons: [...domainOutcome.reasons, 'Domain validation failed — blocked or insecure'],
-          fraudSignals: [...(domainOutcome.fraudSignals || []), 'UNSUPPORTED_DOMAIN_OR_INSECURE'],
-          outcomes,
-          positiveEvidence: [],
-          neutralEvidence: domainOutcome.reasons,
-          weakNegativeEvidence: [],
-          evidenceBreakdown: { domain: 0 },
-        };
+    // ── Domain / Hostname Known ATS — 5 pts ─────────────────────────────
+    if (evidence.hostname) {
+      const isKnownATS = evidence.portal !== 'OTHER' && evidence.portal !== 'COMPANY_WEBSITE' && evidence.portal !== 'CAREER_SITE';
+      if (isKnownATS) {
+        totalScore += weights.Domain;
+        evidenceBreakdown.domain = weights.Domain;
+        positiveEvidence.push(`✓ Known ATS hostname: ${evidence.hostname} matches ${evidence.portal}`);
+        reasons.push(`Domain validated: ${evidence.hostname} matches ${evidence.portal}`);
+      } else if (evidence.hostname.includes('careers.') || evidence.hostname.includes('jobs.') || evidence.pathname.includes('/careers') || evidence.pathname.includes('/jobs')) {
+        totalScore += 5;
+        evidenceBreakdown.domain = 5;
+        positiveEvidence.push(`✓ Career domain: ${evidence.hostname}`);
+        reasons.push(`Career domain: ${evidence.hostname}`);
+      } else {
+        evidenceBreakdown.domain = 0;
+        neutralEvidence.push(`• Generic domain: ${evidence.hostname}`);
       }
-      evidenceBreakdown.domain = 0;
-      neutralEvidence.push(...domainOutcome.reasons);
     }
-    if (domainOutcome.fraudSignals) fraudSignals.push(...domainOutcome.fraudSignals);
 
-    // ── Page Title — 15 pts, missing = 0 ─────────────────────────────────
-    const titleOutcome = this.evaluateTitle(evidence);
-    outcomes.push(titleOutcome);
-    if (titleOutcome.scoreContribution > 0) {
-      totalScore += titleOutcome.scoreContribution;
-      evidenceBreakdown.title = titleOutcome.scoreContribution;
-      positiveEvidence.push(...titleOutcome.reasons.filter(r => r.includes('✓')));
-      reasons.push(...titleOutcome.reasons);
+    // ── Page Title Success — 15 pts ──────────────────────────────────────
+    if (evidence.titleEvidence?.hasSuccess) {
+      totalScore += weights.PageTitle;
+      evidenceBreakdown.title = weights.PageTitle;
+      positiveEvidence.push(`✓ Confirmation title: "${evidence.title.slice(0, 80)}" — ${evidence.titleEvidence.matchedPhrases.slice(0, 2).join(', ')}`);
+      reasons.push(`Title matched: ${evidence.titleEvidence.matchedPhrases.slice(0, 2).join(', ')}`);
+    } else if (evidence.title) {
+      const titleLower = evidence.title.toLowerCase();
+      if (/thank you|success|submitted|confirmation|applied|all done|you're all set|you are all set/i.test(titleLower)) {
+        totalScore += 10;
+        evidenceBreakdown.title = 10;
+        positiveEvidence.push(`✓ Title contains success keyword: "${evidence.title.slice(0, 80)}"`);
+        reasons.push(`Title contains generic success keyword`);
+      } else {
+        evidenceBreakdown.title = 0;
+        neutralEvidence.push(`• No success phrase in title: "${evidence.title.slice(0, 60)}"`);
+      }
     } else {
       evidenceBreakdown.title = 0;
-      neutralEvidence.push(...titleOutcome.reasons);
+      neutralEvidence.push(`• No title`);
     }
 
-    // ── Heading — 20 pts, missing = 0 ────────────────────────────────────
-    const headingOutcome = this.evaluateHeading(evidence);
-    outcomes.push(headingOutcome);
-    if (headingOutcome.scoreContribution > 0) {
-      totalScore += headingOutcome.scoreContribution;
-      evidenceBreakdown.heading = headingOutcome.scoreContribution;
-      positiveEvidence.push(...headingOutcome.reasons.filter(r => r.includes('✓')));
-      reasons.push(...headingOutcome.reasons);
+    // ── Heading Success (H1/H2/H3) — 20 pts ──────────────────────────────
+    if (evidence.headingEvidence?.hasSuccess) {
+      const count = evidence.headingEvidence.matchedSuccessPhrases.length;
+      const finalWeight = count >= 2 ? weights.Heading : Math.max(10, weights.Heading - 5);
+      totalScore += finalWeight;
+      evidenceBreakdown.heading = finalWeight;
+      positiveEvidence.push(`✓ Confirmation heading: ${evidence.headingEvidence.matchedSuccessPhrases.slice(0, 2).join(', ')} — "${evidence.headingEvidence.allHeadings.slice(0, 2).join(' | ').slice(0, 80)}"`);
+      reasons.push(`Heading matched: ${evidence.headingEvidence.matchedSuccessPhrases.slice(0, 2).join(', ')}`);
+    } else if (evidence.headings && evidence.headings.length > 0) {
+      const headingText = evidence.headings.join(' ').toLowerCase();
+      if (/thank you|success|submitted|confirmation|applied|all done|you're all set/i.test(headingText)) {
+        totalScore += 10;
+        evidenceBreakdown.heading = 10;
+        positiveEvidence.push(`✓ Headings contain generic success: ${evidence.headings.slice(0, 2).join(' | ').slice(0, 80)}`);
+        reasons.push(`Headings contain generic success keywords`);
+      } else {
+        evidenceBreakdown.heading = 0;
+        neutralEvidence.push(`• No success heading, found: ${evidence.headings.slice(0, 2).join(' | ').slice(0, 60) || 'none'}`);
+      }
     } else {
       evidenceBreakdown.heading = 0;
-      neutralEvidence.push(...headingOutcome.reasons);
+      neutralEvidence.push(`• No headings found`);
     }
 
-    // ── Confirmation Body — 20 pts, missing = 0 ──────────────────────────
-    const bodyOutcome = this.evaluateConfirmationBody(evidence);
-    outcomes.push(bodyOutcome);
-    if (bodyOutcome.scoreContribution > 0) {
-      totalScore += bodyOutcome.scoreContribution;
-      evidenceBreakdown.body = bodyOutcome.scoreContribution;
-      positiveEvidence.push(...bodyOutcome.reasons.filter(r => r.includes('✓')));
-      reasons.push(...bodyOutcome.reasons);
+    // ── Confirmation Body — 15 pts ───────────────────────────────────────
+    if (evidence.bodyEvidence?.hasSuccess) {
+      const count = evidence.bodyEvidence.matchedSuccessPhrases.length;
+      const finalWeight = count >= 2 ? weights.ConfirmationBody : 15;
+      totalScore += finalWeight;
+      evidenceBreakdown.body = finalWeight;
+      positiveEvidence.push(`✓ Confirmation body: ${evidence.bodyEvidence.matchedSuccessPhrases.slice(0, 2).join(', ')} — "${evidence.bodyEvidence.confirmationText.slice(0, 100)}..."`);
+      reasons.push(`Body matched: ${evidence.bodyEvidence.matchedSuccessPhrases.slice(0, 2).join(', ')}`);
+    } else if (evidence.confirmationText && evidence.confirmationText.length > 20) {
+      if (/thank you|application received|submitted|success|confirmation|all done|you're all set|we have received|we will review|reference number|we appreciate/i.test(evidence.confirmationText.toLowerCase())) {
+        totalScore += 10;
+        evidenceBreakdown.body = 10;
+        positiveEvidence.push(`✓ Body contains generic success keywords — "${evidence.confirmationText.slice(0, 100)}..."`);
+        reasons.push(`Body contains generic success keywords`);
+      } else {
+        evidenceBreakdown.body = 0;
+        neutralEvidence.push(`• No confirmation body match, length: ${evidence.confirmationText.length}`);
+      }
     } else {
       evidenceBreakdown.body = 0;
-      neutralEvidence.push(...bodyOutcome.reasons);
+      neutralEvidence.push(`• No confirmation body`);
     }
 
-    // ── Application Reference — 20 pts strongest ─────────────────────────
-    const refOutcome = this.evaluateReference(evidence);
-    outcomes.push(refOutcome);
-    if (refOutcome.scoreContribution > 0) {
-      totalScore += refOutcome.scoreContribution;
-      evidenceBreakdown.reference = refOutcome.scoreContribution;
-      positiveEvidence.push(...refOutcome.reasons.filter(r => r.includes('✓')));
-      reasons.push(...refOutcome.reasons);
+    // ── Meta Tags — 5 pts ────────────────────────────────────────────────
+    if (evidence.metaEvidence?.hasSuccess) {
+      totalScore += weights.MetaTags;
+      evidenceBreakdown.meta = weights.MetaTags;
+      positiveEvidence.push(`✓ Meta tags: ${evidence.metaEvidence.matchedPhrases.slice(0, 2).join(', ')}`);
+      reasons.push(`Meta tags matched: ${evidence.metaEvidence.matchedPhrases.slice(0, 2).join(', ')}`);
     } else {
-      evidenceBreakdown.reference = 0;
-      neutralEvidence.push(...refOutcome.reasons);
+      evidenceBreakdown.meta = 0;
+      neutralEvidence.push(`• No success in meta tags`);
     }
 
-    // ── DOM Fingerprint — up to 15 pts ───────────────────────────────────
-    const fingerprintOutcome = this.evaluateFingerprint(evidence);
-    outcomes.push(fingerprintOutcome);
-    if (fingerprintOutcome.scoreContribution > 0) {
-      totalScore += fingerprintOutcome.scoreContribution;
-      evidenceBreakdown.domFingerprint = fingerprintOutcome.scoreContribution;
-      positiveEvidence.push(...fingerprintOutcome.reasons.filter(r => r.includes('✓')));
-      reasons.push(...fingerprintOutcome.reasons);
+    // ── Breadcrumbs — 5 pts ──────────────────────────────────────────────
+    if (evidence.breadcrumbEvidence?.hasSuccess) {
+      totalScore += weights.Breadcrumbs;
+      evidenceBreakdown.breadcrumbs = weights.Breadcrumbs;
+      positiveEvidence.push(`✓ Breadcrumbs: ${evidence.breadcrumbEvidence.matchedPhrases.slice(0, 2).join(', ')}`);
+      reasons.push(`Breadcrumbs matched`);
+    } else {
+      evidenceBreakdown.breadcrumbs = 0;
+      neutralEvidence.push(`• No success in breadcrumbs`);
+    }
+
+    // ── JSON-LD Structured Data — 5 pts ──────────────────────────────────
+    if (evidence.structuredDataEvidence?.hasConfirmation) {
+      totalScore += weights.JsonLd;
+      evidenceBreakdown.jsonLd = weights.JsonLd;
+      positiveEvidence.push(`✓ Structured data: ${evidence.structuredDataEvidence.matchedTypes.slice(0, 2).join(', ')}`);
+      reasons.push(`Structured data indicates confirmation`);
+    } else {
+      evidenceBreakdown.jsonLd = 0;
+      neutralEvidence.push(`• No structured data confirmation`);
+    }
+
+    // ── DOM Fingerprints — up to 20 pts ──────────────────────────────────
+    const domScore = evidence.domFingerprint?.fingerprintScore || 0;
+    const hasFingerprint = domScore > 0 || evidence.domFingerprint?.hasConfirmationCard || evidence.domFingerprint?.hasSuccessBanner;
+    if (hasFingerprint) {
+      const weight = Math.min(domScore || 10, weights.DomFingerprint);
+      totalScore += weight;
+      evidenceBreakdown.domFingerprint = weight;
+      const matched = evidence.domFingerprint.matchedFingerprints?.slice(0, 3).join(', ') || 'success card/banner';
+      positiveEvidence.push(`✓ Success DOM: ${matched} (score ${domScore || weight})`);
+      reasons.push(`DOM fingerprint: ${matched}`);
     } else {
       evidenceBreakdown.domFingerprint = 0;
-      neutralEvidence.push(...fingerprintOutcome.reasons);
+      neutralEvidence.push(`• No success DOM fingerprints`);
+    }
+
+    // ── Positive Buttons — 10 pts ─────────────────────────────────────────
+    if (evidence.buttonEvidence?.hasPositive) {
+      totalScore += weights.PositiveButtons;
+      evidenceBreakdown.positiveButtons = weights.PositiveButtons;
+      positiveEvidence.push(`✓ Positive buttons: ${evidence.buttonEvidence.positiveButtons.map((b: any) => b.text).slice(0, 3).join(', ')}`);
+      reasons.push(`Positive buttons: ${evidence.buttonEvidence.positiveButtons.map((b: any) => b.text).slice(0, 2).join(', ')}`);
+    } else {
+      evidenceBreakdown.positiveButtons = 0;
+      neutralEvidence.push(`• No positive buttons (View Application, Dashboard, etc.)`);
+    }
+
+    // ── Apply Button Check — Bonus 2 pts if absent ───────────────────────
+    if (evidence.buttonEvidence?.hasNegative) {
+      neutralEvidence.push(`• Apply button still visible: ${evidence.buttonEvidence.negativeButtons.map((b: any) => b.text).slice(0, 2).join(', ')} — weak signal`);
+      evidenceBreakdown.applyButton = 0;
+    } else {
+      evidenceBreakdown.applyButton = 0;
+      if (evidence.buttonEvidence && !evidence.buttonEvidence.hasNegative) {
+        totalScore += 2;
+        evidenceBreakdown.applyAbsentBonus = 2;
+        positiveEvidence.push(`✓ No Apply button — likely confirmation page`);
+      }
+    }
+
+    // ── Application Reference — 10 pts strongest ─────────────────────────
+    if (evidence.referenceEvidence?.hasAnyReference) {
+      totalScore += weights.ApplicationReference;
+      evidenceBreakdown.reference = weights.ApplicationReference;
+      positiveEvidence.push(`✓ Reference ID: ${evidence.referenceEvidence.strongestReference} (${evidence.referenceEvidence.allReferences.length} found) — strongest positive`);
+      reasons.push(`Reference found: ${evidence.referenceEvidence.strongestReference}`);
+    } else if (evidence.applicationReference) {
+      totalScore += weights.ApplicationReference;
+      evidenceBreakdown.reference = weights.ApplicationReference;
+      positiveEvidence.push(`✓ Reference ID: ${evidence.applicationReference} — strongest positive`);
+      reasons.push(`Reference found: ${evidence.applicationReference}`);
+    } else {
+      evidenceBreakdown.reference = 0;
+      neutralEvidence.push(`• No reference ID`);
     }
 
     // ── Portal Compliance — 5 pts ────────────────────────────────────────
-    const portalOutcome = this.evaluatePortalCompliance(evidence);
-    outcomes.push(portalOutcome);
-    if (portalOutcome.scoreContribution > 0) {
-      totalScore += portalOutcome.scoreContribution;
-      evidenceBreakdown.portalCompliance = portalOutcome.scoreContribution;
-      positiveEvidence.push(...portalOutcome.reasons.filter(r => r.includes('✓')));
-      reasons.push(...portalOutcome.reasons);
+    if (evidence.portal && evidence.portal !== 'OTHER') {
+      totalScore += weights.PortalCompliance;
+      evidenceBreakdown.portalCompliance = weights.PortalCompliance;
+      positiveEvidence.push(`✓ Portal compliance: ${evidence.portal}`);
+      reasons.push(`Portal compliance: ${evidence.portal}`);
     } else {
       evidenceBreakdown.portalCompliance = 0;
-      neutralEvidence.push(...portalOutcome.reasons);
+      neutralEvidence.push(`• Generic portal: ${evidence.portal}`);
     }
 
-    // ── Apply Button — Very weak signal, not penalty ─────────────────────
-    const buttonOutcome = this.evaluateApplyButton(evidence);
-    outcomes.push(buttonOutcome);
-    // Only add positive if bonus, negative is very weak -2 handled as weakNegative
-    if (buttonOutcome.scoreContribution > 0) {
-      totalScore += buttonOutcome.scoreContribution;
-      evidenceBreakdown.positiveButtons = buttonOutcome.scoreContribution;
-      positiveEvidence.push(...buttonOutcome.reasons.filter(r => r.includes('✓')));
-    } else if (buttonOutcome.scoreContribution < 0) {
-      // Apply button visible — very weak negative, only -2 if not many positives
-      const positiveCount = positiveEvidence.length;
-      if (positiveCount < 2) {
-        totalScore += buttonOutcome.scoreContribution; // -2
-        evidenceBreakdown.applyButton = buttonOutcome.scoreContribution;
-        weakNegativeEvidence.push(...buttonOutcome.reasons);
-      } else {
-        // Many positives outweigh, neutral
-        neutralEvidence.push(`• Apply button still visible but ${positiveCount} positive signals outweigh — weak neutral`);
-        evidenceBreakdown.applyButton = 0;
-      }
+    // ── Form Disabled/Read-only — 10 pts ──────────────────────────────────
+    if (evidence.domFingerprint?.hasDisabledForm || evidence.domFingerprint?.hasReadOnlySummary) {
+      totalScore += weights.FormDisabled;
+      evidenceBreakdown.formDisabled = weights.FormDisabled;
+      positiveEvidence.push(`✓ Form disabled/read-only — indicates completion`);
+      reasons.push(`Form disabled/read-only`);
     } else {
-      evidenceBreakdown.applyButton = 0;
-      neutralEvidence.push(...buttonOutcome.reasons);
+      evidenceBreakdown.formDisabled = 0;
     }
-    if (buttonOutcome.fraudSignals) fraudSignals.push(...buttonOutcome.fraudSignals);
+
+    // ── Post-Submission Evidence ─────────────────────────────────────────
+    if (evidence.submissionEvidence) {
+      const sub = evidence.submissionEvidence;
+      let subScore = 0;
+
+      if (sub.newApplicationDetected || sub.updatedApplicationDetected) {
+        subScore += 40;
+        positiveEvidence.push(`✓ Post-submission dashboard application matched`);
+        reasons.push(`Post-submission dashboard application matched`);
+      } else if (sub.applicationReference) {
+        subScore += 30;
+        positiveEvidence.push(`✓ Post-submission reference ID captured: ${sub.applicationReference}`);
+        reasons.push(`Post-submission reference ID captured`);
+      } else if (sub.responseStatus && sub.responseStatus >= 200 && sub.responseStatus < 300) {
+        subScore += 25;
+        positiveEvidence.push(`✓ Successful post-submission network response observed`);
+        reasons.push(`Successful post-submission network response observed`);
+      }
+
+      if (sub.confirmationDetected) {
+        subScore += 20;
+        positiveEvidence.push(`✓ Post-submission success message/toast observed`);
+        reasons.push(`Post-submission success message/toast observed`);
+      }
+      if (sub.formResetDetected) {
+        subScore += 15;
+        positiveEvidence.push(`✓ Post-submission form reset detected`);
+        reasons.push(`Post-submission form reset detected`);
+      }
+      if (sub.redirectDetected && sub.dashboardDetected) {
+        subScore += 15;
+        positiveEvidence.push(`✓ Post-submission redirect to dashboard observed`);
+        reasons.push(`Post-submission redirect to dashboard observed`);
+      }
+
+      if (sub.submitDetected && !sub.responseStatus) {
+        subScore += 5;
+        positiveEvidence.push(`✓ Post-submission submit action detected`);
+      }
+
+      totalScore += subScore;
+      evidenceBreakdown.submissionEvidence = subScore;
+    }
 
     // ── Fraud Analysis — Minimal penalties, only slight reduction ────────
     if (evidence.historyManipulationDetected) {
-      totalScore -= 5; // Keep -5 for actual fraud
+      totalScore -= 5;
       fraudSignals.push('HISTORY_MANIPULATION_DETECTED');
       reasons.push('History manipulation detected — slight reduction');
       weakNegativeEvidence.push('• History manipulation detected — possible spoofing');
     }
     if (evidence.timeOnPageMs !== undefined && evidence.timeOnPageMs < 1000) {
-      totalScore -= 1; // Minimal from -5 to -1
+      totalScore -= 1;
       weakNegativeEvidence.push(`• Page viewed for only ${evidence.timeOnPageMs}ms — minimal influence`);
       if (evidence.timeOnPageMs < 500) {
         fraudSignals.push('VERY_SHORT_TIME_ON_PAGE');

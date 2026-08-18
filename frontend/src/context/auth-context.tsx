@@ -35,6 +35,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasBootstrappedRef = useRef(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (accessToken && (window as any).chrome?.runtime?.sendMessage) {
+      const envId = import.meta.env.VITE_EXTENSION_ID as string | undefined;
+      const extId = envId ? envId.split(',')[0].trim() : 'ndbdagkdffkmiiepihahnebaojmooahm';
+      try {
+        (window as any).chrome.runtime.sendMessage(extId, { action: 'SET_ACCESS_TOKEN', token: accessToken });
+      } catch (e) {
+        console.debug('[AuthContext] Extension sync failed', e);
+      }
+    }
+  }, [accessToken]);
+
   const setAuthToken = useCallback((token: string | null) => {
     setApiToken(token);
     setAccessTokenState(token);

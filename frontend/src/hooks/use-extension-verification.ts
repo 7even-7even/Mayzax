@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { JobPortal } from '../types';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, getAccessToken } from '@/lib/api-client';
 
 export interface VerificationEvidence {
   portal: JobPortal;
@@ -162,6 +162,12 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
       attempt++;
 
       try {
+        const token = getAccessToken();
+        if (token) {
+          try {
+            chromeObj.runtime.sendMessage(currentId, { action: 'SET_ACCESS_TOKEN', token });
+          } catch {}
+        }
         chromeObj.runtime.sendMessage(
           currentId,
           { action: 'VERIFY_URL', url: jobLink },

@@ -242,4 +242,105 @@ export abstract class BasePortalPlugin implements PortalPlugin {
     if (!this.referencePatterns || this.referencePatterns.length === 0) return null;
     return extractReference(doc, this.referencePatterns);
   }
+
+  // --- Portal Adapter Interface Methods ---
+  detectApplicationStart(context: PageContext): boolean {
+    const hasForm = !!context.document.querySelector('form');
+    const isApply = /apply|job|career/i.test(context.url.pathname);
+    return hasForm || isApply;
+  }
+
+  observeForm(context: PageContext): FormObservation {
+    const fileInputs = Array.from(context.document.querySelectorAll('input[type="file"]'));
+    const resumeUploaded = fileInputs.some(f => {
+      const input = f as HTMLInputElement;
+      return input.files && input.files.length > 0;
+    });
+
+    const requiredInputs = Array.from(context.document.querySelectorAll('input[required], textarea[required], select[required]'));
+    const requiredFieldsCompleted = requiredInputs.length > 0 && requiredInputs.every(el => {
+      const input = el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+      if (input.type === 'checkbox') return (input as HTMLInputElement).checked;
+      if (input.type === 'radio') {
+        const name = input.name;
+        if (!name) return !!input.value;
+        const checked = context.document.querySelector(`input[name="${name}"]:checked`);
+        return !!checked;
+      }
+      return input.value.trim().length > 0;
+    });
+
+    return {
+      formInteraction: false,
+      requiredFieldsCompleted,
+      resumeUploaded,
+    };
+  }
+
+  detectSubmission(context: PageContext): SubmissionObservation {
+    return { submitClicked: false };
+  }
+
+  detectConfirmation(context: PageContext): ConfirmationObservation {
+    const title = context.document.title || '';
+    const titleMatch = this.titlePatterns.some(p => p.test(title));
+
+    const headings = Array.from(context.document.querySelectorAll('h1, h2, h3'))
+      .map(h => h.textContent?.trim() || '')
+      .filter(Boolean);
+    const headingMatch = headings.some(text => this.headingPatterns.some(p => p.test(text)));
+
+    const bodyText = context.document.body ? (context.document.body.textContent || '') : '';
+    const bodyMatch = this.confirmationPatterns.some(p => p.test(bodyText));
+
+    const confirmed = titleMatch || headingMatch || bodyMatch;
+    return {
+      submissionConfirmed: confirmed,
+      confirmationText: confirmed ? (headings[0] || title || bodyText.slice(0, 100)) : undefined,
+    };
+  }
+
+  extractApplicationIdentifiers(context: PageContext): ApplicationIdentifiers {
+    const refs = this.extractAllReferences(context.document);
+    return {
+      jobId: this.extractJobIdFromUrl(context.url) || undefined,
+      applicationId: refs.applicationId || undefined,
+      referenceId: refs.strongestReference || undefined,
+    };
+  }
+
+  private extractJobIdFromUrl(url: URL): string | null {
+    const match = url.pathname.match(/\/(?:jobs|job|position|requisition|careers)\/([A-Za-z0-9_-]+)/i);
+    return match ? match[1] : null;
+  }
 }
+
+export interface PageContext {
+  document: Document;
+  url: URL;
+}
+
+export interface FormObservation {
+  formInteraction: boolean;
+  requiredFieldsCompleted: boolean;
+  resumeUploaded: boolean;
+  metadata?: Record<string, any>;
+}
+
+export interface SubmissionObservation {
+  submitClicked: boolean;
+  metadata?: Record<string, any>;
+}
+
+export interface ConfirmationObservation {
+  submissionConfirmed: boolean;
+  confirmationText?: string;
+  metadata?: Record<string, any>;
+}
+
+export interface ApplicationIdentifiers {
+  jobId?: string;
+  applicationId?: string;
+  referenceId?: string;
+}
+

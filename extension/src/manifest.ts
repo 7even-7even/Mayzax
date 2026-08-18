@@ -4,7 +4,7 @@ import { defineManifest } from '@crxjs/vite-plugin';
 export default defineManifest({
   manifest_version: 3,
   name: 'Mayzax CRM — Application Verifier',
-  version: '1.2.0',
+  version: '1.3.0',
   key: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw220UyDVVNfL81OzAEqBsrlsKl6S/QXy/imnWSEKXR75upb1oG/2rVDvTpNHMXBRLcmoNJE3YPJh/6SivUeOowTAPN8aCLBu5opxM0adn0SuKQFPkQFDFI1EtpGL9GbymGbQ7OJ6I1itHhgCvWjkh2EFevFx13DFAmZ+9sSXCPphH8aSxkHD5EfmI5u/64wnaUt4UmdvV4J+PC4CRup2dmqWUWjYGaUnLrlRVFVS+Rjy1MUbpLElTxtS2bYoNwlAXNVuurCbwW6jL5mOCZcF+g80hazcqqrKsgqeQGXEPBqAVL3bE8RGF8OYnnkMpRSeW34oVco7ZOWpwiY3wcoYpwIDAQAB',
   description:
     'Enterprise-grade job application verification engine — fraud-resistant detection with HMAC proof, multi-portal fingerprints, and evidence collection.',
@@ -66,6 +66,9 @@ export default defineManifest({
       // Production
       'https://*.mayzax.app/*',
       'https://*.mayzax.vercel.app/*',
+      'https://www.mayzaxcrm.com/*',
+      'https://mayzaxcrm.com/*',
+      'https://*.mayzaxcrm.com/*',
       // Local development — explicit Vite port + wildcard fallback
       'http://localhost:5173/*',
       'http://localhost:*/*',

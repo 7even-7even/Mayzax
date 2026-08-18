@@ -513,7 +513,9 @@ export default function ApplicationsPage() {
                       </TableCell>
                       <TableCell>
                         {app.verified ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">● Verified</span>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                            ● Verified {app.verificationScore !== undefined && app.verificationScore !== null ? `(${app.verificationScore}%)` : ''}
+                          </span>
                         ) : (
                           <span className="inline-flex rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] text-slate-500 dark:text-slate-400">○ Unverified</span>
                         )}
@@ -560,7 +562,15 @@ export default function ApplicationsPage() {
                     <div>
                       <StatusBadge status={app.status} size="sm" />
                     </div>
-                    <div>{app.verified ? <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">● Verified</span> : <span className="text-[11px] text-slate-400 dark:text-slate-500">○ Unverified</span>}</div>
+                    <div>
+                      {app.verified ? (
+                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                          ● Verified {app.verificationScore !== undefined && app.verificationScore !== null ? `(${app.verificationScore}%)` : ''}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500">○ Unverified</span>
+                      )}
+                    </div>
                     <div className="text-xs text-slate-700 dark:text-slate-300">{app.businessDate.slice(0, 10)}</div>
                     <div className="text-right">
                       <a href={app.jobLink} target="_blank" rel="noreferrer" className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-300">

@@ -1,5 +1,9 @@
 export const ENGINE_VERSION = 'v2' as const;
-export const ENGINE_VERSION_NAME = '1.2.0';
+export const ENGINE_VERSION_NAME = '1.3.0';
+
+// Stable API key for extension → backend journey sync.
+// Must match EXTENSION_API_KEY in backend/.env
+export const EXTENSION_API_KEY = '2b93c3ca17cab4857a3c12bedf46e609508729dd7d2bb775a80a96fee4b21083';
 
 /**
  * v1.1 Universal ATS Intelligence — Evidence Aggregation Model
@@ -10,21 +14,21 @@ export const ENGINE_VERSION_NAME = '1.2.0';
 
 export const SCORING_WEIGHTS = {
   // Core positive signals (start at 0, add)
-  UrlSuccessPattern: 15,        // /applied, /confirmation, /thank-you, etc.
-  Domain: 10,                   // Known ATS hostname (e.g., greenhouse.io, lever.co, recruitee.com)
-  PageTitle: 15,                // Title contains success phrases
+  UrlSuccessPattern: 20,        // /applied, /confirmation, /thank-you, etc.
+  Domain: 15,                   // Known ATS hostname (e.g., greenhouse.io, lever.co, recruitee.com)
+  PageTitle: 20,                // Title contains success phrases
   Heading: 20,                  // H1/H2/H3 contains success phrases
   ConfirmationBody: 20,         // Body contains success phrases
-  ApplicationReference: 20,     // Strongest: Application ID, Reference Number, Candidate ID
-  DomFingerprint: 15,           // Success cards, banners, icons, progress, receipt cards
-  PortalCompliance: 5,          // Portal-specific compliance
+  ApplicationReference: 10,     // Strongest: Application ID, Reference Number, Candidate ID
+  DomFingerprint: 20,           // Success cards, banners, icons, progress, receipt cards
+  PortalCompliance: 10,          // Portal-specific compliance
   MetaTags: 5,                  // og:title, description contains success
   Breadcrumbs: 5,               // Breadcrumbs contain success
   JsonLd: 5,                    // Structured data indicates success
-  PositiveButtons: 5,           // View Application, Track Application, etc.
-  CompanyExtracted: 2,          // Weak positive
-  JobTitleExtracted: 2,         // Weak positive
-  FormDisabled: 5,              // Disabled/read-only form indicates completion
+  PositiveButtons: 10,           // View Application, Track Application, etc.
+  CompanyExtracted: 5,          // Weak positive
+  JobTitleExtracted: 5,         // Weak positive
+  FormDisabled: 10,              // Disabled/read-only form indicates completion
 
   // Legacy compatibility (keep existing keys but mapped to new model)
   DomainLegacy: 15,

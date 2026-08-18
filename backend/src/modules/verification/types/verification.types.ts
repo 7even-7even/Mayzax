@@ -17,6 +17,7 @@ export interface DomFingerprint {
   totalExpected?: number;
   matchedSelectors?: string[];
   missingSelectors?: string[];
+  [key: string]: any;
 }
 
 export interface VerificationEvidence {

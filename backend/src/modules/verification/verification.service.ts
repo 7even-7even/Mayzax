@@ -6,7 +6,7 @@ import { EvidenceValidator } from './evidence/evidence.validator';
 import { VerificationScorer } from './scoring/scorer.service';
 import { getConfidenceFromScore } from './scoring/confidence';
 import { generateHashFromEvidence } from './hashing/hash.service';
-import { VerifyEvidenceInput } from './verification.validation';
+import { VerifyEvidenceInput, CreateSessionInput, AddEventsInput } from './verification.validation';
 import { VerificationEvidence, VerificationResult } from './types/verification.types';
 import { PortalRegistry } from './portals/portal.registry';
 import { env } from '@/config/env';
@@ -180,4 +180,194 @@ export async function listVerifications(recruiterId: string, limit = 20) {
     orderBy: { createdAt: 'desc' },
     take: limit,
   });
+}
+
+export function calculateJourneyScore(session: any, events: any[]) {
+  const eventTypes = new Set(events.map(e => e.type));
+  
+  const portalDetected = !!(session.portal && session.portal !== 'OTHER' && session.portal !== 'UNKNOWN');
+  const applicationObserved = true;
+  const jobIdentified = !!(session.jobId || session.jobUrl);
+  const formInteraction = eventTypes.has('FORM_INTERACTION');
+  const requiredFieldsCompleted = eventTypes.has('REQUIRED_FIELDS_COMPLETED');
+  const resumeUploaded = eventTypes.has('RESUME_UPLOADED');
+  const submitClicked = eventTypes.has('SUBMIT_CLICKED');
+  const submissionConfirmed = eventTypes.has('SUBMISSION_CONFIRMED');
+  const applicationReferenceDetected = eventTypes.has('APPLICATION_REFERENCE_DETECTED') || !!session.applicationId;
+
+  let score = 0;
+  if (portalDetected) score += 10;
+  if (applicationObserved) score += 10;
+  if (jobIdentified) score += 10;
+  if (formInteraction) score += 10;
+  if (requiredFieldsCompleted) score += 10;
+  if (resumeUploaded) score += 10;
+  if (submitClicked) score += 15;
+  if (submissionConfirmed) score += 15;
+  if (applicationReferenceDetected) score += 10;
+
+  return {
+    score,
+    evidence: {
+      portalDetected,
+      applicationObserved,
+      jobIdentified,
+      formInteraction,
+      requiredFieldsCompleted,
+      resumeUploaded,
+      submitClicked,
+      submissionConfirmed,
+      applicationReferenceDetected,
+    }
+  };
+}
+
+export async function createSession(input: CreateSessionInput, requester: Requester) {
+  const existing = await prisma.verificationSession.findUnique({
+    where: { sessionId: input.sessionId }
+  });
+  if (existing) {
+    return existing;
+  }
+  return prisma.verificationSession.create({
+    data: {
+      sessionId: input.sessionId,
+      userId: requester.id,
+      portal: input.portal,
+      jobUrl: input.jobUrl || null,
+      jobId: input.jobId || null,
+      applicationUrl: input.applicationUrl || null,
+      applicationId: input.applicationId || null,
+      status: 'IN_PROGRESS',
+    }
+  });
+}
+
+export async function addEvents(sessionId: string, events: any[]) {
+  const results: any[] = [];
+  for (const event of events) {
+    const existing = await prisma.verificationEvent.findUnique({
+      where: { eventId: event.eventId }
+    });
+    if (existing) {
+      results.push(existing);
+      continue;
+    }
+    const created = await prisma.verificationEvent.create({
+      data: {
+        eventId: event.eventId,
+        sessionId,
+        type: event.type,
+        timestamp: new Date(event.timestamp),
+        metadata: event.metadata || {},
+      }
+    });
+    results.push(created);
+  }
+  return results;
+}
+
+export async function finalizeSession(sessionId: string) {
+  const session = await prisma.verificationSession.findUnique({
+    where: { sessionId },
+    include: { events: true }
+  });
+  if (!session) {
+    throw ApiError.notFound('Session not found');
+  }
+
+  const { score } = calculateJourneyScore(session, session.events);
+  
+  return prisma.verificationSession.update({
+    where: { sessionId },
+    data: {
+      status: 'COMPLETED',
+      score,
+      scoreVersion: 'v1',
+      submittedAt: new Date(),
+    },
+    include: { events: true }
+  });
+}
+
+export async function checkApplicationUrl(applicationUrl: string, requester: Requester) {
+  let normalizedUrl: string;
+  try {
+    normalizedUrl = normalizeJobLink(applicationUrl);
+  } catch {
+    normalizedUrl = applicationUrl;
+  }
+
+  // Find matching verification session
+  const session = await prisma.verificationSession.findFirst({
+    where: {
+      userId: requester.id,
+      OR: [
+        { applicationUrl: { contains: normalizedUrl } },
+        { jobUrl: { contains: normalizedUrl } },
+        { applicationUrl },
+        { jobUrl: applicationUrl },
+      ]
+    },
+    include: { events: true }
+  });
+
+  // Run existing final-page verification (score/log) if present
+  const existingLog = await prisma.verificationLog.findFirst({
+    where: {
+      recruiterId: requester.id,
+      OR: [
+        { jobLink: { contains: normalizedUrl } },
+        { normalizedJobLink: { contains: normalizedUrl } },
+        { jobLink: applicationUrl }
+      ]
+    }
+  });
+
+  let journeyScore = 0;
+  let journeyEvidence = {
+    portalDetected: false,
+    applicationObserved: false,
+    jobIdentified: false,
+    formInteraction: false,
+    requiredFieldsCompleted: false,
+    resumeUploaded: false,
+    submitClicked: false,
+    submissionConfirmed: false,
+    applicationReferenceDetected: false
+  };
+
+  if (session) {
+    const journeyResult = calculateJourneyScore(session, session.events);
+    journeyScore = journeyResult.score;
+    journeyEvidence = journeyResult.evidence;
+  }
+
+  let pageScore = 0;
+  if (existingLog) {
+    const scorer = new VerificationScorer();
+    try {
+      const scoring = scorer.score(existingLog.evidence as any);
+      pageScore = scoring.score;
+    } catch {
+      pageScore = existingLog.score;
+    }
+  }
+
+  // Combine verification evidence: max or average. Let's use max (or combine them deterministically)
+  const combinedScore = Math.max(journeyScore, pageScore);
+
+  let status: 'UNVERIFIED' | 'LOW_CONFIDENCE' | 'HIGH_CONFIDENCE' | 'VERIFIED' = 'UNVERIFIED';
+  if (combinedScore >= 90) status = 'VERIFIED';
+  else if (combinedScore >= 75) status = 'HIGH_CONFIDENCE';
+  else if (combinedScore >= 50) status = 'LOW_CONFIDENCE';
+
+  return {
+    verified: combinedScore > (env.VERIFICATION_THRESHOLD || 60),
+    score: combinedScore,
+    scoreVersion: 'v1',
+    status,
+    portal: session?.portal || existingLog?.portal || 'OTHER',
+    evidence: journeyEvidence
+  };
 }
