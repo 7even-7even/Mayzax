@@ -615,8 +615,8 @@ export async function unblockPayment(id: string, actor: { id: string; role: Role
 }
 
 export async function archiveProfile(id: string, actor: { id: string; role: Role }, meta?: Meta) {
-  if (actor.role !== Role.ADMIN) {
-    throw ApiError.forbidden('Only Admins can archive client profiles');
+  if (actor.role !== Role.ADMIN && actor.role !== Role.TEAM_LEADER) {
+    throw ApiError.forbidden('Only Admins and Team Leaders can archive client profiles');
   }
 
   const existing = await repo.findActiveById(id);
@@ -648,8 +648,8 @@ export async function archiveProfile(id: string, actor: { id: string; role: Role
 }
 
 export async function unarchiveProfile(id: string, actor: { id: string; role: Role }, meta?: Meta) {
-  if (actor.role !== Role.ADMIN) {
-    throw ApiError.forbidden('Only Admins can restore archived client profiles');
+  if (actor.role !== Role.ADMIN && actor.role !== Role.TEAM_LEADER) {
+    throw ApiError.forbidden('Only Admins and Team Leaders can restore archived client profiles');
   }
 
   const existing = await repo.findActiveById(id);
@@ -681,8 +681,8 @@ export async function unarchiveProfile(id: string, actor: { id: string; role: Ro
 }
 
 export async function bulkArchiveProfiles(profileIds: string[], actor: { id: string; role: Role }, meta?: Meta) {
-  if (actor.role !== Role.ADMIN) {
-    throw ApiError.forbidden('Only admins can bulk archive client profiles');
+  if (actor.role !== Role.ADMIN && actor.role !== Role.TEAM_LEADER) {
+    throw ApiError.forbidden('Only admins and team leaders can bulk archive client profiles');
   }
 
   for (const id of profileIds) {

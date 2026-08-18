@@ -28,12 +28,23 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { VirtualizedTable } from '@/components/shared/virtualized-table';
 import { CountUp } from '@/components/motion/count-up';
 
+import { useSearchParams } from 'react-router-dom';
+
 const ALL_ROLES = '__all__';
 
 export default function RecruitersPage() {
   const { isAdmin, isTeamLeader } = usePermissions();
+  const [searchParams] = useSearchParams();
+  const roleParam = searchParams.get('role');
+
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<Role | typeof ALL_ROLES>(ALL_ROLES);
+  const [roleFilter, setRoleFilter] = useState<Role | typeof ALL_ROLES>(() => {
+    if (roleParam) {
+      if (roleParam === 'ALL') return ALL_ROLES;
+      return roleParam as Role;
+    }
+    return ALL_ROLES;
+  });
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search);
 
@@ -44,10 +55,16 @@ export default function RecruitersPage() {
   const [resetTarget, setResetTarget] = useState<Recruiter | null>(null);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (roleParam) {
+      if (roleParam === 'ALL') {
+        setRoleFilter(ALL_ROLES);
+      } else {
+        setRoleFilter(roleParam as Role);
+      }
+    } else if (isAdmin) {
       setRoleFilter(ALL_ROLES);
     }
-  }, [isAdmin]);
+  }, [roleParam, isAdmin]);
 
   const { data, isLoading, isError, refetch } = useRecruiters({
     search: debouncedSearch || undefined,

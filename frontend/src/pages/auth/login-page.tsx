@@ -88,11 +88,13 @@ function ParticleField() {
 }
 
 export default function LoginPage() {
-  const { login, logout } = useAuth();
+  const { login, logout, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+
 
   const {
     register,

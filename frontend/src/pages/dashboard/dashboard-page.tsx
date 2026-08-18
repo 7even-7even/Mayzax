@@ -16,6 +16,7 @@ import { Reveal } from '@/components/motion/reveal';
 import { SummaryCards } from './summary-cards';
 import { RecruiterRow } from './recruiter-row';
 import { LiveStatusCard } from './live-status-card';
+import { RecruiterStatsDialog } from '@/pages/recruiters/recruiter-stats-dialog';
 import { useDashboardOverview, useGlobalSummary } from '@/hooks/use-analytics';
 import { useDebounce } from '@/hooks/use-debounce';
 import { useMyRecruiterStats, useUpdateMyTeamName } from '@/hooks/use-recruiters';
@@ -153,6 +154,7 @@ export default function DashboardPage() {
   const [sortBy, setSortBy] = useState('totalApplications');
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [statsRecruiterId, setStatsRecruiterId] = useState<string | null>(null);
   const debouncedSearch = useDebounce(search);
 
   const { data, isLoading, isError, refetch } = useDashboardOverview({
@@ -181,14 +183,14 @@ export default function DashboardPage() {
         {user?.role === 'TEAM_LEADER' ? (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-stretch">
             <div className="lg:col-span-2 h-full">
-              <SummaryCards />
+              <SummaryCards onShowRecruiterStats={setStatsRecruiterId} />
             </div>
             <div className="h-full">
               <TlTeamCard />
             </div>
           </div>
         ) : (
-          <SummaryCards />
+          <SummaryCards onShowRecruiterStats={setStatsRecruiterId} />
         )}
         <LiveStatusCard />
       </div>
@@ -262,6 +264,7 @@ export default function DashboardPage() {
           </div>
         </Card>
       </Reveal>
+      <RecruiterStatsDialog recruiterId={statsRecruiterId} onOpenChange={(open) => !open && setStatsRecruiterId(null)} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGlobalSummary } from '@/hooks/use-analytics';
 import { usePermissions } from '@/hooks/use-permissions';
+import { useAuth } from '@/context/auth-context';
 import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
 import { CountUp } from '@/components/motion/count-up';
 import { Badge } from '@/components/ui/badge';
@@ -29,14 +30,15 @@ const tlCardConfig = [
   { key: 'topPerformer', label: 'Top Performer', icon: Trophy, gradient: 'from-yellow-500 to-amber-600', accent: 'text-amber-600', bg: 'bg-yellow-50' },
 ] as const;
 
-function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoading, index, featured, roleBreakdown }: any) {
+function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoading, index, featured, roleBreakdown, onDoubleClick }: any) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.4 }}
       whileHover={{ y: -4, scale: 1.01 }}
-      className={`group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] shadow-sm hover:shadow-xl transition-all duration-300 ${featured ? 'ring-1 ring-violet-100' : ''}`}
+      onDoubleClick={onDoubleClick}
+      className={`group relative overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer select-none ${featured ? 'ring-1 ring-violet-100' : ''}`}
     >
       <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${gradient} blur-[0.5px]`} />
       <div className="relative rounded-[15px] bg-white dark:bg-slate-900 p-4 h-full flex flex-col justify-between">
@@ -58,23 +60,6 @@ function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoa
                 <p className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                   <CountUp value={value} />
                 </p>
-                {/* {roleBreakdown && Object.keys(roleBreakdown).length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1 text-[10px]">
-                    {Object.entries(roleBreakdown).map(([role, count]) => {
-                      if (!count) return null;
-                      const roleLabel = role === 'TEAM_LEADER' ? 'TL' : 
-                                        role === 'RECRUITER' ? 'Rec' :
-                                        role === 'RESUME_ASSIST' ? 'RA' :
-                                        role === 'SALES_EXEC' ? 'SE' :
-                                        role === 'CLIENT' ? 'Cli' : 'Adm';
-                      return (
-                        <span key={role} className="rounded bg-slate-100 dark:bg-slate-800 px-1 py-0.5 text-slate-600 dark:text-slate-400 font-medium">
-                          {roleLabel}: {String(count)}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )} */}
               </div>
             ) : (
               <p className="text-base font-semibold text-slate-800 dark:text-slate-200 truncate" title={String(value)}>
@@ -96,8 +81,9 @@ function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoa
   );
 }
 
-export function SummaryCards() {
+export function SummaryCards({ onShowRecruiterStats }: { onShowRecruiterStats?: (id: string) => void } = {}) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { isTeamLeader, isAdmin } = usePermissions();
   const { data, isLoading } = useGlobalSummary();
   const [teamsExpanded, setTeamsExpanded] = useState(false);
@@ -110,6 +96,34 @@ export function SummaryCards() {
     if (parts.length === 0) return '—';
     if (parts.length === 1) return parts[0];
     return `${parts[0]} ${parts[1][0].toUpperCase()}.`;
+  };
+
+  const handleCardDoubleClick = (label: string) => {
+    if (label === 'Total Users' || label === 'Team Recruiters') {
+      navigate('/recruiters?role=ALL');
+    } else if (label === 'Total Recruiters' || label === 'Active Recruiters') {
+      navigate('/recruiters?role=RECRUITER');
+    } else if (label === 'Total Clients' || label === 'Team Clients') {
+      navigate('/profiles');
+    } else if (label === 'Total Applications' || label === 'Team Apps') {
+      navigate('/applications');
+    } else if (label === "Today's Apps" || label === "Today's Team") {
+      const bizDate = data?.currentBusinessDate || '';
+      navigate(bizDate ? `/applications?date=${bizDate}` : '/applications');
+    } else if (label === 'My Total Apps') {
+      navigate(`/applications?recruiterId=${user?.id}`);
+    } else if (label === 'My Current Apps') {
+      const bizDate = data?.currentBusinessDate || '';
+      navigate(bizDate ? `/applications?recruiterId=${user?.id}&date=${bizDate}` : `/applications?recruiterId=${user?.id}`);
+    } else if (label === 'Active') {
+      navigate('/activity?status=ACTIVE');
+    // } else if (label === 'On Break') {
+    //   navigate('/activity?status=SHORT_BREAK,DINNER_BREAK');
+    } else if (label === 'Top Performer') {
+      if (data?.topPerformerId && onShowRecruiterStats) {
+        onShowRecruiterStats(data.topPerformerId);
+      }
+    }
   };
 
   return (
@@ -127,6 +141,7 @@ export function SummaryCards() {
               isLoading={isLoading}
               index={i}
               roleBreakdown={card.key === 'totalRecruiters' && !isTeamLeader ? data?.roleBreakdown : undefined}
+              onDoubleClick={() => handleCardDoubleClick(card.label)}
             />
           </StaggerItem>
         ))}

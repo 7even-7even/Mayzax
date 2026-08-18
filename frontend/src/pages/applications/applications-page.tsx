@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, ExternalLink, FileText, Loader2, Plus, X, Sparkles, Building2, ShieldCheck, Users, ClipboardList, Activity } from 'lucide-react';
+import { Download, ExternalLink, FileText, Loader2, Plus, X, Sparkles, Building2, ShieldCheck, Users, ClipboardList, Activity, RefreshCw } from 'lucide-react';
 import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -103,13 +103,15 @@ export default function ApplicationsPage() {
   const toFilter = searchParams.get('to');
   const profileIdFilter = searchParams.get('profileId');
 
+  const recruiterFilter = searchParams.get('recruiterId');
+
   const [fromDate, setFromDate] = useState<string>(fromFilter || dateFilter || '');
   const [toDate, setToDate] = useState<string>(toFilter || dateFilter || '');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ApplicationStatus | typeof ALL>(ALL);
   const [jobPortal, setJobPortal] = useState<JobPortal | typeof ALL>(ALL);
   const [verified, setVerified] = useState<string>(ALL);
-  const [recruiterId, setRecruiterId] = useState<string>(ALL);
+  const [recruiterId, setRecruiterId] = useState<string>(recruiterFilter || ALL);
   const [companyName, setCompanyName] = useState('');
   const [sortBy, setSortBy] = useState('appliedAt');
   const [page, setPage] = useState(1);
@@ -153,6 +155,14 @@ export default function ApplicationsPage() {
     }
   }, [dateFilter, fromFilter, toFilter]);
 
+  useEffect(() => {
+    if (recruiterFilter) {
+      setRecruiterId(recruiterFilter);
+    } else {
+      setRecruiterId(ALL);
+    }
+  }, [recruiterFilter]);
+
   const handleDateChange = (newFrom: string, newTo: string) => {
     setFromDate(newFrom);
     setToDate(newTo);
@@ -180,6 +190,8 @@ export default function ApplicationsPage() {
     next.delete('date');
     next.delete('from');
     next.delete('to');
+    next.delete('recruiterId');
+    next.delete('profileId');
     setSearchParams(next);
   };
 
@@ -192,7 +204,7 @@ export default function ApplicationsPage() {
     ...(profileIdFilter ? [{ key: 'profile', label: 'Candidate', value: profileIdFilter, displayValue: 'Filtered' }] : []),
   ];
 
-  const { data, isLoading, isError, refetch } = useApplications({
+  const { data, isLoading, isError, refetch, isFetching } = useApplications({
     search: debouncedSearch || undefined,
     status: status === ALL ? undefined : status,
     jobPortal: jobPortal === ALL ? undefined : jobPortal,
@@ -273,6 +285,10 @@ export default function ApplicationsPage() {
         ]}
         actions={
           <div className="flex flex-wrap items-center gap-2 dark:text-black">
+            <Button variant="outline" onClick={() => refetch()} disabled={isLoading || isFetching} className="rounded-full shadow-sm bg-white gap-1.5" title="Refresh applications">
+              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
             <Button variant="outline" onClick={exportApplications} disabled={isLoading || isExporting || totalApplications === 0} className="rounded-full shadow-sm bg-white">
               {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Export Excel
@@ -364,6 +380,7 @@ export default function ApplicationsPage() {
                   },
                   placeholder: 'All Recruiters',
                   icon: Users,
+                  searchable: true,
                   options: [{ value: ALL, label: 'All Recruiters' }, ...recruiters.map((r) => ({ value: r.id, label: r.name }))],
                 },
               ]

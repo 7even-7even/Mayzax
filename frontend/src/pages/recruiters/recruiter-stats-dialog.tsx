@@ -8,8 +8,15 @@ import { formatDateTime, timeAgo } from '@/lib/utils';
 import { BarChart3, Briefcase, Clock, Users, Sparkles, Award, TrendingUp, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+import { useAuth } from '@/context/auth-context';
+
 export function RecruiterStatsDialog({ recruiterId, onOpenChange }: { recruiterId: string | null; onOpenChange: (open: boolean) => void }) {
+  const { user } = useAuth();
   const { data, isLoading, isError, refetch } = useRecruiterStats(recruiterId);
+
+  const showRaw = user?.role === 'ADMIN' || user?.role === 'TEAM_LEADER';
+  const totalAppsVal = showRaw ? (data?.rawTotalApplications ?? data?.totalApplications ?? 0) : (data?.totalApplications ?? 0);
+  const todayAppsVal = showRaw ? (data?.rawCurrentShiftApplications ?? data?.currentShiftApplications ?? 0) : (data?.currentShiftApplications ?? 0);
 
   return (
     <Dialog open={!!recruiterId} onOpenChange={onOpenChange}>
@@ -39,8 +46,8 @@ export function RecruiterStatsDialog({ recruiterId, onOpenChange }: { recruiterI
             <div className="mt-6 space-y-5">
               <div className="grid grid-cols-3 gap-3">
                 <StatBox icon={Users} label="Profiles" value={data.assignedProfilesCount} gradient="from-mayzax-blue-500 to-mayzax-blue-700" />
-                <StatBox icon={Briefcase} label="Total Apps" value={data.totalApplications} gradient="from-mayzax-green-500 to-emerald-600" />
-                <StatBox icon={TrendingUp} label="Today" value={data.currentShiftApplications} gradient="from-amber-500 to-orange-600" />
+                <StatBox icon={Briefcase} label="Total Links Submitted" value={totalAppsVal} gradient="from-mayzax-green-500 to-emerald-600" />
+                <StatBox icon={TrendingUp} label="Links Submitted Today" value={todayAppsVal} gradient="from-amber-500 to-orange-600" />
               </div>
 
               <div className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-mayzax-blue-50 to-mayzax-green-50/50 border border-mayzax-blue-100 px-3 py-2.5 text-xs">
@@ -62,18 +69,22 @@ export function RecruiterStatsDialog({ recruiterId, onOpenChange }: { recruiterI
                   <EmptyState title="No applications yet" description="This recruiter hasn't submitted applications." className="py-10 rounded-xl border-dashed" />
                 ) : (
                   <div className="max-h-64 space-y-2 overflow-y-auto scrollbar-thin pr-1">
-                    {data.profileWiseCounts.map((row, idx) => (
-                      <motion.div key={row.profileId} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }} className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 hover:border-mayzax-blue-200 hover:shadow-sm transition-all">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">{row.candidateName}</p>
-                          {row.technology && <p className="text-[11px] text-slate-400">{row.technology}</p>}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Badge className="bg-slate-900 text-white border-0 text-[11px] rounded-full">Total {row.applicationCount}</Badge>
-                          <Badge className={`${row.currentShiftApplicationCount > 0 ? 'bg-mayzax-gradient text-white border-0' : 'bg-slate-100 text-slate-500'} text-[11px] rounded-full`}>Today {row.currentShiftApplicationCount}</Badge>
-                        </div>
-                      </motion.div>
-                    ))}
+                    {data.profileWiseCounts.map((row, idx) => {
+                      const rowTotalVal = showRaw ? (row.rawApplicationCount ?? row.applicationCount) : row.applicationCount;
+                      const rowShiftVal = showRaw ? (row.rawCurrentShiftApplicationCount ?? row.currentShiftApplicationCount) : row.currentShiftApplicationCount;
+                      return (
+                        <motion.div key={row.profileId} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }} className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2.5 hover:border-mayzax-blue-200 hover:shadow-sm transition-all">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-800 truncate">{row.candidateName}</p>
+                            {row.technology && <p className="text-[11px] text-slate-400">{row.technology}</p>}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Badge className="bg-slate-900 text-white border-0 text-[11px] rounded-full">Total {rowTotalVal}</Badge>
+                            <Badge className={`${rowShiftVal > 0 ? 'bg-mayzax-gradient text-white border-0' : 'bg-slate-100 text-slate-500'} text-[11px] rounded-full`}>Today {rowShiftVal}</Badge>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -16,7 +16,8 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    const isClientRoute = location.pathname.startsWith('/client');
+    return <Navigate to={isClientRoute ? "/client-login" : "/login"} replace state={{ from: location }} />;
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {

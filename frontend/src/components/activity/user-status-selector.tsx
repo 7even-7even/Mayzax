@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Clock, ChevronDown, Check, Loader2, Power, Wifi, Zap, Coffee, Utensils, GraduationCap, Users as UsersIcon, AlertTriangle, LogOut } from 'lucide-react';
+import { Clock, ChevronDown, Check, Loader2, Power, Wifi, Zap, Coffee, Utensils, GraduationCap, Users as UsersIcon, AlertTriangle, LogOut, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -346,6 +346,20 @@ export function UserStatusSelector() {
             </div>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={async () => {
+            const { queryClient } = await import('@/lib/query-client');
+            queryClient.invalidateQueries({ queryKey: ['activity-current-status'] });
+            queryClient.invalidateQueries({ queryKey: ['activity-today'] });
+          }}
+          className="h-8 w-8 rounded-full border-slate-200 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700"
+          title="Refresh current shift status"
+        >
+          <RefreshCw className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+        </Button>
       </div>
 
       {/* Optional Note Modal*/}

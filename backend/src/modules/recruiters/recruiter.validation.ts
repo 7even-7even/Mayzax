@@ -40,6 +40,7 @@ export const listRecruitersQuerySchema = z.object({
   sortBy: z.enum(['name', 'email', 'createdAt', 'lastActiveAt']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
   createdById: z.string().uuid().optional(),
+  teamLeaderId: z.string().uuid().optional(),
 });
 
 export const idParamSchema = z.object({

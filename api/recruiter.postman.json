@@ -111,6 +111,12 @@
                 {
                   "key": "pageSize",
                   "value": "20"
+                },
+                {
+                  "key": "teamLeaderId",
+                  "value": "",
+                  "description": "Optional Team Leader user ID to filter team members",
+                  "disabled": true
                 }
               ]
             },
@@ -138,7 +144,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Test Recruiter\",\n  \"email\": \"recruiter@example.com\",\n  \"password\": \"Pass@123\",\n  \"role\": \"RECRUITER\",\n  \"createdById\": null\n}"
+              "raw": "{\n  \"name\": \"[NAME]\",\n  \"email\": \"[EMAIL_ADDRESS]\",\n  \"password\": \"[PASSWORD]\",\n  \"role\": \"RECRUITER\",\n  \"createdById\": null\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/recruiters",
@@ -206,7 +212,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Recruiter\",\n  \"email\": \"updated.recruiter@example.com\",\n  \"role\": \"RECRUITER\",\n  \"teamName\": \"Team Alpha\"\n}"
+              "raw": "{\n  \"name\": \"[UPDATED_NAME]\",\n  \"email\": \"[EMAIL_ADDRESS]\",\n  \"role\": \"RECRUITER\",\n  \"teamName\": \"[UPDATED_TEAM_NAME]\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/recruiters/{{recruiterId}}",
