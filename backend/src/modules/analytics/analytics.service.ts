@@ -465,14 +465,28 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
     prisma.user.count({
       where: {
         deletedAt: null,
-        ...(isTeamLeader ? { createdById: actor.id, role: Role.RECRUITER } : {}),
+        ...(isTeamLeader
+          ? {
+              OR: [
+                { id: actor.id },
+                { createdById: actor.id, role: Role.RECRUITER },
+              ],
+            }
+          : {}),
       },
     }),
     prisma.user.count({
       where: {
-        role: Role.RECRUITER,
         deletedAt: null,
-        ...(isTeamLeader ? { createdById: actor.id, isActive: true } : {}),
+        ...(isTeamLeader
+          ? {
+              isActive: true,
+              OR: [
+                { id: actor.id },
+                { createdById: actor.id, role: Role.RECRUITER },
+              ],
+            }
+          : { role: Role.RECRUITER }),
       },
     }),
     prisma.clientProfile.count({
@@ -481,7 +495,9 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
         ...(isTeamLeader
           ? {
               OR: [
+                { assignedRecruiterId: actor.id },
                 { assignedRecruiter: { createdById: actor.id } },
+                { assignedRecruiterAssignments: { some: { recruiterId: actor.id } } },
                 { assignedRecruiterAssignments: { some: { recruiter: { createdById: actor.id } } } },
               ],
             }
@@ -528,9 +544,10 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
     prisma.activityLog.findMany({
       where: {
         user: {
-          role: Role.RECRUITER,
           deletedAt: null,
-          ...(isTeamLeader ? { createdById: actor.id } : {}),
+          ...(isTeamLeader
+            ? { OR: [{ id: actor.id }, { createdById: actor.id }] }
+            : { role: { in: [Role.RECRUITER, Role.TEAM_LEADER] } }),
         },
         endedAt: null,
       },
@@ -543,9 +560,10 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
       where: {
         businessDate: businessDateFilter,
         recruiter: {
-          role: Role.RECRUITER,
           deletedAt: null,
-          ...(isTeamLeader ? { createdById: actor.id } : {}),
+          ...(isTeamLeader
+            ? { OR: [{ id: actor.id }, { createdById: actor.id }] }
+            : { role: { in: [Role.RECRUITER, Role.TEAM_LEADER] } }),
         },
       },
       _count: {
@@ -560,6 +578,7 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
   ).length;
 
   let topPerformer = '-';
+  let topPerformerId: string | null = null;
   if (teamApplicationsToday.length > 0) {
     const recruiterPortalCounts = new Map<string, { jobPortal: JobPortal; count: number }[]>();
     for (const row of teamApplicationsToday) {
@@ -577,6 +596,7 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
       }
     }
     if (topRecruiterId) {
+      topPerformerId = topRecruiterId;
       const topUser = await prisma.user.findUnique({
         where: { id: topRecruiterId },
         select: { name: true },
@@ -653,6 +673,7 @@ export async function getGlobalSummary(actor: { id: string; role: Role }) {
     activeMemberCount,
     onBreakMemberCount,
     topPerformer,
+    topPerformerId,
     roleBreakdown,
   };
 }

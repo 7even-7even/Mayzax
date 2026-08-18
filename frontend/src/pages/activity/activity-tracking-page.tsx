@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { usePermissions } from '@/hooks/use-permissions';
 import {
   useTodayActivity,
@@ -45,6 +46,7 @@ import {
   Filter,
   Star,
   Lock,
+  RefreshCw,
 } from 'lucide-react';
 import {
   PieChart as RechartsPieChart,
@@ -730,19 +732,32 @@ function TodayTimeline({ data }: { data?: TodayActivityData }) {
 
 export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: string } = {}) {
   const { isAdmin, isTeamLeader } = usePermissions();
+  const [searchParams] = useSearchParams();
+  const statusParam = searchParams.get('status');
 
   const [selectedUserId, setSelectedUserId] = useState<string | typeof ALL>(forceUserId || ALL);
   const [selectedTeamId, setSelectedTeamId] = useState<string | typeof ALL_TEAMS>(ALL_TEAMS);
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<UserStatus | typeof ALL>(ALL);
+  const [statusFilter, setStatusFilter] = useState<UserStatus | 'ON_BREAK' | typeof ALL>(() => {
+    if (statusParam) return statusParam as any;
+    return ALL;
+  });
   const [selectedRole, setSelectedRole] = useState<string | typeof ALL>(ALL);
   const [page, setPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
 
+  useEffect(() => {
+    if (statusParam) {
+      setStatusFilter(statusParam as any);
+    } else {
+      setStatusFilter(ALL);
+    }
+  }, [statusParam]);
+
   const { data: activityUsers } = useActivityUsers();
   const { data: todayData, isLoading: todayLoading } = useTodayActivity();
-  const { data: liveData, isLoading: liveLoading } = useLiveStatus();
+  const { data: liveData, isLoading: liveLoading, refetch: refetchLive, isFetching: isFetchingLive } = useLiveStatus();
   const { data: productivityData } = useProductivityMetrics({
     fromDate: fromDate || undefined,
     toDate: toDate || undefined,
@@ -753,7 +768,7 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
     userId: selectedUserId === ALL ? undefined : selectedUserId,
     fromDate: fromDate || undefined,
     toDate: toDate || undefined,
-    status: statusFilter === ALL ? undefined : statusFilter,
+    status: statusFilter === ALL || statusFilter === 'ON_BREAK' ? undefined : statusFilter,
     role: selectedRole === ALL ? undefined : selectedRole,
     page,
     pageSize: 20,
@@ -779,7 +794,13 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
           if (m.userId !== selectedTeamId && m.createdById !== selectedTeamId) return false;
         }
         if (selectedUserId !== ALL && m.userId !== selectedUserId) return false;
-        if (statusFilter !== ALL && m.status !== statusFilter) return false;
+        if (statusFilter !== ALL) {
+          if (statusFilter === 'ON_BREAK') {
+            if (m.status !== 'SHORT_BREAK' && m.status !== 'DINNER_BREAK') return false;
+          } else if (m.status !== statusFilter) {
+            return false;
+          }
+        }
         if (selectedRole !== ALL && m.role !== selectedRole) return false;
         return true;
       }),
@@ -1283,10 +1304,16 @@ export default function ActivityTrackingPage({ forceUserId }: { forceUserId?: st
                     <CardDescription className="text-xs dark:text-slate-400">{filteredMembers.length} members • Real-time</CardDescription>
                   </div>
                 </div>
-                <Badge variant="outline" className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm dark:text-white">
-                  <Activity className="h-3 w-3 mr-1" />
-                  Auto-refresh 15s
-                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetchLive()}
+                  disabled={isFetchingLive}
+                  className="gap-2 bg-white dark:bg-slate-800 dark:border-slate-700 shadow-sm dark:text-white"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${isFetchingLive ? 'animate-spin' : ''}`} />
+                  Refresh status
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">

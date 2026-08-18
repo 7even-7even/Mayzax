@@ -246,7 +246,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
                 </Label>
                 {profileId && (
                   <span className="text-[11px] font-semibold text-slate-500">
-                    Applications: <span className="text-mayzax-blue-700 dark:text-mayzax-blue-400">{shiftAppsData?.pagination?.total ?? 0} today</span> · <span className="text-indigo-600">{allTimeAppsData?.pagination?.total ?? 0} total</span>
+                    Links Count Today: <span className="text-mayzax-blue-700 dark:text-mayzax-blue-400">{shiftAppsData?.pagination?.rawTotal ?? shiftAppsData?.pagination?.total ?? 0} today</span> · <span className="text-indigo-600">{allTimeAppsData?.pagination?.rawTotal ?? allTimeAppsData?.pagination?.total ?? 0} total</span>
                   </span>
                 )}
               </div>

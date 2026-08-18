@@ -54,8 +54,10 @@ export interface RecruiterStats {
   recruiter: Recruiter;
   assignedProfilesCount: number;
   totalApplications: number;
+  rawTotalApplications?: number;
   ashbyRemainder?: number;
   currentShiftApplications: number;
+  rawCurrentShiftApplications?: number;
   ashbyShiftRemainder?: number;
   currentBusinessDate: string;
   profileWiseCounts: Array<{
@@ -64,8 +66,12 @@ export interface RecruiterStats {
     technology: string | null;
     applicationCount: number;
     totalApplications: number;
+    rawApplicationCount?: number;
+    rawTotalApplications?: number;
     currentShiftApplicationCount: number;
     currentShiftApplications: number;
+    rawCurrentShiftApplicationCount?: number;
+    rawCurrentShiftApplications?: number;
   }>;
   lastActiveAt: string | null;
   teamLeader?: { id: string; name: string; email: string; teamName?: string | null } | null;
@@ -175,6 +181,7 @@ export interface Pagination {
   page: number;
   pageSize: number;
   total: number;
+  rawTotal?: number;
   totalPages: number;
 }
 
@@ -214,8 +221,12 @@ export interface RecruiterBreakdown {
     technology: string | null;
     applicationCount: number;
     totalApplications: number;
+    rawApplicationCount?: number;
+    rawTotalApplications?: number;
     currentShiftApplicationCount: number;
     currentShiftApplications: number;
+    rawCurrentShiftApplicationCount?: number;
+    rawCurrentShiftApplications?: number;
   }>;
   recentApplications: JobApplication[];
   currentBusinessDate: string;
@@ -253,6 +264,7 @@ export interface GlobalSummary {
   activeMemberCount?: number;
   onBreakMemberCount?: number;
   topPerformer?: string;
+  topPerformerId?: string | null;
   roleBreakdown?: Record<string, number>;
 }
 

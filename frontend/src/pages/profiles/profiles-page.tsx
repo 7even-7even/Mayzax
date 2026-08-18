@@ -576,7 +576,7 @@ export default function ProfilesPage() {
                     </Button>
                   )}
 
-                  {isAdmin && activeTab === 'active' && (
+                  {(isAdmin || isTeamLeader) && activeTab === 'active' && (
                     <Button
                       variant="outline"
                       size="sm"

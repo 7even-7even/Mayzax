@@ -34,7 +34,7 @@ router.post(
 );
 router.post(
   '/bulk-archive',
-  requireRole(Role.ADMIN),
+  requireRole(Role.ADMIN, Role.TEAM_LEADER),
   validate({ body: bulkArchiveProfilesSchema }),
   profileController.bulkArchiveProfiles,
 );
@@ -87,7 +87,7 @@ router.post(
 // Archive client profile
 router.post(
   '/:id/archive',
-  requireRole(Role.ADMIN),
+  requireRole(Role.ADMIN, Role.TEAM_LEADER),
   validate({ params: idParamSchema }),
   profileController.archiveProfile,
 );
@@ -95,7 +95,7 @@ router.post(
 // Unarchive/Restore client profile
 router.post(
   '/:id/unarchive',
-  requireRole(Role.ADMIN),
+  requireRole(Role.ADMIN, Role.TEAM_LEADER),
   validate({ params: idParamSchema }),
   profileController.unarchiveProfile,
 );

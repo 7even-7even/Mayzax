@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TableSkeleton } from '@/components/shared/table-skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Activity, Clock, UserCheck, Coffee, AlertCircle, UserX, Sparkles, Zap } from 'lucide-react';
+import { Activity, Clock, UserCheck, Coffee, AlertCircle, UserX, Sparkles, Zap, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Reveal } from '@/components/motion/reveal';
 import { VirtualizedTable } from '@/components/shared/virtualized-table';
 import { UserStatus } from '@/types';
+import { Button } from '@/components/ui/button';
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -18,7 +19,7 @@ function formatDuration(seconds: number): string {
 }
 
 export function LiveStatusCard() {
-  const { data, isLoading } = useLiveStatus();
+  const { data, isLoading, refetch, isFetching } = useLiveStatus();
 
   if (isLoading) {
     return (
@@ -68,6 +69,16 @@ export function LiveStatusCard() {
                   {s.count} {s.label}
                 </motion.div>
               ))}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="h-8 w-8 rounded-full text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                title="Refresh live availability"
+              >
+                <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+              </Button>
             </div>
           </div>
         </CardHeader>

@@ -53,6 +53,7 @@ export function listRecruiters(query: ListRecruitersQuery) {
     ...(query.role ? { role: query.role } : {}),
     ...(query.isActive !== undefined ? { isActive: query.isActive } : {}),
     ...(query.createdById ? { createdById: query.createdById } : {}),
+    ...(query.teamLeaderId ? { OR: [{ id: query.teamLeaderId }, { createdById: query.teamLeaderId }] } : {}),
     ...(query.search
       ? {
           OR: [

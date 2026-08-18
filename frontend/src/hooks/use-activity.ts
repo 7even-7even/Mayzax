@@ -105,7 +105,6 @@ export function useCurrentStatus() {
       return data.data;
     },
     enabled: !!user && isTracked,
-    refetchInterval: 60000, // Sync every 1 minute
   });
 }
 
@@ -151,7 +150,6 @@ export function useLiveStatus() {
       return data.data;
     },
     enabled: !!user && canMonitor,
-    refetchInterval: 15000, // Refresh live board every 15 seconds
   });
 }
 

@@ -291,6 +291,7 @@ export async function listApplications(query: ListApplicationsQuery, actor: Requ
       page: query.page,
       pageSize: query.pageSize,
       total: adjustedTotal,
+      rawTotal: total,
       totalPages: Math.max(1, Math.ceil(adjustedTotal / query.pageSize)),
     },
   };
