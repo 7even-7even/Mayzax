@@ -166,11 +166,11 @@ export default function UpdatesPage() {
                               <Calendar className="h-3 w-3" />
                               {formatDateTime(item.createdAt)}
                               {item.roles && item.roles.length > 0 ? (
-                                <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 dark:text-indigo-400 dark:bg-indigo-950/30 dark:border-indigo-900/30 px-2 py-0.5 rounded-full ml-1">
+                                <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 dark:text-indigo-400/3  dark:border-indigo-900/30 px-2 py-0.5 rounded-full ml-1">
                                   To: {item.roles.map((r) => getRoleLabel(r)).join(', ')}
                                 </span>
                               ) : (
-                                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 dark:text-emerald-400 dark:bg-emerald-950/30 dark:border-emerald-900/30 px-2 py-0.5 rounded-full ml-1">
+                                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 dark:text-emerald-400/3 dark:border-emerald-900/30 px-2 py-0.5 rounded-full ml-1">
                                   To: Everyone
                                 </span>
                               )}
@@ -280,6 +280,7 @@ export default function UpdatesPage() {
                         <DropdownMenuCheckboxItem
                           key={role}
                           checked={isSelected}
+                          onSelect={(e) => e.preventDefault()}
                           onCheckedChange={(checked) => {
                             if (checked) {
                               setSelectedRoles([...selectedRoles, role]);

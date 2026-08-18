@@ -50,8 +50,11 @@ apiClient.interceptors.response.use(
       originalRequest?.url?.includes('/auth/signup');
 
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      setAccessToken(null);
-      window.dispatchEvent(new CustomEvent('auth:session-expired'));
+      const isMeOrConfig = originalRequest?.url?.includes('/auth/me') || originalRequest?.url?.includes('/config');
+      if (!isMeOrConfig) {
+        setAccessToken(null);
+        window.dispatchEvent(new CustomEvent('auth:session-expired'));
+      }
     }
 
     return Promise.reject(error);

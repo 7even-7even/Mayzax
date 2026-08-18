@@ -380,6 +380,7 @@ export default function ApplicationsPage() {
                   },
                   placeholder: 'All Recruiters',
                   icon: Users,
+                  searchable: true,
                   options: [{ value: ALL, label: 'All Recruiters' }, ...recruiters.map((r) => ({ value: r.id, label: r.name }))],
                 },
               ]

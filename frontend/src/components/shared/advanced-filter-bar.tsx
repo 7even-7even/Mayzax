@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from '@/components/ui/dropdown-menu';
 
 export interface FilterOption {
   value: string;
@@ -32,6 +32,7 @@ interface AdvancedFilterBarProps {
     onChange: (value: string) => void;
     placeholder?: string;
     icon?: any;
+    searchable?: boolean;
   }>;
   dateRange?: {
     from: string;
@@ -85,26 +86,34 @@ export function AdvancedFilterBar({
 
             {/* Quick filters */}
             <div className="flex items-center gap-2 flex-wrap dark:text-black">
-              {filters.slice(0, 3).map((filter) => (
-                <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
-                  <SelectTrigger className="h-9 rounded-full bg-white border-slate-200 shadow-sm text-xs font-medium w-36 dark:text-black">
-                    <div className="flex items-center gap-1.5">
-                      {filter.icon && <filter.icon className="h-3.5 w-3.5 text-slate-400" />}
-                      <SelectValue placeholder={filter.placeholder || filter.label} />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {filter.options.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                        <div className="flex items-center justify-between w-full">
-                          <span>{opt.label}</span>
-                          {opt.count !== undefined && <span className="ml-2 text-[11px] text-slate-400">({opt.count})</span>}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ))}
+              {filters.slice(0, 3).map((filter) => {
+                if (filter.searchable) {
+                  // Custom searchable filter dropdown using React state for the search input query
+                  return (
+                    <SearchableFilterDropdown key={filter.key} filter={filter} />
+                  );
+                }
+                return (
+                  <Select key={filter.key} value={filter.value} onValueChange={filter.onChange}>
+                    <SelectTrigger className="h-9 rounded-full bg-white border-slate-200 shadow-sm text-xs font-medium w-36 dark:text-black">
+                      <div className="flex items-center gap-1.5">
+                        {filter.icon && <filter.icon className="h-3.5 w-3.5 text-slate-400" />}
+                        <SelectValue placeholder={filter.placeholder || filter.label} />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {filter.options.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                          <div className="flex items-center justify-between w-full">
+                            <span>{opt.label}</span>
+                            {opt.count !== undefined && <span className="ml-2 text-[11px] text-slate-400">({opt.count})</span>}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              })}
 
               {(filters.length > 3 || dateRange || additionalFilters) && (
                 <Button variant={showAdvanced ? 'brand' : 'outline'} size="sm" className="h-9 rounded-full gap-1.5 text-xs dark:text-white" onClick={() => setShowAdvanced(!showAdvanced)}>
@@ -137,23 +146,33 @@ export function AdvancedFilterBar({
           {showAdvanced && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden border-t border-slate-100 bg-slate-50/30">
               <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {filters.slice(3).map((filter) => (
-                  <div key={filter.key} className="space-y-1.5">
-                    <label className="text-[11px] font-bold tracking-wider uppercase text-slate-500">{filter.label}</label>
-                    <Select value={filter.value} onValueChange={filter.onChange}>
-                      <SelectTrigger className="h-9 rounded-xl bg-white border-slate-200 text-xs dark:text-black">
-                        <SelectValue placeholder={filter.placeholder || filter.label} />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        {filter.options.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value} className="text-xs">
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))}
+                 {filters.slice(3).map((filter) => {
+                  if (filter.searchable) {
+                    return (
+                      <div key={filter.key} className="space-y-1.5 flex flex-col">
+                        <label className="text-[11px] font-bold tracking-wider uppercase text-slate-500">{filter.label}</label>
+                        <SearchableFilterDropdown filter={filter} />
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={filter.key} className="space-y-1.5">
+                      <label className="text-[11px] font-bold tracking-wider uppercase text-slate-500">{filter.label}</label>
+                      <Select value={filter.value} onValueChange={filter.onChange}>
+                        <SelectTrigger className="h-9 rounded-xl bg-white border-slate-200 text-xs dark:text-black">
+                          <SelectValue placeholder={filter.placeholder || filter.label} />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          {filter.options.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                })}
 
                 {dateRange && (
                   <>
@@ -215,5 +234,80 @@ export function FilterStatsCard({ icon: Icon, label, value, active, onClick }: {
       </div>
       {active && <Check className="ml-auto h-3.5 w-3.5" />}
     </button>
+  );
+}
+
+function SearchableFilterDropdown({ filter }: { filter: any }) {
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+
+  const filteredOptions = useMemo(() => {
+    return filter.options.filter((opt: any) =>
+      opt.label.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [filter.options, search]);
+
+  const selectedOption = filter.options.find((opt: any) => opt.value === filter.value);
+
+  return (
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 rounded-full bg-white border-slate-200 shadow-sm text-xs font-medium w-full sm:w-40 justify-between dark:text-black hover:bg-slate-50"
+        >
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            {filter.icon && <filter.icon className="h-3.5 w-3.5 text-slate-400 shrink-0" />}
+            <span className="truncate">{selectedOption?.label || filter.placeholder || filter.label}</span>
+          </div>
+          <ChevronDown className="h-3.5 w-3.5 opacity-60 shrink-0 ml-1" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-56 p-2 rounded-xl" align="start" onCloseAutoFocus={(e) => e.preventDefault()}>
+        <div className="relative mb-2 px-1 pt-1">
+          <Search className="absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+          <Input
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8 h-8 text-xs rounded-lg border-slate-200 focus-visible:ring-1 dark:text-black"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+        <div className="max-h-48 overflow-y-auto space-y-0.5 pr-1 px-1">
+          {filteredOptions.length === 0 ? (
+            <div className="text-center py-3 text-xs text-slate-400">No results found</div>
+          ) : (
+            filteredOptions.map((opt: any) => {
+              const isSelected = opt.value === filter.value;
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => {
+                    filter.onChange(opt.value);
+                    setOpen(false);
+                    setSearch('');
+                  }}
+                  className={`w-full flex items-center justify-between text-left px-2.5 py-1.5 text-xs rounded-lg transition-colors ${
+                    isSelected ? 'bg-slate-900 text-white font-semibold' : 'hover:bg-slate-50 text-slate-700 dark:text-white dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <span className="truncate mr-2">{opt.label}</span>
+                  {isSelected && <Check className="h-3.5 w-3.5 shrink-0" />}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
