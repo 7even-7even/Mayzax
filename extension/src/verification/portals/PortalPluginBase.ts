@@ -89,7 +89,17 @@ export abstract class BasePortalPlugin implements PortalPlugin {
   }
 
   extractAllReferences(doc: Document): import('../types').ReferenceEvidence {
-    const text = doc.body ? (doc.body.textContent || '') : '';
+    let text = '';
+    if (doc.body) {
+      try {
+        const cloned = doc.body.cloneNode(true) as HTMLElement;
+        const toRemove = cloned.querySelectorAll('script, style, noscript, svg, iframe, link, meta');
+        toRemove.forEach(el => el.remove());
+        text = cloned.textContent || '';
+      } catch {
+        text = doc.body.textContent || '';
+      }
+    }
     const allRefs: string[] = [];
     let appId: string | null = null;
     let candId: string | null = null;
@@ -101,7 +111,8 @@ export abstract class BasePortalPlugin implements PortalPlugin {
       if (match) {
         const candidate = match[2] || match[1] || match[0];
         const cleaned = candidate.replace(/[^A-Z0-9-]/gi, '').trim();
-        if (cleaned.length >= 4) {
+        // Skip technical code strings/placeholders
+        if (cleaned.length >= 4 && !/TRACKINGPIXELHTML|HTMLCONTENT|TEMPLATE|SCRIPT|STYLESHEET/i.test(cleaned)) {
           allRefs.push(cleaned.toUpperCase());
           if (!appId) appId = cleaned.toUpperCase();
         }

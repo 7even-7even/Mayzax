@@ -81,7 +81,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'START_SESSION') {
-    const { portal, jobUrl, jobId, applicationUrl, applicationId } = message.payload;
+    const { portal, jobUrl, jobId, applicationUrl, applicationId, jobTitle, company } = message.payload;
     const tabId = sender.tab?.id;
     if (!tabId) {
       sendResponse({ success: false, error: 'No tab context' });
@@ -103,6 +103,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           jobId,
           applicationUrl,
           applicationId,
+          jobTitle: jobTitle || '',
+          company: company || '',
           status: 'IN_PROGRESS',
           startedAt: new Date().toISOString()
         };
@@ -118,6 +120,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true, sessionId: newSessionId, recovered: false });
       })
       .catch(err => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (message.action === 'GET_CURRENT_SESSION_DETAILS') {
+    const tabId = sender.tab?.id;
+    if (!tabId) {
+      sendResponse(null);
+      return true;
+    }
+    chrome.storage.local.get(['active_sessions']).then((store) => {
+      const sessions = store.active_sessions || {};
+      const session = sessions[tabId];
+      if (session && session.status === 'IN_PROGRESS') {
+        sendResponse({ jobTitle: session.jobTitle, company: session.company });
+      } else {
+        sendResponse(null);
+      }
+    }).catch(() => sendResponse(null));
     return true;
   }
 

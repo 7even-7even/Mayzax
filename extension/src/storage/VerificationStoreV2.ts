@@ -21,7 +21,7 @@ export class VerificationStoreV2 {
       id: existingIndex !== -1 ? store[existingIndex].id : crypto.randomUUID(),
       portal: result.portal as any,
       company: company || result.evidence.hostname.split('.')[0],
-      jobTitle: jobTitle || result.evidence.title.slice(0, 100),
+      jobTitle: jobTitle || 'Job Application',
       url: normalized,
       pageTitle: result.evidence.title,
       verified: result.verified,
@@ -39,19 +39,27 @@ export class VerificationStoreV2 {
       fraudSignals: result.fraudSignals,
     };
 
-    if (existingIndex !== -1) {
-      store[existingIndex] = entry;
+    // Only store in history cache if verified is true
+    if (result.verified) {
+      if (existingIndex !== -1) {
+        store[existingIndex] = entry;
+      } else {
+        store.unshift(entry);
+      }
+
+      const now = Date.now();
+      const clean = store.filter(item => now - item.timestamp < this.TTL_MS).slice(0, this.MAX_ENTRIES);
+
+      await chrome.storage.local.set({ [this.STORAGE_KEY]: clean });
+      await this.migrateLegacyIfNeeded(clean);
     } else {
-      store.unshift(entry);
+      // If it is unverified (or score dropped below threshold), remove it from history
+      if (existingIndex !== -1) {
+        store.splice(existingIndex, 1);
+        await chrome.storage.local.set({ [this.STORAGE_KEY]: store });
+        await this.migrateLegacyIfNeeded(store);
+      }
     }
-
-    const now = Date.now();
-    const clean = store.filter(item => now - item.timestamp < this.TTL_MS).slice(0, this.MAX_ENTRIES);
-
-    await chrome.storage.local.set({ [this.STORAGE_KEY]: clean });
-
-    // Also save to legacy key for backward compat popup that reads old key? We'll migrate
-    await this.migrateLegacyIfNeeded(clean);
 
     return entry;
   }

@@ -73,9 +73,35 @@ async function runDetectionV2(capturedEvidence?: SubmissionEvidence): Promise<vo
         jobTitle = result.evidence.title.slice(0, 100);
       }
 
-      // Filter generic thank-you page titles from job title field
+      // Filter generic thank-you page titles/home titles from job title field
+      const isGenericJobTitle = !jobTitle || /thank you|application submitted|success|confirmation|applied|done|thanks|applicationcompleted|candidate home/i.test(jobTitle);
+      const isGenericCompany = !company || /unknown/i.test(company);
+
+      if (isGenericJobTitle || isGenericCompany) {
+        try {
+          const sessionDetails = await new Promise<any>((resolve) => {
+            chrome.runtime.sendMessage({ action: 'GET_CURRENT_SESSION_DETAILS' }, (response) => {
+              resolve(response || null);
+            });
+          });
+
+          if (sessionDetails) {
+            if (isGenericJobTitle && sessionDetails.jobTitle) {
+              jobTitle = sessionDetails.jobTitle;
+            }
+            if (isGenericCompany && sessionDetails.company) {
+              company = sessionDetails.company;
+            }
+          }
+        } catch (e) {
+          console.warn('[Mayzax] Failed to recover job details from session', e);
+        }
+      }
+
+      // Final sanitization check: if still generic/empty, set it blank so we don't display thank you strings
       if (
-        /thank you|application submitted|success|confirmation|applied|done|thanks|applicationcompleted/i.test(jobTitle)
+        !jobTitle ||
+        /thank you|application submitted|success|confirmation|applied|done|thanks|applicationcompleted|candidate home/i.test(jobTitle)
       ) {
         jobTitle = '';
       }
@@ -402,6 +428,16 @@ async function main(): Promise<void> {
   const portal = plugin.portal;
   const ids = plugin.extractApplicationIdentifiers({ document, url: new URL(currentUrl) });
 
+  let jobTitle = '';
+  let company = '';
+  try {
+    jobTitle = plugin.extractJobTitle(document, new URL(currentUrl)) || '';
+    company = plugin.extractCompany(document, new URL(currentUrl)) || '';
+    if (/thank you|application submitted|success|confirmation|applied|done|thanks|applicationcompleted/i.test(jobTitle)) {
+      jobTitle = '';
+    }
+  } catch {}
+
   try {
     chrome.runtime.sendMessage({
       action: 'START_SESSION',
@@ -410,7 +446,9 @@ async function main(): Promise<void> {
         jobUrl: currentUrl,
         jobId: ids.jobId,
         applicationUrl: currentUrl,
-        applicationId: ids.applicationId
+        applicationId: ids.applicationId,
+        jobTitle,
+        company
       }
     }, (response) => {
       if (response && response.success) {
