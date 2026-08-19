@@ -6,6 +6,32 @@ This is a complete redesign from v1 (keyword matching) to v2 (modular weighted s
 
 ---
 
+## ⚡ Key Updates in v1.3.0 (Latest)
+
+### 1. Active Session Job Details Recovery
+On confirmation pages, standard HTML job title selectors are usually absent, causing fallback to generic titles like *"Thank you for applying"* or *"Candidate Home"*.
+- **Real-Time Extraction**: Extracts the real `jobTitle` and `company` from the initial application form page.
+- **Active Session Sync**: Saves details inside the active session context in local storage.
+- **Auto-Recovery on Redirect**: Dynamically recovers the real job details from the active tab session when evaluating the confirmation page, falling back to a clean `"Job Application"` only if still generic.
+
+### 2. Reference ID DOM Sanitization
+- **DOM Tag Stripping**: Excludes `<script>`, `<style>`, `<noscript>`, `<svg>`, `<link>`, and `<iframe>` contents from `textContent` prior to reference regex extraction.
+- **Technical Code Filtering**: Explicitly ignores internal code placeholders (like `TRACKINGPIXELHTML` or `TEMPLATE`) to ensure only actual human-facing reference codes are parsed.
+
+### 3. Clean Verification History Cache
+- **Verified-Only Storage**: Restricts local storage verification history (`verifications_v2`) to successfully verified entries.
+- **Auto-Purge**: Automatically deletes cached entries if a re-check evaluates them as unverified or if scores drop below the threshold, preventing UI clutter.
+
+### 4. Dynamic Environment Key Integration
+- **Vite .env integration**: Supports `VITE_EXTENSION_API_KEY` inside `extension/.env` and resolves it dynamically at compile time via `import.meta.env` in `EngineConfig.ts`.
+
+### 5. Backend Auth Integration & Self-Healing Event Sync
+- **Bearer Token Resolution**: Resolves and parses incoming JWT Bearer tokens to log Chrome Extension sessions under the correct recruiter's name.
+- **Active User Fallback**: Queries and matches the first active database administrator/recruiter as a fallback to satisfy foreign key constraints.
+- **Placeholder Session Auto-Creation**: Dynamically creates parent `VerificationSession` rows if event uploads (`addEvents` / `finalizeSession`) are received for a session that doesn't exist yet, eliminating database constraint errors.
+
+---
+
 ## ⚡ Key Updates in v1.2.0+
 
 ### 1. Robust Post-Submission Evidence Capture
@@ -223,5 +249,5 @@ backend/src/modules/verification/__tests__/hash.service.test.ts
 
 Siddharth Ohal (7even-7even) <sidxohal9049@gmail.com>
 Branch: `extension`
-Version: v1.2.0
+Version: v1.3.0
 
