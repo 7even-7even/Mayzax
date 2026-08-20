@@ -82,6 +82,46 @@ export interface PushResult {
  * whether the token should be pruned.
  */
 export async function sendPush(payload: PushPayload): Promise<PushResult> {
+  // If the token is an Expo Push Token, route through Expo's Push API
+  if (payload.token.startsWith('ExponentPushToken[') || payload.token.startsWith('ExpoPushToken[')) {
+    try {
+      const response = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          to: payload.token,
+          title: payload.title,
+          body: payload.body,
+          data: payload.data ?? {},
+          sound: 'default',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        return { success: false, error: `Expo API error: ${errorText}` };
+      }
+
+      const result = await response.json() as any;
+      const data = result.data;
+      if (data && data.status === 'error') {
+        const isDeviceNotRegistered = data.details?.error === 'DeviceNotRegistered';
+        return { 
+          success: false, 
+          invalidToken: isDeviceNotRegistered, 
+          error: data.message 
+        };
+      }
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message ?? String(err) };
+    }
+  }
+
+  // Fallback to standard Firebase push for native FCM tokens
   const app = getFirebaseApp();
   if (!app) return { success: false, error: 'firebase-not-configured' };
 
