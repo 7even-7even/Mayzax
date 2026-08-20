@@ -144,17 +144,11 @@ export async function handleLoginEvent(userId: string, role: Role) {
 
   const now = new Date();
 
-  // Check for an existing open log
-  const openLog = await prisma.activityLog.findFirst({
-    where: { userId, endedAt: null },
-    orderBy: { startedAt: 'desc' },
-  });
-
-  // If already tracking an active (non-OFFLINE) status, do nothing
-  if (openLog && openLog.status !== UserStatus.OFFLINE) return;
-
-  // Close any stale log first (e.g. a dangling OFFLINE record)
-  await closeOpenActivityLog(userId, now);
+  // Explicit Login Reset: Always close previous open activity log (including breaks)
+  const openLog = await closeOpenActivityLog(userId, now);
+  if (openLog && openLog.status !== UserStatus.OFFLINE) {
+    logger.info(`Closed previous open log of status ${openLog.status} for user ${userId} due to new login event.`);
+  }
 
   // flow: login starts as ACTIVE (user productive and working)
   await prisma.activityLog.create({

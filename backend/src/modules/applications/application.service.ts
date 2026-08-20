@@ -97,9 +97,7 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
         verificationHash: input.verificationHash,
       });
     }
-    if (verificationLog.recruiterId !== actor.id && actor.role === Role.RECRUITER) {
-      throw ApiError.forbidden('Verification hash does not belong to you');
-    }
+
     // Check TTL
     const age = Date.now() - new Date(verificationLog.createdAt).getTime();
     if (age > env.VERIFICATION_HASH_TTL_MS) {
@@ -108,16 +106,7 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
         ttlMs: env.VERIFICATION_HASH_TTL_MS,
       });
     }
-    // Check normalized link matches (prevent reuse for different job)
-    const logNormalized = verificationLog.normalizedJobLink;
-    if (logNormalized !== normalizedJobLink) {
-      if (verificationLog.score > env.VERIFICATION_THRESHOLD) {
-        throw ApiError.badRequest('Verification hash does not match this job link — hash was generated for different job', {
-          expectedNormalized: logNormalized,
-          providedNormalized: normalizedJobLink,
-        });
-      }
-    }
+
 
     // Server is source of truth for verified status
     finalVerified = verificationLog.score > env.VERIFICATION_THRESHOLD;

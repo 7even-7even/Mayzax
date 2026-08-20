@@ -14,6 +14,17 @@ module.exports = ({ config }) => {
     console.log('google-services.json not found in mobile/ root, skipping android.googleServicesFile configuration.');
   }
 
+  const googleServicesIosPath = path.resolve(__dirname, './GoogleService-Info.plist');
+  if (fs.existsSync(googleServicesIosPath)) {
+    if (!config.ios) {
+      config.ios = {};
+    }
+    config.ios.googleServicesFile = './GoogleService-Info.plist';
+    console.log('Successfully configured ios.googleServicesFile using local GoogleService-Info.plist');
+  } else {
+    console.log('GoogleService-Info.plist not found in mobile/ root, skipping ios.googleServicesFile configuration.');
+  }
+
   if (!config.extra) {
     config.extra = {};
   }

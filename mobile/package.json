@@ -12,7 +12,10 @@
     "typecheck": "tsc --noEmit",
     "test": "jest --passWithNoTests",
     "build:android:preview": "eas build --platform android --profile preview",
-    "build:android:production": "eas build --platform android --profile production"
+    "build:android:production": "eas build --platform android --profile production",
+    "build:ios:simulator": "eas build --platform ios --profile preview",
+    "build:ios:development": "eas build --platform ios --profile development-simulator",
+    "build:ios:production": "eas build --platform ios --profile production"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
