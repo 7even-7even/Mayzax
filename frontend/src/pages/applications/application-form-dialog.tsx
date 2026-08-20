@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { useCreateApplication, useCheckDuplicate, useApplications } from '@/hooks/use-applications';
 import { useGlobalSummary } from '@/hooks/use-analytics';
+import { useCurrentStatus, useChangeStatus } from '@/hooks/use-activity';
 import { useProfiles } from '@/hooks/use-profiles';
 import { useDebounce } from '@/hooks/use-debounce';
 import { extractErrorMessage } from '@/lib/api-client';
@@ -73,6 +74,10 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
   const checkDuplicate = useCheckDuplicate();
 
   const { data: profilesData } = useProfiles({ pageSize: 100, assignedRecruiterId: user?.role === 'RECRUITER' ? user.id : undefined });
+  const [showStatusWarning, setShowStatusWarning] = useState(false);
+  const { data: currentStatusData } = useCurrentStatus();
+  const changeStatusMutation = useChangeStatus();
+  const currentStatus = currentStatusData?.status ?? 'OFFLINE';
 
   const form = useForm<ApplicationForm>({
     resolver: zodResolver(applicationSchema),
@@ -174,6 +179,11 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
 
 
   const onSubmit = async (values: ApplicationForm) => {
+    // Block submission if user is not ACTIVE
+    if (currentStatus !== 'ACTIVE') {
+      setShowStatusWarning(true);
+      return;
+    }
     try {
       await createMutation.mutateAsync(values);
       toast.success(`Application submitted • ${values.verified ? `Verified v2 ${values.verificationScore}%` : 'Legacy mode'} • HMAC secured`);
@@ -332,6 +342,45 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
           </div>
         </form>
       </DialogContent>
+
+      <Dialog open={showStatusWarning} onOpenChange={setShowStatusWarning}>
+        <DialogContent className="max-w-md rounded-2xl border-slate-200/60 p-6 shadow-2xl flex flex-col items-center text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600 mb-4 animate-bounce">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <DialogHeader className="space-y-2">
+            <DialogTitle className="text-xl font-bold text-slate-900">Please Turn Status Active</DialogTitle>
+            <DialogDescription className="text-sm text-slate-500">
+              You are currently on break or offline. You must change your activity status to **Working (Active)** to submit job applications.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-6 w-full flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowStatusWarning(false)}
+              className="rounded-full"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                try {
+                  await changeStatusMutation.mutateAsync({ status: 'ACTIVE' });
+                  setShowStatusWarning(false);
+                  toast.success("Status changed to Active! You can now submit.");
+                } catch (err) {
+                  toast.error("Failed to change status. Please set it active manually in the header.");
+                }
+              }}
+              className="rounded-full bg-mayzax-gradient text-white border-0 hover:opacity-90"
+            >
+              Turn Status Active
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
