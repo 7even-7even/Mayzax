@@ -110,6 +110,14 @@ export async function setRecruiterActiveStatus(
 
   const updated = await repo.setActiveStatus(id, isActive);
 
+  // Sync client profile archive state
+  if (user.role === Role.CLIENT && user.clientProfileId) {
+    await prisma.clientProfile.update({
+      where: { id: user.clientProfileId },
+      data: { isArchived: !isActive },
+    });
+  }
+
   await writeAuditLog({
     userId: actor.id,
     action: isActive ? 'RECRUITER_ACTIVATED' : 'RECRUITER_DEACTIVATED',
@@ -136,6 +144,14 @@ export async function softDeleteRecruiter(
   if (user.id === actor.id) throw ApiError.badRequest('You cannot delete your own account');
 
   await repo.softDeleteUser(id);
+
+  // If client user, soft-delete their profile too
+  if (user.role === Role.CLIENT && user.clientProfileId) {
+    await prisma.clientProfile.update({
+      where: { id: user.clientProfileId },
+      data: { deletedAt: new Date(), isActive: false },
+    });
+  }
 
   // Unassign their profiles so work can be reassigned
   await prisma.clientProfile.updateMany({

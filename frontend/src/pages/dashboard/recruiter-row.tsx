@@ -47,7 +47,7 @@ export function RecruiterRow({ row, expanded, onToggle, index = 0 }: Props) {
         <TableCell>
           <Badge className={`${row.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30' : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'} border rounded-full px-2.5 py-1 text-xs font-medium`}>
             <span className={`mr-1 h-1.5 w-1.5 rounded-full inline-block ${row.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-            {row.isActive ? 'Active' : 'Inactive'}
+            {row.isActive ? 'Active in System' : 'Inactive in System'}
           </Badge>
         </TableCell>
         <TableCell className="text-sm font-semibold text-slate-700 dark:text-white">

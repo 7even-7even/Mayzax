@@ -43,6 +43,7 @@ describe('Analytics - Dashboard Service', () => {
       where: {
         role: Role.RECRUITER,
         deletedAt: null,
+        isActive: true,
         createdById: 'tl-id',
       },
       select: expect.any(Object),

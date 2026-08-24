@@ -34,6 +34,8 @@ import {
 export default function ClientDashboardPage() {
   const { user, logout } = useAuth();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isLinkConfirmOpen, setIsLinkConfirmOpen] = useState(false);
+  const [pendingLink, setPendingLink] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'resumes' | 'interviews' | 'applications' | 'profile' | 'payments' | 'updates'>('overview');
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -367,10 +369,10 @@ export default function ClientDashboardPage() {
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-4">
             {([
               { id: 'overview', label: 'Overview', icon: Zap },
-              { id: 'resumes', label: 'My Resumes', icon: FileText },
+              // { id: 'resumes', label: 'My Resumes', icon: FileText },
               { id: 'interviews', label: 'Interviews', icon: Calendar },
               { id: 'applications', label: 'Applications', icon: Briefcase },
-              { id: 'payments', label: 'Payment History', icon: CreditCard },
+              // { id: 'payments', label: 'Payment History', icon: CreditCard },
               { id: 'updates', label: 'Updates', icon: MessageSquare },
               { id: 'profile', label: 'Profile Settings', icon: User },
             ] as const).map((t) => {
@@ -893,7 +895,7 @@ export default function ClientDashboardPage() {
                       <Table>
                         <TableHeader className="bg-slate-50/60 dark:bg-slate-900">
                           <TableRow>
-                            <TableHead className="font-semibold text-xs pl-6">Company</TableHead>
+                            {/* <TableHead className="font-semibold text-xs pl-6">Company</TableHead> */}
                             {/* <TableHead className="font-semibold text-xs">Job Title</TableHead> */}
                             <TableHead className="font-semibold text-xs">Portal</TableHead>
                             <TableHead className="font-semibold text-xs">Date Applied</TableHead>
@@ -904,7 +906,7 @@ export default function ClientDashboardPage() {
                         <TableBody>
                           {applications.map((app) => (
                             <TableRow key={app.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/30">
-                              <TableCell className="font-bold text-slate-900 dark:text-white pl-6">{app.companyName}</TableCell>
+                              {/* <TableCell className="font-bold text-slate-900 dark:text-white pl-6">{app.companyName}</TableCell> */}
                               {/* <TableCell className="text-xs font-semibold">{app.jobTitle}</TableCell> */}
                               <TableCell>
                                 <Badge variant="outline" className="text-[10px] tracking-wide font-bold">{formatEnumLabel(app.jobPortal)}</Badge>
@@ -927,9 +929,12 @@ export default function ClientDashboardPage() {
                               <TableCell className="pr-6">
                                 {app.jobLink ? (
                                   <a 
-                                    href={app.jobLink} 
-                                    target="_blank" 
-                                    rel="noreferrer" 
+                                    href={app.jobLink}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setPendingLink(app.jobLink);
+                                      setIsLinkConfirmOpen(true);
+                                    }}
                                     className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-750 dark:text-indigo-400 dark:hover:text-indigo-300 hover:underline"
                                   >
                                     View Post
@@ -1676,6 +1681,42 @@ export default function ClientDashboardPage() {
                 className="w-full rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold"
               >
                 Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Portal Login Credentials Reminder Modal */}
+        <Dialog open={isLinkConfirmOpen} onOpenChange={setIsLinkConfirmOpen}>
+          <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden font-sans">
+            <div className="h-1.5 w-full bg-gradient-to-r from-amber-500 to-orange-600 absolute top-0 left-0" />
+            
+            <DialogHeader className="pt-2">
+              <DialogTitle className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                Portal Login Reminder
+              </DialogTitle>
+              <DialogDescription className="text-sm font-semibold text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                Please log in with your updated credentials in the respective portal to verify your application details.
+              </DialogDescription>
+            </DialogHeader>
+
+            <DialogFooter className="mt-6 flex flex-col sm:flex-row gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsLinkConfirmOpen(false)}
+                className="w-full sm:w-auto rounded-full font-bold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsLinkConfirmOpen(false);
+                  window.open(pendingLink, '_blank', 'noopener,noreferrer');
+                }}
+                className="w-full sm:w-auto rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold"
+              >
+                Proceed to Link
               </Button>
             </DialogFooter>
           </DialogContent>

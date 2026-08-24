@@ -10,9 +10,13 @@ vi.mock('../../../backend/src/lib/prisma', () => ({
     user: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      create: vi.fn(),
+      findFirst: vi.fn(),
+      update: vi.fn(),
     },
     clientProfile: {
       findFirst: vi.fn(),
+      update: vi.fn(),
     },
   },
 }));
@@ -23,6 +27,7 @@ vi.mock('../../../backend/src/modules/profiles/profile.repository', () => ({
   update: vi.fn(),
   findActiveById: vi.fn(),
   replaceRecruiterAssignments: vi.fn(),
+  softDelete: vi.fn(),
 }));
 
 // Mock Audit Log
@@ -57,6 +62,13 @@ describe('Profiles - Creation & Management Service', () => {
     (repo.create as any).mockResolvedValue({
       id: 'profile-uuid-abc',
       candidateName: 'John Candidate',
+      email: 'john.candidate@mayzax.com',
+    });
+
+    // Mock User create
+    (prisma.user.create as any).mockResolvedValue({
+      id: 'user-uuid-xyz',
+      name: 'John Candidate',
       email: 'john.candidate@mayzax.com',
     });
 
@@ -128,5 +140,32 @@ describe('Profiles - Creation & Management Service', () => {
     await expect(
       profileService.updateProfile(targetProfileId, { candidateName: 'Hacked Name' }, actor)
     ).rejects.toThrow('Recruiters are not allowed to edit candidate name');
+  });
+
+  it('PROF-DEL-001: Should soft-delete corresponding client user when profile is deleted', async () => {
+    const actor = { id: 'admin-id-123', role: Role.ADMIN };
+    const profileId = 'profile-abc-123';
+
+    (repo.findActiveById as any).mockResolvedValue({
+      id: profileId,
+      candidateName: 'John Candidate',
+    });
+
+    (prisma.user.findFirst as any).mockResolvedValue({
+      id: 'client-user-xyz',
+      role: Role.CLIENT,
+      clientProfileId: profileId,
+    });
+
+    await profileService.deleteProfile(profileId, actor);
+
+    expect(repo.softDelete).toHaveBeenCalledWith(profileId);
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'client-user-xyz' },
+      data: {
+        deletedAt: expect.any(Date),
+        isActive: false,
+      },
+    });
   });
 });
