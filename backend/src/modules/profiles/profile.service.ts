@@ -288,6 +288,15 @@ export async function deleteProfile(id: string, actor: Requester, meta?: Meta) {
 
   await repo.softDelete(id);
 
+  // Also soft-delete corresponding client user as well
+  const clientUser = await prisma.user.findFirst({ where: { clientProfileId: id, deletedAt: null } });
+  if (clientUser) {
+    await prisma.user.update({
+      where: { id: clientUser.id },
+      data: { deletedAt: new Date(), isActive: false }
+    });
+  }
+
   await writeAuditLog({ userId: actor.id, action: 'PROFILE_DELETED', entity: 'ClientProfile', entityId: id, ...meta });
 
   return { message: 'Profile deleted successfully' };
@@ -361,6 +370,15 @@ export async function bulkDeleteProfiles(profileIds: string[], actor: Requester,
 
   for (const id of profileIds) {
     await repo.softDelete(id);
+
+    // Also soft-delete corresponding client user
+    const clientUser = await prisma.user.findFirst({ where: { clientProfileId: id, deletedAt: null } });
+    if (clientUser) {
+      await prisma.user.update({
+        where: { id: clientUser.id },
+        data: { deletedAt: new Date(), isActive: false }
+      });
+    }
   }
 
   await writeAuditLog({

@@ -36,7 +36,10 @@ describe('Analytics - Job Portals Service', () => {
     expect(result.totalApplications).toBe(10);
     expect(prisma.jobApplication.groupBy).toHaveBeenCalledWith({
       by: ['jobPortal'],
-      where: { recruiterId: { in: ['recruiter-id-123'] } },
+      where: {
+        recruiterId: { in: ['recruiter-id-123'] },
+        recruiter: { isActive: true, deletedAt: null },
+      },
       _count: { _all: true },
     });
   });

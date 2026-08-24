@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, X, UserCircle, Activity, Bell, Sparkles, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, X, UserCircle, Activity, Bell, Sparkles, ShieldCheck, MessageSquareCode, Handshake } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { cn } from '@/lib/utils';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
@@ -54,6 +54,18 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
       label: 'Onboarding',
       icon: ShieldCheck,
       desc: 'Verify registrations'
+    });
+    rawNav.splice(4, 0, {
+      to: '/admin/enquiries',
+      label: 'Candidate Enquiry',
+      icon: MessageSquareCode,
+      desc: 'Inbound questions'
+    });
+    rawNav.splice(5, 0, {
+      to: '/admin/partner-requests',
+      label: 'Partner Requests',
+      icon: Handshake,
+      desc: 'Hiring requests'
     });
   }
 

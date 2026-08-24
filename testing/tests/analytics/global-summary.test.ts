@@ -32,8 +32,9 @@ describe('Analytics - Global Summary Service', () => {
   it('ANA-SUM-001: Recruiter summary loads only personal metrics', async () => {
     const actor = { id: 'rec-123', role: Role.RECRUITER };
 
-    (prisma.jobApplication.count as any).mockResolvedValueOnce(15); // myTotalApplications
-    (prisma.jobApplication.count as any).mockResolvedValueOnce(5);  // myTodayApplications
+    (prisma.jobApplication.groupBy as any)
+      .mockResolvedValueOnce([{ jobPortal: 'LINKEDIN', _count: { _all: 15 } }]) // myTotalApplications
+      .mockResolvedValueOnce([{ jobPortal: 'LINKEDIN', _count: { _all: 5 } }]);  // myTodayApplications
 
     const result = await analyticsService.getGlobalSummary(actor);
 
@@ -49,17 +50,17 @@ describe('Analytics - Global Summary Service', () => {
     (prisma.user.count as any).mockResolvedValue(5); // totalRecruiters
     (prisma.user.count as any).mockResolvedValue(4); // activeRecruiters
     (prisma.clientProfile.count as any).mockResolvedValue(10);
-    (prisma.jobApplication.count as any)
-      .mockResolvedValueOnce(100) // totalApplications
-      .mockResolvedValueOnce(20)  // todayApplications
-      .mockResolvedValueOnce(15)  // myTotalApplications
-      .mockResolvedValueOnce(5);  // myTodayApplications
+    
+    (prisma.jobApplication.groupBy as any)
+      .mockResolvedValueOnce([{ jobPortal: 'LINKEDIN', _count: { _all: 100 } }]) // totalApplications
+      .mockResolvedValueOnce([{ jobPortal: 'LINKEDIN', _count: { _all: 20 } }])  // todayApplications
+      .mockResolvedValueOnce([{ jobPortal: 'LINKEDIN', _count: { _all: 15 } }])  // myTotalApplications
+      .mockResolvedValueOnce([{ jobPortal: 'LINKEDIN', _count: { _all: 5 } }])   // myTodayApplications
+      .mockResolvedValueOnce([
+        { recruiterId: 'top-rec-id', jobPortal: 'LINKEDIN', _count: { _all: 5 } }, // teamApplicationsToday
+      ]);
 
     // Top performer mock calls
-    const mockTodayApplicationsList = [
-      { recruiterId: 'top-rec-id', _count: { _all: 5 } },
-    ];
-    (prisma.jobApplication.groupBy as any).mockResolvedValue(mockTodayApplicationsList);
     (prisma.user.findUnique as any).mockResolvedValue({ name: 'Top Performer Recruiter' });
 
     (prisma.user.findMany as any).mockResolvedValue([]); // teamLeaders count

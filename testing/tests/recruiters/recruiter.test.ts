@@ -13,6 +13,7 @@ vi.mock('../../../backend/src/lib/prisma', () => ({
     },
     clientProfile: {
       updateMany: vi.fn(),
+      update: vi.fn(),
     },
     clientProfileAssignment: {
       deleteMany: vi.fn(),
@@ -157,5 +158,39 @@ describe('Recruiter Management Service', () => {
     await expect(
       recruiterService.getRecruiterStats('rec-b-id', tlActor)
     ).rejects.toThrow('You can only view stats for recruiters managed by your team');
+  });
+
+  it('REC-MGMT-009: Deleting CLIENT user soft-deletes their ClientProfile', async () => {
+    const actor = { id: 'admin-id', role: Role.ADMIN };
+    const targetUser = { id: 'client-123', role: Role.CLIENT, clientProfileId: 'profile-abc' };
+
+    (repo.findActiveById as any).mockResolvedValue(targetUser);
+
+    await recruiterService.softDeleteRecruiter('client-123', actor);
+
+    expect(repo.softDeleteUser).toHaveBeenCalledWith('client-123');
+    expect(prisma.clientProfile.update).toHaveBeenCalledWith({
+      where: { id: 'profile-abc' },
+      data: {
+        deletedAt: expect.any(Date),
+        isActive: false,
+      },
+    });
+  });
+
+  it('REC-MGMT-010: Deactivating CLIENT user archives their ClientProfile', async () => {
+    const actor = { id: 'admin-id', role: Role.ADMIN };
+    const targetUser = { id: 'client-123', role: Role.CLIENT, clientProfileId: 'profile-abc' };
+
+    (repo.findActiveById as any).mockResolvedValue(targetUser);
+    (repo.setActiveStatus as any).mockResolvedValue({ id: 'client-123', isActive: false });
+
+    await recruiterService.setRecruiterActiveStatus('client-123', false, actor);
+
+    expect(repo.setActiveStatus).toHaveBeenCalledWith('client-123', false);
+    expect(prisma.clientProfile.update).toHaveBeenCalledWith({
+      where: { id: 'profile-abc' },
+      data: { isArchived: true },
+    });
   });
 });

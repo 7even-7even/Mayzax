@@ -1,0 +1,83 @@
+{
+  "info": {
+    "_postman_id": "c82f8c5b-21d3-4a18-b2a6-hiring-partners",
+    "name": "Mayzax - Hiring Partner Requests",
+    "description": "Postman collection for the Hiring Partner Requests module. All endpoints require Admin authentication. Set {{baseUrl}} to the API base URL and {{accessToken}} to a valid JWT access token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "requestId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "List Hiring Partner Requests",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/hiring-partner-requests?page=1&pageSize=10&search=",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "hiring-partner-requests"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "pageSize",
+              "value": "10"
+            },
+            {
+              "key": "search",
+              "value": ""
+            }
+          ]
+        },
+        "description": "Admin endpoint to retrieve a paginated list of hiring partner requests, optionally filtered by search text matching company, contact name, email, or role type."
+      }
+    },
+    {
+      "name": "Get Hiring Partner Request by ID",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/hiring-partner-requests/{{requestId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "hiring-partner-requests",
+            "{{requestId}}"
+          ]
+        },
+        "description": "Admin endpoint to retrieve the details of a specific hiring partner request by ID."
+      }
+    }
+  ]
+}
