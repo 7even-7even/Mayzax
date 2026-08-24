@@ -44,3 +44,21 @@ export async function getInquiryById(id: string) {
   }
   return item;
 }
+
+export async function createInquiry(input: {
+  fullName: string;
+  email: string;
+  phone?: string;
+  serviceInterested: string;
+  details: string;
+}) {
+  return prisma.inquiry.create({
+    data: {
+      fullName: input.fullName,
+      email: input.email,
+      phone: input.phone ?? null,
+      serviceInterested: input.serviceInterested,
+      details: input.details,
+    },
+  });
+}

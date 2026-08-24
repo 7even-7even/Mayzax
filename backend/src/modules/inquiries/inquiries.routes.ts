@@ -5,6 +5,9 @@ import * as inquiriesController from './inquiries.controller';
 
 const router = Router();
 
+// Public — no auth required
+router.post('/', inquiriesController.submitInquiry);
+
 // Admins only
 router.use(requireAuth, requireRole(Role.ADMIN));
 

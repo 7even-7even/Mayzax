@@ -5,12 +5,15 @@ import { z } from 'zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
-import { Eye, EyeOff, Loader2, Lock, Mail, Sparkles, ShieldCheck, Zap, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, Mail, Sparkles, ShieldCheck, Zap, ArrowRight, SendHorizonal, X } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { extractErrorMessage } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
 import { FloatingCube } from '@/components/shared/floating-cube';
 
@@ -87,12 +90,24 @@ function ParticleField() {
   );
 }
 
+const SERVICES = ['Placement', 'Training', 'OPT/Stem OPT Support', 'H1B Sponsorship', 'Other'] as const;
+
 export default function ClientLoginPage() {
   const { login, logout, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  // Enquiry dialog state
+  const [enquiryOpen, setEnquiryOpen] = useState(false);
+  const [enquirySubmitting, setEnquirySubmitting] = useState(false);
+  const [enquirySuccess, setEnquirySuccess] = useState(false);
+  const [enqName, setEnqName] = useState('');
+  const [enqEmail, setEnqEmail] = useState('');
+  const [enqPhone, setEnqPhone] = useState('');
+  const [enqService, setEnqService] = useState<string>('Placement');
+  const [enqDetails, setEnqDetails] = useState('');
 
   const {
     register,
@@ -119,6 +134,39 @@ export default function ClientLoginPage() {
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  const handleEnquirySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!enqName.trim() || !enqEmail.trim() || !enqDetails.trim()) {
+      toast.error('Please fill in all required fields.');
+      return;
+    }
+    setEnquirySubmitting(true);
+    try {
+      await apiClient.post('/inquiries', {
+        fullName: enqName.trim(),
+        email: enqEmail.trim(),
+        phone: enqPhone.trim() || undefined,
+        serviceInterested: enqService,
+        details: enqDetails.trim(),
+      });
+      setEnquirySuccess(true);
+    } catch (err) {
+      toast.error(extractErrorMessage(err, 'Failed to submit enquiry. Please try again.'));
+    } finally {
+      setEnquirySubmitting(false);
+    }
+  };
+
+  const handleEnquiryClose = () => {
+    setEnquiryOpen(false);
+    // Reset after close animation
+    setTimeout(() => {
+      setEnquirySuccess(false);
+      setEnqName(''); setEnqEmail(''); setEnqPhone('');
+      setEnqService('Placement'); setEnqDetails('');
+    }, 300);
   };
 
   return (
@@ -186,7 +234,7 @@ export default function ClientLoginPage() {
           </motion.div>
         </div>
 
-        <div className="relative z-10 flex items-center gap-6 text-xs text-slate-450">
+        <div className="relative z-10 flex items-center gap-6 text-xs text-slate-450 text-white">
           <span>© 2026 Mayzax Solutions</span>
         </div>
       </div>
@@ -261,15 +309,22 @@ export default function ClientLoginPage() {
               </form>
 
               <div className="mt-7">
-                <div className="relative flex items-center justify-center">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full h-px bg-slate-100" />
-                  </div>
-                  {/* <span className="relative bg-white px-3 text-[10px] font-bold tracking-wider text-slate-400 uppercase">New to Mayzax?</span> */}
+                <div className="relative flex items-center justify-center gap-3">
+                  <div className="flex-1 h-px bg-slate-100" />
+                  <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase whitespace-nowrap">New to Mayzax?</span>
+                  <div className="flex-1 h-px bg-slate-100" />
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setEnquiryOpen(true)}
+                  className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-[13px] font-bold text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-all duration-200 group"
+                >
+                  <SendHorizonal className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                  Send An Enquiry
+                </button>
               </div>
 
-              <div className="mt-6 flex items-center justify-center gap-4 text-[11px] text-slate-400">
+              <div className="mt-5 flex items-center justify-center gap-4 text-[11px] text-slate-400">
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" /> Secure Area
                 </span>
@@ -282,6 +337,132 @@ export default function ClientLoginPage() {
           </div>
         </div>
       </div>
+
+      {/* ──────── ENQUIRY DIALOG ──────── */}
+      <Dialog open={enquiryOpen} onOpenChange={handleEnquiryClose}>
+        <DialogContent className="sm:max-w-md rounded-2xl border-slate-200 p-0 overflow-hidden shadow-2xl">
+          {/* Header gradient strip */}
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[10px] font-bold tracking-widest text-emerald-200 uppercase mb-1">New Enquiry</div>
+                <DialogTitle className="text-xl font-extrabold text-white">Send An Enquiry</DialogTitle>
+                <p className="text-[12px] text-emerald-100 mt-0.5">Our team will get back to you within 24 hours.</p>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+                <SendHorizonal className="h-5 w-5 text-white" />
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 py-6">
+            {enquirySuccess ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center gap-4 py-8 text-center"
+              >
+                <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <ShieldCheck className="h-8 w-8 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-900">Enquiry Submitted!</h3>
+                  <p className="text-sm text-slate-500 mt-1">Thank you, {enqName.split(' ')[0]}! Our team will reach out to <span className="font-semibold text-slate-700">{enqEmail}</span> shortly.</p>
+                </div>
+                <Button onClick={handleEnquiryClose} className="mt-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8">
+                  Done
+                </Button>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleEnquirySubmit} className="space-y-1">
+                {/* Full Name */}
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500">Full Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    value={enqName}
+                    onChange={e => setEnqName(e.target.value)}
+                    placeholder="Jane Doe"
+                    className="h-11 rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px]"
+                    required
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500">Email <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="email"
+                    value={enqEmail}
+                    onChange={e => setEnqEmail(e.target.value)}
+                    placeholder="jane@example.com"
+                    className="h-11 rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px]"
+                    required
+                  />
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500">Phone <span className="text-slate-400 font-normal">(Optional)</span></Label>
+                  <Input
+                    value={enqPhone}
+                    onChange={e => setEnqPhone(e.target.value)}
+                    placeholder="+1 555 000 0000"
+                    className="h-11 rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px]"
+                  />
+                </div>
+
+                {/* Service Interested */}
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500">Service Interested In <span className="text-red-500">*</span></Label>
+                  <div className="flex flex-wrap gap-2">
+                    {SERVICES.map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setEnqService(s)}
+                        className={`rounded-full px-4 py-1.5 text-[12px] font-bold border transition-all duration-150 ${
+                          enqService === s
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                            : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div className="space-y-1.5">
+                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500">How Can We Help? <span className="text-red-500">*</span></Label>
+                  <Textarea
+                    value={enqDetails}
+                    onChange={e => setEnqDetails(e.target.value)}
+                    placeholder="Tell us about your background, visa status & goals..."
+                    rows={3}
+                    className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px] resize-none"
+                    required
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={enquirySubmitting}
+                  className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-[14px] shadow-[0_8px_24px_rgba(16,185,129,0.2)] transition-all duration-300 group"
+                >
+                  {enquirySubmitting ? (
+                    <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Submitting...</>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      Submit Enquiry <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                    </span>
+                  )}
+                </Button>
+              </form>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
