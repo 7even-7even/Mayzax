@@ -384,7 +384,7 @@ export function HomeScreen() {
             <>
               {/* Tab Selector */}
               <View style={{ flexDirection: 'row', backgroundColor: dark ? '#1e293b' : '#f1f5f9', borderRadius: 12, padding: 4, marginBottom: spacing.md }}>
-                {(['overview', 'applications', 'interviews', 'payments'] as const).map((tab) => (
+                {(['overview', 'applications', 'interviews'] as const).map((tab) => (
                   <TouchableOpacity
                     key={tab}
                     onPress={() => setClientTab(tab)}

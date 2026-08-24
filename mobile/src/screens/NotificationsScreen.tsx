@@ -93,13 +93,21 @@ function NotificationsHeader({ unreadCount, onMarkAllRead, markAllDisabled, dark
   );
 }
 
-function getTypeConfig(type: string) {
-  return TYPE_CONFIG[type] ?? { icon: 'bell-ring', color: colors.primary, bg: '#E0E7FF' };
+function getTypeConfig(item: NotificationItem) {
+  const subType = item.data?.subType;
+  if (subType === 'CANDIDATE_ENQUIRY') {
+    return { icon: 'account-question', color: '#10B981', bg: '#D1FAE5' };
+  }
+  if (subType === 'PARTNER_REQUEST') {
+    return { icon: 'handshake', color: '#3B82F6', bg: '#DBEAFE' };
+  }
+  return TYPE_CONFIG[item.type] ?? { icon: 'bell-ring', color: colors.primary, bg: '#E0E7FF' };
 }
 
-function mapTab(screen: string): 'HomeTab' | 'ActivityTab' | 'NotificationsTab' | 'ProfileTab' {
+function mapTab(screen: string): 'HomeTab' | 'ActivityTab' | 'NotificationsTab' | 'ProfileTab' | 'MonitoringTab' {
   switch (screen) {
     case 'Today': return 'ActivityTab';
+    case 'Monitoring': return 'MonitoringTab';
     case 'Notifications': return 'NotificationsTab';
     case 'Profile': return 'ProfileTab';
     default: return 'HomeTab';
@@ -170,8 +178,8 @@ export function NotificationsScreen() {
     if (d.screen && nav) {
       if (d.screen === 'AttendanceDetail' && d.date) {
         nav.navigate('AttendanceDetail', { date: d.date });
-      } else if (['Home', 'Today', 'Notifications', 'Profile'].includes(d.screen)) {
-        nav.navigate('Tabs', { screen: mapTab(d.screen) });
+      } else if (['Home', 'Today', 'Monitoring', 'Notifications', 'Profile'].includes(d.screen)) {
+        nav.navigate('Tabs', { screen: mapTab(d.screen) as any });
       }
     }
   };
@@ -223,7 +231,7 @@ export function NotificationsScreen() {
           }}
           onEndReachedThreshold={0.5}
           renderItem={({ item }) => {
-            const cfg = getTypeConfig(item.type);
+            const cfg = getTypeConfig(item);
             const isUnread = !item.readAt;
             return (
               <TouchableOpacity activeOpacity={0.75} onPress={() => tap(item)}>
