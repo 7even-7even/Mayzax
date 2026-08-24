@@ -24,6 +24,8 @@ import { MayzaxIntro } from '@/components/shared/mayzax-intro';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
 import OnboardPage from '@/pages/onboard/onboard-page';
 import AdminOnboardingPage from '@/pages/onboard/admin-onboarding-page';
+import AdminEnquiriesPage from '@/pages/admin/enquiries-page';
+import AdminPartnerRequestsPage from '@/pages/admin/partner-requests-page';
 import TermsPage from '@/pages/legal/terms-page';
 import PrivacyPage from '@/pages/legal/privacy-page';
 import { apiClient } from '@/lib/api-client';
@@ -110,6 +112,8 @@ export default function App() {
             <Route path="/activity" element={<ActivityTrackingPage />} />
             <Route path="/updates" element={<UpdatesPage />} />
             <Route path="/admin/onboarding" element={<AdminOnboardingPage />} />
+            <Route path="/admin/enquiries" element={<AdminEnquiriesPage />} />
+            <Route path="/admin/partner-requests" element={<AdminPartnerRequestsPage />} />
           </Route>
         </Route>
 

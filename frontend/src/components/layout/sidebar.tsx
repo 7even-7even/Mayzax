@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, UserCircle, Activity, Bell, Sparkles, Zap, ChevronLeft, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Users, UserSquare2, FileText, BarChart3, UserCircle, Activity, Bell, Sparkles, Zap, ChevronLeft, ShieldCheck, MessageSquareCode, Handshake } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useGlobalSummary } from '@/hooks/use-analytics';
@@ -63,10 +63,24 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     // Insert Onboarding Requests right after Team Management (index 3)
     rawNav.splice(3, 0, {
       to: '/admin/onboarding',
-      label: 'Onboarding & Requests',
+      label: 'Onboard & Review',
       icon: ShieldCheck,
       gradient: 'from-indigo-500 to-indigo-700',
       desc: 'Verify registrations',
+    });
+    rawNav.splice(4, 0, {
+      to: '/admin/enquiries',
+      label: 'Candidate Enquiry',
+      icon: MessageSquareCode,
+      gradient: 'from-pink-500 to-rose-600',
+      desc: 'Inbound questions',
+    });
+    rawNav.splice(5, 0, {
+      to: '/admin/partner-requests',
+      label: 'Partner Requests',
+      icon: Handshake,
+      gradient: 'from-teal-500 to-emerald-600',
+      desc: 'Hiring requests',
     });
   }
 

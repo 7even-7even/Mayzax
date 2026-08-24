@@ -13,6 +13,8 @@ import notificationsRoutes from '@/modules/notifications/notifications.routes';
 import attendanceRoutes from '@/modules/attendance/attendance.routes';
 import verificationRoutes from '@/modules/verification/verification.routes';
 import profileChangesRoutes from '@/modules/profile-changes/profile-changes.routes';
+import inquiriesRoutes from '@/modules/inquiries/inquiries.routes';
+import hiringPartnerRequestsRoutes from '@/modules/hiring-partner-requests/hiring-partner-requests.routes';
 
 const router = Router();
 
@@ -28,6 +30,8 @@ router.use('/analytics', analyticsRoutes);
 router.use('/activity', activityRoutes);
 router.use('/updates', updatesRoutes);
 router.use('/onboarding', onboardingRoutes);
+router.use('/inquiries', inquiriesRoutes);
+router.use('/hiring-partner-requests', hiringPartnerRequestsRoutes);
 
 // Companion mobile + shared read-only APIs
 router.use('/shifts', shiftRoutes);

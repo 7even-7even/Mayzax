@@ -779,3 +779,35 @@ model VerificationEvent {
   @@index([createdAt])
   @@map("verification_events")
 }
+
+// ---------------------------------------------------------
+// Website Inquiry & Hiring Partner Requests (Synced from Website project)
+// ---------------------------------------------------------
+
+model Inquiry {
+  id                String   @id @default(uuid())
+  fullName          String
+  email             String
+  phone             String?
+  serviceInterested String
+  details           String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("inquiries")
+}
+
+model HiringPartnerRequest {
+  id          String   @id @default(uuid())
+  company     String
+  contactName String
+  workEmail   String
+  phone       String?
+  roleType    String
+  hiresNeeded String
+  details     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("hiring_partner_requests")
+}
