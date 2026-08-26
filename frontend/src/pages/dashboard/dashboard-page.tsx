@@ -31,8 +31,9 @@ const sortOptions = [
   { value: 'currentShiftApplications', label: 'Current Applications' },
   { value: 'totalApplications', label: 'Total Applications' },
   { value: 'assignedProfiles', label: 'Assigned Profiles' },
+  { value: 'totalInterviewCalls', label: 'Total Interview Calls' },
+  { value: 'currentShiftInterviewCalls', label: "Today's Calls" },
   { value: 'name', label: 'Name' },
-  { value: 'lastActiveAt', label: 'Last Active' },
 ];
 
 const SHIFT_GOAL_KEY = 'mayzax_tl_shift_goal';
