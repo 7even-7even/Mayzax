@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '@/utils/asyncHandler';
 import * as applicationService from './application.service';
+import { prisma } from '@/lib/prisma';
 
 function actor(req: Request) {
   return { id: req.user!.sub, role: req.user!.role };
@@ -44,4 +45,43 @@ export const checkDuplicate = asyncHandler(async (req: Request, res: Response) =
 export const getClientStats = asyncHandler(async (req: Request, res: Response) => {
   const result = await applicationService.getClientStats(actor(req));
   res.status(200).json({ success: true, data: result });
+});
+
+export const listAllInterviews = asyncHandler(async (req: Request, res: Response) => {
+  const { role, id } = actor(req);
+  if (role !== 'ADMIN' && role !== 'TEAM_LEADER') {
+    res.status(403).json({ success: false, error: 'Access forbidden. Admins and Team Leaders only.' });
+    return;
+  }
+
+  let whereClause: any = {};
+
+  if (role === 'TEAM_LEADER') {
+    whereClause = {
+      profile: {
+        OR: [
+          { assignedRecruiterId: id },
+          { assignedRecruiter: { createdById: id } },
+          { assignedRecruiterAssignments: { some: { recruiterId: id } } },
+          { assignedRecruiterAssignments: { some: { recruiter: { createdById: id } } } }
+        ]
+      }
+    };
+  }
+
+  const interviews = await (prisma as any).interview.findMany({
+    where: whereClause,
+    include: {
+      profile: {
+        select: {
+          id: true,
+          candidateName: true,
+          technology: true,
+        }
+      }
+    },
+    orderBy: { date: 'asc' }
+  });
+
+  res.status(200).json({ success: true, data: interviews });
 });

@@ -40,3 +40,7 @@ Enterprise v1 Verification (`verificationHash`):
 * **APP-SC-04:** Register verified application with high-confidence extension hash successfully.
 * **APP-SC-05:** Block application submission if verification hash is expired (TTL checks).
 * **APP-SC-06:** Block submission if verification hash is reused (replay attack prevention).
+
+### C. Interview Calendar & Scheduling Scenarios
+* **APP-SC-07:** Retrieve scheduled interviews list for Admin and Team Leaders (exposes `GET /applications/interviews` role boundaries).
+* **APP-SC-08:** Add/Schedule a candidate interview successfully (dialog actions link properly to backend profile endpoint).

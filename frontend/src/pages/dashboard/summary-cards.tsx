@@ -15,6 +15,7 @@ const adminCardConfig = [
   { key: 'totalProfiles', label: 'Total Clients', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', accent: 'text-amber-600', bg: 'bg-amber-50' },
   { key: 'totalApplications', label: 'Total Applications', icon: Briefcase, gradient: 'from-blue-500 to-cyan-600', accent: 'text-blue-600', bg: 'bg-blue-50' },
   { key: 'currentShiftApplications', label: "Today's Apps", icon: Clock, gradient: 'from-mayzax-blue-500 to-mayzax-green-600', accent: 'text-violet-600', bg: 'bg-violet-50' },
+  { key: 'topPerformer', label: 'Top Performer', icon: Trophy, gradient: 'from-yellow-500 to-amber-600', accent: 'text-amber-600', bg: 'bg-yellow-50' },
 ] as const;
 
 const tlCardConfig = [
@@ -128,7 +129,7 @@ export function SummaryCards({ onShowRecruiterStats }: { onShowRecruiterStats?: 
 
   return (
     <div className="space-y-5">
-      <StaggerContainer className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+      <StaggerContainer className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${isTeamLeader ? 'md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5' : 'lg:grid-cols-3'}`}>
         {visibleCards.map((card: any, i: number) => (
           <StaggerItem key={card.key}>
             <PremiumStatCard

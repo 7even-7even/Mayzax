@@ -15,7 +15,7 @@ const adminNav = [
   { to: '/analytics', label: 'Analytics Hub', icon: BarChart3, gradient: 'from-mayzax-blue-500 to-mayzax-green-500', desc: 'Trends & heatmaps' },
   { to: '/recruiters', label: 'Team Management', icon: Users, gradient: 'from-mayzax-blue-600 to-mayzax-blue-800', desc: 'Users & roles' },
   { to: '/profiles', label: 'Client Vault', icon: UserSquare2, gradient: 'from-amber-500 to-orange-600', desc: 'Candidate profiles' },
-  { to: '/applications', label: 'Applications', icon: FileText, gradient: 'from-mayzax-green-500 to-mayzax-green-700', desc: 'Job submissions' },
+  { to: '/applications', label: 'Applications / Interviews', icon: FileText, gradient: 'from-mayzax-green-500 to-mayzax-green-700', desc: 'Job submissions' },
   { to: '/activity', label: 'Live Monitoring', icon: Activity, gradient: 'from-mayzax-green-600 to-emerald-700', desc: 'Shift tracking' },
   { to: '/profile', label: 'Profile', icon: UserCircle, gradient: 'from-slate-600 to-slate-800', desc: 'Account settings' },
 ];
@@ -63,7 +63,7 @@ export function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
     // Insert Onboarding Requests right after Team Management (index 3)
     rawNav.splice(3, 0, {
       to: '/admin/onboarding',
-      label: 'Onboard & Review',
+      label: 'Onboard / Review',
       icon: ShieldCheck,
       gradient: 'from-indigo-500 to-indigo-700',
       desc: 'Verify registrations',

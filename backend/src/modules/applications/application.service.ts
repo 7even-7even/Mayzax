@@ -107,6 +107,11 @@ export async function createApplication(input: CreateApplicationInput, actor: Re
       });
     }
 
+    if (verificationLog.isReplay) {
+      throw ApiError.badRequest('Invalid verification hash — possible replay attack', {
+        verificationHash: input.verificationHash,
+      });
+    }
 
     // Server is source of truth for verified status
     finalVerified = verificationLog.score > env.VERIFICATION_THRESHOLD;

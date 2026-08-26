@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, Pencil, Search, Target, Users, X, Sparkles, Zap, Trophy, Activity } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { usePermissions } from '@/hooks/use-permissions';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TableSkeleton } from '@/components/shared/table-skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
@@ -22,13 +22,14 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { useMyRecruiterStats, useUpdateMyTeamName } from '@/hooks/use-recruiters';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { apiClient } from '@/lib/api-client';
 
 import { PremiumPageHeader } from '@/components/shared/premium-page-header';
+import { InterviewsCalendar } from '@/components/shared/interviews-calendar';
 
 const sortOptions = [
   { value: 'currentShiftApplications', label: 'Current Applications' },
   { value: 'totalApplications', label: 'Total Applications' },
-  { value: 'currentShiftApplications', label: 'Current Applications' },
   { value: 'assignedProfiles', label: 'Assigned Profiles' },
   { value: 'name', label: 'Name' },
   { value: 'lastActiveAt', label: 'Last Active' },
@@ -88,7 +89,7 @@ function TlTeamCard() {
         <CardDescription className="text-xs dark:text-black/80">Team identity • Shift goals • Performance</CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4 flex-1 p-5">
+      <CardContent className="flex flex-col gap-4 flex-1 p-3">
         {isLoading ? (
           <div className="space-y-2">
             <Skeleton className="h-5 w-40 rounded-xl" />
@@ -149,13 +150,33 @@ function TlTeamCard() {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { isTeamLeader } = usePermissions();
+  const { isTeamLeader, isAdmin } = usePermissions();
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('totalApplications');
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [statsRecruiterId, setStatsRecruiterId] = useState<string | null>(null);
   const debouncedSearch = useDebounce(search);
+
+  const [allInterviews, setAllInterviews] = useState<any[]>([]);
+  const [isLoadingInterviews, setIsLoadingInterviews] = useState(false);
+
+  const fetchAllInterviews = async () => {
+    if (!isTeamLeader && !isAdmin) return;
+    setIsLoadingInterviews(true);
+    try {
+      const { data } = await apiClient.get('/applications/interviews');
+      setAllInterviews(data.data || []);
+    } catch (err) {
+      console.error('Failed to load interviews', err);
+    } finally {
+      setIsLoadingInterviews(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllInterviews();
+  }, []);
 
   const { data, isLoading, isError, refetch } = useDashboardOverview({
     search: debouncedSearch || undefined,
@@ -181,18 +202,56 @@ export default function DashboardPage() {
 
       <div className="space-y-6">
         {user?.role === 'TEAM_LEADER' ? (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 items-stretch">
-            <div className="lg:col-span-2 h-full">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-10 items-stretch">
+            <div className="h-full lg:col-span-5">
               <SummaryCards onShowRecruiterStats={setStatsRecruiterId} />
             </div>
-            <div className="h-full">
+            
+            <div className="h-full flex flex-col gap-2 lg:col-span-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex-1 flex flex-col">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-3">
+                  Interviews Schedule
+                </h4>
+                <div className="flex-1 flex items-center justify-center">
+                  <InterviewsCalendar
+                    interviews={allInterviews}
+                    isLoading={isLoadingInterviews}
+                    selectedDate={null}
+                    onDateSelect={() => {}}
+                    mini={true}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="h-full lg:col-span-2">
               <TlTeamCard />
             </div>
           </div>
         ) : (
-          <SummaryCards onShowRecruiterStats={setStatsRecruiterId} />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-8 items-stretch">
+            <div className="h-full lg:col-span-5">
+              <SummaryCards onShowRecruiterStats={setStatsRecruiterId} />
+            </div>
+            
+            <div className="h-full flex flex-col gap-2 lg:col-span-3">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex-1 flex flex-col">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-3">
+                  Interviews Schedule
+                </h4>
+                <div className="flex-1 flex items-center justify-center">
+                  <InterviewsCalendar
+                    interviews={allInterviews}
+                    isLoading={isLoadingInterviews}
+                    selectedDate={null}
+                    onDateSelect={() => {}}
+                    mini={true}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         )}
-        <LiveStatusCard />
       </div>
 
       <Reveal delay={0.15}>
@@ -243,10 +302,12 @@ export default function DashboardPage() {
                   <TableHeader>
                     <TableRow className="bg-slate-50/60 dark:bg-slate-850/60 dark:border-slate-800">
                       <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Recruiter</TableHead>
-                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Status</TableHead>
+                      {/* <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Status</TableHead> */}
                       <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Profiles</TableHead>
                       <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Total Apps</TableHead>
                       <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Current Shift</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Interview Calls</TableHead>
+                      <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Today's Calls</TableHead>
                       <TableHead className="font-semibold text-xs uppercase tracking-wider dark:text-slate-300">Last Active</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -264,6 +325,9 @@ export default function DashboardPage() {
           </div>
         </Card>
       </Reveal>
+
+      <LiveStatusCard />
+      
       <RecruiterStatsDialog recruiterId={statsRecruiterId} onOpenChange={(open) => !open && setStatsRecruiterId(null)} />
     </div>
   );

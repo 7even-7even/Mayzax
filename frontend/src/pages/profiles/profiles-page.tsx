@@ -72,6 +72,10 @@ export default function ProfilesPage() {
   const [interviewFormOpen, setInterviewFormOpen] = useState(false);
   const [editingInterview, setEditingInterview] = useState<any | null>(null);
 
+  const [interviewCalls, setInterviewCalls] = useState<any[]>([]);
+  const [isLoadingInterviewCalls, setIsLoadingInterviewCalls] = useState(false);
+  const [interviewCallFormOpen, setInterviewCallFormOpen] = useState(false);
+
   const fetchInterviews = async (profileId: string) => {
     setIsLoadingInterviews(true);
     try {
@@ -84,11 +88,25 @@ export default function ProfilesPage() {
     }
   };
 
+  const fetchInterviewCalls = async (profileId: string) => {
+    setIsLoadingInterviewCalls(true);
+    try {
+      const { data } = await apiClient.get(`/profiles/${profileId}/interview-calls`);
+      setInterviewCalls(data.data || []);
+    } catch (err) {
+      console.error('Failed to load interview calls', err);
+    } finally {
+      setIsLoadingInterviewCalls(false);
+    }
+  };
+
   useEffect(() => {
     if (viewingProfile?.id) {
       fetchInterviews(viewingProfile.id);
+      fetchInterviewCalls(viewingProfile.id);
     } else {
       setInterviews([]);
+      setInterviewCalls([]);
     }
   }, [viewingProfile?.id]);
 
@@ -311,7 +329,18 @@ export default function ProfilesPage() {
                       <Key className="h-4 w-4" /> Reset Password
                     </DropdownMenuItem>
                   )}
-                  {/* {(isAdmin || user?.role === 'TEAM_LEADER') && (
+                  {user?.role === 'RECRUITER' && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setSelectedProfileForInterview(profile);
+                        setInterviewCallFormOpen(true);
+                      }}
+                      className="gap-2 text-indigo-650 focus:text-indigo-700 font-medium"
+                    >
+                      <Phone className="h-4 w-4" /> Add Interview Calls
+                    </DropdownMenuItem>
+                  )}
+                  {(isAdmin || user?.role === 'TEAM_LEADER') && (
                     <DropdownMenuItem
                       onClick={() => {
                         setSelectedProfileForInterview(profile);
@@ -320,14 +349,14 @@ export default function ProfilesPage() {
                       }}
                       className="gap-2 text-indigo-700 focus:text-indigo-700"
                     >
-                      <Calendar className="h-4 w-4" /> Add Interview
+                      <Calendar className="h-4 w-4" /> Schedule Interview
                     </DropdownMenuItem>
                   )}
                   {isAdmin && (
-                    <DropdownMenuItem onClick={() => { setSelectedProfileForPayment(profile); setPaymentDialogOpen(true); }} className="gap-2 text-emerald-700 focus:text-indigo-700">
+                    <DropdownMenuItem onClick={() => { setSelectedProfileForPayment(profile); setPaymentDialogOpen(true); }} className="gap-2 text-emerald-700 focus:text-indigo-705">
                       <CreditCard className="h-4 w-4" /> Record Payment
                     </DropdownMenuItem>
-                  )} */}
+                  )}
                   {(isAdmin || user?.role === 'TEAM_LEADER') && profile.paymentBlocked && (
                     <DropdownMenuItem onClick={() => handleReactivateAccount(profile.id)} className="gap-2 text-emerald-600 focus:text-emerald-600">
                       <CheckCircle className="h-4 w-4" /> Reactivate Account
@@ -1055,6 +1084,51 @@ export default function ProfilesPage() {
                 )}
               </div>
 
+              {/* Interview Received Calls Section */}
+              <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50">
+                <div className="flex items-center justify-between border-b pb-2 mb-3">
+                  <h3 className="text-sm font-semibold text-slate-950 dark:text-white flex items-center gap-1.5">
+                    <Phone className="h-4 w-4 text-indigo-600" /> Logged Interview Calls
+                  </h3>
+                </div>
+
+                {isLoadingInterviewCalls ? (
+                  <div className="py-4 text-center text-xs text-slate-400">Loading interview calls...</div>
+                ) : interviewCalls.length > 0 ? (
+                  <div className="space-y-3 mt-2">
+                    {interviewCalls.map((call: any, idx: number) => (
+                      <div key={idx} className="p-3.5 border rounded-xl bg-white dark:bg-slate-800 space-y-1.5 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <div className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                            {call.companyName} • {call.position}
+                          </div>
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(call.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-slate-650 dark:text-slate-350">
+                          <div>
+                            <span className="text-slate-400">Caller Number:</span> <span className="font-medium">{call.number}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400">Caller/Interviewer:</span> <span className="font-medium">{call.callerName || 'N/A'}</span>
+                          </div>
+                        </div>
+                        {call.notes && (
+                          <div className="bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-lg text-xs text-slate-500 dark:text-slate-400 whitespace-pre-wrap">
+                            {call.notes}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-xs text-slate-400">
+                    No interview calls logged yet.
+                  </div>
+                )}
+              </div>
+
               {/* Merge History Log */}
               {Array.isArray(viewingProfile.mergeHistory) && viewingProfile.mergeHistory.length > 0 && (
                 <div className="rounded-xl border bg-slate-50/50 p-4 dark:bg-slate-900/50">
@@ -1135,6 +1209,20 @@ export default function ProfilesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {interviewCallFormOpen && selectedProfileForInterview && (
+        <InterviewCallFormDialog
+          open={interviewCallFormOpen}
+          onClose={() => {
+            setInterviewCallFormOpen(false);
+            setSelectedProfileForInterview(null);
+          }}
+          profileId={selectedProfileForInterview.id}
+          onSuccess={() => {
+            refetch();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -1535,4 +1623,129 @@ function InterviewFormDialog({
     </Dialog>
   );
 }
+
+function InterviewCallFormDialog({
+  open,
+  onClose,
+  profileId,
+  onSuccess
+}: {
+  open: boolean;
+  onClose: () => void;
+  profileId: string;
+  onSuccess: () => void;
+}) {
+  const [companyName, setCompanyName] = useState('');
+  const [position, setPosition] = useState('');
+  const [number, setNumber] = useState('');
+  const [callerName, setCallerName] = useState('');
+  const [notes, setNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!companyName.trim() || !position.trim() || !number.trim()) {
+      toast.error('Company Name, Position, and Number are required fields.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        companyName: companyName.trim(),
+        position: position.trim(),
+        number: number.trim(),
+        callerName: callerName.trim() || null,
+        notes: notes.trim() || null,
+      };
+
+      await apiClient.post(`/profiles/${profileId}/interview-calls`, payload);
+      toast.success('Interview call added successfully!');
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error?.message || 'Failed to save interview call details.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
+      <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6">
+        <DialogHeader className="pb-2 border-b">
+          <DialogTitle className="text-lg font-black text-slate-900 dark:text-white">
+            Add Interview Call Details
+          </DialogTitle>
+          <DialogDescription className="text-xs text-slate-400">
+            Log details of interview calls received by your assigned client.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4 pt-3">
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-500 uppercase">Company Name *</Label>
+            <Input
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="e.g. Google"
+              className="rounded-xl border-slate-200 bg-white dark:text-black"
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-500 uppercase">Position *</Label>
+            <Input
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
+              placeholder="e.g. Frontend Engineer"
+              className="rounded-xl border-slate-200 bg-white dark:text-black"
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-500 uppercase">Caller Number *</Label>
+            <Input
+              value={number}
+              onChange={(e) => setNumber(e.target.value)}
+              placeholder="e.g. +1 234 567 890"
+              className="rounded-xl border-slate-200 bg-white dark:text-black"
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-500 uppercase">Caller / Interviewer Name</Label>
+            <Input
+              value={callerName}
+              onChange={(e) => setCallerName(e.target.value)}
+              placeholder="e.g. Jane Smith"
+              className="rounded-xl border-slate-200 bg-white dark:text-black"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-bold text-slate-500 uppercase">Notes (optional)</Label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Enter details like next steps, scheduled dates, etc."
+              rows={3}
+              className="flex min-h-[80px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300 resize-none dark:text-black"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">Cancel</Button>
+            <Button type="submit" disabled={isSubmitting} className="rounded-xl bg-indigo-650 text-black hover:text-white font-bold hover:bg-indigo-700">
+              {isSubmitting ? 'Logging...' : 'Save Call Details'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 

@@ -142,6 +142,29 @@ export async function getDashboardOverview(query: DashboardQuery, actor: { id: s
     ),
   );
 
+  const allTimeInterviewCallsGrouped = await prisma.interviewCall.groupBy({
+    by: ['recruiterId'],
+    where: { recruiter: { isActive: true, deletedAt: null } },
+    _count: { _all: true },
+  });
+
+  const currentShiftInterviewCallsGrouped = await prisma.interviewCall.groupBy({
+    by: ['recruiterId'],
+    where: {
+      businessDate: businessDateFilter,
+      recruiter: { isActive: true, deletedAt: null },
+    },
+    _count: { _all: true },
+  });
+
+  const allTimeInterviewCallsMap = new Map<string, number>(
+    allTimeInterviewCallsGrouped.map((row) => [row.recruiterId, row._count._all])
+  );
+
+  const shiftInterviewCallsMap = new Map<string, number>(
+    currentShiftInterviewCallsGrouped.map((row) => [row.recruiterId, row._count._all])
+  );
+
   let rows = recruiters.map((r, index) => {
     const totalStats = calculateAdjustedCounts(allTimeRecruiterPortals.get(r.id) || []);
     const shiftStats = calculateAdjustedCounts(shiftRecruiterPortals.get(r.id) || []);
@@ -155,6 +178,8 @@ export async function getDashboardOverview(query: DashboardQuery, actor: { id: s
       ashbyRemainder: totalStats.ashbyRemainder,
       currentShiftApplications: shiftStats.total,
       ashbyShiftRemainder: shiftStats.ashbyRemainder,
+      totalInterviewCalls: allTimeInterviewCallsMap.get(r.id) || 0,
+      currentShiftInterviewCalls: shiftInterviewCallsMap.get(r.id) || 0,
       lastActiveAt: r.lastActiveAt,
     };
   });
@@ -203,7 +228,7 @@ export async function getRecruiterBreakdown(recruiterId: string, actor: { id: st
   const todayBusinessDate = getBusinessDateString(new Date());
   const businessDateFilter = new Date(`${todayBusinessDate}T00:00:00.000Z`);
 
-  const [assignedProfiles, totalProfileWise, currentShiftProfileWise, recentApplications] = await Promise.all([
+  const [assignedProfiles, totalProfileWise, currentShiftProfileWise, recentApplications, totalCallsWise, shiftCallsWise] = await Promise.all([
     prisma.clientProfile.findMany({
       where: {
         deletedAt: null,
@@ -231,6 +256,16 @@ export async function getRecruiterBreakdown(recruiterId: string, actor: { id: st
       take: 10,
       include: { profile: { select: { id: true, candidateName: true } } },
     }),
+    prisma.interviewCall.groupBy({
+      by: ['profileId'],
+      where: { recruiterId },
+      _count: { _all: true },
+    }),
+    prisma.interviewCall.groupBy({
+      by: ['profileId'],
+      where: { recruiterId, businessDate: businessDateFilter },
+      _count: { _all: true },
+    }),
   ]);
 
   const allTimeProfilePortals = new Map<string, { jobPortal: JobPortal; count: number }[]>();
@@ -247,6 +282,9 @@ export async function getRecruiterBreakdown(recruiterId: string, actor: { id: st
     shiftProfilePortals.set(row.profileId, list);
   }
 
+  const totalCallsMap = new Map<string, number>(totalCallsWise.map((row) => [row.profileId, row._count._all]));
+  const shiftCallsMap = new Map<string, number>(shiftCallsWise.map((row) => [row.profileId, row._count._all]));
+
   return {
     profileWiseCounts: assignedProfiles.map((profile) => {
       const totalStats = calculateAdjustedCounts(allTimeProfilePortals.get(profile.id) || []);
@@ -259,6 +297,8 @@ export async function getRecruiterBreakdown(recruiterId: string, actor: { id: st
         totalApplications: totalStats.total,
         currentShiftApplicationCount: shiftStats.total,
         currentShiftApplications: shiftStats.total,
+        totalInterviewCalls: totalCallsMap.get(profile.id) || 0,
+        currentShiftInterviewCalls: shiftCallsMap.get(profile.id) || 0,
       };
     }),
     recentApplications,

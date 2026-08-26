@@ -296,6 +296,28 @@
           ]
         }
       }
+    },
+    {
+      "name": "List Scheduled Interviews",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/applications/interviews",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "applications",
+            "interviews"
+          ]
+        }
+      }
     }
   ]
 }
