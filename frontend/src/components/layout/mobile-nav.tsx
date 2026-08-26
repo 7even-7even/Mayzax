@@ -7,27 +7,27 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const adminNav = [
   { to: '/dashboard', label: 'Command Center', icon: LayoutDashboard, desc: 'Real-time overview' },
-  { to: '/analytics', label: 'Analytics Hub', icon: BarChart3, desc: 'Trends & insights' },
-  { to: '/recruiters', label: 'Management', icon: Users, desc: 'Team & users' },
-  { to: '/profiles', label: 'Client Vault', icon: UserSquare2, desc: 'Candidates' },
-  { to: '/applications', label: 'Applications', icon: FileText, desc: 'Submissions' },
+  { to: '/analytics', label: 'Analytics Hub', icon: BarChart3, desc: 'Trends & heatmaps' },
+  { to: '/recruiters', label: 'Team Management', icon: Users, desc: 'Users & roles' },
+  { to: '/profiles', label: 'Client Vault', icon: UserSquare2, desc: 'Candidate profiles' },
+  { to: '/applications', label: 'Applications / Interviews', icon: FileText, desc: 'Job submissions' },
   { to: '/activity', label: 'Live Monitoring', icon: Activity, desc: 'Shift tracking' },
   { to: '/updates', label: 'Updates', icon: Bell, desc: 'Release notes' },
-  { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account' },
+  { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account settings' },
 ];
 const recruiterNav = [
   { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Your stats' },
-  { to: '/profiles', label: 'My Clients', icon: UserSquare2, desc: 'Assigned' },
+  { to: '/profiles', label: 'My Clients', icon: UserSquare2, desc: 'Assigned profiles' },
   { to: '/applications', label: 'Applications', icon: FileText, desc: 'Submissions' },
   { to: '/activity', label: 'Shift Tracking', icon: Activity, desc: 'Time tracking' },
   { to: '/updates', label: 'Updates', icon: Bell, desc: 'Announcements' },
-  { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account' },
+  { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Settings' },
 ];
 
 const companionNav = [
   { to: '/companion-dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Your status & timeline' },
   { to: '/updates', label: 'Updates', icon: Bell, desc: 'Announcements' },
-  { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account' },
+  { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Settings' },
 ];
 
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -38,20 +38,20 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
       { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Your stats' },
       { to: '/profiles', label: 'My Clients', icon: UserSquare2, desc: 'Assigned clients' },
       { to: '/updates', label: 'Updates', icon: Bell, desc: 'Announcements' },
-      { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account' },
+      { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Settings' },
     ];
   } else if (user?.role === 'SALES_EXEC') {
     rawNav = [
       { to: '/recruiter-dashboard', label: 'Dashboard', icon: LayoutDashboard, desc: 'Your stats' },
       { to: '/updates', label: 'Updates', icon: Bell, desc: 'Announcements' },
-      { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Account' },
+      { to: '/profile', label: 'Profile', icon: UserCircle, desc: 'Settings' },
     ];
   }
 // Admin Page: Onboarding Tab Uncommented.
   if (user?.role === 'ADMIN') {
     rawNav.splice(3, 0, {
       to: '/admin/onboarding',
-      label: 'Onboarding',
+      label: 'Onboard / Review',
       icon: ShieldCheck,
       desc: 'Verify registrations'
     });
@@ -77,6 +77,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
     }
     if (user?.role === 'ADMIN') {
       if (item.to === '/recruiters') return { ...item, label: 'User Management' };
+      if (item.to === '/profiles') return { ...item, label: 'Client Vault' };
       if (item.to === '/activity') return { ...item, label: 'Live Monitoring' };
     }
     return item;

@@ -211,6 +211,7 @@ model User {
 
   clientProfileId String?          @unique
   clientProfile   ClientProfile?   @relation("ClientUser", fields: [clientProfileId], references: [id], onDelete: SetNull)
+  interviewCalls  InterviewCall[]
 
   @@index([role])
   @@index([isActive])
@@ -431,6 +432,7 @@ model ClientProfile {
   changeRequests ClientProfileChangeRequest[]
   payments     ClientPayment[]
   interviews   Interview[]
+  interviewCalls InterviewCall[]
 
   @@index([assignedRecruiterId])
   @@index([assignedResumeAssistId])
@@ -737,6 +739,29 @@ model Interview {
   @@map("interviews")
 }
 
+model InterviewCall {
+  id           String        @id @default(uuid())
+  profileId    String
+  profile      ClientProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  recruiterId  String
+  recruiter    User          @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  
+  companyName  String
+  position     String
+  number       String        // caller number
+  callerName   String?       // interviewer/caller name
+  notes        String?       @db.Text
+  
+  businessDate DateTime      @db.Date
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([profileId])
+  @@index([recruiterId])
+  @@index([businessDate])
+  @@map("interview_calls")
+}
+
 model VerificationSession {
   id             String              @id @default(uuid())
   sessionId      String              @unique
@@ -811,3 +836,4 @@ model HiringPartnerRequest {
 
   @@map("hiring_partner_requests")
 }
+

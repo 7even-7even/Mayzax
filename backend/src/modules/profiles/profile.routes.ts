@@ -116,6 +116,8 @@ router.post(
   profileController.postPaymentDetails,
 );
 
+import * as interviewCallController from './interview-call.controller';
+
 // Interviews & Rounds Management
 router.get(
   '/:id/interviews',
@@ -137,6 +139,19 @@ router.delete(
   '/:id/interviews/:interviewId',
   requireRole(Role.ADMIN, Role.TEAM_LEADER),
   profileController.deleteInterview,
+);
+
+// Interview Received Calls (Recruiter role only)
+router.get(
+  '/:id/interview-calls',
+  validate({ params: idParamSchema }),
+  interviewCallController.getInterviewCalls,
+);
+router.post(
+  '/:id/interview-calls',
+  requireRole(Role.RECRUITER),
+  validate({ params: idParamSchema }),
+  interviewCallController.createInterviewCall,
 );
 
 export default router;

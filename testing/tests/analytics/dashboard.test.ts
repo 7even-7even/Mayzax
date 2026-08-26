@@ -17,6 +17,9 @@ vi.mock('../../../backend/src/lib/prisma', () => ({
       count: vi.fn(),
       findMany: vi.fn(),
     },
+    interviewCall: {
+      groupBy: vi.fn(),
+    },
   },
 }));
 
@@ -34,6 +37,7 @@ describe('Analytics - Dashboard Service', () => {
     ]);
     (prisma.jobApplication.groupBy as any).mockResolvedValue([]);
     (prisma.clientProfile.count as any).mockResolvedValue(5);
+    (prisma.interviewCall.groupBy as any).mockResolvedValue([]);
 
     const result = await analyticsService.getDashboardOverview(query, actor);
 

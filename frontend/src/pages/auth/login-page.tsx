@@ -264,7 +264,7 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              <div className="mt-7">
+              {/* <div className="mt-7">
                 <div className="relative flex items-center justify-center">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full h-px bg-slate-200" />
@@ -277,7 +277,7 @@ export default function LoginPage() {
                     Create account <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
-              </div>
+              </div> */}
 
               <div className="mt-6 flex items-center justify-center gap-4 text-[11px] text-slate-400">
                 <span className="flex items-center gap-1">
