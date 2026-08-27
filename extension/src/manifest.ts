@@ -59,11 +59,14 @@ const manifest = {
     },
   ],
 
-  permissions: ['storage', 'tabs', 'activeTab', 'scripting'],
+  permissions: ['storage'],
 
-  // Universal host permission — required to match the universal content_script.
-  // The actual filtering happens inside the content script via RecruitmentPageDetector.
-  host_permissions: ['https://*/*', 'http://*/*'],
+  // Narrow host permissions to backend API and app domains to avoid broad access policy issues.
+  host_permissions: [
+    'https://*.mayzax.app/*',
+    'https://*.mayzaxcrm.com/*',
+    'http://localhost/*'
+  ],
 
   // Allows the Mayzax frontend to send messages to this extension.
   externally_connectable: {
