@@ -71,7 +71,7 @@ function TlTeamCard() {
   };
 
   return (
-    <Card className="h-full flex flex-col border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
+    <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden relative">
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-mayzax-blue-600 to-mayzax-green-600" />
       <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
         <div className="flex items-center justify-between">
@@ -90,29 +90,29 @@ function TlTeamCard() {
         <CardDescription className="text-xs dark:text-black/80">Team identity • Shift goals • Performance</CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4 flex-1 p-3">
+      <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
         {isLoading ? (
-          <div className="space-y-2">
+          <div className="space-y-2 flex flex-col justify-center">
             <Skeleton className="h-5 w-40 rounded-xl" />
             <Skeleton className="h-4 w-24 rounded-xl" />
           </div>
         ) : editing ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 my-auto">
             <Input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') handleCancel(); }} placeholder="Enter team name..." className="h-9 text-sm rounded-xl" />
             <button onClick={handleSave} disabled={updateTeamName.isPending} className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white hover:bg-emerald-600"><Check className="h-4 w-4" /></button>
             <button onClick={handleCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200"><X className="h-4 w-4" /></button>
           </div>
         ) : (
-          <div>
-            <p className="text-base font-bold tracking-tight text-slate-900 flex items-center gap-2 dark:text-white">
+          <div className="flex flex-col justify-center">
+            <p className="text-lg font-bold tracking-tight text-slate-900 flex items-center gap-2 dark:text-white">
               {currentTeamName || <span className="italic text-slate-400 dark:text-white">No team name set</span>}
               {currentTeamName && <Sparkles className="h-3.5 w-3.5 text-violet-500 dark:text-white" />}
             </p>
-            <p className="text-xs text-slate-500 mt-1 dark:text-white/60"><span className="font-semibold text-slate-700 dark:text-white">{stats?.membersCount ?? 0}</span> team member{stats?.membersCount !== 1 ? 's' : ''} • Live roster</p>
+            <p className="text-sm text-slate-500 mt-1 dark:text-white/60"><span className="font-semibold text-slate-700 dark:text-white">{stats?.membersCount ?? 0}</span> team member{stats?.membersCount !== 1 ? 's' : ''} • Live roster</p>
           </div>
         )}
 
-        <div className="mt-auto rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-white p-4 space-y-3 shadow-inner">
+        <div className="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-white p-4 space-y-3 shadow-inner">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold tracking-wide uppercase text-slate-600">
               <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white">
@@ -202,57 +202,28 @@ export default function DashboardPage() {
       />
 
       <div className="space-y-6">
-        {user?.role === 'TEAM_LEADER' ? (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-10 items-stretch">
-            <div className="h-full lg:col-span-5">
-              <SummaryCards onShowRecruiterStats={setStatsRecruiterId} />
-            </div>
-            
-            <div className="h-full flex flex-col gap-2 lg:col-span-3">
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex-1 flex flex-col">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-3">
-                  Interviews Schedule
-                </h4>
-                <div className="flex-1 flex items-center justify-center">
-                  <InterviewsCalendar
-                    interviews={allInterviews}
-                    isLoading={isLoadingInterviews}
-                    selectedDate={null}
-                    onDateSelect={() => {}}
-                    mini={true}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="h-full lg:col-span-2">
-              <TlTeamCard />
-            </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-8 items-stretch">
+          <div className="h-full lg:col-span-5">
+            <SummaryCards onShowRecruiterStats={setStatsRecruiterId} />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-8 items-stretch">
-            <div className="h-full lg:col-span-5">
-              <SummaryCards onShowRecruiterStats={setStatsRecruiterId} />
-            </div>
-            
-            <div className="h-full flex flex-col gap-2 lg:col-span-3">
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex-1 flex flex-col">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-3">
-                  Interviews Schedule
-                </h4>
-                <div className="flex-1 flex items-center justify-center">
-                  <InterviewsCalendar
-                    interviews={allInterviews}
-                    isLoading={isLoadingInterviews}
-                    selectedDate={null}
-                    onDateSelect={() => {}}
-                    mini={true}
-                  />
-                </div>
+          
+          <div className="h-full flex flex-col gap-2 lg:col-span-3">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex-1 flex flex-col">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-3">
+                Interviews Schedule
+              </h4>
+              <div className="flex-1 flex items-center justify-center w-full">
+                <InterviewsCalendar
+                  interviews={allInterviews}
+                  isLoading={isLoadingInterviews}
+                  selectedDate={null}
+                  onDateSelect={() => {}}
+                  mini={true}
+                />
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       <Reveal delay={0.15}>
@@ -328,6 +299,12 @@ export default function DashboardPage() {
       </Reveal>
 
       <LiveStatusCard />
+
+      {user?.role === 'TEAM_LEADER' && (
+        <Reveal delay={0.2}>
+          <TlTeamCard />
+        </Reveal>
+      )}
       
       <RecruiterStatsDialog recruiterId={statsRecruiterId} onOpenChange={(open) => !open && setStatsRecruiterId(null)} />
     </div>
