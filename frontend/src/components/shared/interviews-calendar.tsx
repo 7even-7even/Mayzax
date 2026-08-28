@@ -55,6 +55,9 @@ export function InterviewsCalendar({
   for (let i = 1; i <= daysInMonth; i++) {
     calendarDays.push(new Date(currentYear, currentMonth, i));
   }
+  while (calendarDays.length < 42) {
+    calendarDays.push(null);
+  }
 
   const getInterviewsForDate = (date: Date) => {
     const compareStr = date.toISOString().slice(0, 10);
@@ -62,7 +65,7 @@ export function InterviewsCalendar({
   };
 
   return (
-    <div className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 ${mini ? 'max-w-md mx-auto' : ''}`}>
+    <div className={`w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 ${mini ? 'max-w-md mx-auto' : ''}`}>
       <div className="flex items-center justify-between border-b pb-3 mb-3">
         <div className="flex items-center gap-2">
           <Calendar className={`text-mayzax-blue-600 ${mini ? 'h-4 w-4' : 'h-5 w-5'}`} />
