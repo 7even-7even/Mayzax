@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (accessToken && (window as any).chrome?.runtime?.sendMessage) {
       const envId = import.meta.env.VITE_EXTENSION_ID as string | undefined;
-      const extId = envId ? envId.split(',')[0].trim() : 'ndbdagkdffkmiiepihahnebaojmooahm';
+      const extId = envId ? envId.split(',')[0].trim() : 'megkihjbidafcafpjhmgihgoohfhnlec';
       try {
         (window as any).chrome.runtime.sendMessage(extId, { action: 'SET_ACCESS_TOKEN', token: accessToken });
       } catch (e) {

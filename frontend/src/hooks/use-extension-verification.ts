@@ -66,8 +66,8 @@ interface UseExtensionVerificationReturn {
   evidence: VerificationEvidence | null;
 }
 
-const DEFAULT_EXTENSION_ID = 'ndbdagkdffkmiiepihahnebaojmooahm';
-const CHROME_WEBSTORE_URL = 'https://chrome.google.com/webstore'; // Replace with actual Chrome Web Store listing URL when published
+const DEFAULT_EXTENSION_ID = 'megkihjbidafcafpjhmgihgoohfhnlec';
+const CHROME_WEBSTORE_URL = 'https://chromewebstore.google.com/detail/mayzax-crm-%E2%80%94-application/megkihjbidafcafpjhmgihgoohfhnlec';
 
 function getExtensionId(): string {
   const envId = import.meta.env.VITE_EXTENSION_ID as string | undefined;
