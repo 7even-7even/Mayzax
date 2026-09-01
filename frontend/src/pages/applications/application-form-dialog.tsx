@@ -179,8 +179,8 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
 
 
   const onSubmit = async (values: ApplicationForm) => {
-    // Block submission if user is not ACTIVE
-    if (currentStatus !== 'ACTIVE') {
+    // Block submission if recruiter is not ACTIVE
+    if (user?.role === 'RECRUITER' && currentStatus !== 'ACTIVE') {
       setShowStatusWarning(true);
       return;
     }
