@@ -110,12 +110,40 @@ export async function setRecruiterActiveStatus(
 
   const updated = await repo.setActiveStatus(id, isActive);
 
-  // Sync client profile archive state
-  if (user.role === Role.CLIENT && user.clientProfileId) {
-    await prisma.clientProfile.update({
-      where: { id: user.clientProfileId },
-      data: { isArchived: !isActive },
+  // If recruiter is deactivated, remove their assignments from all client profiles
+  // and reassign primary assignedRecruiterId to the next active assigned recruiter (or null if none)
+  if (!isActive) {
+    // 1. Remove this deactivated recruiter from all multi-recruiter assignments
+    await prisma.clientProfileAssignment.deleteMany({
+      where: { recruiterId: id },
     });
+
+    // 2. Find profiles where this recruiter was the primary assigned recruiter
+    const profilesWithThisPrimary = await prisma.clientProfile.findMany({
+      where: { assignedRecruiterId: id, deletedAt: null },
+      include: {
+        assignedRecruiterAssignments: {
+          include: {
+            recruiter: {
+              select: { id: true, isActive: true, deletedAt: true },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
+    for (const profile of profilesWithThisPrimary) {
+      const nextActive = profile.assignedRecruiterAssignments.find(
+        (a) => a.recruiter && a.recruiter.isActive && !a.recruiter.deletedAt
+      );
+      await prisma.clientProfile.update({
+        where: { id: profile.id },
+        data: {
+          assignedRecruiterId: nextActive ? nextActive.recruiterId : null,
+        },
+      });
+    }
   }
 
   await writeAuditLog({
