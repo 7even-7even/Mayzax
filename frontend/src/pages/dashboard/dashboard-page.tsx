@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Check, Pencil, Search, Target, Users, X, Sparkles, Zap, Trophy, Activity } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -150,6 +151,7 @@ function TlTeamCard() {
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { isTeamLeader, isAdmin } = usePermissions();
   const [search, setSearch] = useState('');
@@ -207,17 +209,31 @@ export default function DashboardPage() {
             <SummaryCards onShowRecruiterStats={setStatsRecruiterId} />
           </div>
           
-          <div className="h-full flex flex-col gap-2 lg:col-span-3">
+            <div className="h-full flex flex-col gap-2 lg:col-span-3">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:bg-slate-900 dark:border-slate-800 flex-1 flex flex-col">
-              <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500 mb-3">
-                Interviews Schedule
-              </h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-slate-500">
+                  Interviews Schedule
+                </h4>
+                <button
+                  onClick={() => navigate('/applications?tab=interviews')}
+                  className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  View All →
+                </button>
+              </div>
               <div className="flex-1 flex items-center justify-center w-full">
                 <InterviewsCalendar
                   interviews={allInterviews}
                   isLoading={isLoadingInterviews}
                   selectedDate={null}
-                  onDateSelect={() => {}}
+                  onDateSelect={(d: Date) => {
+                    const year = d.getFullYear();
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const dateStr = `${year}-${month}-${day}`;
+                    navigate(`/applications?tab=interviews&date=${dateStr}&interviewDate=${dateStr}`);
+                  }}
                   mini={true}
                 />
               </div>
