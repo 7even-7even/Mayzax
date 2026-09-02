@@ -396,6 +396,15 @@ export async function getProfile(id: string, actor: Requester) {
   const profile = await repo.findActiveById(id);
   if (!profile) throw ApiError.notFound('Client profile not found');
 
+  if (actor.role === Role.CLIENT) {
+    const clientUser = await prisma.user.findFirst({
+      where: { id: actor.id, clientProfileId: id, deletedAt: null }
+    });
+    if (!clientUser) {
+      throw ApiError.forbidden('You do not have access to this profile');
+    }
+  }
+
   const assignedRecruiterIds = [
     ...(profile.assignedRecruiterId ? [profile.assignedRecruiterId] : []),
     ...(profile.assignedRecruiterAssignments?.map((row) => row.recruiterId) ?? []),
