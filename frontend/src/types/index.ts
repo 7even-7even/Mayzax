@@ -106,12 +106,12 @@ export interface ClientProfile {
 
   paymentBlocked?: boolean;
   assignedRecruiterId: string | null;
-  assignedRecruiter?: { id: string; name: string; email: string } | null;
+  assignedRecruiter?: { id: string; name: string; email: string; phone?: string | null; isActive?: boolean; deletedAt?: string | null } | null;
   assignedResumeAssistId?: string | null;
   assignedResumeAssist?: { id: string; name: string; email: string } | null;
   assignedRecruiterAssignments?: Array<{
     recruiterId: string;
-    recruiter: { id: string; name: string; email: string };
+    recruiter: { id: string; name: string; email: string; phone?: string | null; isActive?: boolean; deletedAt?: string | null };
   }>;
   isActive: boolean;
   isArchived?: boolean;
