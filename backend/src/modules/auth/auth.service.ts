@@ -119,6 +119,9 @@ export async function login(input: LoginInput, meta: SessionMeta) {
       clientProfile: {
         include: {
           assignedRecruiter: true,
+          assignedRecruiterAssignments: {
+            include: { recruiter: true },
+          },
         }
       }
     }
@@ -252,6 +255,9 @@ export async function getMe(userId: string) {
       clientProfile: {
         include: {
           assignedRecruiter: true,
+          assignedRecruiterAssignments: {
+            include: { recruiter: true },
+          },
         }
       },
     },
