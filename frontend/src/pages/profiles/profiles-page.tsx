@@ -393,18 +393,29 @@ export default function ProfilesPage() {
 
             <div className="mt-4 flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="flex -space-x-1.5 shrink-0">
-                  {(profile.assignedRecruiterAssignments?.length ? profile.assignedRecruiterAssignments : profile.assignedRecruiter ? [profile.assignedRecruiter] : []).map((a: any, idx: number) => (
-                    <div key={idx} title={a.recruiter?.name || a.name || '?'} className="flex h-6 w-6 items-center justify-center rounded-full bg-mayzax-gradient text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900">{(a.recruiter?.name || a.name || '?').charAt(0)}</div>
-                  ))}
-                </div>
-                <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate" title={profile.assignedRecruiterAssignments?.length ? profile.assignedRecruiterAssignments.map((a: any) => a.recruiter?.name || a.name || '?').join(', ') : profile.assignedRecruiter?.name || 'Unassigned'}>
-                  {profile.assignedRecruiterAssignments?.length
-                    ? profile.assignedRecruiterAssignments.map((a: any) => a.recruiter?.name || a.name || '?').join(', ')
-                    : profile.assignedRecruiter?.name
-                      ? profile.assignedRecruiter.name
-                      : 'Unassigned'}
-                </span>
+                {(() => {
+                  const rawList = profile.assignedRecruiterAssignments?.length
+                    ? profile.assignedRecruiterAssignments
+                    : profile.assignedRecruiter ? [profile.assignedRecruiter] : [];
+                  const activeList = rawList.filter((a: any) => {
+                    const r = a.recruiter || a;
+                    return r && r.isActive !== false && !r.deletedAt;
+                  });
+                  const displayNames = activeList.map((a: any) => a.recruiter?.name || a.name || '?').join(', ');
+
+                  return (
+                    <>
+                      <div className="flex -space-x-1.5 shrink-0">
+                        {activeList.map((a: any, idx: number) => (
+                          <div key={idx} title={a.recruiter?.name || a.name || '?'} className="flex h-6 w-6 items-center justify-center rounded-full bg-mayzax-gradient text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900">{(a.recruiter?.name || a.name || '?').charAt(0)}</div>
+                        ))}
+                      </div>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate" title={displayNames || 'Unassigned'}>
+                        {displayNames || 'Unassigned'}
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
               <span className="text-[11px] text-slate-400 flex items-center gap-1 shrink-0"><Briefcase className="h-3 w-3" /> View apps</span>
             </div>
