@@ -114,8 +114,16 @@ export function ProfileFormDialog({ open, onOpenChange, profile }: Props) {
               phone: profile.phone,
               technology: profile.technology,
               notes: profile.notes ?? '',
-              assignedRecruiterId: profile.assignedRecruiterId,
-              assignedRecruiterIds: profile.assignedRecruiterAssignments?.map((a) => a.recruiterId) ?? (profile.assignedRecruiterId ? [profile.assignedRecruiterId] : []),
+              assignedRecruiterId: profile.assignedRecruiter?.isActive !== false && !profile.assignedRecruiter?.deletedAt ? profile.assignedRecruiterId : null,
+              assignedRecruiterIds: (profile.assignedRecruiterAssignments?.length
+                ? profile.assignedRecruiterAssignments
+                : profile.assignedRecruiter ? [profile.assignedRecruiter] : []
+              )
+                .filter((a: any) => {
+                  const r = a.recruiter || a;
+                  return r && r.isActive !== false && !r.deletedAt;
+                })
+                .map((a: any) => a.recruiterId || a.id),
               assignedResumeAssistId: profile.assignedResumeAssistId ?? null,
               dateOfBirth: profile.dateOfBirth ?? '',
               gender: profile.gender ?? '',
