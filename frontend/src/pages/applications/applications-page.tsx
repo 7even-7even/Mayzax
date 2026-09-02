@@ -112,6 +112,9 @@ export default function ApplicationsPage() {
 
   const recruiterFilter = searchParams.get('recruiterId');
 
+  const tabFilter = searchParams.get('tab');
+  const interviewDateFilter = searchParams.get('interviewDate') || searchParams.get('date');
+
   const [fromDate, setFromDate] = useState<string>(fromFilter || dateFilter || '');
   const [toDate, setToDate] = useState<string>(toFilter || dateFilter || '');
   const [search, setSearch] = useState('');
@@ -127,10 +130,18 @@ export default function ApplicationsPage() {
   const debouncedSearch = useDebounce(search);
   const debouncedCompany = useDebounce(companyName);
 
-  const [activeTab, setActiveTab] = useState<'applications' | 'interviews'>('applications');
+  const [activeTab, setActiveTab] = useState<'applications' | 'interviews'>(() => {
+    return tabFilter === 'interviews' ? 'interviews' : 'applications';
+  });
   const [allInterviews, setAllInterviews] = useState<any[]>([]);
   const [isLoadingInterviews, setIsLoadingInterviews] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
+    if (interviewDateFilter) {
+      const d = new Date(interviewDateFilter + (interviewDateFilter.length === 10 ? 'T00:00:00' : ''));
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+  });
   const [scheduleInterviewOpen, setScheduleInterviewOpen] = useState(false);
 
   const fetchAllInterviews = async () => {
@@ -178,14 +189,29 @@ export default function ApplicationsPage() {
   }, [rawRecruiters, isTeamLeader, user]);
 
   useEffect(() => {
+    if (tabFilter === 'interviews') {
+      setActiveTab('interviews');
+    }
+  }, [tabFilter]);
+
+  useEffect(() => {
+    if (interviewDateFilter) {
+      const d = new Date(interviewDateFilter + (interviewDateFilter.length === 10 ? 'T00:00:00' : ''));
+      if (!isNaN(d.getTime())) {
+        setSelectedDate(d);
+      }
+    }
+  }, [interviewDateFilter]);
+
+  useEffect(() => {
     if (fromFilter || toFilter) {
       setFromDate(fromFilter || '');
       setToDate(toFilter || '');
-    } else if (dateFilter) {
+    } else if (dateFilter && tabFilter !== 'interviews') {
       setFromDate(dateFilter);
       setToDate(dateFilter);
     }
-  }, [dateFilter, fromFilter, toFilter]);
+  }, [dateFilter, fromFilter, toFilter, tabFilter]);
 
   useEffect(() => {
     if (recruiterFilter) {
