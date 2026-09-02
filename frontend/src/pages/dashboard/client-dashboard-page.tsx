@@ -33,6 +33,7 @@ import {
 
 export default function ClientDashboardPage() {
   const { user, logout } = useAuth();
+  const [liveProfile, setLiveProfile] = useState<any>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isLinkConfirmOpen, setIsLinkConfirmOpen] = useState(false);
   const [pendingLink, setPendingLink] = useState('');
@@ -40,7 +41,18 @@ export default function ClientDashboardPage() {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const clientProfile = user?.clientProfile;
+  const clientProfileId = user?.clientProfile?.id || user?.clientProfileId;
+
+  // Always fetch latest live client profile details
+  useEffect(() => {
+    if (clientProfileId) {
+      apiClient.get(`/profiles/${clientProfileId}`)
+        .then(({ data }) => setLiveProfile(data.data))
+        .catch(() => setLiveProfile(user?.clientProfile ?? null));
+    }
+  }, [clientProfileId, user?.clientProfile]);
+
+  const clientProfile = liveProfile ?? user?.clientProfile;
 
   const [educationList, setEducationList] = useState<any[]>([]);
   const [addressHistoryList, setAddressHistoryList] = useState<any[]>([]);
@@ -123,6 +135,8 @@ export default function ClientDashboardPage() {
 
   const [interviewsList, setInterviewsList] = useState<any[]>([]);
   const [isLoadingInterviews, setIsLoadingInterviews] = useState(false);
+  const [calendarDate, setCalendarDate] = useState<Date>(() => new Date());
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
 
   const fetchInterviews = async () => {
     if (!clientProfile?.id) return;
@@ -257,8 +271,20 @@ export default function ClientDashboardPage() {
     }
   }, [activeTab]);
 
-  // Recruiter info
-  const recruiter = clientProfile?.assignedRecruiter;
+  // Recruiter info: use primary assignedRecruiter if active, otherwise fallback to the first active recruiter from assignments
+  const recruiter = (() => {
+    const primary = clientProfile?.assignedRecruiter;
+    if (primary && primary.isActive !== false && !primary.deletedAt) {
+      return primary;
+    }
+    const activeAssigned = clientProfile?.assignedRecruiterAssignments?.find(
+      (a: any) => a.recruiter && a.recruiter.isActive !== false && !a.recruiter.deletedAt
+    );
+    if (activeAssigned?.recruiter) {
+      return activeAssigned.recruiter;
+    }
+    return null;
+  })();
 
   // Determine current placement progress step (1 to 4)
   // Step 1: Assessment (always done)
@@ -316,77 +342,76 @@ export default function ClientDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-slate-955 text-slate-800 dark:text-slate-100 flex flex-col font-sans transition-colors duration-300">
-
       {/* 1. TOP PORTAL HEADER */}
-      <header className="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-6 py-3.5 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <img src={mayzaxLogo} alt="Mayzax Solutions" className="h-8 w-8 rounded-lg bg-white p-1 shadow-md ring-1 ring-slate-200 dark:ring-slate-800" />
-          <div>
-            <span className="text-sm font-extrabold tracking-tight text-slate-900 dark:text-white uppercase">MAYZAX SOLUTIONS</span>
-            <span className="ml-1.5 text-xs font-bold text-emerald-500 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-full uppercase tracking-wider">Candidate Portal</span>
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-6 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <img src={mayzaxLogo} alt="Mayzax Solutions" className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-white p-1 shadow-md ring-1 ring-slate-200 dark:ring-slate-800 shrink-0" />
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs sm:text-sm font-extrabold tracking-tight text-slate-900 dark:text-white uppercase truncate">MAYZAX</span>
+              <span className="text-[10px] sm:text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0">Candidate Portal</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="text-right hidden sm:block">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="text-right hidden md:block">
             <p className="text-sm font-bold text-slate-900 dark:text-white">{user?.name}</p>
             <p className="text-[10px] font-bold text-indigo-650 dark:text-indigo-400 uppercase tracking-widest">{clientProfile?.planSelected ? `${clientProfile.planSelected} Tier` : 'BASIC TIER'}</p>
           </div>
           <button
             onClick={() => setIsProfileModalOpen(true)}
-            className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-sm font-black shadow-sm ring-2 ring-indigo-500/20 hover:scale-105 transition-transform duration-200"
+            className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white text-xs sm:text-sm font-black shadow-sm ring-2 ring-indigo-500/20 active:scale-95 hover:scale-105 transition-transform duration-200"
             title="View Profile Info"
           >
             {user?.name?.charAt(0)?.toUpperCase()}
           </button>
           <button
             onClick={logout}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-500/10 text-slate-500 hover:text-rose-500 transition duration-200"
+            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-rose-500/10 active:bg-rose-500/20 text-slate-500 hover:text-rose-500 transition duration-200"
             title="Log out"
           >
-            <LogOut className="h-4.5 w-4.5" />
+            <LogOut className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
           </button>
         </div>
       </header>
 
       {/* 2. BLUE GRADIENT BANNER WITH INTEGRATED TABS */}
-      <section className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white pt-10 pb-0 px-6 sm:px-12 md:px-16 relative overflow-hidden shadow-inner">
+      <section className="bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 text-white pt-6 sm:pt-10 pb-0 px-4 sm:px-8 md:px-16 relative overflow-hidden shadow-inner">
         {/* Glow Effects */}
         <div className="absolute -top-32 -left-32 h-[350px] w-[350px] rounded-full bg-indigo-500/10 blur-[100px] pointer-events-none" />
         <div className="absolute bottom-0 right-10 h-[300px] w-[300px] rounded-full bg-emerald-500/10 blur-[100px] pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto space-y-6 relative z-10">
-          <div className="space-y-2">
+        <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 relative z-10">
+          <div className="space-y-1 sm:space-y-2">
             <span className="text-[10px] font-bold text-emerald-400 tracking-[0.2em] uppercase">Welcome Back</span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Hello {user?.name?.split(' ')[0]}.</h1>
-            <p className="text-sm sm:text-base text-slate-300">Here is your placement progress.</p>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
+            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">Hello {user?.name?.split(' ')[0]}.</h1>
+            <p className="text-xs sm:text-base text-slate-300">Here is your placement progress.</p>
+            <p className="text-xs sm:text-sm text-slate-400">
               You are currently in <span className="text-emerald-400 font-bold">step {currentStep} of 4</span> — keep going!
             </p>
           </div>
 
-          {/* TAB ITEMS LAYOUT */}
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-4">
+          {/* TAB ITEMS LAYOUT - DESKTOP & SCROLLABLE MOBILE */}
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-3 sm:pt-4 -mx-4 px-4 sm:mx-0 sm:px-0">
             {([
               { id: 'overview', label: 'Overview', icon: Zap },
-              // { id: 'resumes', label: 'My Resumes', icon: FileText },
               { id: 'interviews', label: 'Interviews', icon: Calendar },
               { id: 'applications', label: 'Applications', icon: Briefcase },
-              // { id: 'payments', label: 'Payment History', icon: CreditCard },
               { id: 'updates', label: 'Updates', icon: MessageSquare },
-              { id: 'profile', label: 'Profile Settings', icon: User },
+              { id: 'profile', label: 'Profile', icon: User },
             ] as const).map((t) => {
               const Icon = t.icon;
               return (
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
-                  className={`flex items-center gap-2 rounded-t-2xl px-5 py-3 text-xs sm:text-sm font-bold transition-all whitespace-nowrap border-b-2 ${activeTab === t.id
-                    ? 'bg-[#f8fafc] text-black dark:bg-slate-950 text-indigo-750 dark:text-white border-indigo-500 font-extrabold shadow-sm'
-                    : 'text-slate-300 hover:text-white border-transparent hover:bg-white/5'
+                  className={`flex items-center gap-1.5 sm:gap-2 rounded-t-xl sm:rounded-t-2xl px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-bold transition-all whitespace-nowrap border-b-2 shrink-0 ${activeTab === t.id
+                    ? 'bg-[#f8fafc] text-black dark:bg-slate-955 text-indigo-750 dark:text-white border-indigo-500 font-extrabold shadow-sm'
+                    : 'text-slate-300 hover:text-white border-transparent hover:bg-white/5 active:bg-white/10'
                     }`}
                 >
-                  <Icon className={`h-4 w-4 ${activeTab === t.id ? 'text-indigo-650 dark:text-indigo-400' : 'text-slate-400'}`} />
+                  <Icon className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${activeTab === t.id ? 'text-indigo-650 dark:text-indigo-400' : 'text-slate-400'}`} />
                   {t.label}
                 </button>
               );
@@ -396,7 +421,7 @@ export default function ClientDashboardPage() {
       </section>
 
       {/* 3. CORE CONTENT BODY */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 md:p-8 pb-24 md:pb-8">
 
         {/* OVERVIEW PANEL */}
         {activeTab === 'overview' && (
@@ -618,7 +643,7 @@ export default function ClientDashboardPage() {
                         <p className="text-xs text-slate-400">Senior Career Advisor</p>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
+                    {/* <div className="flex flex-wrap items-center gap-2">
                       <a href={`mailto:${recruiter.email}`} className="flex items-center gap-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 dark:text-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 px-3.5 py-2 rounded-xl transition">
                         <Mail className="h-3.5 w-3.5 text-indigo-500" />
                         {recruiter.email}
@@ -629,7 +654,7 @@ export default function ClientDashboardPage() {
                           {recruiter.phone}
                         </a>
                       )}
-                    </div>
+                    </div> */}
                   </div>
                 ) : (
                   <div className="text-center py-4 text-slate-400 text-xs italic">
@@ -763,66 +788,216 @@ export default function ClientDashboardPage() {
                 <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-slate-950/10">
                   {/* Calendar Header */}
                   <div className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-5 py-3 flex items-center justify-between text-sm">
-                    <span className="font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
-                      {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                    </span>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><ChevronLeft className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><ChevronRight className="h-4 w-4" /></Button>
+                    <div className="flex items-center gap-3">
+                      <span className="font-extrabold text-slate-800 dark:text-white uppercase tracking-wider">
+                        {calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </span>
+                      {selectedCalendarDate && (
+                        <span className="inline-flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                          Filtered: {selectedCalendarDate}
+                          <button
+                            onClick={() => setSelectedCalendarDate(null)}
+                            className="hover:text-rose-500 font-extrabold text-xs ml-1"
+                            title="Clear date filter"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setCalendarDate(new Date());
+                          setSelectedCalendarDate(null);
+                        }}
+                        className="h-8 px-3 text-xs font-bold rounded-xl mr-1"
+                      >
+                        Today
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1));
+                          setSelectedCalendarDate(null);
+                        }}
+                        className="h-8 w-8 rounded-full"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1));
+                          setSelectedCalendarDate(null);
+                        }}
+                        className="h-8 w-8 rounded-full"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  {/* Days grid */}
+
+                  {/* Days of week header */}
                   <div className="grid grid-cols-7 border-b border-slate-100 dark:border-slate-850 bg-slate-100/40 dark:bg-slate-900/30 text-center text-[10px] font-black tracking-widest text-slate-400 py-1.5">
                     <span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span>
                   </div>
-                  <div className="grid grid-cols-7 text-[11px] font-bold text-slate-500">
-                    {/* Month cells with events */}
-                    {Array.from({ length: 31 }, (_, i) => {
-                      const day = i + 1;
-                      const dayInterviews = interviewsList.filter((item) => {
-                        if (!item.date) return false;
-                        const itemDate = new Date(item.date);
-                        return itemDate.getDate() === day && itemDate.getMonth() === new Date().getMonth();
-                      });
-                      return (
-                        <div key={i} className="min-h-[75px] border-r border-b border-slate-150 dark:border-slate-850 p-1 flex flex-col justify-between bg-white dark:bg-slate-900 hover:bg-slate-50/60 transition">
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit ${day === new Date().getDate() ? 'bg-indigo-650 text-white font-extrabold' : 'text-slate-400'
-                            }`}>{day}</span>
 
-                          <div className="space-y-1">
-                            {dayInterviews.map((item, idx) => (
-                              <div key={idx} className="bg-emerald-500/10 border-l-2 border-emerald-500 p-1 rounded text-[9px] text-emerald-650 dark:text-emerald-450 leading-tight">
-                                <p className="font-extrabold truncate">{item.roundName}</p>
-                                <p className="opacity-90 truncate">{item.startTime}</p>
-                              </div>
-                            ))}
+                  {/* Calendar day cells */}
+                  <div className="grid grid-cols-7 text-[11px] font-bold text-slate-500">
+                    {(() => {
+                      const year = calendarDate.getFullYear();
+                      const month = calendarDate.getMonth();
+                      const firstDayIndex = new Date(year, month, 1).getDay();
+                      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                      const cells = [];
+
+                      // Empty padding for previous month offset
+                      for (let p = 0; p < firstDayIndex; p++) {
+                        cells.push(
+                          <div key={`pad-${p}`} className="min-h-[85px] border-r border-b border-slate-150 dark:border-slate-850 p-1 bg-slate-50/40 dark:bg-slate-950/40 opacity-40" />
+                        );
+                      }
+
+                      // Actual days in the month
+                      for (let day = 1; day <= daysInMonth; day++) {
+                        const cellDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const dayInterviews = interviewsList.filter((item) => {
+                          if (!item.date) return false;
+                          const d = new Date(item.date);
+                          return d.getFullYear() === year && d.getMonth() === month && d.getDate() === day;
+                        });
+
+                        const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+                        const isSelected = selectedCalendarDate === cellDateStr;
+
+                        cells.push(
+                          <div
+                            key={`day-${day}`}
+                            onClick={() => {
+                              setSelectedCalendarDate(selectedCalendarDate === cellDateStr ? null : cellDateStr);
+                            }}
+                            className={`min-h-[85px] border-r border-b border-slate-150 dark:border-slate-850 p-1.5 flex flex-col justify-between transition cursor-pointer group ${
+                              isSelected
+                                ? 'bg-indigo-50/80 dark:bg-indigo-950/30 ring-2 ring-indigo-500 z-10'
+                                : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850'
+                            }`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <span
+                                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit ${
+                                  isToday
+                                    ? 'bg-indigo-650 text-white font-extrabold'
+                                    : isSelected
+                                      ? 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-650 dark:text-indigo-300 font-extrabold'
+                                      : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200'
+                                }`}
+                              >
+                                {day}
+                              </span>
+                              {dayInterviews.length > 0 && (
+                                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                              )}
+                            </div>
+
+                            <div className="space-y-1 my-1">
+                              {dayInterviews.map((item, idx) => (
+                                <div
+                                  key={idx}
+                                  title={`${item.roundName} • ${item.startTime || ''} (${item.interviewer || 'N/A'})`}
+                                  className="bg-emerald-500/10 hover:bg-emerald-500/20 border-l-2 border-emerald-500 p-1 rounded text-[9px] text-emerald-650 dark:text-emerald-450 leading-tight transition"
+                                >
+                                  <p className="font-extrabold truncate">{item.roundName}</p>
+                                  <p className="opacity-90 truncate">{item.startTime}</p>
+                                </div>
+                              ))}
+                            </div>
+                            <div />
                           </div>
-                          <div />
-                        </div>
-                      );
-                    })}
+                        );
+                      }
+
+                      return cells;
+                    })()}
                   </div>
                 </div>
 
                 {/* Timeline view */}
                 <div className="space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Scheduled Stages</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                      {selectedCalendarDate
+                        ? `Interviews Scheduled on ${new Date(selectedCalendarDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                        : `Scheduled Stages for ${calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`}
+                    </h3>
+                    {selectedCalendarDate && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedCalendarDate(null)}
+                        className="text-xs font-bold text-indigo-600 dark:text-indigo-400 h-7"
+                      >
+                        Show Full Month
+                      </Button>
+                    )}
+                  </div>
+
                   <div className="relative border-l border-slate-200 dark:border-slate-800 pl-5 ml-2.5 space-y-5">
                     {isLoadingInterviews ? (
                       <div className="text-xs text-slate-400">Loading scheduled stages...</div>
-                    ) : interviewsList.length > 0 ? (
-                      interviewsList.map((item: any, idx: number) => {
+                    ) : (() => {
+                      const curYear = calendarDate.getFullYear();
+                      const curMonth = calendarDate.getMonth();
+
+                      const filteredInterviews = interviewsList.filter((item: any) => {
+                        if (!item.date) return false;
+                        const d = new Date(item.date);
+                        if (selectedCalendarDate) {
+                          const dateParts = selectedCalendarDate.split('-');
+                          return (
+                            d.getFullYear() === Number(dateParts[0]) &&
+                            d.getMonth() + 1 === Number(dateParts[1]) &&
+                            d.getDate() === Number(dateParts[2])
+                          );
+                        }
+                        return d.getFullYear() === curYear && d.getMonth() === curMonth;
+                      });
+
+                      if (filteredInterviews.length === 0) {
+                        return (
+                          <div className="p-6 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 text-center space-y-1">
+                            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
+                              {selectedCalendarDate
+                                ? `No interviews scheduled for ${new Date(selectedCalendarDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}.`
+                                : `No interviews scheduled for ${calendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}.`}
+                            </p>
+                            <p className="text-xs text-slate-400">
+                              Your recruiters and career advisors will post updates as new rounds are confirmed.
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      return filteredInterviews.map((item: any, idx: number) => {
                         const borderCol = idx % 2 === 0 ? 'border-emerald-500' : 'border-indigo-500';
-                        const badgeCol = item.status === 'Completed'
-                          ? 'text-emerald-500 bg-emerald-500/10'
-                          : item.status === 'Cancelled'
-                            ? 'text-rose-500 bg-rose-500/10'
-                            : 'text-indigo-650 bg-indigo-500/10';
+                        const badgeCol =
+                          item.status === 'Completed'
+                            ? 'text-emerald-500 bg-emerald-500/10'
+                            : item.status === 'Cancelled'
+                              ? 'text-rose-500 bg-rose-500/10'
+                              : 'text-indigo-650 bg-indigo-500/10';
 
                         const btnCol = idx % 2 === 0 ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-650 hover:bg-indigo-755';
 
                         // Parse readable date
-                        const readableDate = item.date ? new Date(item.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A';
+                        const readableDate = item.date
+                          ? new Date(item.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+                          : 'N/A';
 
                         return (
                           <div key={idx} className="relative">
@@ -833,7 +1008,9 @@ export default function ClientDashboardPage() {
                                   {item.status}
                                 </span>
                                 <h4 className="text-sm font-extrabold text-slate-950 dark:text-white mt-1.5">{item.roundName}</h4>
-                                <p className="text-xs text-slate-500 mt-1">Interviewer: <span className="font-semibold">{item.interviewer || 'N/A'}</span> • Mode: <span className="font-semibold">{item.mode || 'N/A'}</span></p>
+                                <p className="text-xs text-slate-500 mt-1">
+                                  Interviewer: <span className="font-semibold">{item.interviewer || 'N/A'}</span> • Mode: <span className="font-semibold">{item.mode || 'N/A'}</span>
+                                </p>
                                 <p className="text-xs text-slate-450 mt-0.5 flex items-center gap-1.5">
                                   <Calendar className="h-3.5 w-3.5 text-indigo-500" /> {readableDate} • {item.startTime} - {item.endTime} ({item.timezone})
                                 </p>
@@ -846,10 +1023,8 @@ export default function ClientDashboardPage() {
                             </div>
                           </div>
                         );
-                      })
-                    ) : (
-                      <div className="text-sm text-slate-400 py-4">No interviews scheduled yet.</div>
-                    )}
+                      });
+                    })()}
                   </div>
                 </div>
               </CardContent>
@@ -861,9 +1036,9 @@ export default function ClientDashboardPage() {
         {activeTab === 'applications' && (
           <div className="space-y-6 animate-fadeIn">
             <Card className="border-slate-200/60 dark:border-slate-800 shadow-sm rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
-              <CardHeader className="border-b border-slate-100 dark:border-slate-800 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <CardHeader className="border-b border-slate-100 dark:border-slate-800 px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650 flex items-center justify-center">
+                  <div className="h-8 w-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650 flex items-center justify-center shrink-0">
                     <Briefcase className="h-4.5 w-4.5" />
                   </div>
                   <div>
@@ -871,17 +1046,17 @@ export default function ClientDashboardPage() {
                     <CardDescription className="text-xs">Monitor the real-time application pipelines run by your career advisors</CardDescription>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Input
-                    placeholder="Search company or title..."
-                    className="max-w-[220px] h-9 text-xs rounded-xl bg-slate-55 focus:bg-white border-slate-200"
+                    placeholder="Search portal / role..."
+                    className="flex-1 sm:w-[200px] h-9 text-xs rounded-xl bg-slate-50 focus:bg-white border-slate-200"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
                       setPage(1);
                     }}
                   />
-                  <Button size="sm" onClick={() => refetch()} className="rounded-xl h-9 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 border-0">Refresh</Button>
+                  <Button size="sm" onClick={() => refetch()} className="rounded-xl h-9 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 border-0 shrink-0">Refresh</Button>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -891,13 +1066,12 @@ export default function ClientDashboardPage() {
                   <div className="py-12"><EmptyState title="No applications log found" description="We haven't submitted any job applications on your behalf yet." /></div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="overflow-x-auto">
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
                       <Table>
                         <TableHeader className="bg-slate-50/60 dark:bg-slate-900">
                           <TableRow>
-                            {/* <TableHead className="font-semibold text-xs pl-6">Company</TableHead> */}
-                            {/* <TableHead className="font-semibold text-xs">Job Title</TableHead> */}
-                            <TableHead className="font-semibold text-xs">Portal</TableHead>
+                            <TableHead className="font-semibold text-xs pl-6">Portal</TableHead>
                             <TableHead className="font-semibold text-xs">Date Applied</TableHead>
                             <TableHead className="font-semibold text-xs">Status</TableHead>
                             <TableHead className="font-semibold text-xs pr-6">Job Link</TableHead>
@@ -906,9 +1080,7 @@ export default function ClientDashboardPage() {
                         <TableBody>
                           {applications.map((app) => (
                             <TableRow key={app.id} className="hover:bg-slate-50/30 dark:hover:bg-slate-800/30">
-                              {/* <TableCell className="font-bold text-slate-900 dark:text-white pl-6">{app.companyName}</TableCell> */}
-                              {/* <TableCell className="text-xs font-semibold">{app.jobTitle}</TableCell> */}
-                              <TableCell>
+                              <TableCell className="pl-6">
                                 <Badge variant="outline" className="text-[10px] tracking-wide font-bold">{formatEnumLabel(app.jobPortal)}</Badge>
                               </TableCell>
                               <TableCell className="text-xs text-slate-500">{formatDateTime(app.appliedAt)}</TableCell>
@@ -947,6 +1119,52 @@ export default function ClientDashboardPage() {
                           ))}
                         </TableBody>
                       </Table>
+                    </div>
+
+                    {/* Mobile Card List View */}
+                    <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                      {applications.map((app) => (
+                        <div key={app.id} className="p-4 space-y-2.5 bg-white dark:bg-slate-900">
+                          <div className="flex items-center justify-between gap-2">
+                            <Badge variant="outline" className="text-[10px] tracking-wide font-bold">
+                              {formatEnumLabel(app.jobPortal)}
+                            </Badge>
+                            <Badge
+                              className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider ${app.status === 'OFFERED'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-450'
+                                : app.status === 'REJECTED'
+                                  ? 'bg-red-50 text-red-750 border-red-250 dark:bg-red-950/20 dark:text-red-400'
+                                  : app.status.startsWith('INTERVIEW')
+                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-250 dark:bg-indigo-950/20 dark:text-indigo-400'
+                                    : 'bg-slate-50 text-slate-655 border-slate-200 dark:bg-slate-800 dark:text-slate-350'
+                                }`}
+                            >
+                              {formatEnumLabel(app.status)}
+                            </Badge>
+                          </div>
+
+                          <div className="flex items-center justify-between text-xs pt-1">
+                            <span className="text-slate-400 text-[11px] flex items-center gap-1">
+                              <Calendar className="h-3 w-3" /> {formatDateTime(app.appliedAt)}
+                            </span>
+                            {app.jobLink ? (
+                              <a
+                                href={app.jobLink}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setPendingLink(app.jobLink);
+                                  setIsLinkConfirmOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 font-bold text-indigo-600 dark:text-indigo-400 text-xs hover:underline bg-indigo-50 dark:bg-indigo-950/30 px-2.5 py-1 rounded-lg"
+                              >
+                                View Post →
+                              </a>
+                            ) : (
+                              <span className="text-slate-400 text-[11px]">—</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
 
                     {pagination && pagination.totalPages > 1 && (
@@ -1389,14 +1607,14 @@ export default function ClientDashboardPage() {
                       <Label className="text-[10px] font-bold text-slate-500 uppercase">Selected Plan</Label>
                       <Input readOnly value={clientProfile?.planSelected ?? 'Basic'} className="rounded-xl border-slate-200 bg-slate-100/50 text-slate-700 dark:text-slate-300 text-xs h-9.5 font-bold" />
                     </div>
-                    <div className="space-y-1">
+                    {/* <div className="space-y-1">
                       <Label className="text-[10px] font-bold text-slate-500 uppercase">Total Amount Paid</Label>
                       <Input readOnly value={`$${clientProfile?.amountPaid ?? 1500}`} className="rounded-xl border-slate-200 bg-slate-100/50 text-slate-700 dark:text-slate-300 text-xs h-9.5 font-bold" />
-                    </div>
-                    <div className="space-y-1">
+                    </div> */}
+                    {/* <div className="space-y-1">
                       <Label className="text-[10px] font-bold text-slate-500 uppercase">Reference ID</Label>
                       <Input readOnly value={clientProfile?.paymentRef ?? 'N/A'} className="rounded-xl border-slate-200 bg-slate-100/50 text-slate-500 text-xs h-9.5" />
-                    </div>
+                    </div> */}
 
                     {clientProfile?.planSelected !== 'Premium' && (
                       <Button
@@ -1445,12 +1663,12 @@ export default function ClientDashboardPage() {
                         {clientProfile.planSelected === 'Basic' ? (
                           <>
                             <li>Gold: 100-150 applications</li>
-                            <li>Price: $2,500</li>
+                            {/* <li>Price: $2,500</li> */}
                           </>
                         ) : (
                           <>
                             <li>Premium: 150-200 applications</li>
-                            <li>Price: $3,500</li>
+                            {/* <li>Price: $3,500</li> */}
                           </>
                         )}
                       </ul>
@@ -1723,6 +1941,39 @@ export default function ClientDashboardPage() {
         </Dialog>
 
       </main>
+
+      {/* 4. BOTTOM MOBILE NAVIGATION BAR (Sticky for Mobile Screen) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-2 py-1.5 shadow-lg flex items-center justify-around">
+        {([
+          { id: 'overview', label: 'Overview', icon: Zap },
+          { id: 'interviews', label: 'Interviews', icon: Calendar },
+          { id: 'applications', label: 'Apps', icon: Briefcase },
+          { id: 'updates', label: 'Updates', icon: MessageSquare },
+          { id: 'profile', label: 'Profile', icon: User },
+        ] as const).map((t) => {
+          const Icon = t.icon;
+          const isActive = activeTab === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => {
+                setActiveTab(t.id);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className={`flex flex-col items-center justify-center flex-1 py-1 rounded-xl transition ${
+                isActive
+                  ? 'text-indigo-600 dark:text-indigo-400 font-extrabold'
+                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 font-medium'
+              }`}
+            >
+              <div className={`p-1 rounded-lg transition ${isActive ? 'bg-indigo-50 dark:bg-indigo-950/50' : ''}`}>
+                <Icon className={`h-5 w-5 ${isActive ? 'stroke-[2.5]' : 'stroke-2'}`} />
+              </div>
+              <span className="text-[10px] mt-0.5">{t.label}</span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }
