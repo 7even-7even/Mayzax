@@ -6,7 +6,7 @@ import { isProduction } from '@/config/env';
 // to be generated (which depends on `prisma generate` after a schema migration).
 // At runtime Prisma is fully functional.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let instance: any;
+const globalForPrisma = globalThis as unknown as { __prisma__?: any };
 
 function createPrisma(): any {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,8 +16,9 @@ function createPrisma(): any {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const prisma: any = instance ?? createPrisma();
+export const prisma: any = globalForPrisma.__prisma__ ?? createPrisma();
 
 if (!isProduction) {
-  (globalThis as any).__prisma__ = prisma;
+  globalForPrisma.__prisma__ = prisma;
 }
+
