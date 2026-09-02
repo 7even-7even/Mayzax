@@ -6,10 +6,10 @@ export function findActiveById(id: string) {
   return prisma.clientProfile.findFirst({
     where: { id, deletedAt: null },
     include: {
-      assignedRecruiter: { select: { id: true, name: true, email: true } },
+      assignedRecruiter: { select: { id: true, name: true, email: true, phone: true, isActive: true, deletedAt: true } },
       assignedResumeAssist: { select: { id: true, name: true, email: true } },
       assignedRecruiterAssignments: {
-        include: { recruiter: { select: { id: true, name: true, email: true } } },
+        include: { recruiter: { select: { id: true, name: true, email: true, phone: true, isActive: true, deletedAt: true } } },
       },
     },
   });
@@ -160,10 +160,10 @@ export function list(query: ListProfilesQuery, requester: { id: string; role: Ro
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
       include: {
-        assignedRecruiter: { select: { id: true, name: true, email: true } },
+        assignedRecruiter: { select: { id: true, name: true, email: true, phone: true, isActive: true, deletedAt: true } },
         assignedResumeAssist: { select: { id: true, name: true, email: true } },
         assignedRecruiterAssignments: {
-          include: { recruiter: { select: { id: true, name: true, email: true } } },
+          include: { recruiter: { select: { id: true, name: true, email: true, phone: true, isActive: true, deletedAt: true } } },
         },
       },
     }),
