@@ -108,15 +108,15 @@ export function JobPortalAnalyticsCard({
 
   return (
     <Reveal delay={0.1}>
-      <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden ">
-        <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white ">
+      <Card className="border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden">
+        <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50/80 to-white dark:from-slate-850 dark:to-slate-900">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 text-white shadow-md">
                 <BarChart3 className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold flex items-center gap-2 dark:text-black">
+                <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
                   {title}
                   {topPortal && (
                     <Badge className="bg-gradient-to-r from-amber-400 to-orange-500 text-white border-0 text-[10px] shadow-sm">
@@ -125,13 +125,13 @@ export function JobPortalAnalyticsCard({
                     </Badge>
                   )}
                 </CardTitle>
-                <CardDescription className="text-xs mt-0.5 dark:text-black">{description} • {rangeLabel}</CardDescription>
+                <CardDescription className="text-xs mt-0.5 text-slate-500 dark:text-slate-400">{description} • {rangeLabel}</CardDescription>
                 <div className="mt-2 flex items-center gap-2 text-xs">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-white px-2.5 py-1 font-semibold shadow-sm">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 dark:bg-slate-800 text-white px-2.5 py-1 font-semibold shadow-sm">
                     <Zap className="h-3 w-3" />
                     {totalApps} applications
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 border border-violet-200 px-2 py-1 font-medium text-violet-700">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 px-2 py-1 font-medium text-violet-700 dark:text-violet-300">
                     <Sparkles className="h-3 w-3" />
                     {chartData.length} active portals
                   </span>
@@ -154,15 +154,15 @@ export function JobPortalAnalyticsCard({
               </div>
 
               {scope === 'custom' && (
-                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap gap-2 bg-white border border-slate-200 rounded-xl p-2 shadow-sm">
-                  <div className="flex items-center gap-1 text-xs text-slate-500">
+                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 shadow-sm">
+                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                     <Filter className="h-3 w-3" />
                     From
-                    <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-7 w-32 text-xs" />
+                    <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-7 w-32 text-xs dark:bg-slate-900 dark:text-white dark:border-slate-700" />
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-slate-500">
+                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                     To
-                    <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-7 w-32 text-xs" />
+                    <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-7 w-32 text-xs dark:bg-slate-900 dark:text-white dark:border-slate-700" />
                   </div>
                 </motion.div>
               )}
@@ -193,10 +193,10 @@ export function JobPortalAnalyticsCard({
             <div className="grid grid-cols-1 gap-0 xl:grid-cols-[1fr_300px]">
               {/* Chart */}
               <div className="p-4 sm:p-6">
-                <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-3 sm:p-4 shadow-inner">
+                <div className="rounded-xl border border-slate-200/60 dark:border-slate-800 bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-850/50 dark:to-slate-900 p-3 sm:p-4 shadow-inner">
                   <ResponsiveContainer width="100%" height={420}>
                     <BarChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 60 }} barCategoryGap="28%">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" vertical={false} />
                       <XAxis
                         dataKey="portal"
                         tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }}
@@ -209,19 +209,19 @@ export function JobPortalAnalyticsCard({
                       />
                       <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} allowDecimals={false} axisLine={false} tickLine={false} />
                       <Tooltip
-                        cursor={{ fill: '#f8fafc', radius: 8 }}
+                        cursor={{ fill: 'currentColor', className: 'text-slate-100/50 dark:text-slate-800/40', radius: 8 }}
                         content={({ active, payload }) => {
                           if (!active || !payload?.length) return null;
                           const d = payload[0].payload;
                           return (
-                            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xl min-w-[160px]">
-                              <p className="text-xs font-semibold text-slate-900 flex items-center gap-2">
+                            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 shadow-xl min-w-[160px]">
+                              <p className="text-xs font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: d.color }} />
                                 {d.portal}
                               </p>
-                              <p className="mt-1 text-lg font-bold text-slate-900">{d.applications} apps</p>
-                              <p className="text-[11px] text-slate-500">{((d.applications / totalApps) * 100).toFixed(1)}% of total</p>
-                              <div className="mt-2 h-1 w-full rounded-full bg-slate-100 overflow-hidden">
+                              <p className="mt-1 text-lg font-bold text-slate-900 dark:text-white">{d.applications} apps</p>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400">{((d.applications / totalApps) * 100).toFixed(1)}% of total</p>
+                              <div className="mt-2 h-1 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                                 <div className="h-full rounded-full" style={{ width: `${(d.applications / (topPortal?.applications || 1)) * 100}%`, background: d.color }} />
                               </div>
                             </div>
@@ -232,8 +232,8 @@ export function JobPortalAnalyticsCard({
                         {chartData.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
-                            fill={selectedPortal === entry.rawPortal ? '#0f172a' : entry.color}
-                            stroke={selectedPortal === entry.rawPortal ? '#0f172a' : 'none'}
+                            fill={selectedPortal === entry.rawPortal ? '#3b82f6' : entry.color}
+                            stroke={selectedPortal === entry.rawPortal ? '#3b82f6' : 'none'}
                             strokeWidth={selectedPortal === entry.rawPortal ? 2 : 0}
                             style={{ filter: selectedPortal === entry.rawPortal ? 'brightness(1.1)' : undefined, cursor: 'pointer' }}
                           />
@@ -245,7 +245,7 @@ export function JobPortalAnalyticsCard({
                             const { x, y, width, value } = props;
                             if (!value) return null;
                             return (
-                              <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={11} fontWeight={700} fill="#334155">
+                              <text x={x + width / 2} y={y - 6} textAnchor="middle" fontSize={11} fontWeight={700} fill="#94a3b8">
                                 {value}
                               </text>
                             );
@@ -256,19 +256,19 @@ export function JobPortalAnalyticsCard({
                   </ResponsiveContainer>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 dark:text-white">
+                <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-400">
                   <span className="flex items-center gap-1.5">
-                    <Sparkles className="h-3 w-3 text-violet-500 " />
+                    <Sparkles className="h-3 w-3 text-violet-500" />
                     Hover for details
                   </span>
-                  <span className="hidden sm:inline dark:text-white">Interactive • Animated • GPU accelerated</span>
+                  <span className="hidden sm:inline">Interactive • Animated • GPU accelerated</span>
                 </div>
               </div>
 
               {/* Side list */}
-              <div className="border-t xl:border-t-0 xl:border-l border-slate-200 bg-gradient-to-b from-slate-50/60 to-white">
+              <div className="border-t xl:border-t-0 xl:border-l border-slate-200 dark:border-slate-800 bg-gradient-to-b from-slate-50/60 to-white dark:from-slate-900 dark:to-slate-950">
                 <div className="p-4">
-                  <div className="rounded-xl bg-slate-900 text-white p-4 shadow-lg">
+                  <div className="rounded-xl bg-slate-900 dark:bg-slate-800 text-white p-4 shadow-lg border border-transparent dark:border-slate-700">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Volume</span>
                       <Zap className="h-4 w-4 text-amber-400" />
@@ -291,21 +291,23 @@ export function JobPortalAnalyticsCard({
                           whileHover={{ scale: 1.01, x: 2 }}
                           whileTap={{ scale: 0.99 }}
                           className={`w-full text-left flex items-center justify-between rounded-xl border px-3 py-2.5 transition-all duration-200 ${
-                            isSelected ? 'border-slate-900 bg-slate-900 text-white shadow-md' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
+                            isSelected
+                              ? 'border-indigo-500 bg-indigo-600 dark:bg-indigo-600 text-white shadow-md'
+                              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm'
                           }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <span className="h-8 w-8 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm" style={{ background: row.color }}>
+                            <span className="h-8 w-8 rounded-lg flex items-center justify-center text-white font-bold text-[10px] shadow-sm shrink-0" style={{ background: row.color }}>
                               {idx + 1}
                             </span>
                             <div className="min-w-0">
-                              <p className={`text-sm font-semibold truncate ${isSelected ? 'text-white' : 'text-slate-800'}`}>{row.portal}</p>
-                              <p className={`text-[11px] ${isSelected ? 'text-slate-300' : 'text-slate-500'}`}>{pct}% share</p>
+                              <p className={`text-sm font-semibold truncate ${isSelected ? 'text-white' : 'text-slate-800 dark:text-white'}`}>{row.portal}</p>
+                              <p className={`text-[11px] ${isSelected ? 'text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>{pct}% share</p>
                             </div>
                           </div>
-                          <div className="text-right ml-2">
-                            <p className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-slate-900'}`}>{row.applications}</p>
-                            <div className={`mt-1 h-1 w-12 rounded-full ${isSelected ? 'bg-white/20' : 'bg-slate-100'} overflow-hidden ml-auto`}>
+                          <div className="text-right ml-2 shrink-0">
+                            <p className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{row.applications}</p>
+                            <div className={`mt-1 h-1 w-12 rounded-full ${isSelected ? 'bg-white/30' : 'bg-slate-100 dark:bg-slate-700'} overflow-hidden ml-auto`}>
                               <div className="h-full rounded-full" style={{ width: `${pct}%`, background: isSelected ? 'white' : row.color }} />
                             </div>
                           </div>
@@ -314,12 +316,12 @@ export function JobPortalAnalyticsCard({
                     })}
                   </div>
 
-                  <div className="mt-4 rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-100 p-3">
-                    <p className="text-xs font-semibold text-violet-800 flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5" />
+                  <div className="mt-4 rounded-xl bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/20 dark:to-indigo-950/20 border border-violet-100 dark:border-violet-900/30 p-3">
+                    <p className="text-xs font-semibold text-violet-800 dark:text-violet-300 flex items-center gap-1.5">
+                      <Sparkles className="h-3 w-3" />
                       Insight
                     </p>
-                    <p className="text-[11px] text-violet-700/80 mt-1 leading-relaxed">
+                    <p className="text-[11px] text-violet-700/80 dark:text-violet-300/80 mt-1 leading-relaxed">
                       {topPortal ? `${topPortal.portal} dominates with ${topPortal.applications} applications (${Math.round((topPortal.applications / totalApps) * 100)}%). Focus more sourcing here.` : 'No data to generate insights.'}
                     </p>
                   </div>
