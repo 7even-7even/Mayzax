@@ -645,7 +645,7 @@ export default function ProfilesPage() {
           )}
 
           {useVirtualization ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+            <div className="w-full">
               <VirtualizedGrid data={profiles} columns={3} estimateRowHeight={200} gap={16} renderItem={(p) => profileCard(p as ClientProfile)} />
             </div>
           ) : (

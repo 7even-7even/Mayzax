@@ -82,61 +82,61 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl border-slate-200/60 p-0 overflow-hidden shadow-2xl max-w-lg">
-        <div className="h-1 w-full bg-mayzax-gradient" />
+      <DialogContent className="rounded-3xl border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-0 overflow-hidden shadow-2xl max-w-lg">
+        <div className="h-1.5 w-full bg-mayzax-gradient" />
         <div className="p-6">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5">
+            <DialogTitle className="flex items-center gap-2.5 text-lg font-bold text-slate-900 dark:text-white">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mayzax-gradient text-white shadow-md">
                 <User2 className="h-4 w-4" />
               </div>
               {user?.role === 'ADMIN' ? (isEdit ? 'Edit User' : 'Create New User') : isEdit ? 'Edit Recruiter' : 'Create New Recruiter'}
             </DialogTitle>
-            <DialogDescription className="text-xs">
+            <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
               {user?.role === 'ADMIN' ? (isEdit ? 'Update user details' : 'Add admin, TL, or recruiter') : isEdit ? 'Update recruiter' : 'Add recruiter'}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={form.handleSubmit(onSubmit)} className="mt-5 space-y-4">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                 <User2 className="h-3 w-3 text-mayzax-blue-500" /> Full Name
               </Label>
-              <Input placeholder="e.g. Riya Sharma" className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black" {...form.register('name')} />
-              {form.formState.errors.name && <p className="text-xs text-red-600">{form.formState.errors.name.message}</p>}
+              <Input placeholder="e.g. Riya Sharma" className="rounded-xl h-11 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-mayzax-blue-300" {...form.register('name')} />
+              {form.formState.errors.name && <p className="text-xs text-red-500">{form.formState.errors.name.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1">
                 <Mail className="h-3 w-3 text-slate-400" /> Email Address
               </Label>
-              <Input type="email" placeholder="riya@mayzaxsolutions.com" className="rounded-xl h-11 bg-white border-slate-200 dark:text-black" {...form.register('email')} />
-              {form.formState.errors.email && <p className="text-xs text-red-600">{form.formState.errors.email.message}</p>}
+              <Input type="email" placeholder="riya@mayzaxsolutions.com" className="rounded-xl h-11 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800" {...form.register('email')} />
+              {form.formState.errors.email && <p className="text-xs text-red-500">{form.formState.errors.email.message}</p>}
             </div>
 
             {!isEdit && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider">Temporary Password</Label>
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Temporary Password</Label>
                 <div className="relative">
-                  <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="rounded-xl h-11 pr-10 bg-white border-slate-200 dark:text-black" {...form.register('password' as any)} />
-                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="rounded-xl h-11 pr-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800" {...form.register('password' as any)} />
+                  <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {(form.formState.errors as any).password && <p className="text-xs text-red-600">{(form.formState.errors as any).password.message}</p>}
+                {(form.formState.errors as any).password && <p className="text-xs text-red-500">{(form.formState.errors as any).password.message}</p>}
               </div>
             )}
 
             {user?.role === 'ADMIN' && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1">
                   <Shield className="h-3 w-3 text-slate-400" /> Role
                 </Label>
                 <Select value={form.watch('role')} onValueChange={(value) => { form.setValue('role', value as any); if (value !== 'RECRUITER') form.setValue('createdById', null); }}>
-                  <SelectTrigger className="rounded-xl h-11 bg-white border-slate-200 dark:text-black">
+                  <SelectTrigger className="rounded-xl h-11 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl">
+                  <SelectContent className="rounded-xl bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-700">
                     <SelectItem value="RECRUITER">Recruiter</SelectItem>
                     <SelectItem value="TEAM_LEADER">Team Leader</SelectItem>
                     <SelectItem value="ADMIN">Admin</SelectItem>
@@ -149,14 +149,14 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
 
             {user?.role === 'ADMIN' && form.watch('role') === 'RECRUITER' && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1">
                   <Users className="h-3 w-3 text-slate-400" /> Assign Team Leader (Optional)
                 </Label>
                 <Select value={form.watch('createdById') || '__none__'} onValueChange={(value) => form.setValue('createdById', value === '__none__' ? null : value)}>
-                  <SelectTrigger className="rounded-xl h-11 bg-white border-slate-200 dark:text-black">
+                  <SelectTrigger className="rounded-xl h-11 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                     <SelectValue placeholder="Select Team Leader" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl">
+                  <SelectContent className="rounded-xl bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-700">
                     <SelectItem value="__none__">None (No Team Leader)</SelectItem>
                     {teamLeaders.map((tl) => (
                       <SelectItem key={tl.id} value={tl.id}>
@@ -168,8 +168,8 @@ export function RecruiterFormDialog({ open, onOpenChange, recruiter }: Props) {
               </div>
             )}
 
-            <DialogFooter className="gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-full">
+            <DialogFooter className="gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-full dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
                 Cancel
               </Button>
               <Button type="submit" variant="brand" disabled={isSubmitting} className="rounded-full gap-1.5 bg-mayzax-gradient border-0 text-white shadow-md hover:opacity-90">
