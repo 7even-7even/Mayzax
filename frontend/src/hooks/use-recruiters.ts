@@ -71,11 +71,16 @@ export function useCreateRecruiter() {
 export function useUpdateRecruiter() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...input }: { id: string; name?: string; email?: string; role?: Role }) => {
+    mutationFn: async ({ id, ...input }: { id: string; name?: string; email?: string; role?: Role; teamName?: string | null; createdById?: string | null }) => {
       const { data } = await apiClient.patch<ApiSuccess<Recruiter>>(`/recruiters/${id}`, input);
       return data.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['recruiters'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['recruiters'] });
+      qc.invalidateQueries({ queryKey: ['analytics-summary'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['recruiter-stats'] });
+    },
   });
 }
 
