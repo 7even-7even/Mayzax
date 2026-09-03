@@ -352,11 +352,11 @@ export default function ProfilesPage() {
                       <Calendar className="h-4 w-4" /> Schedule Interview
                     </DropdownMenuItem>
                   )}
-                  {isAdmin && (
+                  {/* {isAdmin && (
                     <DropdownMenuItem onClick={() => { setSelectedProfileForPayment(profile); setPaymentDialogOpen(true); }} className="gap-2 text-emerald-700 focus:text-indigo-705">
                       <CreditCard className="h-4 w-4" /> Record Payment
                     </DropdownMenuItem>
-                  )}
+                  )} */}
                   {(isAdmin || user?.role === 'TEAM_LEADER') && profile.paymentBlocked && (
                     <DropdownMenuItem onClick={() => handleReactivateAccount(profile.id)} className="gap-2 text-emerald-600 focus:text-emerald-600">
                       <CheckCircle className="h-4 w-4" /> Reactivate Account
@@ -1202,13 +1202,13 @@ export default function ProfilesPage() {
 
       {/* RECORD PAYMENT DIALOG */}
       <Dialog open={paymentDialogOpen} onOpenChange={(open) => { setPaymentDialogOpen(open); if (!open) setSelectedProfileForPayment(null); }}>
-        <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6">
-          <DialogHeader className="space-y-1.5 pb-2">
-            <DialogTitle className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-indigo-650" /> Record Client Payment
+        <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-900 dark:text-slate-100 shadow-2xl p-6">
+          <DialogHeader className="space-y-1.5 pb-2 border-b border-slate-100 dark:border-slate-800">
+            <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-mayzax-blue-500 dark:text-mayzax-blue-400" /> Record Client Payment
             </DialogTitle>
-            <DialogDescription className="text-xs text-slate-500">
-              Record a payment history entry for <span className="font-semibold text-slate-700 dark:text-slate-300">{selectedProfileForPayment?.candidateName}</span>. This will overwrite previous history.
+            <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+              Record a payment history entry for <span className="font-semibold text-slate-700 dark:text-slate-200">{selectedProfileForPayment?.candidateName}</span>. This will update their plan & status.
             </DialogDescription>
           </DialogHeader>
 
@@ -1256,9 +1256,9 @@ function PaymentRecordForm({ profile, onClose }: { profile: any; onClose: () => 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const prices: Record<string, number> = { Basic: 1500, Gold: 2500, Premium: 3500 };
+    const prices: Record<string, number> = { Basic: 2000, Gold: 3000, Premium: 4000 };
     if (isFull) {
-      setAmount(prices[plan] || 1500);
+      setAmount(prices[plan] || 2000);
     } else {
       setAmount(500);
     }
@@ -1275,8 +1275,8 @@ function PaymentRecordForm({ profile, onClose }: { profile: any; onClose: () => 
     const loadToast = toast.loading('Posting payment details...');
 
     try {
-      const prices: Record<string, number> = { Basic: 1500, Gold: 2500, Premium: 3500 };
-      const fullPrice = prices[plan] || 1500;
+      const prices: Record<string, number> = { Basic: 2000, Gold: 3000, Premium: 4000 };
+      const fullPrice = prices[plan] || 2000;
 
       const paymentsPayload = [];
       if (isFull) {
@@ -1321,26 +1321,26 @@ function PaymentRecordForm({ profile, onClose }: { profile: any; onClose: () => 
     <form onSubmit={handleSubmit} className="space-y-4 pt-2">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5 col-span-2">
-          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Plan Selected</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Plan Selected</Label>
           <Select value={plan} onValueChange={(val) => setPlan(val)}>
-            <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+            <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white">
               <SelectValue placeholder="Select Plan" />
             </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="Basic">Basic ($1,500)</SelectItem>
-              <SelectItem value="Gold">Gold ($2,500)</SelectItem>
-              <SelectItem value="Premium">Premium ($3,500)</SelectItem>
+            <SelectContent className="rounded-xl bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
+              <SelectItem value="Basic">Basic</SelectItem>
+              <SelectItem value="Gold">Gold</SelectItem>
+              <SelectItem value="Premium">Premium</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-1.5 col-span-2">
-          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Payment Option</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Payment Option</Label>
           <Select value={isFull ? 'full' : 'partial'} onValueChange={(val) => setIsFull(val === 'full')}>
-            <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955">
+            <SelectTrigger className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="rounded-xl">
+            <SelectContent className="rounded-xl bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100">
               <SelectItem value="full">Full Payment</SelectItem>
               <SelectItem value="partial">Partial Payment / Installment</SelectItem>
             </SelectContent>
@@ -1348,53 +1348,53 @@ function PaymentRecordForm({ profile, onClose }: { profile: any; onClose: () => 
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Amount Paid ($)</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Amount Paid ($)</Label>
           <Input
             type="number"
             value={amount}
             onChange={(e) => setAmount(Number(e.target.value))}
-            className="rounded-xl border-slate-200 dark:border-slate-800"
+            className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white"
             min={500}
             readOnly={isFull}
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Payment Date</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Payment Date</Label>
           <Input
             type="date"
             value={paidAt}
             onChange={(e) => setPaidAt(e.target.value)}
-            className="rounded-xl border-slate-200 dark:border-slate-800 cursor-pointer"
+            className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white cursor-pointer"
           />
         </div>
 
         <div className="space-y-1.5 col-span-2">
-          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Payment Reference Code</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Payment Reference Code</Label>
           <Input
             value={ref}
             onChange={(e) => setRef(e.target.value)}
             placeholder="e.g. CHQ-9382 or TXN-8372"
-            className="rounded-xl border-slate-200 dark:border-slate-800 font-mono"
+            className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 font-mono"
           />
         </div>
 
         {!isFull && (
           <div className="space-y-1.5 col-span-2">
-            <Label className="text-xs font-bold text-slate-500 dark:text-slate-400">Remaining Balance Due Date</Label>
+            <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Remaining Balance Due Date</Label>
             <Input
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="rounded-xl border-slate-200 dark:border-slate-800 cursor-pointer"
+              className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white cursor-pointer"
             />
           </div>
         )}
       </div>
 
-      <div className="flex justify-end gap-2 pt-2 border-t dark:border-slate-800">
-        <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">Cancel</Button>
-        <Button type="submit" variant="brand" className="rounded-xl bg-indigo-650 text-black hover:bg-indigo-700 hover:text-white font-bold" disabled={isSubmitting}>
+      <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <Button type="button" variant="outline" onClick={onClose} className="rounded-full dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">Cancel</Button>
+        <Button type="submit" variant="brand" className="rounded-full bg-mayzax-gradient border-0 text-white font-bold hover:opacity-90 shadow-md" disabled={isSubmitting}>
           {isSubmitting ? 'Recording...' : 'Record Payment'}
         </Button>
       </div>
