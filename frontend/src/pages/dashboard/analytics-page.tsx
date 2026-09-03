@@ -199,19 +199,19 @@ export default function AnalyticsPage() {
       </Reveal>
 
       <Reveal delay={0.15}>
-        <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-          <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white">
+        <Card className="border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50/80 to-white dark:from-slate-850 dark:to-slate-900">
             <div className="flex items-start gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white shadow-md">
                 <Activity className="h-5 w-5" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold flex items-center gap-2 dark:text-black">
+                <CardTitle className="text-base font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
                   Daily Applications Trend
-                  <Badge variant="outline" className="text-[10px] bg-violet-50 border-violet-200 text-violet-700">Live</Badge>
+                  <Badge variant="outline" className="text-[10px] bg-violet-50 dark:bg-violet-950/30 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300">Live</Badge>
                 </CardTitle>
-                <CardDescription className="text-xs mt-1 dark:text-black">
-                  Shift logic: {summary?.shiftWindowText || '6:00 PM – 9:00 AM IST'} • Current BD: <span className="font-medium text-slate-700">{summary?.currentBusinessDate}</span> • 3-day moving average
+                <CardDescription className="text-xs mt-1 text-slate-500 dark:text-slate-400">
+                  Shift logic: {summary?.shiftWindowText || '6:00 PM – 9:00 AM IST'} • Current BD: <span className="font-medium text-slate-700 dark:text-slate-300">{summary?.currentBusinessDate}</span> • 3-day moving average
                 </CardDescription>
               </div>
             </div>
@@ -224,7 +224,7 @@ export default function AnalyticsPage() {
             )}
             {!isLoading && !isError && enrichedChartData.length > 0 && (
               <div className="p-4 sm:p-6">
-                <div className="rounded-xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/50 p-3 sm:p-4">
+                <div className="rounded-xl border border-slate-200/60 dark:border-slate-800 bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-850/50 dark:to-slate-900 p-3 sm:p-4">
                   <ResponsiveContainer width="100%" height={360}>
                     <ComposedChart data={enrichedChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
                       <defs>
@@ -233,40 +233,40 @@ export default function AnalyticsPage() {
                           <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-100 dark:text-slate-800/80" vertical={false} />
                       <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} allowDecimals={false} />
                       <Tooltip
                         content={({ active, payload, label }) => {
                           if (!active || !payload?.length) return null;
                           return (
-                            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xl min-w-[180px]">
-                              <p className="text-xs font-semibold text-slate-900">BD: {label}</p>
+                            <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 shadow-xl min-w-[180px]">
+                              <p className="text-xs font-semibold text-slate-900 dark:text-white">BD: {label}</p>
                               {payload.map((p: any) => (
                                 <div key={p.dataKey} className="mt-1 flex items-center justify-between gap-4 text-xs">
-                                  <span className="flex items-center gap-1.5 text-slate-500">
+                                  <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                                     <span className="h-2 w-2 rounded-full" style={{ background: p.color }} />
                                     {p.dataKey === 'applications' ? 'Applications' : '3-day Avg'}
                                   </span>
-                                  <span className="font-bold text-slate-900">{p.value}</span>
+                                  <span className="font-bold text-slate-900 dark:text-white">{p.value}</span>
                                 </div>
                               ))}
                             </div>
                           );
                         }}
                       />
-                      <Area type="monotone" dataKey="applications" stroke="#6366f1" strokeWidth={2.5} fill="url(#colorAppsPremium)" dot={{ r: 3, strokeWidth: 2, fill: 'white', stroke: '#6366f1' }} activeDot={{ r: 6, fill: '#6366f1' }} />
+                      <Area type="monotone" dataKey="applications" stroke="#6366f1" strokeWidth={2.5} fill="url(#colorAppsPremium)" dot={{ r: 3, strokeWidth: 2, fill: '#6366f1', stroke: '#6366f1' }} activeDot={{ r: 6, fill: '#6366f1' }} />
                       <Line type="monotone" dataKey="movingAvg" stroke="#f59e0b" strokeWidth={2} strokeDasharray="6 3" dot={false} />
                     </ComposedChart>
                   </ResponsiveContainer>
 
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 border-t border-slate-100 pt-3">
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-3">
                     <span className="flex items-center gap-2">
-                      <span className="flex items-center gap-1 dark:text-black"><span className="h-2 w-2 rounded-full bg-violet-500 " /> Daily</span>
-                      <span className="flex items-center gap-1 dark:text-black"><span className="h-2 w-2 rounded-full bg-amber-500" style={{ borderStyle: 'dashed' }} /> Moving Avg (3d)</span>
+                      <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300"><span className="h-2 w-2 rounded-full bg-violet-500" /> Daily</span>
+                      <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300"><span className="h-2 w-2 rounded-full bg-amber-500" style={{ borderStyle: 'dashed' }} /> Moving Avg (3d)</span>
                     </span>
-                    <span className="flex items-center gap-1.5 dark:text-black">
-                      <Zap className="h-3 w-3 text-violet-500 " /> 
+                    <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                      <Zap className="h-3 w-3 text-violet-500" /> 
                       Business-date grouping • IST shift
                     </span>
                   </div>
@@ -278,18 +278,18 @@ export default function AnalyticsPage() {
       </Reveal>
 
       <Reveal delay={0.25}>
-        <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-          <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-amber-50/50 to-white">
+        <Card className="border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-amber-50/50 to-white dark:from-slate-850 dark:to-slate-900">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md">
                 <Flame className="h-4 w-4" />
               </div>
               <div>
-                <CardTitle className="text-sm font-semibold flex items-center gap-2 dark:text-black">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
                   Activity Heatmap
-                  <Badge variant="outline" className="text-[10px]">18 weeks</Badge>
+                  <Badge variant="outline" className="text-[10px] dark:border-slate-700 dark:text-slate-300">18 weeks</Badge>
                 </CardTitle>
-                <CardDescription className="text-xs dark:text-black">
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
                   {recruiterId === ALL ? 'All recruiters' : recruiters.find((r) => r.id === recruiterId)?.name} • business-date activity
                 </CardDescription>
               </div>
@@ -297,8 +297,8 @@ export default function AnalyticsPage() {
           </CardHeader>
           <CardContent className="p-4 overflow-x-auto">
             {isLoading ? <Skeleton className="h-28 w-full max-w-2xl rounded-xl" /> : <ActivityHeatmap data={dailyCounts ?? []} weeks={18} />}
-            <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-400 dark:text-white">
-              <Sparkles className="h-3 w-3 text-amber-500 " />
+            <div className="mt-3 flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-400">
+              <Sparkles className="h-3 w-3 text-amber-500" />
               Hover cells for details
             </div>
           </CardContent>
