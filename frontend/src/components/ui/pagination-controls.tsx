@@ -16,16 +16,16 @@ export function PaginationControls({ pagination, onPageChange }: Props) {
 
   return (
     <div className="flex items-center justify-between border-t border-slate-100 px-1 pt-4">
-      <p className="text-xs text-slate-500">
-        Showing <span className="font-medium text-slate-700">{start}</span>–
-        <span className="font-medium text-slate-700">{end}</span> of{' '}
-        <span className="font-medium text-slate-700">{total}</span>
+      <p className="text-xs text-slate-500 dark:text-slate-200">
+        Showing <span className="font-medium text-slate-700 dark:text-slate-200">{start}</span>–
+        <span className="font-medium text-slate-700 dark:text-slate-200">{end}</span> of{' '}
+        <span className="font-medium text-slate-700 dark:text-slate-200">{total}</span>
       </p>
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => onPageChange(page - 1)}>
           <ChevronLeft className="h-3.5 w-3.5" /> Prev
         </Button>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-slate-500 dark:text-slate-200">
           Page {page} of {totalPages}
         </span>
         <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => onPageChange(page + 1)}>
