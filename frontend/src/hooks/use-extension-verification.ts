@@ -207,26 +207,16 @@ export function useExtensionVerification(jobLink: string): UseExtensionVerificat
             const threshold = Number(import.meta.env.VITE_VERIFICATION_THRESHOLD || 60);
             const confidence = response.confidence || (response.score > threshold ? 'HIGH' : 'LOW');
 
-
-
-            // Fraud signals from extension
-            if (response.fraudSignals && response.fraudSignals.length > 0) {
-              // If critical fraud signals, reject
-              const critical = ['HISTORY_MANIPULATION_DETECTED', 'APPLY_BUTTON_STILL_ENABLED', 'UNSUPPORTED_DOMAIN'];
-              if (response.fraudSignals.some((s: string) => critical.includes(s))) {
-                setState('fraud_detected');
-                setVerificationResult(response);
-                setEvidence(ev || null);
-                return;
-              }
-            }
-
             // Now call backend to get HMAC hash — this is the enterprise proof
             if (!ev) {
               // No evidence, can't get hash — treat as legacy verified but without proof
               setVerificationResult(response);
-              setState('verified');
-              setIsVerified(true);
+              if (response.verified || response.score > threshold) {
+                setState('verified');
+                setIsVerified(true);
+              } else {
+                setState('not_verified');
+              }
               return;
             }
 
