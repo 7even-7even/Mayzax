@@ -12,7 +12,7 @@ import {
   ComposedChart,
   Bar,
 } from 'recharts';
-import { BarChart3, TrendingUp, Briefcase, Flame, Sparkles, Calendar, Filter, Zap, Award, Activity } from 'lucide-react';
+import { BarChart3, TrendingUp, Briefcase, Flame, Sparkles, Calendar, Filter, Zap, Award, Activity, Download, Loader2 } from 'lucide-react';
 import { PremiumPageHeader } from '@/components/shared/premium-page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,10 +26,13 @@ import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/revea
 import { CountUp } from '@/components/motion/count-up';
 import { ActivityHeatmap } from '@/components/motion/activity-heatmap';
 import { JobPortalAnalyticsCard } from './job-portal-analytics-card';
-import { useDailyCounts, useGlobalSummary } from '@/hooks/use-analytics';
+import { useDailyCounts, useGlobalSummary, useJobPortalAnalytics, useDashboardOverview } from '@/hooks/use-analytics';
 import { useRecruiters } from '@/hooks/use-recruiters';
 import { usePermissions } from '@/hooks/use-permissions';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+import { formatEnumLabel } from '@/components/shared/status-badge';
+import { Trophy, Medal, UserCheck, Users } from 'lucide-react';
 
 const ALL = '__all__';
 
@@ -38,6 +41,270 @@ function getDefaultRange() {
   const from = new Date();
   from.setDate(from.getDate() - 29);
   return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
+}
+
+function styleHeaderRow(row: any, titleBgColor: string = 'FF2A5DA8') {
+  row.height = 26;
+  row.eachCell((cell: any) => {
+    cell.font = { name: 'Segoe UI', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: titleBgColor } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+      left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+      bottom: { style: 'medium', color: { argb: 'FF1E293B' } },
+      right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+    };
+  });
+}
+
+function styleDataRow(row: any, isEven: boolean) {
+  row.height = 20;
+  row.eachCell((cell: any) => {
+    cell.font = { name: 'Segoe UI', size: 10, color: { argb: 'FF1E293B' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'left' };
+    if (isEven) {
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+    }
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FFF1F5F9' } },
+      left: { style: 'thin', color: { argb: 'FFF1F5F9' } },
+      bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+      right: { style: 'thin', color: { argb: 'FFF1F5F9' } },
+    };
+  });
+}
+
+async function exportAnalyticsToExcel({
+  summary,
+  dailyCounts,
+  portalData,
+  enrichedChartData,
+  leaderboardData,
+  filterInfo,
+}: {
+  summary: any;
+  dailyCounts: any[];
+  portalData: any[];
+  enrichedChartData: any[];
+  leaderboardData: any[];
+  filterInfo: { team: string; recruiter: string; from: string; to: string };
+}) {
+  let ExcelJS;
+  try {
+    ExcelJS = await import('exceljs').then((m) => m.default ?? m);
+  } catch (err) {
+    console.error('Failed to load exceljs', err);
+    toast.error('Failed to load Excel export module.');
+    return;
+  }
+  const { saveAs } = await import('file-saver');
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Mayzax CRM Analytics';
+  workbook.created = new Date();
+
+  // 1. Sheet 1: Executive KPI Overview
+  const summarySheet = workbook.addWorksheet('KPI Overview', { properties: { tabColor: { argb: 'FF2A5DA8' } } });
+  summarySheet.views = [{ showGridLines: true }];
+  
+  // Title Header Banner
+  summarySheet.mergeCells('A1:D1');
+  const titleCell = summarySheet.getCell('A1');
+  titleCell.value = 'MAYZAX CRM — EXECUTIVE ANALYTICS REPORT';
+  titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2A5DA8' } };
+  titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+  summarySheet.getRow(1).height = 36;
+
+  // Metadata block
+  summarySheet.addRow(['Report Generation Date', new Date().toLocaleString(), 'Filter Scope (Team)', filterInfo.team]);
+  summarySheet.addRow(['Business Date (Shift)', summary?.currentBusinessDate || '—', 'Filter Scope (Recruiter)', filterInfo.recruiter]);
+  summarySheet.addRow(['Date Range Evaluated', `${filterInfo.from} to ${filterInfo.to}`, 'Shift Timing Window', summary?.shiftWindowText || '6:00 PM – 9:00 AM IST']);
+  
+  for (let r = 2; r <= 4; r++) {
+    const row = summarySheet.getRow(r);
+    row.height = 20;
+    row.eachCell((cell, colNum) => {
+      cell.font = { name: 'Segoe UI', size: 10, bold: colNum % 2 === 1 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colNum % 2 === 1 ? 'FFEBF1FA' : 'FFFFFFFF' } };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+      };
+    });
+  }
+
+  summarySheet.addRow([]); // Blank line
+
+  // KPI Metrics Table
+  const kpiHeader = summarySheet.addRow(['Metric / Key Indicator', 'Current Value', 'Unit / Details', 'Context']);
+  styleHeaderRow(kpiHeader, 'FF1E293B');
+
+  const totalInRange = dailyCounts.reduce((acc, c) => acc + (c.count || 0), 0);
+  const avgInRange = dailyCounts.length > 0 ? (totalInRange / dailyCounts.length).toFixed(1) : '0';
+  const peakInRange = dailyCounts.length > 0 ? Math.max(...dailyCounts.map((c) => c.count || 0)) : 0;
+
+  const kpiRows = [
+    ['Total Lifetime Applications', summary?.totalApplications ?? 0, 'Applications', 'System-wide all time'],
+    ['Current Shift Applications (Today)', summary?.currentShiftApplications ?? 0, 'Applications', 'Logged in active business date'],
+    ['Selected Range Total Applications', totalInRange, 'Applications', `From ${filterInfo.from} to ${filterInfo.to}`],
+    ['Average Applications / Day', avgInRange, 'Apps / Day', 'Average across days in selected filter'],
+    ['Peak Daily Volume in Range', peakInRange, 'Applications', 'Highest single-day volume in range'],
+    ['Active Recruiters in Roster', summary?.activeRecruiters ?? 0, 'Recruiters', 'Currently marked active'],
+    ['Total Registered Candidates / Profiles', summary?.totalProfiles ?? 0, 'Candidate Profiles', 'Total in Client Vault'],
+    ['Total Organization Teams', summary?.totalTeams ?? (summary?.teams?.length || 0), 'Teams', 'Active Team Leader units'],
+    ['Top Performing Recruiter', summary?.topPerformer || '—', 'Recruiter Name', 'Leader in active shift applications'],
+  ];
+
+  kpiRows.forEach((item, idx) => {
+    const row = summarySheet.addRow(item);
+    styleDataRow(row, idx % 2 === 1);
+  });
+
+  summarySheet.columns = [
+    { width: 36 },
+    { width: 22 },
+    { width: 24 },
+    { width: 38 },
+  ];
+
+  // 2. Sheet 2: Daily Applications Trend
+  const dailySheet = workbook.addWorksheet('Daily Trend', { properties: { tabColor: { argb: 'FF6366F1' } } });
+  dailySheet.views = [{ state: 'frozen', ySplit: 1, showGridLines: true }];
+  const dailyHeader = dailySheet.addRow(['Business Date', 'Applications Logged', '3-Day Moving Average', 'Day of Week']);
+  styleHeaderRow(dailyHeader, 'FF4F46E5');
+
+  enrichedChartData.forEach((d, idx) => {
+    const dateObj = new Date(d.fullDate);
+    const dayName = isNaN(dateObj.getTime()) ? '—' : dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const row = dailySheet.addRow([d.fullDate, d.applications, d.movingAvg, dayName]);
+    styleDataRow(row, idx % 2 === 1);
+  });
+
+  dailySheet.columns = [
+    { width: 20 },
+    { width: 24 },
+    { width: 26 },
+    { width: 20 },
+  ];
+  dailySheet.autoFilter = 'A1:D1';
+
+  // 3. Sheet 3: Job Portal Breakdown
+  const portalSheet = workbook.addWorksheet('Job Portals', { properties: { tabColor: { argb: 'FF3F9C71' } } });
+  portalSheet.views = [{ state: 'frozen', ySplit: 1, showGridLines: true }];
+  const portalHeader = portalSheet.addRow(['Job Portal', 'Total Applications', 'Percentage Share (%)', 'Performance Rank']);
+  styleHeaderRow(portalHeader, 'FF059669');
+
+  const totalPortalApps = portalData.reduce((acc, p) => acc + (p.count || 0), 0);
+  const sortedPortals = [...portalData].sort((a, b) => (b.count || 0) - (a.count || 0));
+
+  sortedPortals.forEach((p, idx) => {
+    const count = p.count || 0;
+    const share = totalPortalApps > 0 ? ((count / totalPortalApps) * 100).toFixed(1) + '%' : '0.0%';
+    const row = portalSheet.addRow([formatEnumLabel(p.portal), count, share, `#${idx + 1}`]);
+    styleDataRow(row, idx % 2 === 1);
+  });
+
+  portalSheet.columns = [
+    { width: 26 },
+    { width: 22 },
+    { width: 24 },
+    { width: 20 },
+  ];
+  portalSheet.autoFilter = 'A1:D1';
+
+  // 4. Sheet 4: Activity Heatmap Data
+  const heatmapSheet = workbook.addWorksheet('Activity Heatmap', { properties: { tabColor: { argb: 'FFF59E0B' } } });
+  heatmapSheet.views = [{ state: 'frozen', ySplit: 1, showGridLines: true }];
+  const heatmapHeader = heatmapSheet.addRow(['Business Date', 'Shift Applications', 'Activity Intensity Level']);
+  styleHeaderRow(heatmapHeader, 'FFD97706');
+
+  dailyCounts.forEach((d, idx) => {
+    let level = 'None (0)';
+    if (d.count > 10) level = 'Very High (10+)';
+    else if (d.count > 5) level = 'High (6-10)';
+    else if (d.count > 2) level = 'Medium (3-5)';
+    else if (d.count > 0) level = 'Low (1-2)';
+
+    const row = heatmapSheet.addRow([d.businessDate, d.count, level]);
+    styleDataRow(row, idx % 2 === 1);
+  });
+
+  heatmapSheet.columns = [
+    { width: 22 },
+    { width: 24 },
+    { width: 28 },
+  ];
+  heatmapSheet.autoFilter = 'A1:C1';
+
+  // 5. Sheet 5: Recruiter Leaderboard
+  if (leaderboardData && leaderboardData.length > 0) {
+    const leaderSheet = workbook.addWorksheet('Leaderboard', { properties: { tabColor: { argb: 'FFE11D48' } } });
+    leaderSheet.views = [{ state: 'frozen', ySplit: 1, showGridLines: true }];
+    const leaderHeader = leaderSheet.addRow(['Rank', 'Recruiter Name', 'Email', 'Assigned Profiles', 'Today / Shift Apps', 'Lifetime Total Apps', 'Status']);
+    styleHeaderRow(leaderHeader, 'FFE11D48');
+
+    leaderboardData.forEach((r: any, idx: number) => {
+      const row = leaderSheet.addRow([
+        `#${idx + 1}`,
+        r.name,
+        r.email,
+        r.assignedProfiles ?? 0,
+        r.currentShiftApplications ?? 0,
+        r.totalApplications ?? 0,
+        r.isActive ? 'Active' : 'Inactive',
+      ]);
+      styleDataRow(row, idx % 2 === 1);
+    });
+
+    leaderSheet.columns = [
+      { width: 12 },
+      { width: 28 },
+      { width: 32 },
+      { width: 22 },
+      { width: 24 },
+      { width: 24 },
+      { width: 16 },
+    ];
+    leaderSheet.autoFilter = 'A1:G1';
+  }
+
+  // 6. Sheet 6: Organization Teams
+  if (summary?.teams && summary.teams.length > 0) {
+    const teamSheet = workbook.addWorksheet('Teams Breakdown', { properties: { tabColor: { argb: 'FF8B5CF6' } } });
+    teamSheet.views = [{ state: 'frozen', ySplit: 1, showGridLines: true }];
+    const teamHeader = teamSheet.addRow(['Team Name', 'Team Leader', 'Members Count', 'Total Applications', 'Shift Applications']);
+    styleHeaderRow(teamHeader, 'FF7C3AED');
+
+    summary.teams.forEach((t: any, idx: number) => {
+      const row = teamSheet.addRow([
+        t.teamName || '—',
+        t.tlName || '—',
+        t.memberCount || 0,
+        t.totalApplications || 0,
+        t.currentApplications || 0,
+      ]);
+      styleDataRow(row, idx % 2 === 1);
+    });
+
+    teamSheet.columns = [
+      { width: 28 },
+      { width: 26 },
+      { width: 20 },
+      { width: 24 },
+      { width: 24 },
+    ];
+    teamSheet.autoFilter = 'A1:E1';
+  }
+
+  // Generate and download
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const filename = `Mayzax_Analytics_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  saveAs(blob, filename);
+  toast.success('Analytics workbook exported successfully!');
 }
 
 function PremiumStat({ icon: Icon, label, value, sub, gradient, index }: any) {
@@ -76,6 +343,7 @@ export default function AnalyticsPage() {
   const [teamId, setTeamId] = useState<string>(() => searchParams.get('teamId') || ALL);
   const [recruiterId, setRecruiterId] = useState<string>(ALL);
   const [range, setRange] = useState(getDefaultRange);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Sync state from query parameters
   const paramTeamId = searchParams.get('teamId') || ALL;
@@ -107,8 +375,26 @@ export default function AnalyticsPage() {
     from: range.from,
     to: range.to,
   });
+  const { data: portalAnalytics } = useJobPortalAnalytics({
+    scope: 'custom',
+    from: range.from,
+    to: range.to,
+    recruiterId: recruiterId === ALL ? undefined : recruiterId,
+    teamId: teamId === ALL ? undefined : teamId,
+  });
+
+  const { data: dashboardData, isLoading: dashboardLoading } = useDashboardOverview({
+    pageSize: 100,
+    sortBy: 'currentShiftApplications',
+    sortOrder: 'desc',
+  });
 
   const recruiters = recruitersData?.data ?? [];
+  const leaderboardList = useMemo(() => {
+    const list = dashboardData?.data ?? [];
+    return [...list].sort((a, b) => (b.currentShiftApplications ?? 0) - (a.currentShiftApplications ?? 0));
+  }, [dashboardData]);
+
   const chartData = useMemo(
     () =>
       (dailyCounts ?? []).map((d) => ({
@@ -133,6 +419,32 @@ export default function AnalyticsPage() {
   const peakDay = chartData.length > 0 ? Math.max(...chartData.map((d) => d.applications)) : 0;
   const totalInRange = chartData.reduce((s, d) => s + d.applications, 0);
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const teamName = teamId === ALL ? 'All Teams' : summary?.teams?.find((t) => t.tlId === teamId)?.teamName || 'Selected Team';
+      const recruiterName = recruiterId === ALL ? 'All Recruiters' : recruiters.find((r) => r.id === recruiterId)?.name || 'Selected Recruiter';
+      await exportAnalyticsToExcel({
+        summary,
+        dailyCounts: dailyCounts || [],
+        portalData: portalAnalytics?.portals || [],
+        enrichedChartData,
+        leaderboardData: leaderboardList,
+        filterInfo: {
+          team: teamName,
+          recruiter: recruiterName,
+          from: range.from,
+          to: range.to,
+        },
+      });
+    } catch (e) {
+      console.error('Export error:', e);
+      toast.error('Failed to export analytics report.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PremiumPageHeader
@@ -144,38 +456,49 @@ export default function AnalyticsPage() {
           { label: `${range.from} → ${range.to}`, icon: Calendar }
         ]}
         actions={
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 shadow-sm whitespace-nowrap overflow-x-auto">
-            <Filter className="h-4 w-4 text-slate-400 dark:text-slate-400 ml-1 shrink-0" />
-            {isAdmin && (
-              <Select value={teamId} onValueChange={handleTeamChange}>
-                <SelectTrigger className="w-32 sm:w-36 h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 dark:text-white shrink-0">
-                  <SelectValue placeholder="All Teams" />
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <Button
+              onClick={handleExport}
+              disabled={isExporting || isLoading}
+              className="rounded-xl h-10 text-xs font-semibold gap-1.5 shadow-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white border-0 transition-all shrink-0"
+            >
+              {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              Export Analytics
+            </Button>
+
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 shadow-sm whitespace-nowrap overflow-x-auto">
+              <Filter className="h-4 w-4 text-slate-400 dark:text-slate-400 ml-1 shrink-0" />
+              {isAdmin && (
+                <Select value={teamId} onValueChange={handleTeamChange}>
+                  <SelectTrigger className="w-32 sm:w-36 h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shrink-0">
+                    <SelectValue placeholder="All Teams" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-slate-850 dark:border-slate-800">
+                    <SelectItem value={ALL} className="dark:text-slate-200 dark:focus:bg-slate-800">All Teams</SelectItem>
+                    {summary?.teams?.map((t) => (
+                      <SelectItem key={t.tlId} value={t.tlId} className="dark:text-slate-200 dark:focus:bg-slate-800">
+                        {t.teamName || t.tlName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Select value={recruiterId} onValueChange={setRecruiterId}>
+                <SelectTrigger className="w-32 sm:w-36 h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white shrink-0">
+                  <SelectValue placeholder="All recruiters" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ALL}>All Teams</SelectItem>
-                  {summary?.teams?.map((t) => (
-                    <SelectItem key={t.tlId} value={t.tlId}>
-                      {t.teamName || t.tlName}
+                <SelectContent className="dark:bg-slate-850 dark:border-slate-800">
+                  <SelectItem value={ALL} className="dark:text-slate-200 dark:focus:bg-slate-800">All Recruiters</SelectItem>
+                  {recruiters.map((r) => (
+                    <SelectItem key={r.id} value={r.id} className="dark:text-slate-200 dark:focus:bg-slate-800">
+                      {r.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            )}
-            <Select value={recruiterId} onValueChange={setRecruiterId}>
-              <SelectTrigger className="w-32 sm:w-36 h-8 text-xs bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 dark:text-white shrink-0">
-                <SelectValue placeholder="All recruiters" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL}>All Recruiters</SelectItem>
-                {recruiters.map((r) => (
-                  <SelectItem key={r.id} value={r.id}>
-                    {r.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Input type="date" value={range.from} onChange={(e) => setRange((prev) => ({ ...prev, from: e.target.value }))} className="w-28 sm:w-32 h-8 text-xs dark:bg-slate-900 dark:text-white dark:border-slate-700 shrink-0" />
-            <Input type="date" value={range.to} onChange={(e) => setRange((prev) => ({ ...prev, to: e.target.value }))} className="w-28 sm:w-32 h-8 text-xs dark:bg-slate-900 dark:text-white dark:border-slate-700 shrink-0" />
+              <Input type="date" value={range.from} onChange={(e) => setRange((prev) => ({ ...prev, from: e.target.value }))} className="w-28 sm:w-32 h-8 text-xs dark:bg-slate-900 dark:text-white dark:border-slate-700 shrink-0 [&::-webkit-calendar-picker-indicator]:dark:invert" />
+              <Input type="date" value={range.to} onChange={(e) => setRange((prev) => ({ ...prev, to: e.target.value }))} className="w-28 sm:w-32 h-8 text-xs dark:bg-slate-900 dark:text-white dark:border-slate-700 shrink-0 [&::-webkit-calendar-picker-indicator]:dark:invert" />
+            </div>
           </div>
         }
         gradient="from-mayzax-blue-600 to-mayzax-green-600"
@@ -301,6 +624,145 @@ export default function AnalyticsPage() {
               <Sparkles className="h-3 w-3 text-amber-500" />
               Hover cells for details
             </div>
+          </CardContent>
+        </Card>
+      </Reveal>
+
+      {/* Recruiter Performance Leaderboard */}
+      <Reveal delay={0.3}>
+        <Card className="border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-rose-50/60 via-amber-50/30 to-white dark:from-slate-850 dark:to-slate-900">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-amber-600 text-white shadow-md">
+                  <Trophy className="h-4 w-4" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
+                    Recruiter Performance Leaderboard
+                    <Badge variant="outline" className="text-[10px] bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300">
+                      Live Shift Rankings
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription className="text-xs text-slate-500 dark:text-slate-400">
+                    Real-time ranking of recruiters by shift output and overall lifetime application volume
+                  </CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-850 px-3 py-1.5 rounded-full">
+                <Users className="h-3.5 w-3.5 text-rose-500" />
+                <span>{leaderboardList.length} Recruiters Ranked</span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {dashboardLoading ? (
+              <div className="p-6 space-y-3">
+                <Skeleton className="h-10 w-full rounded-xl" />
+                <Skeleton className="h-10 w-full rounded-xl" />
+                <Skeleton className="h-10 w-full rounded-xl" />
+              </div>
+            ) : leaderboardList.length === 0 ? (
+              <div className="p-8">
+                <EmptyState icon={Trophy} title="No Leaderboard Data" description="Recruiter performance will show here once applications are logged." />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/60 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      <th className="py-3 px-4 w-16 text-center">Rank</th>
+                      <th className="py-3 px-4">Recruiter</th>
+                      <th className="py-3 px-4">Assigned Profiles</th>
+                      <th className="py-3 px-4">Today / Shift Apps</th>
+                      <th className="py-3 px-4">Lifetime Apps</th>
+                      <th className="py-3 px-4 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {leaderboardList.map((item, index) => {
+                      const isTop1 = index === 0;
+                      const isTop2 = index === 1;
+                      const isTop3 = index === 2;
+
+                      return (
+                        <tr
+                          key={item.id}
+                          className={`transition-colors hover:bg-slate-50/60 dark:hover:bg-slate-800/50 ${
+                            isTop1
+                              ? 'bg-amber-50/30 dark:bg-amber-950/10'
+                              : isTop2
+                              ? 'bg-slate-50/40 dark:bg-slate-850/20'
+                              : isTop3
+                              ? 'bg-orange-50/20 dark:bg-orange-950/10'
+                              : ''
+                          }`}
+                        >
+                          <td className="py-3.5 px-4 text-center font-bold">
+                            {isTop1 ? (
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-white shadow-sm text-xs">
+                                🥇
+                              </span>
+                            ) : isTop2 ? (
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-400 text-white shadow-sm text-xs">
+                                🥈
+                              </span>
+                            ) : isTop3 ? (
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-700 text-white shadow-sm text-xs">
+                                🥉
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 dark:text-slate-400 font-mono">#{index + 1}</span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div>
+                              <p className="font-semibold text-slate-800 dark:text-white flex items-center gap-1.5">
+                                {item.name}
+                                {isTop1 && (
+                                  <span className="text-[10px] bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 font-bold px-1.5 py-0.5 rounded-full">
+                                    Leader
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate max-w-xs">{item.email}</p>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-medium text-slate-700 dark:text-slate-300">
+                              {item.assignedProfiles ?? 0} profiles
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800 px-2 py-0.5 font-bold text-emerald-700 dark:text-emerald-300 text-xs">
+                                +{item.currentShiftApplications ?? 0}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="font-bold text-slate-900 dark:text-white">
+                              {item.totalApplications?.toLocaleString() ?? 0}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center">
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                item.isActive
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                              }`}
+                            >
+                              {item.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
       </Reveal>
