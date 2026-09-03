@@ -17,10 +17,10 @@ export class EvidenceValidator {
     const reasons: string[] = [];
     const fraudSignals: string[] = [];
 
-    // 1. Timestamp check (Allow any age in the past, but flag future timestamps)
+    // 1. Timestamp check (Allow any age in the past, allow up to 24h future for clock skew)
     const now = Date.now();
     const age = now - evidence.verificationTimestamp;
-    const tolerance = env.VERIFICATION_TIMESTAMP_TOLERANCE_MS;
+    const tolerance = Math.max(env.VERIFICATION_TIMESTAMP_TOLERANCE_MS, 24 * 60 * 60 * 1000);
     if (age < -tolerance) {
       fraudSignals.push('FUTURE_TIMESTAMP');
       reasons.push(`Future timestamp detected: ${evidence.verificationTimestamp}`);
@@ -39,64 +39,34 @@ export class EvidenceValidator {
 
     // 3. Hostname basic checks
     const hostname = evidence.hostname.toLowerCase().replace(/^www\./, '');
-    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || ['localhost', '127.0.0.1', '0.0.0.0'].includes(hostname) || !hostname.includes('.')) {
-      return {
-        valid: false,
-        reasons: [`Blocked or invalid hostname: ${hostname}`],
-        fraudSignals: ['INVALID_HOSTNAME'],
-        normalizedHostname: hostname,
-        normalizedPathname: evidence.pathname,
-      };
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || ['localhost', '127.0.0.1', '0.0.0.0'].includes(hostname)) {
+      fraudSignals.push('LOCAL_OR_IP_HOSTNAME');
+      reasons.push(`Local or IP hostname detected: ${hostname}`);
     }
 
     // 4. URL parse
     try {
       const url = new URL(evidence.fullUrl);
-      if (url.protocol !== 'https:') {
-        return {
-          valid: false,
-          reasons: ['Full URL must be HTTPS'],
-          fraudSignals: ['INSECURE_PROTOCOL'],
-          normalizedHostname: hostname,
-          normalizedPathname: evidence.pathname,
-        };
-      }
       const urlHost = url.hostname.toLowerCase().replace(/^www\./, '');
       if (urlHost !== hostname) {
         fraudSignals.push('HOSTNAME_MISMATCH');
         reasons.push(`Hostname mismatch: evidence.hostname ${hostname} vs fullUrl host ${urlHost}`);
-        // Don't fail immediately, but flag
       }
     } catch {
-      return {
-        valid: false,
-        reasons: ['Invalid fullUrl'],
-        fraudSignals: ['INVALID_URL'],
-        normalizedHostname: hostname,
-        normalizedPathname: evidence.pathname,
-      };
+      fraudSignals.push('INVALID_URL');
+      reasons.push('Unparseable fullUrl format');
     }
 
-    // 5. Supported hostname?
+    // 5. Supported hostname check (record signal but do not block scoring)
     if (!this.registry.isSupportedHostname(hostname)) {
-      return {
-        valid: false,
-        reasons: [`Unsupported hostname: ${hostname}`],
-        fraudSignals: ['UNSUPPORTED_DOMAIN'],
-        normalizedHostname: hostname,
-        normalizedPathname: evidence.pathname,
-      };
+      fraudSignals.push('UNSUPPORTED_DOMAIN');
+      reasons.push(`Non-cataloged hostname: ${hostname}`);
     }
 
-    // 6. Evidence sanity
+    // 6. Evidence sanity check
     if (!evidence.title && evidence.headings.length === 0 && !evidence.confirmationText) {
-      return {
-        valid: false,
-        reasons: ['Evidence lacks title, headings, and confirmation text'],
-        fraudSignals: ['EMPTY_EVIDENCE'],
-        normalizedHostname: hostname,
-        normalizedPathname: evidence.pathname,
-      };
+      fraudSignals.push('MINIMAL_EVIDENCE');
+      reasons.push('Evidence contains minimal heading or confirmation text');
     }
 
     // 7. History manipulation flag
