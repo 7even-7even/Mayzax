@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp, Zap, Coffee, Trophy, Sparkles, ArrowRight } from 'lucide-react';
+import { Users, UserCheck, UserSquare2, Briefcase, Clock, ChevronDown, ChevronUp, Zap, Coffee, Trophy, Sparkles, ArrowRight, Pencil, Check, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGlobalSummary } from '@/hooks/use-analytics';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useAuth } from '@/context/auth-context';
+import { useUpdateRecruiter } from '@/hooks/use-recruiters';
 import { Reveal, StaggerContainer, StaggerItem } from '@/components/motion/reveal';
 import { CountUp } from '@/components/motion/count-up';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
 
 const adminCardConfig = [
   { key: 'totalRecruiters', label: 'Total Users', icon: Users, gradient: 'from-mayzax-blue-500 to-mayzax-green-500', accent: 'text-indigo-600', bg: 'bg-indigo-50' },
@@ -82,6 +85,128 @@ function PremiumStatCard({ icon: Icon, label, value, gradient, bg, accent, isLoa
   );
 }
 
+function OrganizationTeamCard({
+  team,
+  isAdmin,
+}: {
+  team: { tlId: string; tlName: string; teamName: string | null; memberCount: number; totalApplications: number; currentApplications: number };
+  isAdmin: boolean;
+}) {
+  const navigate = useNavigate();
+  const updateRecruiter = useUpdateRecruiter();
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftName, setDraftName] = useState(team.teamName || '');
+
+  const handleStartEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDraftName(team.teamName || '');
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(false);
+  };
+
+  const handleSave = async (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    try {
+      await updateRecruiter.mutateAsync({
+        id: team.tlId,
+        teamName: draftName.trim() || null,
+      });
+      toast.success('Team name updated successfully!');
+      setIsEditing(false);
+    } catch {
+      toast.error('Failed to update team name');
+    }
+  };
+
+  return (
+    <motion.div
+      whileHover={{ y: -4, scale: 1.01 }}
+      onClick={() => {
+        if (!isEditing) navigate(`/analytics?teamId=${team.tlId}`);
+      }}
+      className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] hover:shadow-lg transition-all cursor-pointer"
+    >
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 blur-[0.5px]" />
+      <div className="relative rounded-[11px] bg-gradient-to-br from-slate-50/50 to-white dark:from-slate-850 dark:to-slate-900 p-3.5 flex flex-col justify-between h-full gap-3.5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            {isEditing ? (
+              <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                <Input
+                  autoFocus
+                  value={draftName}
+                  onChange={(e) => setDraftName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSave(e);
+                    if (e.key === 'Escape') handleCancelEdit(e as any);
+                  }}
+                  placeholder="Enter team name..."
+                  className="h-8 text-xs rounded-lg dark:bg-slate-800 dark:text-white dark:border-slate-700"
+                />
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={updateRecruiter.isPending}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
+                >
+                  {updateRecruiter.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 group/title">
+                <p className="truncate text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="truncate">{team.teamName || <span className="italic text-slate-400">No team name</span>}</span>
+                </p>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={handleStartEdit}
+                    title="Edit team name"
+                    className="opacity-0 group-hover:opacity-100 hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shrink-0"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            )}
+            <p className="truncate text-xs text-slate-500 dark:text-slate-400 mt-1">
+              TL: <span className="font-semibold text-slate-700 dark:text-slate-300">{team.tlName}</span>
+            </p>
+          </div>
+          {!isEditing && (
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100/80 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-mayzax-blue shadow-sm group-hover:text-white transition-all transform group-hover:translate-x-0.5">
+              <ArrowRight className="h-4 w-4" />
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+          <span className="rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-350 px-2 py-0.5 text-[10px] font-semibold border border-slate-200 dark:border-slate-700/60 dark:text-white">
+            {team.memberCount} members
+          </span>
+          <span className="rounded-full bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-350 px-2 py-0.5 text-[10px] font-semibold border border-blue-200/50 dark:border-blue-900/30 dark:text-white">
+            {team.totalApplications} total
+          </span>
+          <span className="rounded-full bg-violet-50 dark:bg-violet-950/20 text-violet-700 dark:text-violet-350 px-2 py-0.5 text-[10px] font-semibold border border-violet-200/50 dark:border-violet-900/30 dark:text-white">
+            {team.currentApplications} today
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 export function SummaryCards({ onShowRecruiterStats }: { onShowRecruiterStats?: (id: string) => void } = {}) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -118,8 +243,6 @@ export function SummaryCards({ onShowRecruiterStats }: { onShowRecruiterStats?: 
       navigate(bizDate ? `/applications?recruiterId=${user?.id}&date=${bizDate}` : `/applications?recruiterId=${user?.id}`);
     } else if (label === 'Active') {
       navigate('/activity?status=ACTIVE');
-    // } else if (label === 'On Break') {
-    //   navigate('/activity?status=SHORT_BREAK,DINNER_BREAK');
     } else if (label === 'Top Performer') {
       if (data?.topPerformerId && onShowRecruiterStats) {
         onShowRecruiterStats(data.topPerformerId);
@@ -199,39 +322,7 @@ export function SummaryCards({ onShowRecruiterStats }: { onShowRecruiterStats?: 
                     {!isLoading && data?.teams && data.teams.length > 0 && (
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                         {data.teams.map((team: any) => (
-                          <motion.div
-                            key={team.tlId}
-                            whileHover={{ y: -4, scale: 1.01 }}
-                            onClick={() => navigate(`/analytics?teamId=${team.tlId}`)}
-                            className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-[1px] hover:shadow-lg transition-all cursor-pointer"
-                          >
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 blur-[0.5px]" />
-                            <div className="relative rounded-[11px] bg-gradient-to-br from-slate-50/50 to-white dark:from-slate-850 dark:to-slate-900 p-3.5 flex flex-col justify-between h-full gap-3.5">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
-                                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                    {team.teamName || <span className="italic text-slate-400">No team name</span>}
-                                  </p>
-                                  <p className="truncate text-xs text-slate-500 dark:text-slate-400 mt-1">TL: <span className="font-semibold text-slate-700 dark:text-slate-300">{team.tlName}</span></p>
-                                </div>
-                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100/80 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-mayzax-blue shadow-sm group-hover:text-white transition-all transform group-hover:translate-x-0.5">
-                                  <ArrowRight className="h-4 w-4" />
-                                </div>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                                <span className="rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-350 px-2 py-0.5 text-[10px] font-semibold border border-slate-200 dark:border-slate-700/60 dark:text-white">
-                                  {team.memberCount} members
-                                </span>
-                                <span className="rounded-full bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-350 px-2 py-0.5 text-[10px] font-semibold border border-blue-200/50 dark:border-blue-900/30 dark:text-white">
-                                  {team.totalApplications} total
-                                </span>
-                                <span className="rounded-full bg-violet-50 dark:bg-violet-950/20 text-violet-700 dark:text-violet-350 px-2 py-0.5 text-[10px] font-semibold border border-violet-200/50 dark:border-violet-900/30 dark:text-white">
-                                  {team.currentApplications} today
-                                </span>
-                              </div>
-                            </div>
-                          </motion.div>
+                          <OrganizationTeamCard key={team.tlId} team={team} isAdmin={isAdmin} />
                         ))}
                       </div>
                     )}
