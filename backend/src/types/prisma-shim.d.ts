@@ -67,6 +67,7 @@ declare module '@prisma/client' {
     LEVER = 'LEVER',
     GREENHOUSE = 'GREENHOUSE',
     SPEEDY_APPLY = 'SPEEDY_APPLY',
+    EASY_APPLY = 'EASY_APPLY',
     THE_MUSE = 'THE_MUSE',
     Y_COMBINATOR = 'Y_COMBINATOR',
     CAREER_SITE = 'CAREER_SITE',

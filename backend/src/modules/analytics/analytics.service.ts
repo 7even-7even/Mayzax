@@ -14,6 +14,7 @@ const ANALYTICS_JOB_PORTALS = [
   'WELLFOUND',
   'HANDSHAKE',
   'SPEEDY_APPLY',
+  'EASY_APPLY',
   'THE_MUSE',
   'Y_COMBINATOR',
   'LEVER',
@@ -26,16 +27,21 @@ const ANALYTICS_JOB_PORTALS = [
 export function calculateAdjustedCounts(portalCounts: { jobPortal: JobPortal; count: number }[]) {
   let total = 0;
   let ashbyRaw = 0;
+  let easyApplyRaw = 0;
   for (const item of portalCounts) {
     if (item.jobPortal === 'ASHBY') {
       ashbyRaw += item.count;
+    } else if (item.jobPortal === 'EASY_APPLY') {
+      easyApplyRaw += item.count;
     } else {
       total += item.count;
     }
   }
   total += Math.floor(ashbyRaw / 10);
+  total += Math.floor(easyApplyRaw / 2);
   const ashbyRemainder = ashbyRaw % 10;
-  return { total, ashbyRemainder, ashbyRaw };
+  const easyApplyRemainder = easyApplyRaw % 2;
+  return { total, ashbyRemainder, ashbyRaw, easyApplyRemainder, easyApplyRaw };
 }
 
 export async function getAdjustedApplicationCounts(where: Prisma.JobApplicationWhereInput) {
@@ -176,8 +182,10 @@ export async function getDashboardOverview(query: DashboardQuery, actor: { id: s
       assignedProfiles: assignedProfileCounts[index],
       totalApplications: totalStats.total,
       ashbyRemainder: totalStats.ashbyRemainder,
+      easyApplyRemainder: totalStats.easyApplyRemainder,
       currentShiftApplications: shiftStats.total,
       ashbyShiftRemainder: shiftStats.ashbyRemainder,
+      easyApplyShiftRemainder: shiftStats.easyApplyRemainder,
       totalInterviewCalls: allTimeInterviewCallsMap.get(r.id) || 0,
       currentShiftInterviewCalls: shiftInterviewCallsMap.get(r.id) || 0,
       lastActiveAt: r.lastActiveAt,
@@ -471,6 +479,8 @@ export async function getJobPortalAnalytics(actor: { id: string; role: Role }, q
       let count = (countMap.get(portal) ?? 0) + (portal === JobPortal.OTHER ? legacyOtherCount : 0);
       if (portal === 'ASHBY') {
         count = Math.floor(count / 10);
+      } else if (portal === 'EASY_APPLY') {
+        count = Math.floor(count / 2);
       }
       return { portal, count };
     }),

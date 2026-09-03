@@ -361,9 +361,11 @@ export async function getRecruiterStats(id: string, actor: Requester) {
     totalApplications: totalStats.total,
     rawTotalApplications,
     ashbyRemainder: totalStats.ashbyRemainder,
+    easyApplyRemainder: totalStats.easyApplyRemainder,
     currentShiftApplications: shiftStats.total,
     rawCurrentShiftApplications,
     ashbyShiftRemainder: shiftStats.ashbyRemainder,
+    easyApplyShiftRemainder: shiftStats.easyApplyRemainder,
     currentBusinessDate: todayBusinessDate,
     profileWiseCounts: assignedProfiles.map((profile) => {
       const pTotalStats = calculateAdjustedCounts(allTimeProfilePortals.get(profile.id) || []);

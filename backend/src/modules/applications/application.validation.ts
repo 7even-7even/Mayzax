@@ -30,6 +30,7 @@ export const jobPortalEnum = z.enum([
   'LEVER',
   'GREENHOUSE',
   'SPEEDY_APPLY',
+  'EASY_APPLY',
   'THE_MUSE',
   'Y_COMBINATOR',
   'CAREER_SITE',
