@@ -88,28 +88,28 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
-          <motion.div initial={{ x: -320 }} animate={{ x: 0 }} exit={{ x: -320 }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="absolute left-0 top-0 h-full w-[300px] bg-white shadow-2xl flex flex-col overflow-hidden">
-            <div className="relative h-[72px] flex items-center justify-between border-b border-slate-200/60 px-5 bg-gradient-to-r from-white to-slate-50/80">
+          <motion.div initial={{ x: -320 }} animate={{ x: 0 }} exit={{ x: -320 }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="absolute left-0 top-0 h-full w-[300px] bg-white dark:bg-slate-900 shadow-2xl flex flex-col overflow-hidden border-r border-slate-200 dark:border-slate-800">
+            <div className="relative h-[72px] flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 px-5 bg-gradient-to-r from-white to-slate-50/80 dark:from-slate-900 dark:to-slate-850">
               <div className="flex items-center gap-3">
-                <img src={mayzaxLogo} alt="Mayzax" className="h-9 w-9 rounded-xl bg-white p-1 shadow-md ring-1 ring-slate-200" />
+                <img src={mayzaxLogo} alt="Mayzax" className="h-9 w-9 rounded-xl bg-white p-1 shadow-md ring-1 ring-slate-200 dark:ring-slate-800" />
                 <div>
                   <p className="text-sm font-bold tracking-tight">
                     <span className="text-mayzax-blue-500">MAY</span>
                     <span className="text-mayzax-green-500">ZAX</span>
                   </p>
-                  <p className="text-[11px] text-slate-500 flex items-center gap-1">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                     ATS/CRM
                     <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
                   </p>
                 </div>
               </div>
-              <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-900 hover:text-white transition-colors">
+              <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-900 hover:text-white dark:hover:bg-slate-700 transition-colors">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-3 space-y-1">
-              <p className="px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-slate-400">Navigation</p>
+              <p className="px-3 py-2 text-[11px] font-bold tracking-widest uppercase text-slate-400 dark:text-slate-500">Navigation</p>
               {nav.map((item, idx) => (
                 <motion.div key={item.to} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.04 }}>
                   <NavLink
@@ -118,18 +118,18 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
                     className={({ isActive }) =>
                       cn(
                         'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
-                        isActive ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        isActive ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
                       )
                     }
                   >
                     {({ isActive }) => (
                       <>
-                        <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', isActive ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-900 group-hover:text-white')}>
+                        <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', isActive ? 'bg-white/10 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-slate-900 dark:group-hover:bg-slate-700 group-hover:text-white')}>
                           <item.icon className="h-4 w-4" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-[13px] font-semibold leading-tight">{item.label}</p>
-                          <p className={cn('text-[11px] leading-tight', isActive ? 'text-white/60' : 'text-slate-400')}>{item.desc}</p>
+                          <p className={cn('text-[11px] leading-tight', isActive ? 'text-white/60' : 'text-slate-400 dark:text-slate-500')}>{item.desc}</p>
                         </div>
                       </>
                     )}
@@ -138,8 +138,8 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
               ))}
             </div>
 
-            <div className="border-t border-slate-200/60 p-4 bg-gradient-to-b from-white to-slate-50/50">
-              <div className="rounded-xl bg-slate-900 text-white p-3 flex items-center gap-2">
+            <div className="border-t border-slate-200/60 dark:border-slate-800 p-4 bg-gradient-to-b from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-850">
+              <div className="rounded-xl bg-slate-900 dark:bg-slate-800 text-white p-3 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-violet-300" />
                 <div>
                   <p className="text-xs font-semibold">ATS/CRM</p>
