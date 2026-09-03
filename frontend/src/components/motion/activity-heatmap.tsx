@@ -18,11 +18,11 @@ interface DayCell {
 }
 
 const INTENSITY_LEVELS = [
-  { max: 0, className: 'bg-slate-100 border border-slate-200/30', glow: '' },
-  { max: 2, className: 'bg-emerald-100 border border-emerald-200/50', glow: 'shadow-sm shadow-emerald-100' },
-  { max: 5, className: 'bg-emerald-300 border border-emerald-400/50', glow: 'shadow-sm shadow-emerald-200' },
-  { max: 10, className: 'bg-emerald-500 border border-emerald-600/50 text-white', glow: 'shadow-md shadow-emerald-300' },
-  { max: Infinity, className: 'bg-gradient-to-br from-emerald-600 to-teal-700 border border-emerald-700 text-white', glow: 'shadow-lg shadow-emerald-400' },
+  { max: 0, className: 'bg-slate-100 dark:bg-slate-800/80 border border-slate-200/30 dark:border-slate-700/40', glow: '' },
+  { max: 2, className: 'bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-200/50 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300', glow: 'shadow-sm shadow-emerald-100 dark:shadow-none' },
+  { max: 5, className: 'bg-emerald-300 dark:bg-emerald-800/70 border border-emerald-400/50 dark:border-emerald-700/50 text-emerald-900 dark:text-emerald-200', glow: 'shadow-sm shadow-emerald-200 dark:shadow-none' },
+  { max: 10, className: 'bg-emerald-500 dark:bg-emerald-600 border border-emerald-600/50 text-white', glow: 'shadow-md shadow-emerald-300 dark:shadow-none' },
+  { max: Infinity, className: 'bg-gradient-to-br from-emerald-600 to-teal-700 border border-emerald-700 text-white', glow: 'shadow-lg shadow-emerald-400 dark:shadow-none' },
 ];
 
 function getIntensity(count: number) {
@@ -106,31 +106,31 @@ export function ActivityHeatmap({ data, weeks = 26, className }: ActivityHeatmap
   };
 
   return (
-    <div className={cn('relative w-full overflow-hidden rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white to-slate-50/30 p-4 shadow-sm', className)}>
+    <div className={cn('relative w-full overflow-hidden rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-gradient-to-br from-white to-slate-50/30 dark:from-slate-850/60 dark:to-slate-900 p-4 shadow-sm', className)}>
       {/* Header */}
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 ">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md ">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md">
             <Flame className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-800 flex items-center gap-1.5 dark:text-black">
+            <p className="text-sm font-semibold text-slate-800 dark:text-white flex items-center gap-1.5">
               Business-Date Activity Map
-              <span className="rounded-full bg-amber-100 border border-amber-200 text-amber-700 px-1.5 py-0.5 text-[10px] font-bold">{weeks}w</span>
+              <span className="rounded-full bg-amber-100 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 text-[10px] font-bold">{weeks}w</span>
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {total} apps • {maxCount ? `peak ${maxCount}/day` : 'no activity'} • avg {avg.toFixed(1)}/active day • click to filter
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-[11px] text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm">
+        <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1 shadow-sm">
           <TrendingUp className="h-3 w-3 text-emerald-500" />
           Interactive
         </div>
       </div>
 
       {/* Month labels */}
-      <div className="mb-2 grid pl-10 text-[11px] font-medium text-slate-400" style={{ gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))`, minWidth: minHeatmapWidth }}>
+      <div className="mb-2 grid pl-10 text-[11px] font-medium text-slate-400 dark:text-slate-500" style={{ gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))`, minWidth: minHeatmapWidth }}>
         {columns.map((_, i) => {
           const label = monthLabels.find((m) => m.weekIndex === i);
           return (
