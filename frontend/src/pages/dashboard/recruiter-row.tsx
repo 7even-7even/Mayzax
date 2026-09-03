@@ -73,7 +73,7 @@ export function RecruiterRow({ row, expanded, onToggle, index = 0 }: Props) {
           <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-bold dark:text-white">{(row as any).totalInterviewCalls ?? 0}</span>
         </TableCell>
         <TableCell>
-          <span className="inline-flex items-center rounded-full bg-indigo-50 border border-indigo-200 text-indigo-750 px-2.5 py-1 text-xs font-bold shadow-sm">{(row as any).currentShiftInterviewCalls ?? 0}</span>
+          <span className="inline-flex items-center rounded-full bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 text-indigo-750 dark:text-indigo-300 px-2.5 py-1 text-xs font-bold shadow-sm">{(row as any).currentShiftInterviewCalls ?? 0}</span>
         </TableCell>
         <TableCell className="text-xs text-slate-500 dark:text-white flex items-center gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
