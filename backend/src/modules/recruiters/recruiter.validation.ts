@@ -18,6 +18,7 @@ export const updateRecruiterSchema = z.object({
   email: z.string().email().optional(),
   role: z.enum(['ADMIN', 'TEAM_LEADER', 'RECRUITER', 'RESUME_ASSIST', 'SALES_EXEC', 'CLIENT']).optional(),
   createdById: z.string().uuid().nullable().optional(),
+  teamName: z.string().max(100).nullable().optional(),
 });
 
 export const teamNameSchema = z.object({
