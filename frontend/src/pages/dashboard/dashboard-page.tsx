@@ -72,23 +72,23 @@ function TlTeamCard() {
   };
 
   return (
-    <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden relative">
+    <Card className="border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden relative">
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-mayzax-blue-600 to-mayzax-green-600" />
-      <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+      <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-white dark:from-slate-850 dark:to-slate-900 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-sm font-semibold dark:text-black">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white shadow-md">
               <Users className="h-4 w-4" />
             </div>
             My Team
           </CardTitle>
           {!editing && (
-            <button onClick={handleEdit} className="flex items-center gap-1 rounded-full bg-white border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 shadow-sm">
+            <button onClick={handleEdit} className="flex items-center gap-1 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm">
               <Pencil className="h-3 w-3" /> Edit
             </button>
           )}
         </div>
-        <CardDescription className="text-xs dark:text-black/80">Team identity • Shift goals • Performance</CardDescription>
+        <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Team identity • Shift goals • Performance</CardDescription>
       </CardHeader>
 
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
@@ -99,36 +99,36 @@ function TlTeamCard() {
           </div>
         ) : editing ? (
           <div className="flex items-center gap-2 my-auto">
-            <Input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') handleCancel(); }} placeholder="Enter team name..." className="h-9 text-sm rounded-xl" />
+            <Input autoFocus value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') handleCancel(); }} placeholder="Enter team name..." className="h-9 text-sm rounded-xl dark:bg-slate-800 dark:text-white dark:border-slate-700" />
             <button onClick={handleSave} disabled={updateTeamName.isPending} className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500 text-white hover:bg-emerald-600"><Check className="h-4 w-4" /></button>
-            <button onClick={handleCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200"><X className="h-4 w-4" /></button>
+            <button onClick={handleCancel} className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200"><X className="h-4 w-4" /></button>
           </div>
         ) : (
           <div className="flex flex-col justify-center">
             <p className="text-lg font-bold tracking-tight text-slate-900 flex items-center gap-2 dark:text-white">
-              {currentTeamName || <span className="italic text-slate-400 dark:text-white">No team name set</span>}
-              {currentTeamName && <Sparkles className="h-3.5 w-3.5 text-violet-500 dark:text-white" />}
+              {currentTeamName || <span className="italic text-slate-400 dark:text-slate-500">No team name set</span>}
+              {currentTeamName && <Sparkles className="h-3.5 w-3.5 text-violet-500 dark:text-violet-400" />}
             </p>
-            <p className="text-sm text-slate-500 mt-1 dark:text-white/60"><span className="font-semibold text-slate-700 dark:text-white">{stats?.membersCount ?? 0}</span> team member{stats?.membersCount !== 1 ? 's' : ''} • Live roster</p>
+            <p className="text-sm text-slate-500 mt-1 dark:text-slate-400"><span className="font-semibold text-slate-700 dark:text-white">{stats?.membersCount ?? 0}</span> team member{stats?.membersCount !== 1 ? 's' : ''} • Live roster</p>
           </div>
         )}
 
-        <div className="rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-white p-4 space-y-3 shadow-inner">
+        <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-gradient-to-br from-slate-50 to-white dark:from-slate-850 dark:to-slate-900 p-4 space-y-3 shadow-inner">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-bold tracking-wide uppercase text-slate-600">
+            <div className="flex items-center gap-2 text-xs font-bold tracking-wide uppercase text-slate-600 dark:text-slate-400">
               <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-mayzax-blue-600 to-mayzax-green-600 text-white">
                 <Target className="h-3.5 w-3.5" />
               </div>
               Shift Goal
             </div>
             {editingGoal ? (
-              <div className="flex items-center gap-1 dark:text-black">
-                <input autoFocus type="number" min={1} value={goalDraft} onChange={(e) => setGoalDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleGoalSave(); if (e.key === 'Escape') setEditingGoal(false); }} className="w-16 rounded-xl border border-slate-200 bg-white px-2 py-1 text-right text-xs font-bold focus:outline-none focus:ring-2 focus:ring-violet-200" />
+              <div className="flex items-center gap-1">
+                <input autoFocus type="number" min={1} value={goalDraft} onChange={(e) => setGoalDraft(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleGoalSave(); if (e.key === 'Escape') setEditingGoal(false); }} className="w-16 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white px-2 py-1 text-right text-xs font-bold focus:outline-none focus:ring-2 focus:ring-violet-200" />
                 <button onClick={handleGoalSave} className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white"><Check className="h-3.5 w-3.5" /></button>
-                <button onClick={() => setEditingGoal(false)} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500"><X className="h-3.5 w-3.5" /></button>
+                <button onClick={() => setEditingGoal(false)} className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500"><X className="h-3.5 w-3.5" /></button>
               </div>
             ) : (
-              <button onClick={handleGoalEdit} className="rounded-full bg-white border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 shadow-sm">
+              <button onClick={handleGoalEdit} className="rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-sm">
                 {isLoading ? '—' : `${currentApps} / ${shiftGoal}`}
               </button>
             )}
