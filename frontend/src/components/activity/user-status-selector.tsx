@@ -237,16 +237,16 @@ export function UserStatusSelector() {
             </button>
           </DropdownMenuTrigger>
 
-          <DropdownMenuContent align="end" className="w-64 p-2 rounded-2xl shadow-2xl border-slate-200">
-            <DropdownMenuLabel className="text-xs font-bold tracking-wider uppercase text-slate-500 px-2 py-1.5 flex items-center gap-2">
+          <DropdownMenuContent align="end" className="w-64 p-2 rounded-2xl shadow-2xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+            <DropdownMenuLabel className="text-xs font-bold tracking-wider uppercase text-slate-500 dark:text-slate-400 px-2 py-1.5 flex items-center gap-2">
               <Zap className="h-3 w-3" />
               Switch Status
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="dark:bg-slate-800" />
 
             {/* Active - Primary */}
             <div className="space-y-1 p-1">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-2 pt-1">Primary Presence</p>
+              <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-2 pt-1">Primary Presence</p>
               {(['ACTIVE'] as UserStatus[]).map((statusKey) => {
                 const itemConfig = STATUS_CONFIG[statusKey];
                 const isSelected = currentStatus === statusKey;
@@ -255,7 +255,7 @@ export function UserStatusSelector() {
                   <DropdownMenuItem
                     key={statusKey}
                     onClick={() => handleSelectStatus(statusKey)}
-                    className={`flex items-center justify-between cursor-pointer rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${isSelected ? 'bg-slate-900 text-white shadow-md' : 'hover:bg-slate-50'}`}
+                    className={`flex items-center justify-between cursor-pointer rounded-xl px-3 py-2.5 text-xs font-medium transition-all ${isSelected ? 'bg-slate-900 dark:bg-slate-800 text-white shadow-md' : 'hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-200'}`}
                   >
                     <div className="flex items-center gap-2.5">
                       <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${isSelected ? 'bg-white/10 text-white' : `bg-gradient-to-br ${itemConfig.gradient} text-white shadow-sm`}`}>
@@ -263,7 +263,7 @@ export function UserStatusSelector() {
                       </div>
                       <div>
                         <p className="font-semibold leading-tight">{itemConfig.label}</p>
-                        <p className={`text-[11px] leading-tight ${isSelected ? 'text-white/60' : 'text-slate-400'}`}>{itemConfig.description}</p>
+                        <p className={`text-[11px] leading-tight ${isSelected ? 'text-white/60' : 'text-slate-400 dark:text-slate-500'}`}>{itemConfig.description}</p>
                       </div>
                     </div>
                     {isSelected && <Check className="h-4 w-4 text-white" />}
@@ -272,11 +272,11 @@ export function UserStatusSelector() {
               })}
             </div>
 
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="dark:bg-slate-800" />
 
             {/* Breaks & Meetings */}
             <div className="space-y-1 p-1">
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-2 pt-1">Break & Meetings</p>
+              <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider px-2 pt-1">Break & Meetings</p>
               {(Object.keys(STATUS_CONFIG) as UserStatus[]).filter((k) => !['ACTIVE', 'OFFLINE'].includes(k)).map((statusKey) => {
                 const itemConfig = STATUS_CONFIG[statusKey];
                 const isSelected = currentStatus === statusKey;
@@ -284,13 +284,15 @@ export function UserStatusSelector() {
 
                 // Determine if break limit is reached
                 let isLimitReached = false;
-                let limitLabel = '';
+                let badgeText = '';
                 if (statusKey === 'SHORT_BREAK') {
                   isLimitReached = shortBreaksCount >= 2;
-                  limitLabel = ` (${shortBreaksCount}/2)`;
+                  const remaining = Math.max(0, 2 - shortBreaksCount);
+                  badgeText = isLimitReached ? 'Limit reached (2/2 used)' : `${remaining} left (max 2)`;
                 } else if (statusKey === 'DINNER_BREAK') {
                   isLimitReached = dinnerBreaksCount >= 1;
-                  limitLabel = ` (${dinnerBreaksCount}/1)`;
+                  const remaining = Math.max(0, 1 - dinnerBreaksCount);
+                  badgeText = isLimitReached ? 'Limit reached (1/1 used)' : `${remaining} left (max 1)`;
                 }
 
                 return (
@@ -301,10 +303,10 @@ export function UserStatusSelector() {
                     className={cn(
                       "flex items-center justify-between cursor-pointer rounded-xl px-3 py-2 text-xs font-medium transition-all",
                       isSelected
-                        ? "bg-slate-900 text-white"
+                        ? "bg-slate-900 dark:bg-slate-800 text-white"
                         : isLimitReached
                         ? "opacity-40 cursor-not-allowed hover:bg-transparent"
-                        : "hover:bg-slate-50"
+                        : "hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-200"
                     )}
                   >
                     <div className="flex items-center gap-2.5">
@@ -314,9 +316,16 @@ export function UserStatusSelector() {
                       )}>
                         <ItemIcon className="h-3.5 w-3.5" />
                       </div>
-                      <span className={cn(isLimitReached && !isSelected && "line-through text-slate-400")}>
-                        {itemConfig.label}{limitLabel}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className={cn("font-medium", isLimitReached && !isSelected && "line-through text-slate-400")}>
+                          {itemConfig.label}
+                        </span>
+                        {badgeText && (
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                            {badgeText}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {isSelected && <Check className="h-3.5 w-3.5 text-white" />}
                   </DropdownMenuItem>
@@ -324,21 +333,21 @@ export function UserStatusSelector() {
               })}
             </div>
 
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="dark:bg-slate-800" />
 
             {/* Offline - Destructive */}
             <div className="p-1">
               <DropdownMenuItem
                 onClick={() => handleSelectStatus('OFFLINE')}
-                className={`flex items-center justify-between cursor-pointer rounded-xl px-3 py-2.5 text-xs font-medium ${currentStatus === 'OFFLINE' ? 'bg-slate-100 text-slate-600' : 'hover:bg-red-50 hover:text-red-600 text-slate-600'}`}
+                className={`flex items-center justify-between cursor-pointer rounded-xl px-3 py-2.5 text-xs font-medium ${currentStatus === 'OFFLINE' ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300' : 'hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 text-slate-600 dark:text-slate-300'}`}
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                     <LogOut className="h-3.5 w-3.5" />
                   </div>
                   <div>
                     <p className="font-semibold">Go Offline</p>
-                    <p className="text-[11px] text-slate-400">End shift & go offline</p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">End shift & go offline</p>
                   </div>
                 </div>
                 {currentStatus === 'OFFLINE' && <Check className="h-3.5 w-3.5 text-slate-500" />}

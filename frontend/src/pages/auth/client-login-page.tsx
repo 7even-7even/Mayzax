@@ -5,13 +5,13 @@ import { z } from 'zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
-import { Eye, EyeOff, Loader2, Lock, Mail, Sparkles, ShieldCheck, Zap, ArrowRight, SendHorizonal, X } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, Mail, Sparkles, ShieldCheck, Zap, ArrowRight, SendHorizonal, X, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { extractErrorMessage } from '@/lib/api-client';
 import { apiClient } from '@/lib/api-client';
 import mayzaxLogo from '@/assets/mayzax-logo.png';
@@ -238,9 +238,8 @@ export default function ClientLoginPage() {
           <span>© 2026 Mayzax Solutions</span>
         </div>
       </div>
-
       {/* RIGHT FORM PANEL - Lighter, clean slate layout */}
-      <div className="relative flex w-full flex-col items-center justify-center px-4 py-8 lg:w-[42%] bg-slate-50 lg:shadow-[-20px_0_80px_rgba(99,102,241,0.05)] overflow-hidden" onMouseMove={handleMouseMove}>
+      <div className="relative flex w-full flex-col items-center justify-center px-4 py-8 lg:w-[42%] bg-slate-50 dark:bg-slate-950 lg:shadow-[-20px_0_80px_rgba(99,102,241,0.05)] overflow-hidden" onMouseMove={handleMouseMove}>
         <InteractiveSpotlight />
 
         <div className="mb-8 flex flex-col items-center gap-3 lg:hidden">
@@ -248,45 +247,45 @@ export default function ClientLoginPage() {
             <img src={mayzaxLogo} alt="Mayzax" className="h-9 w-9 rounded-lg bg-slate-900 p-1" />
           </div>
           <div className="text-center">
-            <h1 className="text-xl font-bold text-slate-900">Mayzax Client Portal</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">Mayzax Client Portal</h1>
           </div>
         </div>
 
         <div className="relative z-10 w-full max-w-[380px]">
-          <div className="relative overflow-hidden rounded-[28px] border border-slate-200/60 bg-white p-8 shadow-[0_20px_80px_rgba(99,102,241,0.06),0_0_0_1px_rgba(0,0,0,0.02)]">
+          <div className="relative overflow-hidden rounded-[28px] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-[0_20px_80px_rgba(99,102,241,0.06),0_0_0_1px_rgba(0,0,0,0.02)] dark:shadow-2xl">
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-indigo-500 to-violet-600" />
-            <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-100/10 to-emerald-100/5 blur-2xl" />
+            <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-gradient-to-br from-indigo-100/20 to-emerald-100/10 dark:from-indigo-900/20 dark:to-emerald-900/10 blur-2xl pointer-events-none" />
 
             <div className="relative">
               <div className="mb-7">
-                <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 border border-indigo-100/60 px-3 py-1 text-[11px] font-bold tracking-wide text-indigo-700">
+                <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-100/60 dark:border-indigo-800 px-3 py-1 text-[11px] font-bold tracking-wide text-indigo-700 dark:text-indigo-300">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   CLIENT LOGIN
                 </div>
-                <h2 className="mt-4 text-[22px] font-extrabold tracking-tight text-slate-900">Login To Your Dashboard</h2>
+                <h2 className="mt-4 text-[22px] font-extrabold tracking-tight text-slate-900 dark:text-white">Login To Your Dashboard</h2>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold tracking-wide uppercase text-slate-600">Work Email</Label>
+                  <Label className="text-xs font-bold tracking-wide uppercase text-slate-600 dark:text-slate-300">Work Email</Label>
                   <div className="relative group">
-                    <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <Input type="email" placeholder="you@clientemail.com" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-[14px] transition-all" {...register('email')} />
+                    <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors" />
+                    <Input type="email" placeholder="you@clientemail.com" className="h-[46px] pl-10 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-[14px] transition-all" {...register('email')} />
                   </div>
                   {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-600">Password</Label>
-                    <Link to="/forgot-password" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline">
+                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-600 dark:text-slate-300">Password</Label>
+                    <Link to="/forgot-password" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline">
                       Forgot?
                     </Link>
                   </div>
                   <div className="relative group">
-                    <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
-                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="h-[46px] pl-10 pr-10 rounded-xl border-slate-200 bg-slate-50/50 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-[14px] transition-all" {...register('password')} />
-                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-100 text-slate-400">
+                    <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 dark:group-focus-within:text-indigo-400 transition-colors" />
+                    <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" className="h-[46px] pl-10 pr-10 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 text-[14px] transition-all" {...register('password')} />
+                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400">
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
@@ -301,36 +300,34 @@ export default function ClientLoginPage() {
                       </>
                     ) : (
                       <>
-                        Sign in to dashboard <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                        Access Client Dashboard <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                       </>
                     )}
                   </span>
                 </Button>
               </form>
 
-              <div className="mt-7">
-                <div className="relative flex items-center justify-center gap-3">
-                  <div className="flex-1 h-px bg-slate-100" />
-                  <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase whitespace-nowrap">New to Mayzax?</span>
-                  <div className="flex-1 h-px bg-slate-100" />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setEnquiryOpen(true)}
-                  className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-[13px] font-bold text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-all duration-200 group"
-                >
-                  <SendHorizonal className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-                  Send An Enquiry
-                </button>
+              {/* Enquiry link */}
+              <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 text-center">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Interested in our services?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setEnquirySuccess(false); setEnquiryOpen(true); }}
+                    className="font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline transition-colors"
+                  >
+                    Submit an Enquiry
+                  </button>
+                </p>
               </div>
 
-              <div className="mt-5 flex items-center justify-center gap-4 text-[11px] text-slate-400">
+              <div className="mt-6 flex items-center justify-center gap-4 text-[11px] text-slate-400 dark:text-slate-500">
                 <span className="flex items-center gap-1">
-                  <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" /> Secure Area
+                  <ShieldCheck className="h-3 w-3 text-emerald-500" /> Client Protected
                 </span>
-                <span className="h-3 w-px bg-slate-200" />
+                <span className="h-3 w-px bg-slate-200 dark:bg-slate-800" />
                 <span className="flex items-center gap-1">
-                  <Zap className="h-3.5 w-3.5 text-indigo-600" /> 99.9% uptime
+                  <Zap className="h-3 w-3 text-indigo-500" /> Real-time Data
                 </span>
               </div>
             </div>
@@ -338,82 +335,83 @@ export default function ClientLoginPage() {
         </div>
       </div>
 
-      {/* ──────── ENQUIRY DIALOG ──────── */}
-      <Dialog open={enquiryOpen} onOpenChange={handleEnquiryClose}>
-        <DialogContent className="sm:max-w-md rounded-2xl border-slate-200 p-0 overflow-hidden shadow-2xl">
-          {/* Header gradient strip */}
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-[10px] font-bold tracking-widest text-emerald-200 uppercase mb-1">New Enquiry</div>
-                <DialogTitle className="text-xl font-extrabold text-white">Send An Enquiry</DialogTitle>
-                <p className="text-[12px] text-emerald-100 mt-0.5">Our team will get back to you within 24 hours.</p>
+      {/* ENQUIRY MODAL */}
+      <Dialog open={enquiryOpen} onOpenChange={setEnquiryOpen}>
+        <DialogContent className="max-w-md p-0 overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xl">
+          {/* Top header banner */}
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-6 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/10 blur-xl pointer-events-none" />
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase mb-2">
+                <Sparkles className="h-3 w-3" /> Mayzax Solutions
               </div>
-              <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
-                <SendHorizonal className="h-5 w-5 text-white" />
-              </div>
+              <DialogTitle className="text-xl font-extrabold text-white">Partner With Us</DialogTitle>
+              <DialogDescription className="text-emerald-100 text-xs mt-1">
+                Tell us about your requirements — our team will reach out within 24 hours.
+              </DialogDescription>
             </div>
           </div>
 
-          <div className="px-6 py-6">
+          <div className="p-6">
             {enquirySuccess ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex flex-col items-center gap-4 py-8 text-center"
-              >
-                <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <ShieldCheck className="h-8 w-8 text-emerald-600" />
+              <div className="text-center py-6 space-y-3">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 mx-auto shadow-inner border border-emerald-200 dark:border-emerald-800">
+                  <CheckCircle2 className="h-8 w-8" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">Enquiry Submitted!</h3>
-                  <p className="text-sm text-slate-500 mt-1">Thank you, {enqName.split(' ')[0]}! Our team will reach out to <span className="font-semibold text-slate-700">{enqEmail}</span> shortly.</p>
-                </div>
-                <Button onClick={handleEnquiryClose} className="mt-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8">
-                  Done
+                <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">Enquiry Received!</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
+                  Thank you for reaching out. A Mayzax representative will review your request and get in touch shortly.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEnquiryOpen(false)}
+                  className="mt-2 rounded-xl border-slate-200 dark:border-slate-700 dark:text-slate-200"
+                >
+                  Close
                 </Button>
-              </motion.div>
+              </div>
             ) : (
-              <form onSubmit={handleEnquirySubmit} className="space-y-1">
+              <form onSubmit={handleEnquirySubmit} className="space-y-4">
                 {/* Full Name */}
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500">Full Name <span className="text-red-500">*</span></Label>
+                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500 dark:text-slate-400">Full Name <span className="text-red-500">*</span></Label>
                   <Input
                     value={enqName}
                     onChange={e => setEnqName(e.target.value)}
                     placeholder="Jane Doe"
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px]"
+                    className="h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px]"
                     required
                   />
                 </div>
 
                 {/* Email */}
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500">Email <span className="text-red-500">*</span></Label>
+                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500 dark:text-slate-400">Email <span className="text-red-500">*</span></Label>
                   <Input
                     type="email"
                     value={enqEmail}
                     onChange={e => setEnqEmail(e.target.value)}
                     placeholder="jane@example.com"
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px]"
+                    className="h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px]"
                     required
                   />
                 </div>
 
                 {/* Phone */}
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500">Phone <span className="text-slate-400 font-normal">(Optional)</span></Label>
+                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500 dark:text-slate-400">Phone <span className="text-slate-400 font-normal">(Optional)</span></Label>
                   <Input
                     value={enqPhone}
                     onChange={e => setEnqPhone(e.target.value)}
                     placeholder="+1 555 000 0000"
-                    className="h-11 rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px]"
+                    className="h-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px]"
                   />
                 </div>
 
                 {/* Service Interested */}
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500">Service Interested In <span className="text-red-500">*</span></Label>
+                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500 dark:text-slate-400">Service Interested In <span className="text-red-500">*</span></Label>
                   <div className="flex flex-wrap gap-2">
                     {SERVICES.map(s => (
                       <button
@@ -423,7 +421,7 @@ export default function ClientLoginPage() {
                         className={`rounded-full px-4 py-1.5 text-[12px] font-bold border transition-all duration-150 ${
                           enqService === s
                             ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                            : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-300 hover:text-emerald-700'
                         }`}
                       >
                         {s}
@@ -434,13 +432,13 @@ export default function ClientLoginPage() {
 
                 {/* Details */}
                 <div className="space-y-1.5">
-                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500">How Can We Help? <span className="text-red-500">*</span></Label>
+                  <Label className="text-[11px] font-bold tracking-widest uppercase text-slate-500 dark:text-slate-400">How Can We Help? <span className="text-red-500">*</span></Label>
                   <Textarea
                     value={enqDetails}
                     onChange={e => setEnqDetails(e.target.value)}
                     placeholder="Tell us about your background, visa status & goals..."
                     rows={3}
-                    className="rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px] resize-none"
+                    className="rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 text-[14px] resize-none"
                     required
                   />
                 </div>

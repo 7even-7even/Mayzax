@@ -37,6 +37,7 @@ const PORTAL_COLORS: Record<string, string> = {
   LEVER: '#F43F5E',
   GREENHOUSE: '#22C55E',
   SPEEDY_APPLY: '#E11D48',
+  EASY_APPLY: '#F59E0B',
   THE_MUSE: '#6366F1',
   Y_COMBINATOR: '#F97316',
   CAREER_SITE: '#94A3B8',
@@ -53,6 +54,7 @@ const PORTAL_GRADIENTS: Record<string, string> = {
   SIMPLYHIRED: 'from-amber-400 to-orange-500',
   WELLFOUND: 'from-emerald-400 to-teal-600',
   HANDSHAKE: 'from-orange-400 to-red-500',
+  EASY_APPLY: 'from-amber-500 to-orange-600',
   ASHBY: 'from-rose-400 to-rose-600',
   OTHER: 'from-slate-400 to-slate-600',
 };

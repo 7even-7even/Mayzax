@@ -54,18 +54,24 @@ export function RecruiterRow({ row, expanded, onToggle, index = 0 }: Props) {
           <span className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-bold dark:text-white">{row.assignedProfiles}</span>
         </TableCell>
         <TableCell className="text-sm font-bold text-slate-900 dark:text-white">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             <span>{row.totalApplications}</span>
             {row.ashbyRemainder && row.ashbyRemainder > 0 ? (
               <span className="text-[10px] text-slate-400 font-normal"> (+{row.ashbyRemainder} Ashby)</span>
             ) : null}
+            {row.easyApplyRemainder && row.easyApplyRemainder > 0 ? (
+              <span className="text-[10px] text-amber-500 font-normal"> (+{row.easyApplyRemainder} EA)</span>
+            ) : null}
           </div>
         </TableCell>
         <TableCell>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="inline-flex items-center rounded-full bg-gradient-to-r from-mayzax-blue-600 to-mayzax-green-600 text-white px-2.5 py-1 text-xs font-bold shadow-sm">{row.currentShiftApplications}</span>
             {row.ashbyShiftRemainder && row.ashbyShiftRemainder > 0 ? (
               <span className="text-[10px] text-indigo-500 font-medium"> (+{row.ashbyShiftRemainder} A)</span>
+            ) : null}
+            {row.easyApplyShiftRemainder && row.easyApplyShiftRemainder > 0 ? (
+              <span className="text-[10px] text-amber-500 font-medium"> (+{row.easyApplyShiftRemainder} EA)</span>
             ) : null}
           </div>
         </TableCell>

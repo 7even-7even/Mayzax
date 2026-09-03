@@ -107,16 +107,33 @@ export function InterviewsCalendar({
                 <button
                   type="button"
                   onClick={() => onDateSelect(day)}
-                  className={`relative aspect-square flex flex-col items-center justify-between p-1 rounded-lg border text-xs font-semibold transition-all ${isSelected
-                      ? 'border-mayzax-blue-500 bg-mayzax-blue-50/50 dark:bg-mayzax-blue-950/40 text-mayzax-blue-700 dark:text-mayzax-blue-300 shadow-sm ring-1 ring-mayzax-blue-500'
+                  className={`relative aspect-square flex flex-col items-center justify-between p-1 rounded-xl border text-xs font-semibold transition-all ${
+                    isSelected
+                      ? 'border-indigo-500 bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-500/30 ring-2 ring-indigo-400 z-10'
                       : isToday
-                        ? 'border-indigo-200 dark:border-indigo-800 bg-indigo-50/30 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300'
-                        : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
-                    }`}
+                        ? 'border-indigo-400 dark:border-indigo-500 bg-indigo-500/20 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 font-bold ring-1 ring-indigo-400/50'
+                        : 'border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-850 dark:text-slate-100'
+                  }`}
                 >
-                  <span className="text-[11px]">{day.getDate()}</span>
+                  <span
+                    className={`text-[12px] font-bold ${
+                      isSelected
+                        ? 'text-white'
+                        : isToday
+                          ? 'text-indigo-700 dark:text-indigo-300'
+                          : 'text-slate-900 dark:text-white'
+                    }`}
+                  >
+                    {day.getDate()}
+                  </span>
                   {hasInterviews && (
-                    <div className="flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[9px] font-bold text-white shadow-sm">
+                    <div
+                      className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold shadow-sm ${
+                        isSelected
+                          ? 'bg-white text-indigo-700'
+                          : 'bg-indigo-600 text-white'
+                      }`}
+                    >
                       {dayInterviews.length}
                     </div>
                   )}

@@ -136,7 +136,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen overflow-hidden bg-slate-50">
+    <div className="relative flex min-h-screen overflow-hidden bg-slate-50 dark:bg-slate-950">
       {/* LEFT BRAND PANEL - Original palette Mayzax gradient */}
       <div className="relative hidden w-[58%] flex-col justify-between overflow-hidden bg-mayzax-gradient px-16 py-12 lg:flex" onMouseMove={handleMouseMove}>
         {/* Interactive spotlight following mouse */}
@@ -159,7 +159,7 @@ export default function ForgotPasswordPage() {
         <div className="absolute -top-20 -left-20 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-mayzax-green-300/20 blur-3xl" />
 
-        {/* Floating cubes - original blue/green/white */}
+        {/* Floating cubes */}
         <FloatingCube size={90} top="12%" left="15%" variant="blue" duration={10} />
         <FloatingCube size={50} top="25%" right="18%" variant="white" duration={7} delay={0.5} />
         <FloatingCube size={65} bottom="20%" left="10%" variant="green" duration={9} delay={1} />
@@ -179,17 +179,17 @@ export default function ForgotPasswordPage() {
         <div className="relative z-10 flex flex-col gap-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}>
             <h1 className="mt-6 text-5xl font-bold tracking-tight text-white leading-[1.05]">
-              Secure password
+              Account
               <br />
-              <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">recovery system</span>
+              <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">Recovery Flow</span>
             </h1>
           </motion.div>
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="grid grid-cols-3 gap-3 max-w-lg">
             {[
-              { icon: KeyRound, label: 'Instant Reset', sub: 'Security QA' },
-              { icon: ShieldCheck, label: 'Bcrypt Hash', sub: 'High security' },
-              { icon: Zap, label: 'No spam', sub: 'Zero latency' },
+              { icon: ShieldCheck, label: 'Secured', sub: 'Challenge Auth' },
+              { icon: Zap, label: 'Instant', sub: 'Direct Reset' },
+              { icon: Sparkles, label: 'Verified', sub: 'Anti-enumeration' },
             ].map((f, i) => (
               <div key={i} className="group rounded-2xl bg-white/10 border border-white/15 backdrop-blur-xl p-3 hover:bg-white/15 transition-colors cursor-default">
                 <f.icon className="h-4 w-4 text-white mb-2 group-hover:scale-110 transition-transform" />
@@ -205,45 +205,45 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
 
-      {/* RIGHT FORM PANEL - Premium white with interactive spotlight */}
-      <div className="relative flex w-full flex-col items-center justify-center px-4 py-8 lg:w-[42%] bg-white lg:shadow-[-20px_0_80px_rgba(42,93,168,0.08)] overflow-hidden" onMouseMove={handleMouseMove}>
+      {/* RIGHT FORM PANEL */}
+      <div className="relative flex w-full flex-col items-center justify-center px-4 py-8 lg:w-[42%] bg-white dark:bg-slate-950 lg:shadow-[-20px_0_80px_rgba(42,93,168,0.08)] overflow-hidden" onMouseMove={handleMouseMove}>
         <InteractiveSpotlight />
 
         <div className="mb-8 flex flex-col items-center gap-3 lg:hidden">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-mayzax-gradient shadow-xl shadow-mayzax-blue/20 ring-1 ring-white">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-mayzax-gradient shadow-xl shadow-mayzax-blue/20 ring-1 ring-white/20">
             <img src={mayzaxLogo} alt="Mayzax" className="h-9 w-9 rounded-lg bg-white p-1" />
           </div>
           <div className="text-center">
-            <h1 className="text-xl font-bold text-slate-900">Mayzax ATS</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">Mayzax ATS</h1>
           </div>
         </div>
 
         <div className="relative z-10 w-full max-w-[380px]">
-          <div className="relative overflow-hidden rounded-[24px] border border-slate-200/60 bg-white p-8 shadow-[0_20px_80px_rgba(42,93,168,0.08),0_0_0_1px_rgba(0,0,0,0.03)]">
+          <div className="relative overflow-hidden rounded-[24px] border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-[0_20px_80px_rgba(42,93,168,0.08),0_0_0_1px_rgba(0,0,0,0.03)] dark:shadow-2xl">
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-mayzax-gradient" />
-            <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-gradient-to-br from-mayzax-blue-100 to-mayzax-green-50 blur-2xl" />
+            <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-gradient-to-br from-mayzax-blue-100/40 to-mayzax-green-50/20 dark:from-mayzax-blue-900/20 dark:to-mayzax-green-900/10 blur-2xl pointer-events-none" />
 
             <div className="relative">
               <div className="mb-7 flex flex-col items-center text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-mayzax-blue-50 border border-mayzax-blue-100 text-mayzax-blue-700 shadow-sm mb-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-mayzax-blue-50 dark:bg-mayzax-blue-950/50 border border-mayzax-blue-100 dark:border-mayzax-blue-800 text-mayzax-blue-700 dark:text-mayzax-blue-300 shadow-sm mb-4">
                   <KeyRound className="h-7 w-7" />
                 </div>
-                <h1 className="text-[22px] font-bold tracking-tight text-slate-900 flex items-center justify-center gap-2">
+                <h1 className="text-[22px] font-bold tracking-tight text-slate-900 dark:text-white flex items-center justify-center gap-2">
                   Forgot Password
-                  <span className="rounded-full bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 text-[10px] font-bold">SECURE</span>
+                  <span className="rounded-full bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 text-[10px] font-bold">SECURE</span>
                 </h1>
-                <p className="mt-1.5 text-[13px] text-slate-500 leading-relaxed max-w-[300px]">Answer your security question to reset password • Recovery flow</p>
+                <p className="mt-1.5 text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed max-w-[300px]">Answer your security question to reset password • Recovery flow</p>
               </div>
 
               {!securityQuestion ? (
                 <form onSubmit={emailForm.handleSubmit(fetchQuestion)} className="space-y-5" noValidate>
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">Email Address</Label>
+                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700 dark:text-slate-300">Email Address</Label>
                     <div className="relative group">
                       <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 group-focus-within:text-mayzax-blue-500 transition-colors" />
-                      <Input type="email" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" placeholder="you@mayzaxsolutions.com" {...emailForm.register('email')} />
+                      <Input type="email" className="h-[46px] pl-10 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[14px] transition-all" placeholder="you@mayzaxsolutions.com" {...emailForm.register('email')} />
                     </div>
-                    {emailForm.formState.errors.email && <p className="text-xs text-red-600">{emailForm.formState.errors.email.message}</p>}
+                    {emailForm.formState.errors.email && <p className="text-xs text-red-500">{emailForm.formState.errors.email.message}</p>}
                   </div>
 
                   <Button type="submit" className="group relative w-full h-[46px] rounded-xl bg-mayzax-gradient hover:opacity-90 text-white font-semibold text-[14px] shadow-[0_8px_24px_rgba(42,93,168,0.25)] hover:shadow-[0_12px_32px_rgba(42,93,168,0.3)] transition-all duration-300 overflow-hidden" disabled={emailForm.formState.isSubmitting}>
@@ -260,42 +260,42 @@ export default function ForgotPasswordPage() {
                     </span>
                   </Button>
 
-                  <div className="rounded-xl bg-gradient-to-br from-mayzax-blue-50 to-mayzax-green-50/30 border border-mayzax-blue-100 p-3 flex gap-2.5">
+                  <div className="rounded-xl bg-gradient-to-br from-mayzax-blue-50 to-mayzax-green-50/30 dark:from-mayzax-blue-950/40 dark:to-mayzax-green-950/20 border border-mayzax-blue-100 dark:border-mayzax-blue-800 p-3 flex gap-2.5">
                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-mayzax-gradient text-white shrink-0">
                       <ShieldCheck className="h-4 w-4" />
                     </div>
-                    <p className="text-xs leading-relaxed text-slate-600">
-                      <span className="font-semibold text-mayzax-blue-700">Security safeguard:</span> We’ll show your security question only if account exists. No email enumeration.
+                    <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+                      <span className="font-semibold text-mayzax-blue-700 dark:text-mayzax-blue-300">Security safeguard:</span> We’ll show your security question only if account exists. No email enumeration.
                     </p>
                   </div>
                 </form>
               ) : (
                 <form onSubmit={resetForm.handleSubmit(resetPassword)} className="space-y-5" noValidate>
-                  <div className="rounded-xl border border-mayzax-blue-200 bg-gradient-to-br from-mayzax-blue-50 to-mayzax-green-50/50 p-4">
-                    <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-mayzax-blue-750">
+                  <div className="rounded-xl border border-mayzax-blue-200 dark:border-mayzax-blue-800 bg-gradient-to-br from-mayzax-blue-50 to-mayzax-green-50/50 dark:from-mayzax-blue-950/40 dark:to-mayzax-green-950/20 p-4">
+                    <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-mayzax-blue-750 dark:text-mayzax-blue-300">
                       <ShieldQuestion className="h-3.5 w-3.5" /> Security Question
                     </p>
-                    <p className="text-sm font-semibold text-slate-900 leading-relaxed">{securityQuestion}</p>
-                    <p className="mt-1 text-[11px] text-slate-500">Answer is case-insensitive • Stored securely</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white leading-relaxed">{securityQuestion}</p>
+                    <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Answer is case-insensitive • Stored securely</p>
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">Answer</Label>
-                    <Input type="password" placeholder="Your secret answer" className="h-[46px] rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...resetForm.register('securityAnswer')} />
-                    {resetForm.formState.errors.securityAnswer && <p className="text-xs text-red-600">{resetForm.formState.errors.securityAnswer.message}</p>}
+                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700 dark:text-slate-300">Answer</Label>
+                    <Input type="password" placeholder="Your secret answer" className="h-[46px] rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[14px] transition-all" {...resetForm.register('securityAnswer')} />
+                    {resetForm.formState.errors.securityAnswer && <p className="text-xs text-red-500">{resetForm.formState.errors.securityAnswer.message}</p>}
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">New Password</Label>
+                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700 dark:text-slate-300">New Password</Label>
                     <div className="relative">
                       <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                      <Input type="password" placeholder="Minimum 8 chars, uppercase, number" className="h-[46px] pl-10 rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...resetForm.register('newPassword')} />
+                      <Input type="password" placeholder="Minimum 8 chars, uppercase, number" className="h-[46px] pl-10 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[14px] transition-all" {...resetForm.register('newPassword')} />
                     </div>
-                    {resetForm.formState.errors.newPassword && <p className="text-xs text-red-600">{resetForm.formState.errors.newPassword.message}</p>}
+                    {resetForm.formState.errors.newPassword && <p className="text-xs text-red-500">{resetForm.formState.errors.newPassword.message}</p>}
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700">Confirm New Password</Label>
-                    <Input type="password" placeholder="Repeat new password" className="h-[46px] rounded-xl border-slate-200 bg-slate-50/50 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 text-[14px] transition-all dark:text-black" {...resetForm.register('confirmPassword')} />
-                    {resetForm.formState.errors.confirmPassword && <p className="text-xs text-red-600">{resetForm.formState.errors.confirmPassword.message}</p>}
+                    <Label className="text-xs font-bold tracking-wide uppercase text-slate-700 dark:text-slate-300">Confirm New Password</Label>
+                    <Input type="password" placeholder="Repeat new password" className="h-[46px] rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[14px] transition-all" {...resetForm.register('confirmPassword')} />
+                    {resetForm.formState.errors.confirmPassword && <p className="text-xs text-red-500">{resetForm.formState.errors.confirmPassword.message}</p>}
                   </div>
 
                   <Button type="submit" className="group relative w-full h-[46px] rounded-xl bg-mayzax-gradient hover:opacity-90 text-white font-semibold text-[14px] shadow-[0_8px_24px_rgba(42,93,168,0.25)] hover:shadow-[0_12px_32px_rgba(42,93,168,0.3)] transition-all duration-300 overflow-hidden" disabled={resetForm.formState.isSubmitting}>
@@ -304,24 +304,24 @@ export default function ForgotPasswordPage() {
                     </span>
                   </Button>
 
-                  <Button type="button" variant="outline" className="w-full rounded-xl h-[46px] border-slate-200 bg-white" onClick={() => setSecurityQuestion('')}>
+                  <Button type="button" variant="outline" className="w-full rounded-xl h-[46px] border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 dark:hover:bg-slate-750" onClick={() => setSecurityQuestion('')}>
                     <ArrowLeft className="h-4 w-4 mr-1" /> Use another email
                   </Button>
                 </form>
               )}
 
-              <p className="mt-6 flex items-center justify-center gap-2 text-sm text-slate-500">
+              <p className="mt-6 flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                 <span>Remembered password?</span>
-                <Link to="/login" className="font-bold text-mayzax-blue-700 hover:text-mayzax-blue-800 transition-colors inline-flex items-center gap-1">
+                <Link to="/login" className="font-bold text-mayzax-blue-700 dark:text-mayzax-blue-400 hover:text-mayzax-blue-800 dark:hover:text-mayzax-blue-300 transition-colors inline-flex items-center gap-1">
                   Back to login <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </p>
 
-              <div className="mt-6 flex items-center justify-center gap-4 text-[11px] text-slate-400">
+              <div className="mt-6 flex items-center justify-center gap-4 text-[11px] text-slate-400 dark:text-slate-500">
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="h-3 w-3 text-mayzax-green-600" /> Secure recovery
                 </span>
-                <span className="h-3 w-px bg-slate-200" />
+                <span className="h-3 w-px bg-slate-200 dark:bg-slate-800" />
                 <span className="flex items-center gap-1">
                   <Zap className="h-3 w-3 text-mayzax-blue-600" /> Uptime 99.9%
                 </span>

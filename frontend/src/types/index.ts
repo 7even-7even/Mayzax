@@ -56,9 +56,11 @@ export interface RecruiterStats {
   totalApplications: number;
   rawTotalApplications?: number;
   ashbyRemainder?: number;
+  easyApplyRemainder?: number;
   currentShiftApplications: number;
   rawCurrentShiftApplications?: number;
   ashbyShiftRemainder?: number;
+  easyApplyShiftRemainder?: number;
   currentBusinessDate: string;
   profileWiseCounts: Array<{
     profileId: string;
@@ -149,6 +151,7 @@ export type JobPortal =
   | 'LEVER'
   | 'GREENHOUSE'
   | 'SPEEDY_APPLY'
+  | 'EASY_APPLY'
   | 'THE_MUSE'
   | 'Y_COMBINATOR'
   | 'CAREER_SITE'
@@ -209,8 +212,10 @@ export interface DashboardRow {
   assignedProfiles: number;
   totalApplications: number;
   ashbyRemainder?: number;
+  easyApplyRemainder?: number;
   currentShiftApplications: number;
   ashbyShiftRemainder?: number;
+  easyApplyShiftRemainder?: number;
   lastActiveAt: string | null;
 }
 

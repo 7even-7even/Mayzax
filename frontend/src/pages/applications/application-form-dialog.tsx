@@ -218,18 +218,18 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg rounded-2xl border-slate-200/60 p-0 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+      <DialogContent className="max-w-lg rounded-2xl border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 p-0 overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         <div className="h-1 w-full bg-mayzax-gradient shrink-0" />
         <div className="p-6 pb-2 shrink-0">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5 text-lg">
+            <DialogTitle className="flex items-center gap-2.5 text-lg font-bold text-slate-900 dark:text-white">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mayzax-gradient text-white shadow-md">
                 <Briefcase className="h-4 w-4" />
               </div>
               Log Job Application
             </DialogTitle>
-            <DialogDescription className="text-xs">
-              Verified tracking 
+            <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+              Verified tracking • Real-time duplicate & ATS detection
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -238,24 +238,24 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
           <div className="flex-1 overflow-y-auto px-6 py-2 space-y-5">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                   <User2 className="h-3.5 w-3.5 text-mayzax-blue-500" />
                   Candidate Profile
                 </Label>
                 {profileId && (
-                  <span className="text-[11px] font-semibold text-slate-500">
-                    Links Count Today: <span className="text-mayzax-blue-700 dark:text-mayzax-blue-400">{shiftAppsData?.pagination?.rawTotal ?? shiftAppsData?.pagination?.total ?? 0} today</span> · <span className="text-indigo-600">{allTimeAppsData?.pagination?.rawTotal ?? allTimeAppsData?.pagination?.total ?? 0} total</span>
+                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    Links Count Today: <span className="text-mayzax-blue-600 dark:text-mayzax-blue-400 font-bold">{shiftAppsData?.pagination?.rawTotal ?? shiftAppsData?.pagination?.total ?? 0} today</span> · <span className="text-indigo-600 dark:text-indigo-400 font-bold">{allTimeAppsData?.pagination?.rawTotal ?? allTimeAppsData?.pagination?.total ?? 0} total</span>
                   </span>
                 )}
               </div>
               <Select value={form.watch('profileId')} onValueChange={(value) => form.setValue('profileId', value)}>
-                <SelectTrigger className="rounded-xl h-11 bg-slate-50/50 border-slate-200 focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black">
+                <SelectTrigger className="rounded-xl h-11 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-500/10">
                   <SelectValue placeholder="Select a profile" />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl">
+                <SelectContent className="rounded-xl bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-700">
                   {profiles.map((p) => (
-                    <SelectItem key={p.id} value={p.id} className="text-sm">
-                      <span className="font-medium dark:text-white">{p.candidateName}</span> <span className="text-slate-400 dark:text-white">· {p.technology}</span>
+                    <SelectItem key={p.id} value={p.id} className="text-sm focus:bg-slate-100 dark:focus:bg-slate-750">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{p.candidateName}</span> <span className="text-slate-400 dark:text-slate-400">· {p.technology}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -263,21 +263,26 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="jobLink" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 dark:text-white ">
-                <Link2 className="h-3.5 w-3.5 text-mayzax-blue-500 " />
+              <Label htmlFor="jobLink" className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                <Link2 className="h-3.5 w-3.5 text-mayzax-blue-500" />
                 Job Posting Link
               </Label>
-              <Input id="jobLink" placeholder="https://www.linkedin.com/jobs/view/..." className="rounded-xl h-11 border-slate-200 focus:bg-white focus:border-mayzax-blue-300 focus:ring-4 focus:ring-mayzax-blue-50 dark:text-black" {...form.register('jobLink')} />
+              <Input
+                id="jobLink"
+                placeholder="https://www.linkedin.com/jobs/view/..."
+                className="rounded-xl h-11 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-mayzax-blue-400 focus:ring-4 focus:ring-mayzax-blue-500/10"
+                {...form.register('jobLink')}
+              />
               {debouncedLink && (
                 <div className="mt-3 space-y-2">
                   <ExtensionVerificationBadge isVerified={isVerified} isChecking={isChecking} result={verificationResult} state={verificationState} isExtensionInstalled={isExtensionInstalled} installUrl={installUrl} extensionId={extensionId} onRetry={retryVerification} />
                   <div className="flex flex-wrap gap-2">
                     {duplicateResult?.isDuplicate ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 px-3 py-1 text-xs font-semibold text-rose-700 dark:text-rose-400">
                         <AlertTriangle className="h-3.5 w-3.5" /> Duplicate • Already applied
                       </span>
                     ) : duplicateResult && !duplicateResult.isDuplicate ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
                         <CheckCircle2 className="h-3.5 w-3.5" /> Unique • Safe to submit
                       </span>
                     ) : null}
@@ -288,28 +293,36 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1 text-slate-700 dark:text-slate-300">
                   <Building2 className="h-3 w-3 text-slate-400" /> Company
                 </Label>
-                <Input placeholder="e.g. Google" className="rounded-xl h-10 bg-white border-slate-200" {...form.register('companyName')} />
+                <Input
+                  placeholder="e.g. Google"
+                  className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
+                  {...form.register('companyName')}
+                />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                <Label className="text-xs font-bold uppercase tracking-wider flex items-center gap-1 text-slate-700 dark:text-slate-300">
                   <Briefcase className="h-3 w-3 text-slate-400" /> Job Title
                 </Label>
-                <Input placeholder="e.g. Backend Engineer" className="rounded-xl h-10 bg-white border-slate-200" {...form.register('jobTitle')} />
+                <Input
+                  placeholder="e.g. Backend Engineer"
+                  className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
+                  {...form.register('jobTitle')}
+                />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase tracking-wider">Job Portal</Label>
+              <Label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">Job Portal</Label>
               <Select value={form.watch('jobPortal')} onValueChange={(value) => form.setValue('jobPortal', value as any)}>
-                <SelectTrigger className="rounded-xl h-10 bg-white border-slate-200 dark:text-black">
+                <SelectTrigger className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-xl">
+                <SelectContent className="rounded-xl bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-700 max-h-60">
                   {ALL_JOB_PORTALS.map((portal) => (
-                    <SelectItem key={portal} value={portal} className="text-xs">
+                    <SelectItem key={portal} value={portal} className="text-xs focus:bg-slate-100 dark:focus:bg-slate-750">
                       {formatEnumLabel(portal)}
                     </SelectItem>
                   ))}
@@ -317,20 +330,19 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
               </Select>
             </div>
 
-            {/* Verification Info Box commented out until extension is deployed */}
-            <div className="rounded-xl bg-gradient-to-br from-mayzax-blue-50 to-mayzax-green-50/30 border border-mayzax-blue-100 p-3 flex gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-mayzax-gradient text-white shrink-0">
+            <div className="rounded-xl bg-gradient-to-br from-mayzax-blue-50/80 to-mayzax-green-50/40 dark:from-mayzax-blue-950/20 dark:to-mayzax-green-950/10 border border-mayzax-blue-100/80 dark:border-mayzax-blue-900/40 p-3 flex gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-mayzax-gradient text-white shrink-0 shadow-sm">
                 <ShieldCheck className="h-4 w-4" />
               </div>
-              <p className="text-xs leading-relaxed text-slate-600">
-                <span className="font-semibold text-mayzax-blue-700">Updated Verification:</span> Extension auto-detects success page • Prevents duplicate for same profile
+              <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-350">
+                <span className="font-semibold text-mayzax-blue-700 dark:text-mayzax-blue-400">Updated Verification:</span> Extension auto-detects success page • Prevents duplicate for same profile
               </p>
             </div>
           </div>
 
-          <div className="p-6 pt-4 border-t border-slate-100 shrink-0 bg-slate-50/30">
+          <div className="p-6 pt-4 border-t border-slate-100 dark:border-slate-800 shrink-0 bg-slate-50/50 dark:bg-slate-900/70">
             <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-full">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-full dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
                 Cancel
               </Button>
               <Button type="submit" variant="brand" disabled={isSubmitting || duplicateResult?.isDuplicate} className="rounded-full gap-1.5 shadow-md shadow-mayzax-blue-200/30 bg-mayzax-gradient border-0 text-white hover:opacity-90">
@@ -344,14 +356,14 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
       </DialogContent>
 
       <Dialog open={showStatusWarning} onOpenChange={setShowStatusWarning}>
-        <DialogContent className="max-w-md rounded-2xl border-slate-200/60 p-6 shadow-2xl flex flex-col items-center text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-600 mb-4 animate-bounce">
+        <DialogContent className="max-w-md rounded-2xl border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-2xl flex flex-col items-center text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 mb-4 animate-bounce">
             <AlertTriangle className="h-6 w-6" />
           </div>
           <DialogHeader className="space-y-2">
-            <DialogTitle className="text-xl font-bold text-slate-900">Please Turn Status Active</DialogTitle>
-            <DialogDescription className="text-sm text-slate-500">
-              You are currently on break or offline. You must change your activity status to **Working (Active)** to submit job applications.
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">Please Turn Status Active</DialogTitle>
+            <DialogDescription className="text-sm text-slate-500 dark:text-slate-400">
+              You are currently on break or offline. You must change your activity status to <strong className="text-slate-700 dark:text-slate-200">Working (Active)</strong> to submit job applications.
             </DialogDescription>
           </DialogHeader>
           <div className="mt-6 w-full flex justify-end gap-3">
@@ -359,7 +371,7 @@ export function ApplicationFormDialog({ open, onOpenChange, defaultProfileId }: 
               type="button"
               variant="outline"
               onClick={() => setShowStatusWarning(false)}
-              className="rounded-full"
+              className="rounded-full dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Cancel
             </Button>

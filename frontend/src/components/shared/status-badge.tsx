@@ -60,6 +60,7 @@ export const ALL_JOB_PORTALS = [
   'LEVER',
   'GREENHOUSE',
   'SPEEDY_APPLY',
+  'EASY_APPLY',
   'THE_MUSE',
   'Y_COMBINATOR',
   'CAREER_SITE',
@@ -82,9 +83,11 @@ const enumLabels: Partial<Record<string, string>> = {
   LEVER: 'Lever',
   GREENHOUSE: 'Greenhouse',
   SPEEDY_APPLY: 'Speedy Apply',
+  EASY_APPLY: 'Easy Apply',
   THE_MUSE: 'The Muse',
   Y_COMBINATOR: 'Y Combinator',
   CAREER_SITE: 'Career Site',
+  ASHBY: 'Ashby',
 };
 
 export function formatEnumLabel(value: string): string {
@@ -97,6 +100,7 @@ export function JobPortalBadge({ portal }: { portal: JobPortal }) {
     INDEED: 'bg-[#2164A6] text-white border-0',
     GLASSDOOR: 'bg-[#17A2B8] text-white border-0',
     ASHBY: 'bg-[#FF5A5F] text-white border-0',
+    EASY_APPLY: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white border-0',
     OTHER: 'bg-slate-100 text-slate-700 border-slate-200',
   };
   return <Badge className={cn('rounded-full text-[11px] font-semibold shadow-sm', colors[portal] ?? colors.OTHER)}>{formatEnumLabel(portal)}</Badge>;

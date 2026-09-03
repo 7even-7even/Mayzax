@@ -481,7 +481,7 @@ export default function ProfilesPage() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               placeholder="Search by name, email, phone, or tech..."
-              className="pl-9 bg-white shadow-sm rounded-full border-slate-200"
+              className="pl-9 bg-white dark:bg-slate-900 shadow-sm rounded-full border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -491,20 +491,20 @@ export default function ProfilesPage() {
           </div>
 
           {isManager && (
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm">
-              <span className="text-xs font-semibold text-slate-500">Assigned To:</span>
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full px-3 py-1 shadow-sm">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Assigned To:</span>
               <select
-                className="h-7 rounded-full border-0 bg-transparent text-xs text-slate-700 font-medium focus:outline-none cursor-pointer"
+                className="h-7 rounded-full border-0 bg-transparent text-xs text-slate-700 dark:text-slate-200 font-medium focus:outline-none cursor-pointer"
                 value={assignedRecruiterFilter}
                 onChange={(e) => {
                   setAssignedRecruiterFilter(e.target.value);
                   setPage(1);
                 }}
               >
-                <option value="ALL">All Recruiters</option>
-                <option value="unassigned">Unassigned</option>
+                <option value="ALL" className="dark:bg-slate-900 dark:text-white">All Recruiters</option>
+                <option value="unassigned" className="dark:bg-slate-900 dark:text-white">Unassigned</option>
                 {recruiters.map((r) => (
-                  <option key={r.id} value={r.id}>
+                  <option key={r.id} value={r.id} className="dark:bg-slate-900 dark:text-white">
                     {r.name} ({r.role === 'TEAM_LEADER' ? 'TL' : 'Recruiter'})
                   </option>
                 ))}
@@ -513,11 +513,11 @@ export default function ProfilesPage() {
           )}
 
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-slate-500 bg-white border border-slate-200 rounded-full px-3 py-1 shadow-sm hidden sm:inline">
+            <span className="text-xs text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full px-3 py-1 shadow-sm hidden sm:inline">
               {data?.pagination?.total ?? profiles.length} profiles
             </span>
             {useVirtualization && (
-              <div className="flex items-center gap-1.5 text-[11px] text-violet-700 bg-violet-50 border border-violet-200 rounded-full px-3 py-1 shadow-sm">
+              <div className="flex items-center gap-1.5 text-[11px] text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 rounded-full px-3 py-1 shadow-sm">
                 <Sparkles className="h-3 w-3" />
                 Virtualized
               </div>
@@ -529,7 +529,7 @@ export default function ProfilesPage() {
         {(search || assignedRecruiterFilter !== 'ALL') && (
           <div className="mb-4 flex flex-wrap items-center gap-2">
             {search && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 text-white px-3 py-1 text-xs font-medium">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 dark:bg-slate-800 border border-transparent dark:border-slate-700 text-white px-3 py-1 text-xs font-medium">
                 Search: "{search}"
                 <button onClick={() => setSearch('')} className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-white/20 hover:bg-white/30">
                   <span className="text-[10px]">✕</span>
@@ -537,14 +537,14 @@ export default function ProfilesPage() {
               </span>
             )}
             {assignedRecruiterFilter !== 'ALL' && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 px-3 py-1 text-xs font-medium">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 px-3 py-1 text-xs font-medium">
                 Assigned: {assignedRecruiterFilter === 'unassigned' ? 'Unassigned' : recruiters.find((r) => r.id === assignedRecruiterFilter)?.name || assignedRecruiterFilter}
-                <button onClick={() => setAssignedRecruiterFilter('ALL')} className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-200 hover:bg-indigo-300">
+                <button onClick={() => setAssignedRecruiterFilter('ALL')} className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-200 dark:bg-indigo-800 hover:bg-indigo-300">
                   <span className="text-[10px]">✕</span>
                 </button>
               </span>
             )}
-            <button onClick={() => { setSearch(''); setAssignedRecruiterFilter('ALL'); }} className="text-xs text-slate-500 hover:text-red-600">Clear all filters</button>
+            <button onClick={() => { setSearch(''); setAssignedRecruiterFilter('ALL'); }} className="text-xs text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400">Clear all filters</button>
           </div>
         )}
       </Reveal>
@@ -581,11 +581,11 @@ export default function ProfilesPage() {
       {!isLoading && !isError && profiles.length > 0 && (
         <>
           {canBulkProfile && (
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-700">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
+              <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300 text-mayzax-blue focus:ring-mayzax-blue cursor-pointer"
+                  className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-mayzax-blue focus:ring-mayzax-blue cursor-pointer"
                   checked={allSelectedOnPage}
                   onChange={toggleSelectAll}
                 />
@@ -594,7 +594,7 @@ export default function ProfilesPage() {
 
               {selectedProfileIds.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-mayzax-blue-50 px-2.5 py-0.5 text-xs font-bold text-mayzax-blue border border-mayzax-blue-200">
+                  <span className="rounded-full bg-mayzax-blue-50 dark:bg-mayzax-blue-950/30 px-2.5 py-0.5 text-xs font-bold text-mayzax-blue dark:text-mayzax-blue-400 border border-mayzax-blue-200 dark:border-mayzax-blue-800">
                     {selectedProfileIds.length} Selected
                   </span>
 
@@ -1002,7 +1002,7 @@ export default function ProfilesPage() {
                         setInterviewFormOpen(true);
                       }}
                       size="sm"
-                      className="h-8 rounded-lg bg-indigo-650 text-black font-bold hover:bg-indigo-700 hover:text-white text-xs gap-1"
+                      className="h-8 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs gap-1 shadow-sm"
                     >
                       <Plus className="h-3.5 w-3.5" /> Add Interview
                     </Button>
@@ -1492,36 +1492,36 @@ function InterviewFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6">
-        <DialogHeader className="pb-2 border-b">
-          <DialogTitle className="text-lg font-black text-slate-900 dark:text-white">
+      <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-900 dark:text-slate-100 shadow-2xl p-6">
+        <DialogHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+          <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
             {interview ? 'Edit Interview Round' : 'Add Interview Round'}
           </DialogTitle>
-          <DialogDescription className="text-xs text-slate-400">
+          <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
             Schedule or update interview details for this candidate.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-3">
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-500 uppercase">Round Name *</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Round Name *</Label>
             <Input
               value={roundName}
               onChange={(e) => setRoundName(e.target.value)}
               placeholder="e.g. Technical Round 1"
-              className="rounded-xl border-slate-200 bg-white dark:text-black"
+              className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label className="text-xs font-bold text-slate-500 uppercase">Status *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Status *</Label>
               <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger className="rounded-xl border-slate-200 dark:text-black">
+                <SelectTrigger className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-700">
                   <SelectItem value="Scheduled">Scheduled</SelectItem>
                   <SelectItem value="Completed">Completed</SelectItem>
                   <SelectItem value="Cancelled">Cancelled</SelectItem>
@@ -1529,69 +1529,69 @@ function InterviewFormDialog({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs font-bold text-slate-500 uppercase">Timezone</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Timezone</Label>
               <Input
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
                 placeholder="e.g. EST"
-                className="rounded-xl border-slate-200 bg-white dark:text-black"
+                className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
               />
             </div>
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-500 uppercase">Date *</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date *</Label>
             <Input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="rounded-xl border-slate-200 bg-white dark:text-black cursor-pointer"
+              className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white cursor-pointer"
               required
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label className="text-xs font-bold text-slate-500 uppercase">Start Time *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Start Time *</Label>
               <Input
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
                 placeholder="e.g. 10:30 AM"
-                className="rounded-xl border-slate-200 bg-white dark:text-black"
+                className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
                 required
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-bold text-slate-500 uppercase">End Time *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">End Time *</Label>
               <Input
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
                 placeholder="e.g. 11:30 AM"
-                className="rounded-xl border-slate-200 bg-white dark:text-black"
+                className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
                 required
               />
             </div>
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-500 uppercase">Interviewer Name</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Interviewer Name</Label>
             <Input
               value={interviewer}
               onChange={(e) => setInterviewer(e.target.value)}
               placeholder="e.g. John Doe"
-              className="rounded-xl border-slate-200 bg-white dark:text-black"
+              className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label className="text-xs font-bold text-slate-500 uppercase">Mode</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Mode</Label>
               <Select value={mode} onValueChange={setMode}>
-                <SelectTrigger className="rounded-xl border-slate-200 dark:text-black">
+                <SelectTrigger className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                   <SelectValue placeholder="Mode" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-700">
                   <SelectItem value="Google Meet">Google Meet</SelectItem>
                   <SelectItem value="Zoom">Zoom</SelectItem>
                   <SelectItem value="Teams">Teams</SelectItem>
@@ -1601,31 +1601,33 @@ function InterviewFormDialog({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs font-bold text-slate-500 uppercase">Meeting Link</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Meeting Link</Label>
               <Input
                 value={meetingLink}
                 onChange={(e) => setMeetingLink(e.target.value)}
                 placeholder="e.g. https://meet.google.com/..."
-                className="rounded-xl border-slate-200 bg-white dark:text-black"
+                className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
               />
             </div>
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-500 uppercase">Notes</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Notes</Label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Provide interview agenda or panel instructions..."
               rows={2}
-              className="flex min-h-[60px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300 resize-none dark:text-black"
+              className="flex min-h-[60px] w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mayzax-blue-500/40 resize-none focus:bg-white dark:focus:bg-slate-800"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t">
-            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">Cancel</Button>
-            <Button type="submit" disabled={isSubmitting} className="rounded-xl bg-indigo-650 text-black hover:text-white font-bold hover:bg-indigo-700">
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <Button type="button" variant="outline" onClick={onClose} className="rounded-full dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-sm">
               {isSubmitting ? 'Saving...' : 'Save Round'}
             </Button>
           </div>
@@ -1682,74 +1684,76 @@ function InterviewCallFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
-      <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-6">
-        <DialogHeader className="pb-2 border-b">
-          <DialogTitle className="text-lg font-black text-slate-900 dark:text-white">
+      <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-900 dark:text-slate-100 shadow-2xl p-6">
+        <DialogHeader className="pb-3 border-b border-slate-100 dark:border-slate-800">
+          <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
             Add Interview Call Details
           </DialogTitle>
-          <DialogDescription className="text-xs text-slate-400">
+          <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
             Log details of interview calls received by your assigned client.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-3">
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-500 uppercase">Company Name *</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Company Name *</Label>
             <Input
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder="e.g. Google"
-              className="rounded-xl border-slate-200 bg-white dark:text-black"
+              className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
               required
             />
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-500 uppercase">Position *</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Position *</Label>
             <Input
               value={position}
               onChange={(e) => setPosition(e.target.value)}
               placeholder="e.g. Frontend Engineer"
-              className="rounded-xl border-slate-200 bg-white dark:text-black"
+              className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
               required
             />
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-500 uppercase">Caller Number *</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Caller Number *</Label>
             <Input
               value={number}
               onChange={(e) => setNumber(e.target.value)}
               placeholder="e.g. +1 234 567 890"
-              className="rounded-xl border-slate-200 bg-white dark:text-black"
+              className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
               required
             />
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-500 uppercase">Caller / Interviewer Name</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Caller / Interviewer Name</Label>
             <Input
               value={callerName}
               onChange={(e) => setCallerName(e.target.value)}
               placeholder="e.g. Jane Smith"
-              className="rounded-xl border-slate-200 bg-white dark:text-black"
+              className="rounded-xl h-10 bg-slate-50/70 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800"
             />
           </div>
 
-          <div className="space-y-1">
-            <Label className="text-xs font-bold text-slate-500 uppercase">Notes (optional)</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Notes (optional)</Label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Enter details like next steps, scheduled dates, etc."
               rows={3}
-              className="flex min-h-[80px] w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300 resize-none dark:text-black"
+              className="flex min-h-[80px] w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 px-3 py-2 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mayzax-blue-500/40 resize-none focus:bg-white dark:focus:bg-slate-800"
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t">
-            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">Cancel</Button>
-            <Button type="submit" disabled={isSubmitting} className="rounded-xl bg-indigo-650 text-black hover:text-white font-bold hover:bg-indigo-700">
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <Button type="button" variant="outline" onClick={onClose} className="rounded-full dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting} className="rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-sm">
               {isSubmitting ? 'Logging...' : 'Save Call Details'}
             </Button>
           </div>

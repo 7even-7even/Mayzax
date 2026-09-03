@@ -93,8 +93,18 @@ export default function RecruiterDashboardPage() {
         title={`Welcome back, ${user?.name?.split(' ')[0] || 'Recruiter'}!`}
         description="Your personal cockpit • Portal performance, profiles & recent activity"
         pills={[
-          { label: `${recruiterStats?.totalApplications ?? 0} total apps${recruiterStats?.ashbyRemainder ? ` (+${recruiterStats.ashbyRemainder} Ashby)` : ''}`, icon: Zap },
-          { label: `${recruiterStats?.currentShiftApplications ?? 0} today${recruiterStats?.ashbyShiftRemainder ? ` (+${recruiterStats.ashbyShiftRemainder} Ashby)` : ''}`, icon: Clock }
+          {
+            label: `${recruiterStats?.totalApplications ?? 0} total apps${
+              recruiterStats?.ashbyRemainder ? ` (+${recruiterStats.ashbyRemainder} Ashby)` : ''
+            }${recruiterStats?.easyApplyRemainder ? ` (+${recruiterStats.easyApplyRemainder} EA)` : ''}`,
+            icon: Zap,
+          },
+          {
+            label: `${recruiterStats?.currentShiftApplications ?? 0} today${
+              recruiterStats?.ashbyShiftRemainder ? ` (+${recruiterStats.ashbyShiftRemainder} Ashby)` : ''
+            }${recruiterStats?.easyApplyShiftRemainder ? ` (+${recruiterStats.easyApplyShiftRemainder} EA)` : ''}`,
+            icon: Clock,
+          },
         ]}
         stats={
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full px-3 py-1.5 shadow-sm">
@@ -171,15 +181,15 @@ export default function RecruiterDashboardPage() {
       </Reveal>
 
       <Reveal delay={0.2}>
-        <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-          <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+        <Card className="border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-850 dark:to-slate-900">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md">
                 <Users className="h-4 w-4" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold">Profile-wise Applications</CardTitle>
-                <CardDescription className="text-xs">Grouped by your assigned client profiles</CardDescription>
+                <CardTitle className="text-base font-bold text-slate-900 dark:text-white">Profile-wise Applications</CardTitle>
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Grouped by your assigned client profiles</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -195,27 +205,27 @@ export default function RecruiterDashboardPage() {
                 <EmptyState title="No assigned profiles" description="Profiles assigned to you will appear here." />
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {profileWiseCounts.map((row, idx) => (
                   <motion.div
                     key={row.profileId}
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.03 }}
-                    className="flex items-center justify-between p-4 hover:bg-slate-50/60 transition-colors"
+                    className="flex items-center justify-between p-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 text-white font-bold text-sm">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 text-white font-bold text-sm shadow-sm">
                         {row.candidateName.charAt(0)}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-900">{row.candidateName}</p>
-                        <p className="text-xs text-slate-500">{row.profileId.slice(0, 8)} • Profile</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{row.candidateName}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{row.profileId.slice(0, 8)} • Profile</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge className="bg-slate-900 text-white hover:bg-slate-900 border-0 shadow-sm">{row.currentShiftApplications} today</Badge>
-                      <Badge variant="secondary" className="bg-indigo-50 border-indigo-100 text-indigo-700">
+                      <Badge className="bg-slate-900 dark:bg-slate-800 text-white hover:bg-slate-900 dark:hover:bg-slate-800 border border-slate-700/50 shadow-sm">{row.currentShiftApplications} today</Badge>
+                      <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300">
                         {row.totalApplications} total
                       </Badge>
                     </div>
@@ -228,15 +238,15 @@ export default function RecruiterDashboardPage() {
       </Reveal>
 
       <Reveal delay={0.25}>
-        <Card className="border-slate-200/60 rounded-2xl shadow-sm overflow-hidden">
-          <CardHeader className="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+        <Card className="border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden">
+          <CardHeader className="border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-slate-50 to-white dark:from-slate-850 dark:to-slate-900">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 dark:bg-slate-800 text-white shadow-md border border-slate-700/50">
                 <Clock className="h-4 w-4" />
               </div>
               <div>
-                <CardTitle className="text-base font-semibold">Recent Applications</CardTitle>
-                <CardDescription className="text-xs">Latest 5 submissions • Auto-refreshes</CardDescription>
+                <CardTitle className="text-base font-bold text-slate-900 dark:text-white">Recent Applications</CardTitle>
+                <CardDescription className="text-xs text-slate-500 dark:text-slate-400">Latest 5 submissions • Auto-refreshes</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -246,29 +256,29 @@ export default function RecruiterDashboardPage() {
                 <EmptyState title="No recent applications" description="Your recent activity will appear here." />
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {recentApplications.map((app, idx) => (
                   <motion.div
                     key={app.id}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.04 }}
-                    className="flex items-center justify-between p-4 hover:bg-slate-50/60 transition-colors group"
+                    className="flex items-center justify-between p-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 text-white font-bold text-sm">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-mayzax-blue-500 to-mayzax-green-500 text-white font-bold text-sm shadow-sm">
                         {app.profile?.candidateName?.charAt(0) || '?'}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 truncate">{app.profile?.candidateName}</p>
-                        <p className="text-xs text-slate-500 truncate">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{app.profile?.candidateName}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                           {app.companyName || 'Company'} • {app.jobTitle || 'Role'} • {formatEnumLabel(app.jobPortal)}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 ml-4">
-                      <span className="hidden sm:inline text-xs text-slate-400">{formatDateTime(app.appliedAt)}</span>
-                      <a href={app.jobLink} target="_blank" rel="noreferrer" className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 group-hover:bg-slate-900 text-slate-500 group-hover:text-white transition-colors">
+                      <span className="hidden sm:inline text-xs text-slate-400 dark:text-slate-500">{formatDateTime(app.appliedAt)}</span>
+                      <a href={app.jobLink} target="_blank" rel="noreferrer" className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-900 dark:group-hover:bg-slate-700 text-slate-500 dark:text-slate-400 group-hover:text-white transition-colors border border-transparent dark:border-slate-700">
                         <ExternalLink className="h-4 w-4" />
                       </a>
                     </div>
